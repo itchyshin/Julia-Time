@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The local Case Board for Julia Time: The Missing Fleas.">
+  <title>Julia Time · Case Board</title><link rel="stylesheet" href="course.css">
+</head>
+<body>
+<a class="skip" href="#case-board">Skip to the Case Board</a>
+<header class="shell topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><p>Local browser record</p></header>
+<main id="case-board" class="shell">
+  <section class="hero" aria-labelledby="board-title">
+    <div class="hero-copy"><p class="eyebrow">Your case board</p><h1 id="board-title">Find your next move.</h1><p>This board remembers work saved in this browser. It does not grade it or replace a fresh Julia check.</p><a id="continue-action" class="primary-action" href="chapter.html" aria-disabled="true">Checking Julia…</a><a class="quiet-link hero-guide-link" href="getting-started.html">How to play</a></div>
+    <img src="../assets/lab-cast.png" alt="Itchy, Toto, Momo and Eddie gathered around jars and the Missing Fleas notebook.">
+  </section>
+  <section id="case-thread" class="panel" aria-labelledby="case-thread-heading">
+    <p class="eyebrow">The case, in one glance</p>
+    <h2 id="case-thread-heading">Keep the question in view</h2>
+    <dl>
+      <div><dt>Question</dt><dd id="case-question">Loading the case question…</dd></div>
+      <div><dt>Established in this browser</dt><dd id="case-established">Loading saved case history…</dd></div>
+      <div><dt>Still unknown</dt><dd id="case-unknown">Loading the boundary…</dd></div>
+      <div><dt>Why this next move?</dt><dd id="case-why-next">Loading the next move…</dd></div>
+    </dl>
+  </section>
+  <section id="setup-readiness" class="setup-readiness panel" aria-labelledby="setup-heading" aria-busy="true">
+    <p class="eyebrow">Check this computer</p>
+    <h2 id="setup-heading">Julia readiness</h2>
+    <p id="setup-status" class="setup-status" aria-live="polite" aria-atomic="true">Connecting to the local Julia lab…</p>
+    <p class="setup-boundary">This fresh check makes sure Julia can run the mystery. It never installs software. R and Python are not needed to start the case, and this first check does not inspect them.</p>
+    <div class="setup-actions">
+      <button id="setup-recheck" class="secondary-action" type="button" aria-describedby="setup-status" disabled>Check Julia again</button>
+      <button id="setup-reconnect" class="secondary-action" type="button" aria-describedby="setup-status" hidden>Reconnect to Julia</button>
+    </div>
+    <details id="setup-details" class="setup-details">
+      <summary>Check details</summary>
+      <dl>
+        <div><dt>Detected version</dt><dd id="setup-version">Not checked yet</dd></div>
+        <div><dt>Checked</dt><dd id="setup-checked-at">Not checked yet</dd></div>
+        <div><dt>Reason code</dt><dd id="setup-reason">Not checked yet</dd></div>
+      </dl>
+    </details>
+  </section>
+  <p id="board-status" class="board-status" aria-live="polite">Loading browser-local case history…</p>
+  <button id="changed-history-action" class="changed-history-action" type="button" aria-describedby="board-status" hidden>Add changed browser history</button>
+  <section aria-labelledby="chapters-heading"><p class="eyebrow">Case route</p><h2 id="chapters-heading">Six chapters, one investigation</h2><div id="chapter-cards" class="chapter-grid"></div></section>
+  <section id="speed-lab-entry" class="panel" aria-labelledby="speed-lab-heading"><p class="eyebrow">Optional laboratory</p><h2 id="speed-lab-heading">Compare a fixed bootstrap calculation</h2><p>This is not a seventh chapter, does not affect case progress, and has no score.</p><p>It first checks that Julia, R, and Python return the same answers before timing the fixed local calculation.</p><a id="speed-lab-link" class="secondary-action" href="speed-lab.html">Open the optional speed laboratory</a></section>
+  <div class="lower-grid">
+    <section class="panel" aria-labelledby="evidence-heading"><p class="eyebrow">Saved evidence</p><h2 id="evidence-heading">What this browser remembers</h2><div id="saved-evidence"></div></section>
+    <section class="panel" aria-labelledby="concepts-heading"><p class="eyebrow">Julia tools met so far</p><h2 id="concepts-heading">Concepts from your saved work</h2><ul id="concept-list"></ul><p id="draft-notice" class="draft-notice"></p></section>
+  </div>
+  <aside class="setup-reminder"><strong>Before you play:</strong> start Julia Time with the supplied local launcher. The game runs on your own computer; this board runs a fixed Julia readiness check but never installs anything.</aside>
+</main>
+<script src="course-state.js"></script><script src="legacy-import.js"></script><script src="course-client.js"></script><script src="course-board.js"></script><script src="setup-status-client.js"></script><script src="setup-status-board.js"></script><script>(function(){const link=document.getElementById("speed-lab-link"),client=window.JuliaTimeCourseClient,attempt=new URLSearchParams(location.search).get("attempt");if(link&&client)link.href=client.speedLabDestination(attempt);}());</script>
+</body>
+</html>

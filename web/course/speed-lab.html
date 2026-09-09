@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Julia Time optional bootstrap comparison laboratory.">
+  <title>Julia Time · Optional speed lab</title>
+  <link rel="stylesheet" href="course.css">
+</head>
+<body>
+  <a class="skip" href="#speed-lab">Skip to the optional comparison</a>
+  <header class="shell topbar">
+    <div><p class="eyebrow">Julia Time / optional laboratory</p><p class="brand">Bootstrap comparison</p></div>
+    <a class="quiet-link" href="index.html">Return to Case Board</a>
+  </header>
+  <main id="speed-lab" class="shell guide-main">
+    <section class="guide-section" aria-labelledby="speed-title">
+      <p class="eyebrow">Optional after the mystery</p>
+      <h1 id="speed-title">Curious how the same bootstrap runs in three languages?</h1>
+      <p><strong>What this page is for:</strong> after you finish the mystery, you can ask one fair question on <em>this</em> computer: do Julia, R, and Python give the same answer to the same supplied bootstrap calculation, and how long does each take here?</p>
+      <ol>
+        <li><strong>Step 1: confirm the answers agree.</strong> The lab runs a fixed calculation in all three languages and checks the returned values.</li>
+        <li><strong>Step 2: time those matching calculations.</strong> This unlocks only when Step 1 passes, so we never compare unlike answers.</li>
+        <li><strong>Step 3: read one local report.</strong> It describes this computer and these settings; it is not a claim that a language always wins.</li>
+      </ol>
+      <p>A <strong>bootstrap</strong> repeatedly resamples a fixed dataset and recalculates one summary. If a language is missing, the page says so; the Missing Fleas mystery is still complete. Each language has a 30-second total limit across both fixed workloads.</p>
+      <aside class="setup-reminder"><strong>You do not need to do this to learn Julia or finish the case.</strong> Leave this page if you would rather continue the mystery. This laboratory is only for comparing one small calculation on this computer.</aside>
+    </section>
+    <section class="guide-section" aria-labelledby="controls-title">
+      <h2 id="controls-title">Try the optional experiment</h2>
+      <p><strong>Before you start:</strong> leave the Julia Time terminal running. Start with Step 1 below; this page will tell you whether the optional experiment is available.</p>
+      <p id="speed-status" aria-live="polite">Step 1: confirm that this computer can run the same calculation in Julia, R, and Python.</p>
+      <div class="editor-controls">
+        <button id="check-speed-lab" type="button">Step 1: check matching answers</button>
+        <button id="run-speed-lab" type="button" disabled>Step 2: time the fixed calculation</button>
+      </div>
+      <section id="speed-report" hidden aria-live="polite" aria-labelledby="speed-report-title">
+        <h2 id="speed-report-title">Current local report</h2>
+        <p id="speed-report-message"></p>
+        <dl id="speed-report-context"></dl>
+        <table>
+          <caption>Median timing in seconds; range is shown in parentheses.</caption>
+          <thead><tr><th scope="col">Workload</th><th scope="col">Julia</th><th scope="col">R</th><th scope="col">Python / NumPy</th></tr></thead>
+          <tbody id="speed-report-timings"></tbody>
+        </table>
+      </section>
+    </section>
+    <aside class="setup-reminder"><strong>Boundary:</strong> this is an optional local comparison, not a requirement for the mystery and not a claim about a different computer.</aside>
+  </main>
+  <script src="speed-lab.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const status = document.getElementById("speed-status");
+    const check = document.getElementById("check-speed-lab");
+    const run = document.getElementById("run-speed-lab");
+    const client = window.JuliaTimeSpeedLab;
+    if (!client || !window.WebSocket) {
+      status.textContent = "This optional laboratory needs a current browser with WebSocket support. Return to the Case Board; the mystery is still playable.";
+      check.disabled = true;
+      run.disabled = true;
+      return;
+    }
+    const speedReport = document.getElementById("speed-report");
+    const reportMessage = document.getElementById("speed-report-message");
+    const reportContext = document.getElementById("speed-report-context");
+    const reportTimings = document.getElementById("speed-report-timings");
+    const INFO_REPLY_TIMEOUT_MS = 60000;
+    const RUN_REPLY_TIMEOUT_MS = 150000;
+    const CONNECT_TIMEOUT_MS = 5000;
+    let state = client.createState();
+    let socket = null;
+    let sequence = 0;
+    let replyTimer = null;
+    let connectionTimer = null;
+
+    function requestId(kind) { sequence += 1; return kind + "-" + Date.now().toString(36) + "-" + sequence; }
+    function timingText(summary) { return summary.median.toFixed(6) + " s (" + summary.min.toFixed(6) + "–" + summary.max.toFixed(6) + " s)"; }
+    function textNode(tag, text) { const node = document.createElement(tag); node.textContent = text; return node; }
+    function renderReceipt(receipt) {
+      reportContext.replaceChildren();
+      reportTimings.replaceChildren();
+      if (!receipt) { reportMessage.textContent = ""; return; }
+      reportMessage.textContent = receipt.title + ". Parity verified before timing; each language ran one warm-up and five timed fixed-kernel repetitions.";
+      const context = [
+        ["Machine", receipt.machine.cpu_model + "; " + receipt.machine.architecture + "; " + receipt.machine.os + "; " + receipt.machine.logical_cpus + " logical CPUs"],
+        ["Threads", "Single-threaded kernel; Julia, BLAS, OpenMP, MKL and vecLib each capped at 1"],
+        ["Versions", "Julia " + receipt.language_versions.julia + " · R " + receipt.language_versions["r-base"] + " · Python / NumPy " + receipt.language_versions["python-numpy"]]
+      ];
+      context.forEach(function (pair) { reportContext.append(textNode("dt", pair[0]), textNode("dd", pair[1])); });
+      receipt.workloads.forEach(function (workload) {
+        const row = document.createElement("tr");
+        row.append(textNode("th", workload.iterations + " resamples"));
+        row.lastChild.scope = "row";
+        ["julia", "r-base", "python-numpy"].forEach(function (language) { row.append(textNode("td", timingText(workload.timings_seconds[language]))); });
+        reportTimings.append(row);
+      });
+    }
+    function render() {
+      const model = client.viewModel(state);
+      status.textContent = model.message;
+      check.disabled = state.phase === "loading" || state.phase === "running";
+      run.disabled = !client.canRunBenchmark(state);
+      speedReport.hidden = !model.result;
+      renderReceipt(model.result);
+    }
+    function clearReplyTimer() { if (replyTimer !== null) { clearTimeout(replyTimer); replyTimer = null; } }
+    function clearConnectionTimer() { if (connectionTimer !== null) { clearTimeout(connectionTimer); connectionTimer = null; } }
+    function armReplyTimer(requestId, timeoutMs) {
+      clearReplyTimer();
+      replyTimer = setTimeout(function () {
+        replyTimer = null;
+        const before = state;
+        state = client.expirePending(state, requestId);
+        if (state !== before) render();
+      }, timeoutMs);
+    }
+    function receive(reply) {
+      const before = state;
+      if (reply && reply.type === "benchmark_info") state = client.receiveInfoReply(state, reply);
+      if (reply && reply.type === "benchmark_run") state = client.receiveRunReply(state, reply);
+      if (before !== state) { clearReplyTimer(); render(); }
+    }
+    function withSocket(ready) {
+      if (socket && socket.readyState === WebSocket.OPEN) { ready(); return; }
+      status.textContent = "Connecting to the local lab…";
+      try {
+        socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
+      } catch (_) {
+        state = client.connectionFailed(state);
+        render();
+        return;
+      }
+      const currentSocket = socket;
+      connectionTimer = setTimeout(function () {
+        if (socket !== currentSocket || currentSocket.readyState === WebSocket.OPEN) return;
+        try { currentSocket.close(); } catch (_) {}
+        state = client.connectionFailed(state);
+        render();
+      }, CONNECT_TIMEOUT_MS);
+      currentSocket.addEventListener("open", function () { if (socket !== currentSocket) return; clearConnectionTimer(); state = client.connect(state); render(); ready(); });
+      currentSocket.addEventListener("message", function (event) { if (socket !== currentSocket) return; try { receive(JSON.parse(event.data)); } catch (_) {} });
+      currentSocket.addEventListener("error", function () { if (socket !== currentSocket) return; clearConnectionTimer(); clearReplyTimer(); state = client.connectionFailed(state); render(); });
+      currentSocket.addEventListener("close", function () { if (socket !== currentSocket) return; clearConnectionTimer(); clearReplyTimer(); state = client.connectionFailed(state); render(); });
+    }
+    check.addEventListener("click", function () {
+      withSocket(function () {
+        const started = client.beginInfo(state, requestId("speed-info"));
+        if (!started.message) return;
+        state = started.state;
+        socket.send(JSON.stringify(started.message));
+        armReplyTimer(started.message.request_id, INFO_REPLY_TIMEOUT_MS);
+        render();
+      });
+    });
+    run.addEventListener("click", function () {
+      const started = client.beginBenchmarkRun(state, requestId("speed-run"));
+      if (!started.message || !socket || socket.readyState !== WebSocket.OPEN) return;
+      state = started.state;
+      socket.send(JSON.stringify(started.message));
+      armReplyTimer(started.message.request_id, RUN_REPLY_TIMEOUT_MS);
+      render();
+    });
+  }());
+  </script>
+</body>
+</html>

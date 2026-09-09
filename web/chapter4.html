@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Julia Time — The missing fleas: Plan a recheck</title>
+  <link rel="stylesheet" href="chapter4.css">
+  <script defer src="course/course-state.js"></script>
+  <script defer src="chapter4.js"></script>
+</head>
+<body>
+  <a class="skip" href="#chapter-title">Skip to the chapter introduction</a>
+  <header class="topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><p id="connection" aria-live="polite">Connecting to the lab…</p><button id="reconnect" class="quiet" type="button" hidden>Reconnect to lab</button></header>
+  <nav class="course-location" aria-label="Course location"><a id="case-board" href="course/index.html">Case Board</a><p id="course-location" aria-live="polite">Case 4 of 6 · Plan a recheck</p></nav>
+  <main>
+    <section id="scene" class="opening" aria-labelledby="chapter-title">
+      <div class="scene-card"><div class="scene-copy"><p class="eyebrow">Chapter 4 · Plan a recheck</p><h1 id="chapter-title" tabindex="-1">Choose what to look at next</h1><p>The lab has already applied its stated planning rule and supplied the eligible jar list. Your Julia move will make a reproducible three-jar plan.</p><p class="dialogue"><strong>Toto:</strong> “A recheck plan names what to inspect next; it does not manufacture an observation.”</p></div><img src="assets/course/scene-c4-recheck-station.png" alt="Toto and the Missing Fleas team stand at a recheck station with labelled jar slots and a planning clipboard."></div>
+      <section class="scene-brief" aria-labelledby="scene-goal"><p class="eyebrow">Your one clear move</p><h2 id="scene-goal">Choose three different eligible jars for a recheck plan.</h2><p>The visible list is already eligible under the stated planning rule. Use Julia to choose three different IDs without replacement. A recheck plan creates no observations: it does not say what a recheck will find. No new observations are made or shown.</p><p class="caution"><strong>Keep the claim small:</strong> eligibility is a planning rule in simulated teaching data, not a newly observed flea outcome or a biological explanation.</p><button id="start-investigation" class="run" type="button">Open the recheck station →</button></section>
+    </section>
+    <section id="investigation" hidden aria-label="Chapter 4 Julia investigation">
+      <button id="back-to-scene" class="quiet" type="button">← Back to the story</button>
+      <section class="case-panel" aria-labelledby="move-title"><p class="eyebrow">Your one clear move</p><h1 id="move-title" tabindex="-1">Plan three distinct rechecks</h1><p id="move-question"></p><p id="move-bridge" class="bridge"></p><div class="return"><span>Required result</span><code id="return-spec"></code></div></section>
+      <section id="visible-inputs" class="inputs-panel" aria-live="polite"></section>
+      <section id="distinct-practice" class="inputs-panel" aria-labelledby="distinct-practice-title" hidden>
+        <p class="eyebrow">Optional hands-on practice · no case evidence</p>
+        <h2 id="distinct-practice-title">Try choosing three different practice jars</h2>
+        <p>Imagine these are four physical jar cards on Toto’s clipboard. Choose three cards for a practice recheck plan. A card can be in the plan once, not twice.</p>
+        <div id="practice-jar-rack" class="practice-rack" role="group" aria-label="Practice jar cards"></div>
+        <p id="practice-selection" class="practice-bridge" aria-live="polite"></p>
+        <div class="controls"><button id="practice-check" class="quiet" type="button">Check this practice plan</button></div>
+        <p id="practice-result" aria-live="polite"></p>
+        <p class="data-label">Practice only — it does not add case evidence. Then use the same idea on the named <code>eligible.jar_id</code> list in your own empty editor.</p>
+      </section>
+      <section class="editor-panel" aria-labelledby="editor-heading"><div class="editor-heading"><div><p class="eyebrow">Write Julia</p><h2 id="editor-heading">Your independent challenge</h2></div><span id="run-status" aria-live="polite">Waiting for the lab</span></div><section id="case-bindings" class="practice-bridge" aria-label="Julia names for visible case tables"></section><p id="challenge-bridge" class="practice-bridge">Use the visible case table and required result to decide your next Julia move. This empty editor is for your own result.</p><p id="syntax-note" class="syntax-note"></p><section id="answer-before-editor" class="practice-bridge" aria-live="polite" hidden></section><label for="code">Your Julia code</label><textarea id="code" rows="8" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea><p id="draft-note" class="keyboard">This challenge editor starts empty. Write your own Julia result.</p><p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p><div class="controls"><button id="run" class="run" type="button" disabled>Run Julia →</button></div>
+        <details class="help"><summary>Need the full answer? <span>Take small hints first; your editor stays empty</span></summary><div id="help-list" aria-live="polite"></div><div class="controls"><button id="next-help" class="quiet" type="button">Show the first small hint</button><button id="show-answer" class="quiet" type="button">Show the complete answer</button></div></details>
+        <details class="comparisons"><summary>R and Python comparisons <span>optional bridges, not required moves</span></summary><pre id="comparisons"></pre><p>These are common equivalents for the teaching tables. They are not case evidence and do not add observations.</p></details>
+        <section id="result" class="result" aria-live="polite" aria-atomic="false"></section><button id="next-move" class="quiet next" type="button" hidden>Next: test a probability model →</button>
+      </section>
+      <section id="returned-visual" class="visual-panel" aria-live="polite"></section>
+    </section>
+  </main>
+</body>
+</html>

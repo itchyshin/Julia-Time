@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  fixtures.html — renders the five visuals from static JSON, no server/WebSocket required.
+  Used to eyeball and screenshot each renderer in isolation. Loads style.css and app.js exactly
+  as index.html does, then fetches web/fixtures/*.json (relative paths, so it also works when
+  served by the Julia server) and calls window.JuliaTime.render.* directly with state.instant = true
+  so each canvas draws one complete static frame (no animation to wait for).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Julia Time — fixtures</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div style="max-width: 900px; margin: 20px auto; padding: 0 16px;">
+  <h1>Julia Time — visual fixtures</h1>
+  <p>Each block renders one visual from its fixture JSON, standing in for the level noted below it.
+  No server connection is used on this page.</p>
+
+  <div class="fixture-block">
+    <h2>bar — stands for L0 &middot; First contact</h2>
+    <canvas id="fx-bar" class="visual" width="640" height="260"></canvas>
+  </div>
+
+  <div class="fixture-block">
+    <h2>rows — stands for L1/L2 &middot; Falling rows / Which pond?</h2>
+    <canvas id="fx-rows" class="visual" width="640" height="320"></canvas>
+    <div class="data-label" id="fx-rows-label"></div>
+  </div>
+
+  <div class="fixture-block">
+    <h2>deck — stands for L3 &middot; Toto's deck</h2>
+    <canvas id="fx-deck" class="visual" width="640" height="360"></canvas>
+  </div>
+
+  <div class="fixture-block">
+    <h2>gallery — stands for L4 &middot; Shooting gallery</h2>
+    <canvas id="fx-gallery" class="visual" width="640" height="260"></canvas>
+  </div>
+
+  <div class="fixture-block">
+    <h2>race — stands for L6 &middot; The race</h2>
+    <canvas id="fx-race" class="visual" width="640" height="160"></canvas>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  function loadFixture(name) {
+    return fetch("fixtures/" + name + ".json").then((r) => r.json());
+  }
+
+  const specs = [
+    { name: "bar", canvas: "fx-bar" },
+    { name: "rows", canvas: "fx-rows", label: "fx-rows-label" },
+    { name: "deck", canvas: "fx-deck" },
+    { name: "gallery", canvas: "fx-gallery" },
+    { name: "race", canvas: "fx-race" },
+  ];
+
+  specs.forEach((spec) => {
+    loadFixture(spec.name).then((payload) => {
+      const canvas = document.getElementById(spec.canvas);
+      const state = { instant: true };
+      window.JuliaTime.render[spec.name](canvas, payload, state);
+      if (spec.label && payload.label) {
+        document.getElementById(spec.label).textContent = payload.label;
+      }
+    }).catch((err) => {
+      // Surface fetch/parse problems visibly rather than leaving a blank canvas with a silent
+      // console error only — this page is meant to be screenshotted headlessly.
+      const canvas = document.getElementById(spec.canvas);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#a3352b";
+      ctx.font = "13px sans-serif";
+      ctx.fillText("failed to load fixtures/" + spec.name + ".json: " + err, 10, 20);
+    });
+  });
+})();
+</script>
+</body>
+</html>

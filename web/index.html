@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Julia Time: a small mystery solved with Julia code.">
+  <title>Julia Time — The Case of the Missing Fleas</title>
+  <link rel="stylesheet" href="mystery.css">
+</head>
+<body>
+  <a class="skip-link" href="#case-work">Skip to the case work</a>
+  <main class="shell" id="case-work">
+    <header class="masthead">
+      <p class="eyebrow">Julia Time / case files</p>
+      <div class="masthead-row"><h1>The Case of the<br><em>Missing Fleas</em></h1><div class="connection" aria-live="polite"><span class="connection-mark" aria-hidden="true"></span><span id="connection-text">Connecting to the lab…</span><button class="quiet-button" id="reconnect" type="button" hidden>Reconnect</button></div></div>
+    </header>
+    <div id="notices" role="status" aria-live="polite"></div>
+    <details class="session-options"><summary>New attempt or saved work</summary><p>A new attempt starts with empty editors and no evidence. Nothing from this attempt is erased. Bookmark this page to return to this attempt.</p><button id="new-attempt" class="quiet-button" type="button">Start a new empty attempt</button> <a id="original-save" href="/">Return to original saved investigation</a></details>
+    <nav class="step-controls" aria-label="Investigation steps"><button id="step-back" class="quiet-button" hidden>← Back</button><p id="step-label" aria-live="polite">Case 1 of 6 · Meet the case</p><a id="case-board" class="quiet-button" href="course/index.html">Case Board</a><button id="view-evidence" class="quiet-button" hidden>Your saved evidence</button></nav>
+    <section class="hero" aria-labelledby="chapter-title">
+      <div class="hero-copy"><p class="chapter-kicker">9:00 am · Itchy’s lab · Chapter 1</p><h2 id="chapter-title">Can you check Toto’s report?</h2><p class="lede">Toto arrives with a troubling report about batch B09. Before the lab can check its claims, someone needs to find the right jar records.</p><p><strong>You’re the lab’s newest investigator.</strong> Write Julia code, run it, and use the returned records as evidence.</p><p><strong>Your first job:</strong> keep the B09 rows from the notebook below. Leave the other batch out, but keep every detail about each B09 jar.</p><p class="intro-help">New to Julia? Open <strong>Help me start</strong> beside the editor. You can edit your code and try again.</p><a class="start-link" href="#goal-heading">Open the lab notebook →</a></div>
+      <div class="lab-stage" aria-label="The field lab and its investigation team"><img src="assets/lab-cast.png" alt="Morning field lab with the cast, specimen jars and Toto's report." onload="this.nextElementSibling.hidden=true" onerror="this.hidden=true"><div class="stage-fallback" aria-hidden="true"><span class="moon"></span><span class="jar jar-one"></span><span class="jar jar-two"></span><span class="magnifier"></span></div></div>
+    </section>
+    <section class="cast" aria-label="The investigation team">
+      <article class="cast-card itchy"><h3>Itchy</h3><p class="role">mentor</p><p>“Start with a claim you can check.”</p></article><article class="cast-card toto"><h3>Toto</h3><p class="role">brings the report</p><p>“Batch B09 is the one everyone is arguing about.”</p></article><article class="cast-card momo"><h3>Momo</h3><p class="role">sceptic</p><p>“Provisional thought: a zero may be a label mistake, not an absence.”</p></article><article class="cast-card eddie"><h3>Eddie</h3><p class="role">checks assumptions</p><p>“Before we believe a count, which records did we keep?”</p></article>
+    </section>
+    <section class="case-grid" aria-label="Chapter 1 case work">
+      <div class="case-main">
+        <section class="brief paper-panel" aria-labelledby="goal-heading"><p class="panel-label">Case brief</p><h2 id="goal-heading">Your goal</h2><p id="case-goal">Load the case file to see the exact question.</p><div class="return-spec"><span class="spec-label">Return</span><code id="return-spec">a filtered table</code></div></section>
+        <section class="data-panel" aria-labelledby="data-heading"><div class="section-heading"><div><p class="panel-label">Evidence in hand</p><h2 id="data-heading">Field notebook preview</h2></div><p id="data-label" class="data-label">Waiting for the case file…</p></div><div class="table-wrap" tabindex="0"><table id="case-table"><caption class="sr-only">Case records supplied by the server</caption><thead></thead><tbody></tbody></table></div><p class="table-note">These are the simulated records available to your Julia code as <code>jars</code>.</p></section>
+        <div class="move-stack">
+        <section class="editor-panel" aria-labelledby="editor-heading"><div class="editor-heading"><div><p class="panel-label">Your move</p><h2 id="editor-heading">Write Julia</h2></div><span id="run-status" class="run-status">Waiting for the lab</span></div><p class="binding-note"><code>jars</code> = the displayed simulated table<br><code>case_batch</code> = <code>"B09"</code> (supplied by the server)</p><p id="practice-to-case-bridge" class="editor-help"><strong>Bridge from practice:</strong> The practice used a true-or-false row rule. Now use that same rule on the case table: make one true-or-false choice for each jar whose batch label matches <code>case_batch</code>; put those choices in the <strong>rows position</strong>; then keep <strong>all columns</strong>. The code shape and hints below are there if you need the Julia punctuation.</p><label class="sr-only" for="code">Julia code for filtering the B09 records</label><textarea id="code" spellcheck="false" autocomplete="off" placeholder="Your Julia code goes here…" aria-describedby="code-help practice-to-case-bridge"></textarea><p id="code-help" class="editor-help"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code. Your typing stays on screen while you investigate.</p><div class="editor-controls"><button id="run" class="run-button" type="button" disabled>Run the evidence check <span aria-hidden="true">→</span></button><button id="reset-code" class="text-button" type="button">Reset code</button></div></section>
+        <details class="help-drawer"><summary>Need the full answer? <span>or take small hints first; your editor stays empty</span></summary><aside class="case-side">
+          <section class="help-panel" aria-labelledby="help-heading"><p class="panel-label">Field guide</p><h2 id="help-heading">Choose your help</h2><p id="hint-intro">Hints reveal one small next step at a time. The complete answer remains optional.</p><ol id="hint-list" class="hint-list"></ol><div class="editor-controls"><button id="next-hint" class="quiet-button" type="button">Show first hint</button><button id="show-answer" class="quiet-button" type="button">Show the complete answer</button></div></section>
+          <details class="reference-panel"><summary>Compare a worked example <span>contains a complete line for another batch</span></summary><p>Try a nudge first if you want to work out the code yourself. This example uses the same operation with a different target.</p><div id="worked-example">An example will appear with the case file.</div></details><details class="reference-panel"><summary>Julia syntax glossary</summary><dl id="glossary"></dl></details><details class="reference-panel"><summary>Coming from R or Python?</summary><div class="bridge"><h3>R</h3><pre id="bridge-r"></pre><h3>Python</h3><pre id="bridge-python"></pre></div></details>
+          <nav class="chapters" aria-label="Chapters"><p class="panel-label">Case progress</p><ol><li class="current">01 · The disputed batch</li><li>02 · Compare trays</li><li>03 · Connect the handling log</li><li>04 · Plan a recheck</li><li>05 · Test a small model</li><li>06 · Compare explanations</li></ol><p>Each next chapter opens from a checked move or the Case Board. Nothing is sealed.</p></nav>
+        </aside></details>
+        <section id="result-area" class="result-area" aria-live="polite" aria-atomic="false"></section>
+        </div>
+      </div>
+    </section>
+    <section id="evidence-board" class="evidence-board" hidden aria-labelledby="evidence-heading"><div><p class="panel-label">Evidence board</p><h2 id="evidence-heading">The records you retained</h2><p id="evidence-summary"></p></div><div id="evidence-rows" class="evidence-rows"></div><div class="explanation"><p id="explanation-julia"></p><p id="explanation-case"></p></div><div class="complete-line"><strong>Evidence secured. The case remains open.</strong><span>Next, compare the B09 trays. Your checked evidence stays saved in this browser.</span></div></section>
+    <template id="selection-connections">
+      <details class="paper-panel">
+        <summary>Connect this to what you know: Julia, R and Python</summary>
+        <p>One operation, several ways to express it: keep records whose batch label matches the target. These examples assume the same jar table with no missing batch labels. Only Julia runs in this game.</p>
+        <details><summary>Julia: indexing and filter</summary>
+          <pre>jars[jars.batch_id .== case_batch, :]
+filter(row -&gt; row.batch_id == case_batch, jars)</pre>
+          <p>Indexing builds a true/false choice for every row, then uses those choices to select records. In the second line, filter checks each row with a rule. The arrow means “take a row and test this condition”; rows that return true are kept. Both select the same records here.</p>
+          <p>You may also encounter <code>filter(:batch_id =&gt; ==(case_batch), jars)</code>. Here <code>:batch_id</code> names the column, <code>=&gt;</code> pairs it with a test, and <code>==(case_batch)</code> creates the equality test. You do not need this shorter spelling to solve the case.</p>
+        </details>
+        <details><summary>R: base R and dplyr</summary>
+          <pre>jars[jars$batch_id == case_batch, , drop = FALSE]
+dplyr::filter(jars, batch_id == case_batch)</pre>
+          <p>Base R uses the condition in the rows position; the blank columns position keeps all columns. Unlike Julia, you do not put a colon there. dplyr names the operation directly. These examples use an R data frame named jars and a target string named case_batch.</p>
+        </details>
+        <details><summary>Python: two pandas forms</summary>
+          <pre>jars.loc[jars["batch_id"] == case_batch, :]
+jars[jars["batch_id"] == case_batch]</pre>
+          <p>Both use a true/false condition to select rows of a pandas DataFrame. For positions rather than conditions, pandas uses zero-based .iloc: .iloc[0:3] takes the first three rows. Julia and R positions start at 1.</p>
+        </details>
+        <p><strong>Try a new question:</strong> in guided practice, select B08 instead, then keep only jar_id and detected. Explain what you changed before running it. Practice does not replace your case evidence.</p>
+        <p>References: <a href="https://dataframes.juliadata.org/stable/man/working_with_dataframes/">DataFrames.jl</a>, <a href="https://dplyr.tidyverse.org/reference/filter.html">dplyr</a>, <a href="https://pandas.pydata.org/docs/user_guide/indexing.html">pandas</a>. Missing values need additional care; these examples are not a universal missing-data policy.</p>
+      </details>
+    </template>
+    <section id="indexing-practice" class="paper-panel" hidden aria-labelledby="practice-heading">
+      <p class="panel-label">Optional guided practice · no case evidence awarded</p>
+      <h2 id="practice-heading">One row, one jar</h2>
+      <p id="practice-explanation">A table has rows and columns. Each row is one jar; each column is one detail. Julia selects them in this order: rows first, columns second.</p>
+      <pre id="practice-shape">jars[rows, columns]</pre>
+      <p id="practice-task">Try the first three rows: type jars[1:3, :]. The range 1:3 means rows 1 through 3; the final : means all columns. These are practice records, not necessarily Toto’s batch.</p>
+      <label for="practice-code">Your practice code</label><textarea id="practice-code" spellcheck="false" placeholder="Type the practice expression here"></textarea>
+      <button id="practice-run" class="run-button" disabled>Run this experiment</button>
+      <div id="practice-output" aria-live="polite"></div>
+      <button id="practice-next" class="quiet-button">Next: choose by a rule →</button>
+      <button id="practice-done" class="quiet-button">Return to the case →</button>
+    </section>
+    <button id="learn-indexing" class="run-button" hidden>Learn rows and columns first →</button>
+    <button id="step-next" class="quiet-button" hidden>I know indexing — try the case →</button>
+  </main>
+  <script src="mystery.js"></script>
+</body>
+</html>

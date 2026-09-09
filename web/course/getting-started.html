@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Start here: what Julia Time is, what to install, and how to play The Case of the Missing Fleas.">
+  <title>Julia Time · Start Here</title><link rel="stylesheet" href="course.css">
+</head>
+<body>
+<a class="skip" href="#start-here">Skip to the instructions</a>
+<header class="shell topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><p>Start here</p></header>
+<main id="start-here" class="shell guide-main">
+  <section class="hero guide-hero" aria-labelledby="guide-title">
+    <div class="hero-copy">
+      <p class="eyebrow">Before the investigation</p>
+      <h1 id="guide-title">Start here.</h1>
+      <p>Julia Time is a local browser game in which you use real Julia to investigate a simulated water-flea mystery.</p>
+      <p class="guide-promise">You do not need to build the game, create a GitHub account, find a package in a registry, or install R or Python.</p>
+      <a class="primary-action" href="#setup-heading">Set up Julia Time</a>
+      <p class="guide-local-note">This guide is bundled with the supplied folder and can be shared as a static page, but the mystery itself runs on your own laptop after you start the local lab. If you reached a shared copy first, ask the facilitator for that folder before attempting setup.</p>
+    </div>
+    <img src="../assets/lab-cast.png" alt="Itchy, Toto, Momo and Eddie gathered around jars and the Missing Fleas notebook.">
+  </section>
+
+  <section class="guide-section" aria-labelledby="what-heading">
+    <p class="eyebrow">One simple distinction</p>
+    <h2 id="what-heading">What is Julia Time?</h2>
+    <div class="guide-grid">
+      <article class="panel"><h3>Julia Time</h3><p>This supplied folder and learning game. It runs locally on your own laptop.</p></article>
+      <article class="panel"><h3>Julia</h3><p>Julia is the programming language. It runs the game and the small investigation moves you write.</p></article>
+      <article class="panel"><h3>R and Python</h3><p>They are optional reference languages only. You do not need either one for this build of the mystery.</p></article>
+    </div>
+    <aside class="guide-callout"><strong>A useful technical detail, without homework:</strong> the folder is a local Julia project called <code>JuliaTime</code>. Do not run <code>Pkg.add("JuliaTime")</code>; the one-time setup prepares the folder’s own declared packages.</aside>
+  </section>
+
+  <section class="guide-section" aria-labelledby="terminal-heading">
+    <p class="eyebrow">The one computer step</p>
+    <h2 id="terminal-heading">Open a terminal in the Julia Time folder</h2>
+    <p>A <strong>terminal</strong> is simply the small text window that can run a command in a folder. The commands below only work when that window is in the extracted Julia Time folder—not in Downloads generally, and not in a different project.</p>
+    <div class="guide-grid">
+      <article class="panel"><h3>Mac</h3><p>In Finder, open the extracted Julia Time folder. Control-click its background and choose <strong>New Terminal at Folder</strong> (or open Terminal and drag the folder onto it after typing <code>cd </code>).</p></article>
+      <article class="panel"><h3>Windows</h3><p>In File Explorer, open the extracted Julia Time folder, then right-click its background and choose <strong>Open in Terminal</strong>.</p></article>
+      <article class="panel"><h3>After setup</h3><p>On a Mac, you can double-click <code>tools/setup/launch-macos.command</code>. On Windows, first double-click <code>tools/setup/setup-windows.cmd</code> once, then use <code>tools/setup/launch-windows.cmd</code> whenever you play. You do not need Julia on PATH: these helpers also find the usual Julia 1.10 installation folder. Keep the game window open while you play.</p></article>
+    </div>
+    <aside class="guide-callout"><strong>Do not guess whether it worked:</strong> only call the game ready when the Case Board says Julia is ready. If it does not, return here and use the recovery steps below.</aside>
+  </section>
+
+  <section class="guide-section" aria-labelledby="setup-heading">
+    <p class="eyebrow">Set up once, before the meeting</p>
+    <h2 id="setup-heading">What you need</h2>
+    <p>Your laptop, the supplied Julia Time archive, Julia <strong>1.10.x</strong>, and an internet connection. Internet is needed to download Julia and for the first course setup, when Julia prepares this folder’s packages.</p>
+    <ol class="guide-steps">
+      <li><strong>Extract the supplied archive</strong> somewhere you can find again. You do not need to clone a repository or sign in anywhere.</li>
+      <li><strong>Install Julia 1.10.x</strong> from the <a href="https://julialang.org/downloads/manual-downloads/#long-term-support-release">official Julia long-term-support download page</a>. In the extracted folder, <code>julia --version</code> should begin <code>julia version 1.10.</code></li>
+      <li><strong>Run the one-time check.</strong> On Windows you can simply double-click <code>tools/setup/setup-windows.cmd</code>; otherwise use the matching terminal block below. Do not close the terminal while it works.</li>
+    </ol>
+    <p class="guide-platform-note"><strong>Choose your platform deliberately:</strong> choose the block whose title exactly matches your terminal. Mac/Linux and Windows commands are different; do not copy a command meant for another platform.</p>
+    <details class="guide-details">
+      <summary>Mac or Linux Terminal: one-time check</summary>
+      <pre><code>JULIA_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 julia --startup-file=no --history-file=no --project=. check_setup.jl</code></pre>
+    </details>
+    <details class="guide-details">
+      <summary>Windows Command Prompt: one-time check</summary>
+      <pre><code>set JULIA_NUM_THREADS=4
+set OPENBLAS_NUM_THREADS=1
+julia --startup-file=no --history-file=no --project=. check_setup.jl</code></pre>
+    </details>
+    <details class="guide-details">
+      <summary>Windows PowerShell: one-time check</summary>
+      <pre><code>$env:JULIA_NUM_THREADS = "4"
+$env:OPENBLAS_NUM_THREADS = "1"
+julia --startup-file=no --history-file=no --project=. check_setup.jl</code></pre>
+    </details>
+    <p class="guide-success">Setup is complete only when the terminal says <code>OK — Julia Time is ready</code>.</p>
+  </section>
+
+  <section class="guide-section" aria-labelledby="start-heading">
+    <p class="eyebrow">Each time you play</p>
+    <h2 id="start-heading">Start the local lab</h2>
+    <p>In the same folder, choose the command for your terminal and keep that terminal window open while you play:</p>
+    <p class="guide-platform-note"><strong>Use the same terminal type you chose for setup:</strong> Mac/Linux and Windows commands are different.</p>
+    <details class="guide-details">
+      <summary>Mac or Linux Terminal: start the local lab</summary>
+      <pre><code>JULIA_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
+    </details>
+    <details class="guide-details">
+      <summary>Windows Command Prompt: start the local lab</summary>
+      <pre><code>set JULIA_NUM_THREADS=4
+set OPENBLAS_NUM_THREADS=1
+julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
+    </details>
+    <details class="guide-details">
+      <summary>Windows PowerShell: start the local lab</summary>
+      <pre><code>$env:JULIA_NUM_THREADS = "4"
+$env:OPENBLAS_NUM_THREADS = "1"
+julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
+    </details>
+    <p>The browser should open the Case Board. If it does not, enter this exact local address in your browser:</p>
+    <pre><code>http://127.0.0.1:8000/course/index.html</code></pre>
+    <p>When you finish, return to the terminal and press Enter or Ctrl-C to stop the local game.</p>
+  </section>
+
+  <section id="how-to-play" class="guide-section" aria-labelledby="play-heading">
+    <p class="eyebrow">How to play without hunting around</p>
+    <h2 id="play-heading">Your code is the investigation move.</h2>
+    <ol class="guide-flow">
+      <li><strong>Read the brief.</strong> Each chapter puts the question, the relevant data, and the required result in view before you write.</li>
+      <li><strong>Inspect the evidence.</strong> Look at the visible table, its column names, and the records you need to reason about.</li>
+      <li><strong>Write a small Julia move.</strong> The editor starts empty (or restores your own earlier typing). You are not expected to invent a whole answer from nothing.</li>
+      <li><strong>Run it and read what happened.</strong> Julia returns the actual result. A successful move explains both what the code did and what it does—and does not—establish about the case.</li>
+      <li><strong>Use help when you want it.</strong> <em>Help me start</em> gives a small nudge first. Depending on the chapter, it can also offer a code shape, an optional full solution, or a different-data practice example. It is help, not a test.</li>
+      <li><strong>Return to the Case Board.</strong> When browser storage is available, it saves your evidence and points to the next available move. It is not a grade or leaderboard.</li>
+    </ol>
+  </section>
+
+  <section class="guide-section guide-help" aria-labelledby="help-heading">
+    <p class="eyebrow">If something goes wrong</p>
+    <h2 id="help-heading">Take the shortest safe next step.</h2>
+    <details class="guide-details">
+      <summary>Show recovery help</summary>
+      <dl class="guide-recovery">
+        <div><dt><code>julia</code> is not found, or the version is wrong</dt><dd>On Windows, first try the supplied double-click setup helper: it also checks the usual Julia 1.10 installation folder. Otherwise install or select Julia 1.10.x, open a new terminal, and run the one-time check again. On a Mac, if Julia is installed but the terminal cannot find it, use <code>/Applications/Julia-1.10.app/Contents/Resources/julia/bin/julia</code> in place of <code>julia</code>.</dd></div>
+        <div><dt><code>JULIA_TIME_NOT_READY</code></dt><dd>Run the one-time <code>check_setup.jl</code> command first.</dd></div>
+        <div><dt><code>SERVER_START_FAILED</code></dt><dd>Close an earlier Julia Time terminal, then try again—or ask the facilitator for help. Do not kill unrelated programs.</dd></div>
+        <div><dt>The browser cannot connect</dt><dd>Keep the Julia Time terminal open and visit the exact local address above. On the Case Board, choose <em>Reconnect to Julia</em> if it appears.</dd></div>
+        <div><dt>Still stuck</dt><dd>Send the facilitator your operating system and the final 10 terminal lines. Your browser-saved drafts should remain in this browser.</dd></div>
+      </dl>
+    </details>
+  </section>
+
+  <aside class="setup-reminder"><strong>What is playable now:</strong> all six case chapters are on the Case Board. The mystery can start with Julia alone; any R/Python comparison is an optional separate laboratory, never a requirement for solving the case.</aside>
+  <p class="guide-return"><a class="primary-action" href="http://127.0.0.1:8000/course/index.html">Open the local Case Board</a></p>
+</main>
+</body>
+</html>

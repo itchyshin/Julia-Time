@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Julia Time — The missing fleas: Check the report</title>
+  <link rel="stylesheet" href="chapter3.css">
+  <script defer src="course/course-state.js"></script>
+  <script defer src="chapter3.js"></script>
+</head>
+<body>
+  <a class="skip" href="#chapter-title">Skip to the chapter introduction</a>
+  <header class="topbar">
+    <div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div>
+    <p id="connection" aria-live="polite">Connecting to the lab…</p>
+    <button id="reconnect" class="quiet reconnect" type="button" hidden>Reconnect to lab</button>
+  </header>
+  <nav class="course-location" aria-label="Course location">
+    <a id="case-board" href="course/index.html">Case Board</a>
+    <p id="course-location" aria-live="polite">Case 3 of 6 · 1 of 2 · Connect the two records</p>
+  </nav>
+  <main>
+    <section id="scene" class="opening" aria-labelledby="chapter-title">
+      <div class="scene-card">
+        <div class="scene-copy">
+          <p class="eyebrow">Chapter 3 · Check the report</p>
+          <h1 id="chapter-title" tabindex="-1">Two sheets, one question</h1>
+          <p>Toto’s tray summary says one thing. Eddie has a handling log that may say another. Before anyone explains a difference, the records must be connected safely.</p>
+          <p class="dialogue"><strong>Eddie:</strong> “First make sure the same tray is meeting the same tray.”</p>
+        </div>
+        <img src="assets/course/scene-c3-handling-desk.png" alt="Eddie holds two blank sheets side by side at a lab desk while Itchy, Toto and Momo examine the investigation materials.">
+      </div>
+      <section class="scene-brief" aria-labelledby="scene-goal">
+        <p class="eyebrow">Your first win</p>
+        <h2 id="scene-goal">I connected two sheets safely.</h2>
+        <p>You will see both tables, use their shared tray label to join them, then inspect a fresh joined table for a recording disagreement. A possible difference can be visible by eye; the join makes each comparison repeatable. Julia code is the investigative move.</p>
+        <p class="caution"><strong>Keep the claim small:</strong> a recording disagreement does not tell us which record is biologically true, why the entries differ, who entered them, or whether anyone is at fault.</p>
+        <button id="start-investigation" class="run" type="button">Open the two records →</button>
+        <section id="resume-saved" hidden aria-live="polite">
+          <p id="resume-saved-note">Your earlier C3 work is saved only in this browser. Reopen your next move for a fresh Julia check.</p>
+          <button id="resume-saved-move" class="quiet" type="button">Resume saved move →</button>
+        </section>
+      </section>
+    </section>
+
+    <section id="investigation" hidden aria-label="Chapter 3 Julia investigation">
+      <button id="back-to-scene" class="quiet" type="button">← Back to the story</button>
+      <nav class="moves" aria-label="Chapter 3 moves">
+        <p>Make one clear move at a time</p>
+        <button data-move="join-report-log" type="button" aria-current="step">1 · Connect records</button>
+        <button data-move="filter-disagreement" type="button" aria-current="false">2 · Inspect difference</button>
+      </nav>
+
+      <section class="case-panel" aria-labelledby="move-title">
+        <p class="eyebrow">Your move</p>
+        <h1 id="move-title">Connect the tray summary to its handling record</h1>
+        <p id="move-question"></p>
+        <p id="move-bridge" class="bridge"></p>
+        <div class="return"><span>Return</span><code id="return-spec"></code></div>
+      </section>
+
+      <section id="visible-inputs" class="inputs-panel" aria-live="polite"></section>
+
+      <section class="editor-panel" aria-labelledby="editor-heading">
+        <div class="editor-heading"><div><p class="eyebrow">Write Julia</p><h2 id="editor-heading">Your independent challenge</h2></div><span id="run-status" aria-live="polite">Waiting for the lab</span></div>
+        <section id="case-bindings" class="practice-bridge" aria-label="Julia names for the visible case tables"><p>Loading the Julia names for these case tables…</p></section>
+        <p id="challenge-bridge" class="practice-bridge">Use the visible case tables and the required result to decide your next Julia move. This empty editor is for your own result.</p>
+        <p id="syntax-note" class="syntax-note"></p>
+        <p id="code-shape" class="practice-bridge" aria-live="polite"></p>
+        <details id="demo-panel" class="worked-example demo"><summary>Before the case: practise matching two records <span>one minute, optional; separate data</span></summary>
+          <p id="demo-copy">The separate K-A/K-B practice pair uses a shared <code>key</code>, not a case tray. Open this panel to ask the lab for its actual practice tables; the case editor below stays empty.</p>
+          <section id="demo-inputs" class="demo-inputs" aria-live="polite"><p>Practice tables will appear here after the lab supplies them.</p></section>
+          <section class="demo-editor" aria-labelledby="demo-heading">
+            <p class="eyebrow">Build, then run</p><h3 id="demo-heading">Try the join on separate data</h3>
+            <p id="demo-plan" class="practice-bridge"><strong>Before you run:</strong> predict which shared keys will match—K-A, K-B, or both—and how many rows Julia will return. The two buttons below write only this practice editor, one clause at a time.</p>
+            <label for="demo-code">Your practice Julia code</label>
+            <textarea id="demo-code" rows="4" spellcheck="false" autocomplete="off" placeholder="Build or type a practice expression here…"></textarea>
+            <p id="demo-draft-note" class="keyboard">This separate practice editor begins empty.</p>
+            <div class="controls"><button data-demo-token="open" class="quiet action" type="button" disabled>Add <code>leftjoin(</code></button><button data-demo-token="key" class="quiet action" type="button" disabled>Add tables and key</button><button id="run-demo" class="run" type="button" disabled>Run demonstration</button></div>
+            <section id="demo-result" class="result demo-result" aria-live="polite" aria-atomic="false"></section>
+            <section id="demo-case-bridge" class="demo-case-bridge" aria-live="polite" hidden>
+              <p class="eyebrow">Back to the case</p>
+              <p><strong>Separate practice only:</strong> this result used K-A/K-B practice data, not the Missing Fleas case.</p>
+              <p><strong>Case inputs:</strong> <code>report</code> (<code>tray_id</code>, <code>reported_detected_n</code>) and <code>handling_log</code> (<code>tray_id</code>, <code>logged_detected_n</code>, <code>log_status</code>).</p>
+              <p><strong>Case question:</strong> How can we put each report tray beside its matching handling record?</p>
+              <p><strong>Required return:</strong> One row per report tray, with that tray’s matching handling-log fields.</p>
+              <a id="return-to-case" class="quiet next" href="#code" hidden>Return to your case challenge →</a>
+            </section>
+          </section>
+        </details>
+        <label for="code">Your Julia code</label>
+        <textarea id="code" rows="8" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea>
+        <p id="draft-note" class="keyboard">This challenge editor starts empty. Write your own Julia result.</p>
+        <p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p>
+        <div class="controls"><button id="run" class="run" type="button" disabled>Run Julia →</button></div>
+        <details class="help"><summary>Need the full answer? <span>or take small hints first; your editor stays empty</span></summary><div id="help-list" aria-live="polite"></div><div class="controls"><button id="next-help" class="quiet action" type="button">Show the first small hint</button><button id="show-answer" class="quiet action" type="button">Show the complete answer</button></div></details>
+        <details class="comparisons"><summary>R and Python comparisons <span>optional bridges, not required moves</span></summary><pre id="comparisons"></pre><p>These are common equivalents for these simple teaching tables. They are not the only valid R or Python approaches, and do not add evidence to the case.</p></details>
+        <section id="result" class="result" aria-live="polite" aria-atomic="false"></section>
+        <button id="next-move" class="quiet next" type="button" hidden>Next: inspect the disagreement →</button>
+      </section>
+
+      <section id="returned-visual" class="visual-panel" aria-live="polite"></section>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Julia Time — Compare explanations</title>
+  <link rel="stylesheet" href="chapter5.css">
+  <link rel="stylesheet" href="chapter6.css">
+  <script defer src="course/course-state.js"></script>
+  <script defer src="chapter6.js"></script>
+</head>
+<body>
+  <a class="skip" href="#editor-title">Skip to your Julia move</a>
+  <main>
+    <header>
+      <p class="eyebrow">Julia Time / Case files</p>
+      <h1>The Case of the <em>Missing Fleas</em></h1>
+      <p id="status" class="connection">● Connecting to the lab…</p>
+      <nav class="course-location" aria-label="Course location">
+        <a id="case-board-scene" href="course/index.html">Case Board</a>
+        <p>Case 6 of 6 · Compare explanations</p>
+      </nav>
+    </header>
+
+    <section id="scene" class="scene">
+      <img src="assets/course/scene-c6-evidence-board.png" alt="The four investigators examine a calm evidence board in the laboratory.">
+      <div>
+        <p class="eyebrow">Chapter 6 of 6 · Compare explanations carefully</p>
+        <h2 id="scene-title" tabindex="-1">What can the ranges tell us?</h2>
+        <p>Eddie lays out several simple models of how detections could have been recorded. The final honest decision does not name a cause: retain the models whose predictions can still produce the B09 count we saw.</p>
+        <p>Your code will make that modest check visible. It cannot explain the recording difference or prove a model true.</p>
+        <button id="start" class="run" type="button">Open the evidence board →</button>
+      </div>
+    </section>
+
+    <section id="work" hidden>
+      <nav class="top" aria-label="Chapter controls">
+        <button id="back" class="quiet" type="button">← Back to story</button>
+        <a id="case-board" class="quiet" href="course/index.html">Case Board</a>
+        <button id="reconnect" class="quiet" type="button" hidden>Reconnect to lab</button>
+      </nav>
+
+      <section class="case">
+        <p class="eyebrow">Your one clear move</p>
+        <h1 id="move-title" tabindex="-1">Retain compatible candidate models</h1>
+        <p>Compare each visible model range with the one B09 count we observed.</p>
+        <div class="return"><span>Required result</span><code>Every candidate row, once each, for which lower ≤ observed_count ≤ upper.</code></div>
+        <p id="observed" class="limit"></p>
+      </section>
+
+      <section id="model-context" class="data scaffold" aria-labelledby="model-context-title">
+        <p class="eyebrow">Evidence-board legend · before you code</p>
+        <h2 id="model-context-title">Hypothetical detection models</h2>
+        <p>Each supplied card is a simple candidate model. Here, <code>p</code> means the assumed chance that a detection is recorded in one jar. These are hypothetical model inputs, not explanations for the record discrepancy and not true winners.</p>
+        <ul id="candidate-model-cards" aria-label="Candidate detection-frequency hypotheses" aria-live="polite"></ul>
+        <p><strong>Your decision:</strong> keep a candidate when the observed B09 count lies inside its displayed range, including both ends. A count exactly on either edge stays in. You are checking compatibility with this one count, not choosing the explanation.</p>
+      </section>
+
+      <section id="data" class="data" aria-live="polite"></section>
+      <section id="learning-scaffold" class="scaffold" aria-live="polite" hidden></section>
+      <section id="case-status" class="case" aria-label="Case status before you write" aria-live="polite"></section>
+
+      <section class="editor">
+        <div class="editor-title"><div><p class="eyebrow">Write Julia</p><h2 id="editor-title">Your independent challenge</h2></div></div>
+        <p>Use <code>candidate_models</code> and <code>observed_count</code> from the displayed lab file. This editor starts empty.</p>
+        <p id="pre-editor-bridge" class="bridge"></p>
+        <label for="code">Your Julia code</label>
+        <textarea id="code" rows="7" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea>
+        <p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p>
+        <button id="run" class="run" type="button" disabled>Run Julia →</button>
+        <section id="result" class="result" aria-live="polite"></section>
+        <details class="help"><summary>Help me start <span>one small step at a time</span></summary><p id="hint" aria-live="polite"></p><button id="next-hint" class="quiet" type="button">Show the concept</button><button id="answer" class="quiet" type="button">Show complete code now</button></details>
+        <details><summary>R and Python comparisons <span>optional bridges, not required moves</span></summary><pre id="bridges"></pre><p>Several equivalent expressions are possible. These bridges do not add case evidence.</p></details>
+      </section>
+      <section id="visual" class="visual" aria-live="polite"></section>
+    </section>
+  </main>
+</body>
+</html>

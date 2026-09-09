@@ -1,0 +1,12 @@
+# run state, never a deliverable
+.unlazy/
+.unlazy-hook-state.json
+LOOP/state/
+# Julia
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+/docs/build/
+# OS / editors
+.DS_Store
+.vscode/

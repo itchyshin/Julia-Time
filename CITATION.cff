@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use Julia Time, please cite it as below."
+title: "Julia Time: a local, single-player game for learning Julia through data and probability"
+abstract: >-
+  A locally-run browser game in which the player types real Julia and the screen answers:
+  six connected investigation chapters on simulated water-flea records, data handling,
+  sampling, simulation, and careful interpretation.
+type: software
+authors:
+  - family-names: Nakagawa
+    given-names: Shinichi
+    orcid: "https://orcid.org/0000-0002-7765-5182"
+    email: itchyshin@gmail.com
+license: MIT
+repository-code: "https://github.com/itchyshin/Julia-Time"
+version: 0.0.1
+date-released: 2026-09-07
+keywords:
+  - Julia
+  - teaching
+  - game-based learning
+  - probability
+  - data manipulation

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Julia Time — The simulated tail</title><link rel="stylesheet" href="chapter5.css">
+  <script defer src="course/course-state.js"></script><script defer src="chapter5.js"></script>
+</head>
+<body>
+<a class="skip" href="#move-title">Skip to your Julia move</a>
+<main>
+  <header><p class="eyebrow">Julia Time / Case files</p><h1>The Case of the <em>Missing Fleas</em></h1><p id="connection" class="connection">● Connecting to the lab…</p></header>
+  <section id="scene" class="scene" aria-labelledby="scene-title"><img src="assets/course/scene-c5-toto-card-table.png" alt="Toto presents a small two-colour card deck at a lab table."><div><p class="eyebrow">Chapter 5 of 6 · A small probability model</p><h2 id="scene-title" tabindex="-1">Toto’s card round</h2><p>“We can ask a precise question of a small model,” says Toto. “First decide what counts as an event. Then count how often it happens.”</p><p>Our checks still cannot say why B09 differs. Toto’s next question is deliberately narrower: under one explicitly stated model, how often would a six-jar count be at least as high as B09?</p><p>Your code will identify that tail of a fixed simulation and calculate its frequency. It can test this teaching question; it cannot identify what happened in the real lab.</p><button id="start" class="run" type="button">Open Toto’s simulation table →</button></div></section>
+  <section id="work" hidden aria-label="Chapter 5 Julia investigation">
+    <nav class="top"><button id="back" class="quiet" type="button">← Back to story</button><a id="case-board" class="quiet" href="course/index.html">Case Board — all chapters</a><button id="reconnect" class="quiet" type="button" hidden>Reconnect to lab</button></nav>
+    <nav class="moves" aria-label="Chapter 5 moves"><p>Make one clear move at a time</p><button data-move="event-mask" type="button" aria-current="step">1 · Name the event</button><button data-move="event-frequency" type="button" aria-current="false">2 · Calculate frequency</button><p id="move-lock" class="limit">Complete and run Move 1 to unlock Move 2.</p></nav>
+    <section class="case"><p id="move-step" class="eyebrow"></p><h1 id="move-title" tabindex="-1"></h1><p id="move-question"></p><div class="return"><span>Required result</span><code id="required-result"></code></div><p id="case-context" class="limit">A teaching simulation gives a question a clear model. It is not evidence of what caused the field result.</p></section>
+    <details id="model-recipe" class="case"><summary>Why use a simple simulation? <span>optional model context</span></summary><p class="eyebrow">Why Toto starts small</p><h2>A clear question after the record mismatch</h2><p>The B09 record mismatch tells us that the record alone cannot settle what caused the field result. Toto is not proposing a cause. He uses a deliberately simple <code>p = 0.5</code> teaching model so you can practise asking one precise probability question.</p><p><strong>Model recipe:</strong> In each simulated draw, imagine six jars. Each jar is recorded as detected or not detected, with a fixed 0.5 teaching probability of detection. Repeat that draw 1,000 times. The event is: the detected count is at least the observed B09 count.</p><p class="limit">This model is not evidence for a cause. Toto’s cards are optional rehearsal, not new evidence; you may go straight to the Julia move.</p></details>
+    <details id="practice-event" class="data"><summary>Practise the .&gt;= rule with six toy counts <span>optional, different data</span></summary><p class="eyebrow">Different-data worked example · no case evidence</p><h2>Turn counts into a yes-or-no event</h2><p>Imagine six practice counts: <code>practice_counts = [1, 4, 3, 5, 2, 4]</code>. Ask which are at least <code>practice_target = 3</code>.</p><pre>practice_counts .>= practice_target</pre><p>The dot says: compare every count with the target. Julia returns one true-or-false result for each practice count. These values are different from the Missing Fleas case, so this shows the code shape without answering the case.</p><p class="limit">This is a worked example, not case evidence. Next, inspect the named case inputs before you write your own Julia.</p></details>
+    <section id="simulation-data" class="data" aria-live="polite"></section>
+    <section id="cards" class="cards" aria-labelledby="cards-title">
+      <details>
+        <summary>Optional physical rehearsal: Toto’s six-card round <span>no case evidence</span></summary>
+        <p class="eyebrow">Optional: try Toto’s card round first · no case evidence</p>
+        <h2 id="cards-title">Toto’s six-card round</h2>
+        <p>Toto uses teal for “detected” and orange for “not detected.” One fixed six-card draw stands in for the six jars in this small teaching model. If you want a tangible rehearsal, decide whether that draw meets the event: <strong>at least the observed B09 count.</strong></p>
+        <p class="limit">This is a model demonstration, not a new laboratory observation, and it never changes case evidence. You may go straight to your Julia move below.</p>
+        <label for="card-prediction">Optional prediction before revealing the cards</label><textarea id="card-prediction" rows="2" spellcheck="true" placeholder="How many teal cards do you expect in six draws? This is not case evidence."></textarea>
+        <p class="limit">Your prediction stays on this page. It is optional and not case evidence.</p>
+        <div id="card-actions" class="controls"><button data-action="draw-six" class="run" type="button" disabled>Show Toto’s six cards →</button></div>
+        <div id="demo" aria-live="polite"></div><section id="card-event" aria-live="polite"></section>
+        <details class="extension"><summary>Optional: replay more model draws <span>no case evidence</span></summary><div id="replay-actions" class="controls"><button data-action="replay-100" class="quiet" type="button" disabled>Show 100 recorded model runs</button><button data-action="replay-1000" class="quiet" type="button" disabled>Show 1,000 recorded model runs</button></div></details>
+      </details>
+    </section>
+    <section id="case-status" class="case" aria-label="Case status before you write" aria-live="polite"></section>
+    <section class="editor" aria-labelledby="editor-title"><div class="editor-title"><div><p class="eyebrow">Write Julia</p><h2 id="editor-title">Your independent challenge</h2></div><span id="run-status" aria-live="polite">Waiting for the lab</span></div><p>Use the named inputs shown above. This editor starts empty so the result can be yours.</p><p id="syntax" class="syntax"></p><details id="frequency-composition" class="help" hidden><summary>Optional: arrange the event-to-frequency pieces first <span>practice only</span></summary><p>Choose the line that comes first, then choose the next, until the construction is complete. This rehearsal uses placeholders, does not run Julia, does not add case evidence, and does not write into your editor.</p><div id="frequency-composition-cards" class="controls" aria-label="Generic event-to-frequency code pieces"></div><div class="controls"><button id="check-frequency-composition" class="quiet" type="button">Check this order</button><button id="reset-frequency-composition" class="quiet" type="button">Start the rehearsal again</button></div><p id="frequency-composition-feedback" aria-live="polite">Choose the first piece.</p></details><label for="code">Your Julia code</label><textarea id="code" rows="7" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea><p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p><button id="run" class="run" type="button" disabled>Run Julia →</button>
+      <section id="result" class="result" aria-live="polite"></section><button id="next" class="quiet next" type="button" hidden></button>
+      <details class="help"><summary>Help me start <span>one small step at a time</span></summary><p id="hint" aria-live="polite"></p><button id="next-hint" class="quiet" type="button">Show the concept</button><button id="answer" class="quiet" type="button">Show complete code now</button></details>
+      <details><summary>R and Python comparisons <span>optional bridges, not required moves</span></summary><pre id="bridges"></pre><p>Equivalent table operations can be written in more than one way in either language.</p></details>
+    </section>
+    <section id="visual" class="visual" aria-live="polite"></section>
+  </section>
+</main>
+</body>
+</html>

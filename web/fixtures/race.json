@@ -1,0 +1,6 @@
+{
+  "julia_ms": 123.4,
+  "r_ms": 890.2,
+  "python_ms": 654.3,
+  "note": "measured once on a reference machine; not your machine's speed"
+}

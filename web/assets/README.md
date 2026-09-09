@@ -1,0 +1,5 @@
+# Missing Fleas artwork
+
+`lab-cast.png` is a locally shipped, AI-generated illustration produced on 2026-09-07 with OpenAI image generation for this prototype. It depicts fictional illustrative versions of Itchy, Toto, Momo and Eddie, not verified likenesses. Shinichi retains editorial approval of character designs and dialogue. Publishing and licensing decisions remain separate; this file makes no new licensing claim.
+
+Art direction: wide editorial picture-book gouache and fine ink, warm cream paper, navy and teal with terracotta accents; a cozy ecology lab at nine in the morning. Four adult characters examine specimen jars and a report: an older Japanese lecturer with glasses and teal cardigan, an eager graduate carrying the report, a skeptical graduate in a rust sweater, and an advanced female graduate examining jars. Morning window, plants, microscope, shelves and a nine-o'clock clock. No typography, data labels, code, graphs or watermark. The illustration supplies atmosphere; live tables and evidence are rendered separately from actual returned data.

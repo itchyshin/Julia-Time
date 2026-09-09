@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Julia Time fixed bootstrap benchmark report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "report_type",
+    "language",
+    "version",
+    "input_identity",
+    "data_sha256",
+    "indices_sha256",
+    "fixture_index_base",
+    "thread_claim",
+    "workload",
+    "warmup_repetitions",
+    "timed_repetitions",
+    "times_seconds",
+    "median_seconds",
+    "min_seconds",
+    "max_seconds"
+  ],
+  "properties": {
+    "contract": {"const": "bootstrap-benchmark-v1"},
+    "report_type": {"const": "bootstrap_benchmark"},
+    "language": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "input_identity": {"const": "detections-v1/resampling-indices-v1"},
+    "data_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "indices_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "fixture_index_base": {"const": 0},
+    "thread_claim": {"const": "single-threaded kernel"},
+    "workload": {"enum": [1000, 10000]},
+    "warmup_repetitions": {"const": 1},
+    "timed_repetitions": {"const": 5},
+    "times_seconds": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {"type": "number", "minimum": 0}
+    },
+    "median_seconds": {"type": "number", "minimum": 0},
+    "min_seconds": {"type": "number", "minimum": 0},
+    "max_seconds": {"type": "number", "minimum": 0}
+  }
+}
