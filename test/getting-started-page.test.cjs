@@ -56,10 +56,13 @@ test("the Case Board offers instructions without moving its primary game action"
   assert.match(board, /id="continue-action"[^>]*href="chapter\.html"/);
 });
 
-test("the repository landing page tells a first-time downloader exactly what to install", () => {
+test("the repository landing page is a public first door before the learner has Julia Time", () => {
   const readme = read("README.md");
   const firstInstallSection = readme.slice(0, readme.indexOf("## What happens when you play"));
 
+  assert.match(firstInstallSection, /You are in the right place before you download anything/i);
+  assert.match(firstInstallSection, /\[\*\*Download Julia Time\*\*\]\(https:\/\/github\.com\/itchyshin\/Julia-Time\/releases\/latest\)/i);
+  assert.match(firstInstallSection, /web\/assets\/lab-cast\.png/i, "the public doorway should retain the course's visual welcome");
   assert.match(firstInstallSection, /## Start here/i);
   assert.match(firstInstallSection, /Julia Time archive/i);
   assert.match(firstInstallSection, /Julia 1\.10\.x/i);
@@ -68,4 +71,5 @@ test("the repository landing page tells a first-time downloader exactly what to 
   assert.match(firstInstallSection, /docs\/install\.md/i);
   assert.match(firstInstallSection, /setup-windows\.cmd/i);
   assert.match(firstInstallSection, /launch-macos\.command/i);
+  assert.doesNotMatch(firstInstallSection, /127\.0\.0\.1/i, "a public reader should not be sent to a local address before downloading and launching the game");
 });
