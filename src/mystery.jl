@@ -192,7 +192,7 @@ end
 Evaluate a chapter submission in its own fresh fixture.  The checker independently regenerates
 its expectation, so neither a player-side mutation nor a prior request can poison later checks.
 """
-function mystery_case_run(msg::AbstractDict)
+function mystery_case_run(msg::AbstractDict; on_status::Function=((_, __) -> nothing))
     request_id = get(msg, "request_id", "")
     request_id isa AbstractString || return _mystery_result(
         message="`request_id` must be a string.", feedback="Send a string request ID before running code.")
@@ -203,7 +203,8 @@ function mystery_case_run(msg::AbstractDict)
         message="Write some Julia before running the case.", feedback="The editor is empty, so no sandbox worker was started.")
 
     r = lock(_RUN_LOCK) do
-        run_code(String(code); env=(jars=mystery_jars(), case_batch=MYSTERY_CASE_BATCH), budget=RUN_BUDGET)
+        run_code(String(code); env=(jars=mystery_jars(), case_batch=MYSTERY_CASE_BATCH), budget=RUN_BUDGET,
+                 on_status=on_status)
     end
     columns = r.value isa DataFrames.DataFrame ? _mystery_columns(r.value) : String[]
     rows = r.value isa DataFrames.DataFrame ? mystery_rows(r.value) : Any[]

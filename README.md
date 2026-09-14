@@ -42,7 +42,10 @@ separate optional comparison laboratory after the game.
 4. **Mac:** open Terminal in the extracted folder, run
    `julia --project=. check_setup.jl` once, then double-click
    `tools/setup/launch-macos.command` whenever you want to play.
-5. Keep the launcher terminal open. It opens the Case Board in your browser on
+5. **Linux:** run `chmod +x tools/setup/launch-linux.sh` once, then run
+   `tools/setup/launch-linux.sh` whenever you want to play; it runs the
+   one-time setup for you the first time.
+6. Keep the launcher terminal open. It opens the Case Board in your browser on
    **your own computer**.
 
 The detailed platform-specific commands and recovery steps are in
@@ -71,7 +74,9 @@ Run the same one-time setup and launcher on your own computer. The local
 sandbox runs player code in a separate Julia process with a five-second budget;
 it is a teaching convenience, not a security boundary. See
 [the playtest observer sheet](docs/playtest-observer-sheet.md) for the
-no-rescue learner sessions.
+no-rescue learner sessions. A printable [one-page observer sheet (PDF)](output/pdf/playtest-observer-sheet.pdf)
+is ready for the person observing; do not help the player through a sticking
+point—record where their own next action became unclear.
 
 ## Licence
 

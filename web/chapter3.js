@@ -75,9 +75,20 @@
   function draftStatus(message) {
     if (!message || message.status === "timeout") return "This code was not accepted; your draft is still here to check and run again.";
     if (message.status === "error") return "Julia could not run this code; your draft is still here to revise and run again.";
-    if (message.status === "ok" && message.pass === true) return "Julia checked this code just now. You can change it and run again.";
+    if (message.status === "ok" && message.pass === true) return "✓ Accepted — evidence saved. Julia checked this code just now; you can change it and run again.";
     if (message.status === "ok") return "Julia ran this code, but the returned result does not yet meet the stated requirement.";
     return "This is your own unrun draft for this move.";
+  }
+  function draftNotice(hasCode, restored) {
+    if (!hasCode) return "This challenge editor starts empty. Write your own Julia result.";
+    return restored ? "Restored your saved draft — it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
+  }
+  function runOutcomeStatus(message) {
+    if (!message) return "";
+    if (message.status === "ok" && message.pass === true) return "✓ Accepted — evidence saved.";
+    if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
+    if (message.status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
+    return "Not accepted — no evidence was saved.";
   }
   function helpStages(move) {
     const copy = lessonCopy(move);
@@ -107,7 +118,7 @@
     return knownMove(move) ? move : "";
   }
   function createState() {
-    return {connection:"connecting", activeMove:MOVES[0], infoRequest:null, pending:null, metadata:null, metadataFailure:"", result:null, evidence:null, joinAccepted:false, demoInfoRequest:null, demoPending:null, demoMetadata:null, demoResult:null};
+    return {connection:"connecting", activeMove:MOVES[0], infoRequest:null, pending:null, expired:false, statusMessage:null, metadata:null, metadataFailure:"", result:null, evidence:null, joinAccepted:false, demoInfoRequest:null, demoPending:null, demoExpired:false, demoStatusMessage:null, demoMetadata:null, demoResult:null};
   }
   function beginInfo(state, requestId, moveId) {
     const move = knownMove(moveId) ? moveId : MOVES[0];
@@ -115,6 +126,8 @@
       activeMove:move,
       infoRequest:{case_id:CASE_ID, chapter:CHAPTER, move_id:move, mode:"challenge", activity_id:null, simulation_id:null, request_id:requestId},
       pending:null,
+      expired:false,
+      statusMessage:null,
       metadata:null,
       result:null,
       metadataFailure:""
@@ -135,16 +148,30 @@
     return Object.assign({}, state, {
       activeMove:move,
       pending:{case_id:CASE_ID, chapter:CHAPTER, move_id:move, mode:"challenge", activity_id:null, simulation_id:null, request_id:requestId},
+      expired:false,
+      statusMessage:null,
       result:null
     });
   }
+  // `pending` is kept (not nulled) on expiry so a correct result arriving late for this same
+  // request is still applied rather than discarded (B1); `isRunPending` makes the run retryable.
   function expireRun(state, requestId) {
     if (!state.pending || state.pending.request_id !== requestId) return state;
-    return Object.assign({}, state, {pending:null, result:{type:"case_result", status:"timeout", message:"This check took too long. Your draft is still here; check it, then run again."}});
+    return Object.assign({}, state, {expired:true, statusMessage:null, result:{type:"case_result", status:"timeout", message:"This check took too long. Your draft is still here; check it, then run again."}});
   }
-  function cancelRun(state) { return Object.assign({}, state, {pending:null, result:null}); }
-  function cancelDemo(state) { return Object.assign({}, state, {demoInfoRequest:null, demoPending:null, demoResult:null}); }
-  function disconnect(state) { return Object.assign({}, state, {connection:"offline", infoRequest:null, pending:null, demoInfoRequest:null, demoPending:null}); }
+  function cancelRun(state) { return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:null}); }
+  function cancelDemo(state) { return Object.assign({}, state, {demoInfoRequest:null, demoPending:null, demoExpired:false, demoStatusMessage:null, demoResult:null}); }
+  function disconnect(state) { return Object.assign({}, state, {connection:"offline", infoRequest:null, pending:null, expired:false, statusMessage:null, demoInfoRequest:null, demoPending:null, demoExpired:false, demoStatusMessage:null}); }
+  function isRunPending(state) { return Boolean(state.pending) && !state.expired; }
+  function isDemoRunPending(state) { return Boolean(state.demoPending) && !state.demoExpired; }
+  function applyRunStatus(state, message) {
+    if (!message || message.type !== "status" || !state.pending || state.expired || message.request_id !== state.pending.request_id) return state;
+    return Object.assign({}, state, {statusMessage: message.status === "restarting" ? (message.message || "Restarting Julia after the stopped run…") : ""});
+  }
+  function applyDemoRunStatus(state, message) {
+    if (!message || message.type !== "status" || !state.demoPending || state.demoExpired || message.request_id !== state.demoPending.request_id) return state;
+    return Object.assign({}, state, {demoStatusMessage: message.status === "restarting" ? (message.message || "Restarting Julia after the stopped run…") : ""});
+  }
   function exactInputSet(inputs, move) {
     if (!Array.isArray(inputs) || inputs.length !== activeInputIds(move).length) return false;
     const expected = activeInputIds(move).slice().sort();
@@ -185,19 +212,20 @@
     if (!state.pending || !message || message.type !== "case_result" || !sameRunIdentity(message, state.pending)) return state;
     const visual = message.status === "ok" && message.pass === true && message.progress_eligible === true ? visualData(state.activeMove, message) : null;
     const evidence = visual ? {move_id:state.activeMove, columns:message.columns.slice(), rows:message.rows.map(row => Object.assign({}, row)), visual:visual} : state.evidence;
-    return Object.assign({}, state, {pending:null, result:message, evidence:evidence});
+    return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:message, evidence:evidence});
   }
   function beginDemoRun(state, requestId) {
     if (state.activeMove !== "join-report-log" || !state.demoMetadata) return state;
-    return Object.assign({}, state, {demoPending:{case_id:CASE_ID, chapter:CHAPTER, move_id:"join-report-log", mode:"demonstration", activity_id:DEMO_ACTIVITY, simulation_id:null, request_id:requestId}, demoResult:null});
+    return Object.assign({}, state, {demoPending:{case_id:CASE_ID, chapter:CHAPTER, move_id:"join-report-log", mode:"demonstration", activity_id:DEMO_ACTIVITY, simulation_id:null, request_id:requestId}, demoExpired:false, demoStatusMessage:null, demoResult:null});
   }
+  // `demoPending` is kept (not nulled) on expiry, same reasoning as `expireRun` above (B1).
   function expireDemoRun(state, requestId) {
     if (!state || !state.demoPending || state.demoPending.request_id !== requestId) return state;
-    return Object.assign({}, state, {demoPending:null, demoResult:{type:"case_result", status:"timeout", request_id:requestId, message:"The practice run took too long. Your practice code is still here; check it and run again."}});
+    return Object.assign({}, state, {demoExpired:true, demoStatusMessage:null, demoResult:{type:"case_result", status:"timeout", request_id:requestId, message:"The practice run took too long. Your practice code is still here; check it and run again."}});
   }
   function applyDemoResult(state, message) {
     if (!state.demoPending || !message || message.type !== "case_result" || !sameRunIdentity(message, state.demoPending)) return state;
-    return Object.assign({}, state, {demoPending:null, demoResult:message});
+    return Object.assign({}, state, {demoPending:null, demoExpired:false, demoStatusMessage:null, demoResult:message});
   }
   function normalisedJoinRows(payload) {
     if (!payload || !Array.isArray(payload.columns) || !Array.isArray(payload.rows) || !JOIN_COLUMNS.every(column => payload.columns.includes(column))) return null;
@@ -279,9 +307,9 @@
     const el = {
       scene:$("scene"), investigation:$("investigation"), start:$("start-investigation"), back:$("back-to-scene"), resumeSaved:$("resume-saved"), resumeSavedNote:$("resume-saved-note"), resumeSavedMove:$("resume-saved-move"),
       board:$("case-board"), location:$("course-location"), reconnect:$("reconnect"), moveButtons:document.querySelectorAll("[data-move]"),
-      title:$("move-title"), question:$("move-question"), bridge:$("move-bridge"), returnSpec:$("return-spec"), syntax:$("syntax-note"), codeShape:$("code-shape"), challengeBridge:$("challenge-bridge"),
+      title:$("move-title"), question:$("move-question"), bridge:$("move-bridge"), returnSpec:$("return-spec"), syntax:$("syntax-note"), challengeBridge:$("challenge-bridge"),
       inputs:$("visible-inputs"), bindings:$("case-bindings"), code:$("code"), run:$("run"), runStatus:$("run-status"), result:$("result"), visual:$("returned-visual"),
-      help:$("help-list"), nextHelp:$("next-help"), showAnswer:$("show-answer"), comparisons:$("comparisons"), connection:$("connection"), nextMove:$("next-move"), draftNote:$("draft-note"),
+      help:$("help-list"), nextHelp:$("next-help"), showAnswer:$("show-answer"), answerReference:$("answer-before-editor"), comparisons:$("comparisons"), connection:$("connection"), nextMove:$("next-move"), draftNote:$("draft-note"),
       demoPanel:$("demo-panel"), demoCopy:$("demo-copy"), demoInputs:$("demo-inputs"), demoCode:$("demo-code"), demoTokenButtons:document.querySelectorAll("[data-demo-token]"), runDemo:$("run-demo"), demoPlan:$("demo-plan"), demoResult:$("demo-result"), demoCaseBridge:$("demo-case-bridge"), returnToCase:$("return-to-case"), demoDraftNote:$("demo-draft-note")
     };
     let storage = null;
@@ -299,11 +327,11 @@
     let demoRunTimer = null;
     let reconnects = 0;
     let hintIndex = 0;
-    const drafts = Object.create(null);
+    const drafts = Object.create(null), restoredDrafts = Object.create(null);
     let demoDraft = "";
     try {
       const savedDrafts = courseState && typeof courseState.readChallengeDrafts === "function" ? courseState.readChallengeDrafts(storage, attempt) : {};
-      Object.entries(savedDrafts || {}).forEach(([key, value]) => { if (key.startsWith("C3/") && typeof value === "string") drafts[key.slice(3)] = value; });
+      Object.entries(savedDrafts || {}).forEach(([key, value]) => { if (key.startsWith("C3/") && typeof value === "string") { drafts[key.slice(3)] = value; restoredDrafts[key.slice(3)] = value.length > 0; } });
       demoDraft = courseState && typeof courseState.readDraft === "function" ? courseState.readDraft(storage, attempt, CHAPTER, "join-report-log", "demonstration", DEMO_ACTIVITY) : "";
     } catch (_) {}
     const requested = requestedMove(location.search);
@@ -322,10 +350,10 @@
       if (el.resumeSavedMove) el.resumeSavedMove.textContent = "Resume saved move: " + lessonCopy(move).title + " →";
     }
     function updateControls() {
-      if (el.run) el.run.disabled = state.connection !== "connected" || !state.metadata || Boolean(state.pending);
-      if (el.runStatus) el.runStatus.textContent = state.pending ? "Checking your Julia result…" : state.metadataFailure || (state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading the case file…") : "Connect to the lab to run Julia");
+      if (el.run) el.run.disabled = state.connection !== "connected" || !state.metadata || isRunPending(state);
+      if (el.runStatus) el.runStatus.textContent = isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result) : (state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading the case file…") : "Connect to the lab to run Julia"));
       if (el.reconnect) el.reconnect.hidden = !state.metadataFailure && (state.connection === "connected" || state.connection === "connecting");
-      const demoReady = state.connection === "connected" && state.activeMove === "join-report-log" && Boolean(state.demoMetadata) && !state.demoPending;
+      const demoReady = state.connection === "connected" && state.activeMove === "join-report-log" && Boolean(state.demoMetadata) && !isDemoRunPending(state);
       if (el.runDemo) el.runDemo.disabled = !demoReady;
       el.demoTokenButtons.forEach(button => {
         const code = el.demoCode ? el.demoCode.value.trim() : "";
@@ -354,6 +382,14 @@
         if (el.code) el.code.focus();
       }, RUN_DEADLINE_MS);
     }
+    function armDemoRunDeadline(id) {
+      clearDemoRunTimer();
+      demoRunTimer = setTimeout(() => {
+        const before = state; state = expireDemoRun(state, id); if (state === before) return;
+        renderDemoResult(state.demoResult); updateControls();
+        if (el.demoCode) el.demoCode.focus();
+      }, RUN_DEADLINE_MS);
+    }
     function renderDemoFallback() {
       if (!el.demoInputs) return;
       el.demoInputs.replaceChildren();
@@ -371,12 +407,15 @@
       if (el.bridge) el.bridge.textContent = copy.bridge;
       if (el.returnSpec) el.returnSpec.textContent = copy.returnSpec;
       if (el.syntax) el.syntax.textContent = copy.syntax;
-      if (el.codeShape) el.codeShape.textContent = "Template only — not code to run yet: " + copy.shape + ". This names the parts; the visible bindings above tell you which case names to use.";
+      // T2 (2026-09-12 playtest): the code shape used to leak into this always-visible panel,
+      // duplicating the gated "Code shape" hint stage below and turning the move into
+      // substitution rather than a decision. It now lives only in that staged hint.
       if (el.challengeBridge) el.challengeBridge.textContent = "Use the visible case tables and the required result to decide your next Julia move. This empty editor is for your own result.";
       if (el.comparisons) el.comparisons.textContent = "R (dplyr): " + copy.r + "\n\nPython (pandas): " + copy.python;
       if (el.code) el.code.value = drafts[state.activeMove] || "";
-      if (el.draftNote) el.draftNote.textContent = el.code && el.code.value ? "This is your own unrun draft for this move." : "This challenge editor starts empty. Write your own Julia result.";
+      if (el.draftNote) el.draftNote.textContent = draftNotice(Boolean(el.code && el.code.value), Boolean(restoredDrafts[state.activeMove]));
       if (el.help) el.help.replaceChildren();
+      if (el.answerReference) { el.answerReference.hidden = true; el.answerReference.replaceChildren(); }
       if (el.nextHelp) el.nextHelp.textContent = "Show the first small hint";
       hintIndex = 0;
       clearResult();
@@ -483,7 +522,7 @@
       const raw = [message && message.stdout, message && message.message, message && message.value_repr].filter(Boolean).join("\n");
       if (!raw) return;
       const details = document.createElement("details");
-      const summary = document.createElement("summary"); summary.textContent = message.status === "error" ? "Technical Julia detail" : "Actual Julia output";
+      const summary = document.createElement("summary"); summary.textContent = message.status === "error" ? "Original Julia error" : "Actual Julia output";
       const pre = document.createElement("pre"); pre.textContent = raw; details.append(summary, pre); target.append(details);
     }
     function appendReturnedTable(message, target) {
@@ -512,6 +551,7 @@
       if (!el.result) return;
       el.result.replaceChildren();
       if (el.draftNote) el.draftNote.textContent = draftStatus(message);
+      const outcome = document.createElement("p"); outcome.className = "run-outcome"; outcome.textContent = runOutcomeStatus(message); el.result.append(outcome);
       const p = document.createElement("p");
       if (message.status === "error") p.textContent = recoveryCopy(state.activeMove);
       else if (message.status === "timeout") p.textContent = "The lab stopped this run to keep the session responsive. Your code is still here; check it and run again.";
@@ -536,6 +576,7 @@
         el.nextMove.textContent = destination === "chapter4" ? "Next: plan a recheck →" : "Next: inspect the disagreement →";
       }
     }
+    function focusResult() { if (el.result) el.result.focus(); }
     function renderDemoResult(message) {
       if (!el.demoResult) return;
       el.demoResult.replaceChildren();
@@ -578,7 +619,7 @@
       updateControls();
     }
     function sendRun() {
-      if (!socket || socket.readyState !== WebSocket.OPEN || !state.metadata || state.pending) return;
+      if (!socket || socket.readyState !== WebSocket.OPEN || !state.metadata || isRunPending(state)) return;
       const id = requestId("run");
       state = beginRun(state, id, state.activeMove);
       armRunDeadline(id);
@@ -588,15 +629,10 @@
       if (el.result) el.result.textContent = "Julia is checking your move…";
     }
     function sendDemoRun() {
-      if (!socket || socket.readyState !== WebSocket.OPEN || !state.demoMetadata || state.demoPending || !el.demoCode) return;
+      if (!socket || socket.readyState !== WebSocket.OPEN || !state.demoMetadata || isDemoRunPending(state) || !el.demoCode) return;
       const id = requestId("practice-run");
       state = beginDemoRun(state, id);
-      clearDemoRunTimer();
-      demoRunTimer = setTimeout(() => {
-        const before = state; state = expireDemoRun(state, id); if (state === before) return;
-        renderDemoResult(state.demoResult); updateControls();
-        if (el.demoCode) el.demoCode.focus();
-      }, RUN_DEADLINE_MS);
+      armDemoRunDeadline(id);
       socket.send(JSON.stringify(demoRunMessage(el.demoCode.value, id)));
       clearDemoResult();
       updateControls();
@@ -616,6 +652,17 @@
         if (before !== state) { clearInfoTimer(); renderInputsFailure(); updateControls(); }
         return;
       }
+      if (message.type === "status") {
+        const before = state; state = applyRunStatus(state, message);
+        if (before !== state) { armRunDeadline(state.pending.request_id); updateControls(); return; }
+        const demoBefore = state; state = applyDemoRunStatus(state, message);
+        if (demoBefore !== state) {
+          armDemoRunDeadline(state.demoPending.request_id);
+          if (el.demoResult) el.demoResult.textContent = state.demoStatusMessage || "Julia is running the separate practice join…";
+          updateControls();
+        }
+        return;
+      }
       if (message.type === "case_result") {
         const before = state; state = applyCaseResult(state, message);
         if (before !== state) {
@@ -627,6 +674,7 @@
           }
           renderResult(state.result); renderMoveButtons(); updateControls();
           if (needsRecoveryFocus(state.result) && el.code) setTimeout(() => el.code.focus(), 0);
+          else focusResult();
           return;
         }
         const demoBefore = state; state = applyDemoResult(state, message);
@@ -691,7 +739,7 @@
     if (el.back) el.back.addEventListener("click", () => { if (el.code) drafts[state.activeMove] = el.code.value; clearRunTimer(); clearDemoInfoTimer(); clearDemoRunTimer(); state = cancelDemo(cancelRun(state)); clearResult(); clearDemoResult(); updateControls(); el.investigation.hidden = true; el.scene.hidden = false; $("chapter-title").focus(); });
     if (el.run) el.run.addEventListener("click", sendRun);
     if (el.code) {
-      el.code.addEventListener("input", () => { clearRunTimer(); drafts[state.activeMove] = el.code.value; persistChallengeDraft(courseState, storage, attempt, state.activeMove, el.code.value); state = cancelRun(state); clearResult(); if (el.draftNote) el.draftNote.textContent = "This is your own unrun draft for this move."; updateControls(); });
+      el.code.addEventListener("input", () => { clearRunTimer(); drafts[state.activeMove] = el.code.value; restoredDrafts[state.activeMove] = false; persistChallengeDraft(courseState, storage, attempt, state.activeMove, el.code.value); state = cancelRun(state); clearResult(); if (el.draftNote) el.draftNote.textContent = draftNotice(Boolean(el.code.value), false); updateControls(); });
       el.code.addEventListener("keydown", event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); sendRun(); } });
     }
     if (el.demoPanel) el.demoPanel.addEventListener("toggle", () => { if (el.demoPanel.open && state.activeMove === "join-report-log") requestDemoInfo(); });
@@ -723,6 +771,17 @@
       while (hintIndex <= lastStage) {
         const stage = helpStage(state.activeMove, hintIndex);
         if (!stage) break;
+        if (stage.label === "Full answer" && el.answerReference) {
+          const label = document.createElement("p"), code = document.createElement("pre");
+          label.textContent = "Reference code answer — runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or add evidence.";
+          code.className = "complete-answer-code";
+          code.textContent = stage.text;
+          el.answerReference.replaceChildren(label, code);
+          el.answerReference.hidden = false;
+          hintIndex += 1;
+          if (el.nextHelp) el.nextHelp.textContent = stage.button;
+          continue;
+        }
         const item = document.createElement("p"); const strong = document.createElement("strong"); strong.textContent = stage.label + ": "; item.append(strong, document.createTextNode(stage.text)); el.help.append(item); hintIndex += 1;
         if (el.nextHelp) el.nextHelp.textContent = stage.button;
       }
@@ -746,5 +805,5 @@
     return null;
   }
 
-  return {CASE_ID, CHAPTER, INFO_DEADLINE_MS, RUN_DEADLINE_MS, knownMove, tableIdentity, activeInputIds, lessonCopy, recoveryCopy, needsRecoveryFocus, draftStatus, helpStage, caseBoardUrl, nextChapterUrl, nextDestination, requestedMove, createState, beginInfo, failCaseInfo, expireInfo, beginRun, expireRun, cancelRun, cancelDemo, disconnect, applyCaseInfo, applyCaseResult, beginDemoInfo, expireDemoInfo, applyDemoInfo, beginDemoRun, expireDemoRun, applyDemoResult, visualData, shouldRenderCaseVisual, shouldOfferCaseReturn, shouldShowDemoCaseBridge, acceptedMoveKeys, canOpenMove, initialMove, savedChallengeResume, persistChallengeDraft, persistDemoDraft, persistAcceptedCourseResult, infoMessage, runMessage, demoInfoMessage, demoRunMessage, init};
+  return {CASE_ID, CHAPTER, INFO_DEADLINE_MS, RUN_DEADLINE_MS, knownMove, tableIdentity, activeInputIds, lessonCopy, recoveryCopy, needsRecoveryFocus, draftStatus, draftNotice, runOutcomeStatus, helpStage, caseBoardUrl, nextChapterUrl, nextDestination, requestedMove, createState, beginInfo, failCaseInfo, expireInfo, beginRun, expireRun, cancelRun, cancelDemo, disconnect, isRunPending, isDemoRunPending, applyRunStatus, applyDemoRunStatus, applyCaseInfo, applyCaseResult, beginDemoInfo, expireDemoInfo, applyDemoInfo, beginDemoRun, expireDemoRun, applyDemoResult, visualData, shouldRenderCaseVisual, shouldOfferCaseReturn, shouldShowDemoCaseBridge, acceptedMoveKeys, canOpenMove, initialMove, savedChallengeResume, persistChallengeDraft, persistDemoDraft, persistAcceptedCourseResult, infoMessage, runMessage, demoInfoMessage, demoRunMessage, init};
 });

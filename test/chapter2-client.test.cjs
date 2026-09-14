@@ -55,6 +55,13 @@ test("an intentionally empty saved draft is different from a missing draft", () 
   assert.equal(client.hasDraft(storage,"counts"),true);
 });
 
+test("C2 gives a plain accepted-or-not-accepted status after each case run", () => {
+  assert.equal(typeof client.runOutcomeStatus, "function");
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true}), "✓ Accepted — evidence saved.");
+  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
+  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not accepted.*timed out/i);
+});
+
 test("summary jar marks use returned counts without assigning specimen identities", () => {
   assert.equal(typeof client.jarMarks,"function");
   assert.deepEqual(client.jarMarks({n:3,detected_n:1}),[true,false,false]);
@@ -100,12 +107,17 @@ test("C2 offers a closed worked groupby example on separate data before the empt
   assert.doesNotMatch(copy, /groupby\(jars, :tray_id\)/);
 });
 
-test("lesson shapes do not disclose complete rates answer and explain saved names", () => {
+test("C2 separates a plain build plan from real named inputs and runnable answers", () => {
   assert.equal(typeof client.lessonCopy,"function");
   assert.match(client.lessonCopy("group").teaching, /groupby is the Julia function/i);
-  assert.match(client.lessonCopy("counts").teaching,/groups =/);
-  assert.match(client.lessonCopy("rates").teaching,/summary =/);
-  assert.doesNotMatch(client.lessonCopy("rates").shape,/summary.detected_n/);
+  assert.match(client.lessonCopy("counts").teaching,/Make groups in this same editor/i);
+  assert.match(client.lessonCopy("rates").teaching,/complete little script/i);
+  assert.doesNotMatch(client.lessonCopy("rates").shape,/\b(?:group_column|count_rows|boolean_column)\b/);
+  const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
+  assert.match(html,/id="named-inputs"/);
+  assert.match(html,/<code>jars<\/code>.*visible B09 notebook table/i);
+  assert.match(html,/<code>:tray_id<\/code>.*column that says which tray/i);
+  assert.doesNotMatch(html,/<pre id="code-shape"/);
 });
 
 test("C2 states the investigative reason for each coding move without supplying case code", () => {
@@ -120,20 +132,21 @@ test("C2 states the investigative reason for each coding move without supplying 
   assert.ok(purpose > -1 && purpose < editor);
 });
 
-test("C2 gives its compound summary moves an optional generic arrange-then-type rehearsal", () => {
+test("C2 gives its compound summary moves an optional named-code rehearsal", () => {
   const counts = client.compositionCards("counts");
   const rates = client.compositionCards("rates");
   assert.deepEqual(counts.map(card => card.id), ["group", "summary", "return"]);
   assert.deepEqual(rates.map(card => card.id), ["group", "summary", "rate", "return"]);
-  assert.ok(counts.every(card => !/jars/.test(card.text)));
-  assert.ok(rates.every(card => !/jars/.test(card.text)));
+  assert.ok(counts.every(card => !/\btable\b|group_column|count_rows|boolean_column/.test(card.text)));
+  assert.ok(rates.every(card => !/\btable\b|group_column|count_rows|boolean_column/.test(card.text)));
+  assert.match(counts[0].text,/groupby\(jars, :tray_id\)/);
   assert.equal(client.compositionIsCorrect("rates", ["group", "summary", "rate", "return"]), true);
   assert.equal(client.compositionIsCorrect("rates", ["summary", "group", "rate", "return"]), false);
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   const scaffold = html.indexOf('id="composition-scaffold"');
   const editor = html.indexOf('<textarea id="code"');
   assert.ok(scaffold > -1 && scaffold < editor);
-  assert.match(html, /practice only.*does not write into your editor/i);
+  assert.match(html, /practice only[\s\S]*does not run Julia[\s\S]*write into your editor/i);
 });
 
 test("saved summaries reject empty duplicate impossible and inconsistent rows", () => {
@@ -222,11 +235,11 @@ test("C2 gives its final accepted move a named Chapter 3 route", () => {
   assert.equal(client.nextChapterUrl("?attempt=not/valid"), "chapter3.html");
 });
 
-test("only a learner-owned accepted prior draft carries into the next blank sandbox", () => {
-  assert.equal(client.carryDraft("counts", "groupby(jars, :tray_id)", true), "groupby(jars, :tray_id)");
-  assert.equal(client.carryDraft("rates", "summary = combine(grouped, nrow => :n)", true), "summary = combine(grouped, nrow => :n)");
-  assert.equal(client.carryDraft("counts", "groupby(jars, :tray_id)", false), "");
-  assert.equal(client.carryDraft("group", "anything", true), "");
+test("a newly unlocked move begins empty unless its own draft was saved", () => {
+  const storage = memoryStorage();
+  assert.equal(client.starterDraft(storage, "counts"), "");
+  client.persistDraft(storage, "counts", "groups = groupby(jars, :tray_id)");
+  assert.equal(client.starterDraft(storage, "counts"), "groups = groupby(jars, :tray_id)");
 });
 
 test("a fresh learner cannot jump into a C2 move whose earlier lines are absent", () => {
@@ -249,6 +262,12 @@ test("server explanation and raw output stay available without inventing a concl
   assert.match(client.resultText({status:"ok", value_repr:"3", explanation:{julia:"A scalar is not a summary table.", case:"No tray comparison yet."}}), /scalar/);
   assert.match(client.resultText({status:"error", message:"MethodError", value_repr:"bad"}), /MethodError/);
   assert.equal(client.displayError({status:"error", message:"MethodError"}), "MethodError");
+});
+
+test("a copied C2 template word gets a direct correction beside its Julia error", () => {
+  assert.match(client.c2ErrorNextStep({status:"error", message:"UndefVarError: table not defined"}), /template word/i);
+  assert.match(client.c2ErrorNextStep({status:"error", message:"UndefVarError: table not defined"}), /jars.*:tray_id.*nrow.*:detected/i);
+  assert.equal(client.c2ErrorNextStep({status:"error", message:"MethodError: no method"}), "");
 });
 
 function validRows() { return [{tray_id:"T1", n:2, detected_n:1, rate:0.5}, {tray_id:"T2", n:3, detected_n:0, rate:0}]; }

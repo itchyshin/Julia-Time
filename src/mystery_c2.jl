@@ -221,7 +221,7 @@ Run one C2 step in the usual sandbox.  The returned rows and columns serialise t
 actual DataFrame (or the rows contained in their actual GroupedDataFrame); they are never
 replaced with a server-computed expected result.
 """
-function mystery_c2_case_run(msg::AbstractDict)
+function mystery_c2_case_run(msg::AbstractDict; on_status::Function=((_, __) -> nothing))
     request_id = get(msg, "request_id", "")
     request_id isa AbstractString || return _mystery_c2_result(
         message="`request_id` must be a string.", feedback="Send a string request ID before running code.")
@@ -237,7 +237,7 @@ function mystery_c2_case_run(msg::AbstractDict)
 
     r = lock(_RUN_LOCK) do
         run_code(String(code); env=(jars=_mystery_c2_input(),), budget=RUN_BUDGET,
-                 protected_bindings=(:jars,))
+                 protected_bindings=(:jars,), on_status=on_status)
     end
     display = _mystery_c2_output_frame(r.value)
     columns = display === nothing ? String[] : _mystery_columns(display)

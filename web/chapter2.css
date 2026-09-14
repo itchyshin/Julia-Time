@@ -48,6 +48,16 @@ h2 { font-size:1.85rem; }
 pre,textarea { border-radius:0; background:var(--navy); color:var(--paper); font-family:"SFMono-Regular",Consolas,monospace; }
 .run,#show-hint,.attempt button { border-radius:0; background:var(--gold); color:var(--navy); }
 .help,.words,.comparisons { border-top:1px solid var(--line); padding-top:.8rem; }
+.answer-reference { margin:1rem 0; padding:.85rem 1rem; border-left:5px solid var(--gold); background:#eaf1eb; }
+.complete-answer-label { font-weight:800; }
+.complete-answer-code { margin:.6rem 0; border:2px solid #d99a69; background:#050b0f; color:#fff8e9; }
+.named-inputs,.code-plan,.answer-route { margin:1rem 0; padding:1rem; border:1px solid var(--line); background:#fffdf7; }
+.named-inputs h3,.code-plan h3,.answer-route h3 { margin:.15rem 0 .55rem; }
+.named-inputs dl { margin:.55rem 0 0; }
+.code-plan p { margin:.35rem 0 0; }
+.template-code { background:#eef4ef; color:var(--ink); border:1px dashed var(--moss); font:.9rem/1.45 "SFMono-Regular",Consolas,monospace; padding:.85rem; white-space:pre-wrap; }
+.answer-route { border-left:4px solid var(--gold); }
+.answer-route p { margin:.35rem 0 .7rem; }
 summary { color:var(--moss); }
 .source-notebook { margin:0; }
 .tangible-practice { margin:1rem 0; padding:1rem; border:1px solid var(--line); background:#f5fbf7; }

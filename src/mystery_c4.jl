@@ -202,7 +202,7 @@ function _mystery_c4_valid_run_envelope(msg::AbstractDict)
 end
 
 """Run C4's sole sampling move with fresh worker input and checker-owned truth."""
-function mystery_c4_case_run(msg::AbstractDict)
+function mystery_c4_case_run(msg::AbstractDict; on_status::Function=((_, __) -> nothing))
     valid, error = _mystery_c4_valid_run_envelope(msg)
     valid || return _mystery_c4_error(error)
     request_id = String(msg["request_id"])
@@ -217,7 +217,7 @@ function mystery_c4_case_run(msg::AbstractDict)
     sandbox_result = lock(_RUN_LOCK) do
         run_code(_mystery_c4_guarded_code(String(code));
                  env=(eligible=mystery_c4_expected_eligible(),), budget=RUN_BUDGET,
-                 protected_bindings=(:eligible,))
+                 protected_bindings=(:eligible,), on_status=on_status)
     end
     display = sandbox_result.value
     columns, rows = if display isa AbstractVector && all(id -> id isa AbstractString, display)

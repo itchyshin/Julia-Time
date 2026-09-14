@@ -32,4 +32,23 @@
         @test JuliaTime.safe_web_path("/../Project.toml", webroot) === nothing
         @test JuliaTime.safe_web_path("/nope.html", webroot) === nothing
     end
+
+    @testset "_within_root is separator-independent (T1, Windows)" begin
+        # `normpath` on Windows joins with backslashes, so a POSIX-only
+        # `startswith(full, root * "/")` check always returned `false` there, and
+        # `safe_web_path("/", webroot)` served nothing at all on the windows-latest CI runner.
+        # Plain strings, no filesystem access, so this exercises the Windows shape on every OS.
+        root = raw"C:\x\web"
+        @test JuliaTime._within_root(raw"C:\x\web\index.html", root)
+        @test JuliaTime._within_root(raw"C:\x\web\course\index.html", root)
+        @test JuliaTime._within_root(root, root)                     # root itself
+        @test !JuliaTime._within_root(raw"C:\x\web2\index.html", root)   # sibling with shared prefix
+        @test !JuliaTime._within_root(raw"C:\x\other\Project.toml", root)  # traversal escape
+        @test !JuliaTime._within_root(raw"C:\x\we", root)             # shorter than root
+
+        # Same containment logic holds for POSIX-style paths.
+        @test JuliaTime._within_root("/a/web/index.html", "/a/web")
+        @test !JuliaTime._within_root("/a/web2/index.html", "/a/web")
+        @test !JuliaTime._within_root("/a/other/Project.toml", "/a/web")
+    end
 end

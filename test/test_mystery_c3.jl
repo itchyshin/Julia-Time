@@ -386,7 +386,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
         try
             HTTP.WebSockets.open("ws://127.0.0.1:$port/ws") do ws
                 HTTP.WebSockets.send(ws, JSON.json(c3_info_request(request_id="wire-c3-info-one")))
-                first_info = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                first_info = _receive_reply(ws)
                 @test first_info["request_id"] == "wire-c3-info-one"
                 @test first_info["move_id"] == "join-report-log"
                 @test [input["id"] for input in first_info["inputs"]] == ["report", "handling_log"]
@@ -394,7 +394,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                 HTTP.WebSockets.send(ws, JSON.json(c3_run_request(
                     "join-report-log", "leftjoin(report, handling_log, on=:tray_id)";
                     request_id="wire-c3-join")))
-                joined = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                joined = _receive_reply(ws)
                 @test joined["request_id"] == "wire-c3-join"
                 @test joined["move_id"] == "join-report-log"
                 @test joined["pass"] == true
@@ -405,7 +405,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
             HTTP.WebSockets.open("ws://127.0.0.1:$port/ws") do ws
                 HTTP.WebSockets.send(ws, JSON.json(c3_info_request(move_id="filter-disagreement",
                                                                       request_id="wire-c3-info-two")))
-                second_info = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                second_info = _receive_reply(ws)
                 @test second_info["request_id"] == "wire-c3-info-two"
                 @test second_info["move_id"] == "filter-disagreement"
                 @test [input["id"] for input in second_info["inputs"]] == ["joined"]
@@ -414,7 +414,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                     "filter-disagreement",
                     "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]";
                     request_id="wire-c3-filter")))
-                discrepancy = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                discrepancy = _receive_reply(ws)
                 @test discrepancy["request_id"] == "wire-c3-filter"
                 @test discrepancy["move_id"] == "filter-disagreement"
                 @test discrepancy["pass"] == true

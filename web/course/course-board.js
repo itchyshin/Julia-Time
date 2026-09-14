@@ -18,7 +18,9 @@
       text(continueAction, readyLabel);
       text(document.getElementById("board-status"), model.historicalNotice);
       text(document.getElementById("case-question"), model.caseThread.question);
-      text(document.getElementById("case-established"), model.caseThread.established);
+      const established = document.getElementById("case-established");
+      text(established, model.caseThread.established);
+      established.classList.toggle("case-established--updated", Boolean(model.caseThread.hasEstablishedFact));
       text(document.getElementById("case-unknown"), model.caseThread.unknown);
       text(document.getElementById("case-why-next"), model.caseThread.whyNext);
       changedHistoryAction.hidden = !model.changedHistoryAction;

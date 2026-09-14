@@ -40,7 +40,7 @@ end
 
 Handle one parsed client message and return the reply to send back. Never throws.
 """
-function handle_message(msg::Dict)
+function handle_message(msg::Dict; on_status::Function=((_, __) -> nothing))
     try
         type = get(msg, "type", nothing)
         if type == "ping"
@@ -82,12 +82,12 @@ function handle_message(msg::Dict)
             return Dict("type" => "error", "message" => "Unknown mystery chapter.")
         elseif type == "case_run"
             chapter = get(msg, "chapter", "C1")
-            chapter == "C1" && return mystery_case_run(msg)
-            chapter == "C2" && return mystery_c2_case_run(msg)
-            chapter == "C3" && return mystery_c3_case_run(msg)
-            chapter == "C4" && return mystery_c4_case_run(msg)
-            chapter == "C5" && return mystery_c5_case_run(msg)
-            chapter == "C6" && return mystery_c6_case_run(msg)
+            chapter == "C1" && return mystery_case_run(msg; on_status=on_status)
+            chapter == "C2" && return mystery_c2_case_run(msg; on_status=on_status)
+            chapter == "C3" && return mystery_c3_case_run(msg; on_status=on_status)
+            chapter == "C4" && return mystery_c4_case_run(msg; on_status=on_status)
+            chapter == "C5" && return mystery_c5_case_run(msg; on_status=on_status)
+            chapter == "C6" && return mystery_c6_case_run(msg; on_status=on_status)
             return Dict("type" => "error", "message" => "Unknown mystery chapter.")
         elseif type == "case_action"
             chapter = get(msg, "chapter", nothing)
@@ -100,7 +100,7 @@ function handle_message(msg::Dict)
             if level_id === nothing
                 # Plain run, no level — today's behaviour, unused by the client but kept harmless.
                 r = lock(_RUN_LOCK) do
-                    run_code(code; budget=RUN_BUDGET)
+                    run_code(code; budget=RUN_BUDGET, on_status=on_status)
                 end
                 value_repr = r.value === nothing ? "" : repr(r.value)
                 length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
@@ -127,7 +127,7 @@ function handle_message(msg::Dict)
             # seed their runs with `level.seed` for reproducibility; the checkers tolerate noise).
             local r
             elapsed = @elapsed r = lock(_RUN_LOCK) do
-                run_code(level.preamble * "\n" * code; env=env_for(level), budget=RUN_BUDGET)
+                run_code(level.preamble * "\n" * code; env=env_for(level), budget=RUN_BUDGET, on_status=on_status)
             end
             elapsed_ms = round(elapsed * 1000; digits=1)
 
@@ -199,9 +199,18 @@ function _stream_handler(http::HTTP.Stream)
                 catch
                     nothing
                 end
+                # Truthful mid-run status (T1): a killed worker's replacement can take real
+                # seconds on a slow machine, so tell the learner what is happening before the
+                # final result arrives instead of leaving the run looking merely slow or stuck.
+                # Carrying the same `request_id` as the run itself (B1/B2) lets the client tie a
+                # status frame to the pending run: extend its own deadline timer and clear the
+                # line once "running" arrives, without discarding a correct result that follows.
+                request_id = parsed isa AbstractDict ? get(parsed, "request_id", nothing) : nothing
+                notify_status(kind, text) = HTTP.WebSockets.send(ws, encode(Dict(
+                    "type" => "status", "request_id" => request_id, "status" => kind, "message" => text)))
                 reply = parsed === nothing ?
                     Dict("type" => "error", "message" => "Could not read that message.") :
-                    handle_message(parsed)
+                    handle_message(parsed; on_status=notify_status)
                 HTTP.WebSockets.send(ws, encode(reply))
             end
         end
@@ -212,31 +221,59 @@ function _stream_handler(http::HTTP.Stream)
 end
 
 """
-    start_server(; host="127.0.0.1", port=8000, open_browser=false) -> HTTP.Server
+    _open_browser(url)
 
-Warm up the sandbox and start the game server. Uses `HTTP.listen!` (non-blocking — it returns
+Fire-and-forget the OS command that opens `url` in the default browser. `run(cmd; wait=false)`
+launches the subprocess without waiting for it, and the `try/catch` swallows a missing/erroring
+opener (a headless CI runner has no `xdg-open`) — either way this call returns immediately and can
+never block the server.
+"""
+function _open_browser(url::AbstractString)
+    cmd = if Sys.isapple()
+        `open $url`
+    elseif Sys.iswindows()
+        `cmd /c start $url`
+    else
+        `xdg-open $url`
+    end
+    try
+        run(cmd; wait=false)
+    catch
+    end
+    return nothing
+end
+
+"""
+    _no_browser_env() -> Bool
+
+`JULIATIME_NO_BROWSER=1` suppresses the browser open regardless of `open_browser` — set by CI
+launch smokes (headless runners either hang opening a browser or leave an orphaned window) and by
+anyone who wants the URL printed instead of a tab opened.
+"""
+_no_browser_env() = get(ENV, "JULIATIME_NO_BROWSER", "0") == "1"
+
+"""
+    start_server(; host="127.0.0.1", port=8000, open_browser=false, browser_opener=_open_browser, warmup_fn=warmup!) -> HTTP.Server
+
+Start the game server and begin answering requests immediately; the sandbox pool warms up
+afterwards, in the background (`_run_warmup_in_background!`), so a learner sees the Case Board right
+away. A first Run still works while warm-up is in flight: it waits for a ready worker inside
+`ACQUIRE_BUDGET` and narrates that wait. `warmup_fn` is test-only (inject a slow stand-in). Uses `HTTP.listen!` (non-blocking — it returns
 immediately with a running server) rather than blocking `HTTP.listen`, so callers (including
 tests) can start the server, use it, and `stop_server` it in the same call stack. When requested,
-the browser opens the Case Board rather than the legacy root page.
+the browser opens the Case Board rather than the legacy root page — unless `JULIATIME_NO_BROWSER=1`
+is set, in which case the open is skipped entirely and only the URL is printed. `browser_opener` is
+injectable so tests can assert the opener was (not) called without actually opening a browser.
 """
-function start_server(; host::AbstractString="127.0.0.1", port::Integer=8000, open_browser::Bool=false)
-    warmup!()
+function start_server(; host::AbstractString="127.0.0.1", port::Integer=8000, open_browser::Bool=false,
+                       browser_opener::Function=_open_browser, warmup_fn::Function=warmup!)
     server = HTTP.listen!(_stream_handler, host, port)
-    if open_browser
-        url = _browser_url(host, port)
-        cmd = if Sys.isapple()
-            `open $url`
-        elseif Sys.iswindows()
-            `cmd /c start $url`
-        else
-            `xdg-open $url`
-        end
-        try
-            run(cmd; wait=false)
-        catch
-        end
+    if open_browser && !_no_browser_env()
+        browser_opener(_browser_url(host, port))
     end
     println("Julia Time is running at $(_browser_url(host, port))")
+    flush(stdout)
+    _run_warmup_in_background!(warmup_fn)
     return server
 end
 
@@ -249,26 +286,63 @@ only for application exit, where an idle browser connection must not block Ctrl-
 stop_server(server; force::Bool=false) = force ? HTTP.forceclose(server) : close(server)
 
 """
-    run_server(; host="127.0.0.1", port=8000, open_browser=true, stop_input=stdin)
+    _stop_mode(stop_input, is_tty::Bool) -> Symbol
 
-Entry point for `run.jl`: warm up, start the server, open the Case Board in a browser, and wait for
-Enter to stop. Use `stop_input=nothing` for programmatic callers that want to wait on the server
-instead.
+Pure decision for how `run_server` should wait for the stop signal: `:enter` to print the prompt
+and `readline(stop_input)`, or `:wait` to block on the server itself (the same path
+`stop_input=nothing` takes).
+
+Only `stop_input === stdin` is ever redirected to `:wait` — an explicit `IOBuffer` (what the tests
+pass) always gets `:enter`, preserving the existing programmatic behaviour. `stdin` itself is
+redirected to `:wait` whenever it is not a terminal: a background launcher (CI, a `/dev/null` or
+piped stdin such as `tail -f /dev/null | julia run.jl`) would otherwise call `readline`, which
+either returns immediately at EOF (a closed pipe) and shuts the server down before the first
+request, or — for a pipe that never closes — blocks forever and the server never comes up at all.
+Deciding this from `is_tty` alone (no `eof` probe) is deliberate: `eof` on a non-terminal stream
+that never closes blocks just as badly as `readline` would.
 """
-function run_server(; host::AbstractString="127.0.0.1", port::Integer=8000, open_browser::Bool=true, stop_input::Union{IO,Nothing}=stdin)
+function _stop_mode(stop_input, is_tty::Bool)::Symbol
+    stop_input === stdin && !is_tty ? :wait : :enter
+end
+
+"""
+    run_server(; host="127.0.0.1", port=8000, open_browser=true, stop_input=stdin, warmup_fn=warmup!)
+
+Entry point for `run.jl`: start the server, open the Case Board in a browser, and wait for Enter to
+stop. The sandbox pool warms up in the background after the server starts (see `start_server`), not
+before — a learner sees the Case Board immediately rather than a blank terminal while packages
+JIT-compile. Use `stop_input=nothing` for programmatic callers that want to wait on the server
+instead. `warmup_fn` is test-only, forwarded to `start_server`.
+"""
+function run_server(; host::AbstractString="127.0.0.1", port::Integer=8000, open_browser::Bool=true,
+                     stop_input::Union{IO,Nothing}=stdin, warmup_fn::Function=warmup!)
     # `julia run.jl` runs non-interactively, where Julia's default is to exit the process
     # directly on SIGINT rather than deliver a catchable InterruptException (that default is
     # what the REPL turns off). Turn it off here too, so Ctrl-C reaches the try/catch below and
     # the sandbox workers get shut down instead of leaking as orphaned OS processes.
     Base.exit_on_sigint(false)
-    println("Warming up the sandbox…")
-    server = start_server(; host=host, port=port, open_browser=open_browser)
+    server = start_server(; host=host, port=port, open_browser=open_browser, warmup_fn=warmup_fn)
     try
         if stop_input === nothing
             wait(server)
         else
-            println("Keep this terminal open while playing. Press Enter here to stop the game cleanly.")
-            readline(stop_input)
+            # Julia's Base has no `isatty` function; the documented way to tell a real terminal
+            # apart from a redirected/piped stream (`/dev/null`, a CI runner's stdin, a shell
+            # pipe such as `tail -f /dev/null | julia run.jl`) is its concrete IO type — a
+            # genuine terminal is `Base.TTY`, a redirection is not. We deliberately never probe
+            # `eof(stop_input)` here: on a pipe that never closes (`tail -f /dev/null`), `eof`
+            # blocks forever just like `readline` would, and the server would never finish
+            # starting up.
+            is_tty = stop_input isa Base.TTY
+            if _stop_mode(stop_input, is_tty) === :wait
+                println("stdin is not a terminal: stop with Ctrl-C or by closing the process.")
+                flush(stdout)
+                wait(server)
+            else
+                println("Keep this terminal open while playing. Press Enter here to stop the game cleanly.")
+                flush(stdout)
+                readline(stop_input)
+            end
         end
     catch e
         e isa InterruptException || rethrow()

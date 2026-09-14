@@ -61,6 +61,15 @@ test("C1 names the practiced Boolean-row-selection path beside the independent e
   assert.doesNotMatch(bridgeCopy, /filter\(row/);
 });
 
+test("T3: the direct-entry bridge line names no practice screen the player never saw", () => {
+  assert.match(client.bridgeText(true), /the practice/i);
+  assert.match(client.bridgeText(true), /rows position/i);
+  assert.match(client.bridgeText(true), /all columns/i);
+  assert.doesNotMatch(client.bridgeText(false), /the practice/i);
+  assert.match(client.bridgeText(false), /rows position/i);
+  assert.match(client.bridgeText(false), /all columns/i);
+});
+
 test("practice restores lesson and code together and rejects malformed saves", () => {
   assert.deepEqual(client.readPractice('{"lesson":"rule","code":"jars.batch_id"}'), {lesson:"rule",code:"jars.batch_id"});
   assert.deepEqual(client.readPractice('{"lesson":"wrong","code":3}'), {lesson:"rows",code:""});
@@ -109,6 +118,31 @@ test("C1 challenge errors name the missing row-rule decision without supplying a
   assert.match(recovery, /first nudge/i);
   assert.doesNotMatch(recovery, /jars\.batch_id\s*\.==\s*case_batch/);
   assert.equal(client.challengeRecovery({status:"ok", pass:true}), "");
+});
+
+test("T4: the R-$ habit and the missing-broadcast-dot error get different first lines, then the shared step", () => {
+  const dollarError = client.challengeRecovery({
+    status: "error",
+    message: "`$` is a name that doesn't exist yet — check the spelling, or define it first.\n\nUndefVarError: `$` not defined",
+  });
+  const boolError = client.challengeRecovery({
+    status: "error",
+    message: "Something went wrong running this line.\n\nArgumentError: invalid row index of type Bool",
+  });
+  assert.notEqual(dollarError, boolError);
+  assert.match(dollarError, /\$ does not exist in Julia/);
+  assert.match(boolError, /not one per row/);
+  // Both still end in the same shared next step, so the recovery reads as one continuous path.
+  const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge if you need to place that rule in the table. Your draft is unchanged.";
+  assert.ok(dollarError.endsWith(shared));
+  assert.ok(boolError.endsWith(shared));
+});
+
+test("C1 gives a plain accepted-or-not-accepted status after each case run", () => {
+  assert.equal(typeof client.runOutcomeStatus, "function");
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true}), "✓ Accepted — evidence saved.");
+  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
+  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not accepted.*timed out/i);
 });
 
 test("source highlighting uses returned jar identifiers", () => {

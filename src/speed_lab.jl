@@ -55,10 +55,26 @@ function _speed_lab_fixed_command_succeeds(executable::AbstractString, arguments
     return success(process)
 end
 
+"""Return the locally selected Python interpreter, without searching or installing anything.
+
+`JULIATIME_PYTHON` is an optional full executable path for the local launcher.
+It lets a learner choose a Python environment that already contains NumPy when
+their shell's default `python3` points at a different environment.
+"""
+function _speed_lab_python_executable()
+    requested = strip(get(ENV, "JULIATIME_PYTHON", ""))
+    if !isempty(requested)
+        # `Sys.which` validates an absolute executable path as well as a PATH
+        # command, without asking the browser for any runnable value.
+        return Sys.which(requested)
+    end
+    return Sys.which("python3")
+end
+
 """Return only fixed local interpreter/probe availability; never a benchmark measurement."""
 function _speed_lab_probe_availability()
     rscript = Sys.which("Rscript")
-    python = Sys.which("python3")
+    python = _speed_lab_python_executable()
     numpy_ready = python !== nothing &&
         _speed_lab_fixed_command_succeeds(python, ["-c", "import numpy"])
     return (
@@ -134,10 +150,12 @@ function _speed_lab_default_parity_runner()
     data = joinpath(root, "fixtures", "detections-v1.csv")
     indices = joinpath(root, "fixtures", "resampling-indices-v1.csv")
     shared = ["--data", data, "--indices", indices, "--replicates", "8"]
+    python = _speed_lab_python_executable()
+    python === nothing && error("fixed speed-lab Python interpreter is unavailable")
     commands = Dict(
         "julia" => `$(Base.julia_cmd()) --startup-file=no --history-file=no $(joinpath(root, "bootstrap.jl")) $shared`,
         "r-base" => `Rscript $(joinpath(root, "bootstrap.R")) $shared`,
-        "python-numpy" => `python3 $(joinpath(root, "bootstrap.py")) $shared`,
+        "python-numpy" => `$python $(joinpath(root, "bootstrap.py")) $shared`,
     )
     return Dict(language => _speed_lab_fixed_json(commands[language]) for language in SPEED_LAB_PARITY_LANGUAGES)
 end
@@ -175,6 +193,8 @@ function _speed_lab_default_benchmark_runner()
     root = joinpath(@__DIR__, "..", "benchmarks", "bootstrap")
     data = joinpath(root, "fixtures", "detections-v1.csv")
     indices = joinpath(root, "fixtures", "resampling-indices-v1.csv")
+    python = _speed_lab_python_executable()
+    python === nothing && error("fixed speed-lab Python interpreter is unavailable")
     reports = Dict{String,Any}()
     for language in SPEED_LAB_PARITY_LANGUAGES
         language_started = time()
@@ -188,7 +208,7 @@ function _speed_lab_default_benchmark_runner()
             elseif language == "r-base"
                 `Rscript $(joinpath(root, "bootstrap.R")) $options`
             else
-                `python3 $(joinpath(root, "bootstrap.py")) $options`
+                `$python $(joinpath(root, "bootstrap.py")) $options`
             end
             by_workload[workload] = _speed_lab_fixed_json(command; timeout_seconds=remaining)
         end

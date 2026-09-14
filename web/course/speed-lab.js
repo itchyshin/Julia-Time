@@ -17,6 +17,25 @@
   }
   function nonemptyString(value, limit) { return typeof value === "string" && value.length <= limit && value.trim().length > 0; }
   function finiteNonnegative(value) { return typeof value === "number" && Number.isFinite(value) && value >= 0; }
+  function displayFactor(value) {
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return value >= 10 ? String(Math.round(value)) : String(Math.round(value * 10) / 10);
+  }
+  function relativeTimingSummary(workload) {
+    if (!plainRecord(workload) || !Number.isInteger(workload.iterations) || workload.iterations < 1 || !exactLanguageKeys(workload.timings_seconds)) return "";
+    const timings = workload.timings_seconds;
+    const julia = timings.julia && timings.julia.median;
+    const r = timings["r-base"] && timings["r-base"].median;
+    const python = timings["python-numpy"] && timings["python-numpy"].median;
+    if (![julia, r, python].every(value => finiteNonnegative(value)) || julia === 0) return "";
+    function comparison(label, median) {
+      const ratio = median / julia;
+      if (Math.abs(ratio - 1) <= 1e-12) return label + " took the same median time as Julia";
+      if (ratio > 1) return label + " took " + displayFactor(ratio) + "× Julia's median time";
+      return "Julia took " + displayFactor(1 / ratio) + "× " + label + "'s median time";
+    }
+    return "On this computer for " + workload.iterations.toLocaleString("en-US") + " resamples: " + comparison("R", r) + "; " + comparison("Python / NumPy", python) + ".";
+  }
   function validRequestId(value) { return typeof value === "string" && REQUEST_ID.test(value); }
   function matchingEnvelope(reply, type, requestId) {
     return plainRecord(reply) && reply.type === type && reply.contract_version === 1 &&
@@ -143,5 +162,5 @@
     return {phase:"not_checked", message:"Check cross-language parity before requesting any timing.", result:null};
   }
 
-  return {BENCHMARK_ID, validRequestId, benchmarkInfoRequest, benchmarkRunRequest, createState, connect, disconnect, connectionFailed, beginInfo, receiveInfoReply, expirePending, canRunBenchmark, beginBenchmarkRun, receiveRunReply, viewModel};
+  return {BENCHMARK_ID, validRequestId, benchmarkInfoRequest, benchmarkRunRequest, relativeTimingSummary, createState, connect, disconnect, connectionFailed, beginInfo, receiveInfoReply, expirePending, canRunBenchmark, beginBenchmarkRun, receiveRunReply, viewModel};
 });

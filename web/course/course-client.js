@@ -72,9 +72,21 @@
       const recorded = receipt.sources[source.source_key];
       const changedSource = Boolean(recorded && recorded.fingerprint !== source.fingerprint);
       if (recorded && !changedSource) continue;
-      if (changedSource && !acceptChangedHistory) {
-        historicalChanged.push(source.source_key);
-        continue;
+      if (changedSource) {
+        // A move a chapter already wrote directly to the shared course state (C3-C6, and C2 going
+        // forward) can never be "lost" by a stale legacy fingerprint: skip the changed-source guard
+        // once every destination this legacy source targets is already accepted some other way, and
+        // just resynchronise the receipt so a later, genuinely new change is still detected.
+        const acceptedNow = new Set(courseState.acceptedMoves(progress).map(move => move.key));
+        if (source.destinations.every(key => acceptedNow.has(key))) {
+          const receiptWrite = saveImportRecord(storage, attempt, receipt, source);
+          receipt = receiptWrite.record;
+          continue;
+        }
+        if (!acceptChangedHistory) {
+          historicalChanged.push(source.source_key);
+          continue;
+        }
       }
 
       const payload = sourcePayload(imported, source);
@@ -196,7 +208,30 @@
     const whyNext = complete
       ? "Case closed for today: review the checked facts, then use the planned recheck to collect a new observation rather than assume one."
       : why[key] || "Review what the case established and what remains unknown.";
-    return {question, established, unknown, whyNext};
+    return {question, established, unknown, whyNext, hasEstablishedFact: keys.size > 0};
+  }
+
+  const CASE_FILE_MILESTONES = Object.freeze([
+    {chapter:"C1", key:"C1/select-records"},
+    {chapter:"C2", key:"C2/rates"},
+    {chapter:"C3", key:"C3/filter-disagreement"},
+    {chapter:"C4", key:"C4/plan-distinct-recheck"},
+    {chapter:"C5", key:"C5/event-frequency"},
+    {chapter:"C6", key:"C6/compatible-models"}
+  ]);
+  function caseFile(keys) {
+    const accepted = keys instanceof Set ? keys : new Set();
+    const progressive = new Set();
+    return CASE_FILE_MILESTONES.map(({chapter, key}) => {
+      const move = MOVE_COPY[key];
+      const beforeThread = caseThread(progressive, move);
+      const reached = accepted.has(key);
+      if (reached) progressive.add(key);
+      const thread = reached ? caseThread(progressive, move) : beforeThread;
+      const label = reached ? "ESTABLISHED" : "STILL UNKNOWN";
+      const fact = reached ? thread.established : thread.unknown;
+      return {chapter, label, fact, line: label + ": " + fact};
+    });
   }
   function dashboardModel(state) {
     const keys = acceptedKeys(state);
@@ -234,5 +269,5 @@
     return Boolean(pending && reply && pending.case_id === courseState.CASE_ID && pending.mode === "challenge" && knownMove && reply.type === "case_result" && keys.every(key => typeof pending[key] === "string" && pending[key] && reply[key] === pending[key]));
   }
 
-  return {loadCourseState, legacyDestination, adapterDestination, speedLabDestination, caseThread, dashboardModel, acceptReply};
+  return {loadCourseState, legacyDestination, adapterDestination, speedLabDestination, caseThread, caseFile, dashboardModel, acceptReply};
 });

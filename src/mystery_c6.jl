@@ -219,7 +219,7 @@ function _mystery_c6_valid_run_envelope(msg::AbstractDict)
 end
 
 """Run C6 with fresh protected candidate data and return only the learner's actual result payload."""
-function mystery_c6_case_run(msg::AbstractDict)
+function mystery_c6_case_run(msg::AbstractDict; on_status::Function=((_, __) -> nothing))
     valid, error_message = _mystery_c6_valid_run_envelope(msg)
     valid || return _mystery_c6_error(error_message)
     request_id = String(msg["request_id"])
@@ -235,7 +235,7 @@ function mystery_c6_case_run(msg::AbstractDict)
            n_trials=MYSTERY_C6_N_TRIALS)
     sandbox_result = lock(_RUN_LOCK) do
         run_code(_mystery_c6_guarded_code(String(code)); env=env, budget=RUN_BUDGET,
-                 protected_bindings=(:candidate_models, :observed_count, :n_trials))
+                 protected_bindings=(:candidate_models, :observed_count, :n_trials), on_status=on_status)
     end
     display = sandbox_result.value
     columns, rows = display isa DataFrames.DataFrame ?

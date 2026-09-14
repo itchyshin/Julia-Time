@@ -27,6 +27,14 @@ function sha256(pathname) {
   return crypto.createHash("sha256").update(fs.readFileSync(pathname)).digest("hex");
 }
 
+function commandAvailable(command) {
+  const result = childProcess.spawnSync(command, ["--version"], {encoding:"utf8"});
+  return result.status === 0;
+}
+
+const rscriptAvailable = commandAvailable("Rscript");
+const rscriptSkip = rscriptAvailable ? false : "Rscript is not on PATH in this environment (dev-only R toolchain)";
+
 function run(command, script, options = {}) {
   const argumentsForScript = [
     script,
@@ -104,7 +112,7 @@ function assertParity(left, right) {
   assert.ok(Math.abs(left.bootstrap_mean - right.bootstrap_mean) <= parityTolerance);
 }
 
-test("the shared bootstrap fixture and Julia/R kernels agree, while a changed index is detected", () => {
+test("the shared bootstrap fixture and Julia/R kernels agree, while a changed index is detected", {skip:rscriptSkip}, () => {
   const juliaScript = path.join(bootstrapRoot, "bootstrap.jl");
   const rScript = path.join(bootstrapRoot, "bootstrap.R");
   const pythonScript = path.join(bootstrapRoot, "bootstrap.py");
@@ -154,7 +162,7 @@ test("the shared bootstrap fixture and Julia/R kernels agree, while a changed in
   console.log("BOOTSTRAP_PARITY_OK");
 });
 
-test("the opt-in benchmark report has a pinned safe schema and rejects invalid workloads before timing", () => {
+test("the opt-in benchmark report has a pinned safe schema and rejects invalid workloads before timing", {skip:rscriptSkip}, () => {
   assert.equal(fs.existsSync(benchmarkSchemaPath), true, "benchmark report schema must be checked in");
   const schema = JSON.parse(fs.readFileSync(benchmarkSchemaPath, "utf8"));
   assert.equal(schema.additionalProperties, false);
@@ -197,7 +205,7 @@ test("the opt-in benchmark report has a pinned safe schema and rejects invalid w
   }
 });
 
-test("runnable kernels reject a malformed shared resampling-index header", () => {
+test("runnable kernels reject a malformed shared resampling-index header", {skip:rscriptSkip}, () => {
   const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "julia-time-bootstrap-header-"));
   const malformedIndicesPath = path.join(temporaryRoot, "malformed-indices.csv");
   try {

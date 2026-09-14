@@ -7,6 +7,10 @@ const path = require("node:path");
 
 const root = path.join(__dirname, "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
+const humanKitPath = path.join(root, "docs", "dev-log", "playtest", "missing-fleas-six-chapter-human-kit.md");
+const humanKitSkip = fs.existsSync(humanKitPath)
+  ? false
+  : "dev-only material not present in the curated export: docs/dev-log/playtest/missing-fleas-six-chapter-human-kit.md";
 
 test("learner-facing launcher configuration directs the story to the Case Board with capped threads", () => {
   const server = read("src/server.jl");
@@ -16,7 +20,7 @@ test("learner-facing launcher configuration directs the story to the Case Board 
   const install = read("docs/install.md");
   const readme = read("README.md");
 
-  assert.match(server, /if\s*open_browser\s*url\s*=\s*_browser_url\(host,\s*port\)/s);
+  assert.match(server, /if\s*open_browser[\s\S]*?_browser_url\(host,\s*port\)/s);
   assert.match(server, /course\/index\.html/);
   assert.match(runner, /JuliaTime\.run_server\(; host="127\.0\.0\.1", port=8000\)/);
   assert.match(macLauncher, /JULIA_NUM_THREADS=4/);
@@ -66,7 +70,7 @@ test("Windows launch helpers find a normal Julia 1.10 installation when PATH is 
   assert.doesNotMatch(resolver, /setx|reg\.exe|winget|powershell/i);
 });
 
-test("the human-launch card asks Windows observers to verify the learner setup route", () => {
+test("the human-launch card asks Windows observers to verify the learner setup route", {skip:humanKitSkip}, () => {
   const kit = read("docs/dev-log/playtest/missing-fleas-six-chapter-human-kit.md");
 
   assert.match(kit, /where julia/i);

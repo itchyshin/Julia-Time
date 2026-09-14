@@ -1,11 +1,18 @@
 name: CI
-# Cost-disciplined (house rule): PR + manual only, Linux only. Add macOS/Windows and a `push`
-# trigger to `main` only right before a tagged release. Local checks come first:
+# Cost-disciplined (house rule): PR + manual only. The default run is Linux-only.
+# The cross-OS matrix (macOS + Windows runners cost more than Linux) is opt-in only,
+# via the workflow_dispatch `os_matrix` input — use it right before a tagged release,
+# not on every push. Local checks come first:
 #   julia --project=. -e 'using Pkg; Pkg.test()'
 on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      os_matrix:
+        description: "Run the full ubuntu/macos/windows matrix (use before releases only)"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,7 +20,14 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ inputs.os_matrix && fromJSON('["ubuntu-latest", "macos-latest", "windows-latest"]') || fromJSON('["ubuntu-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    # Bound the whole job: a hung launch smoke (e.g. a blocking browser-open or stdin probe) must
+    # fail loudly within 30 minutes, not run for hours on a paid macOS/Windows runner.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -26,3 +40,96 @@ jobs:
           # The integration + bad-code suites spawn worker processes; run them here on purpose so a
           # regression in the sandbox kill path fails loudly (docs/design/01-architecture.md §2).
           JULIATIME_INTEGRATION: "1"
+          JULIA_NUM_THREADS: "4"
+          OPENBLAS_NUM_THREADS: "1"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run the client-side test suite
+        shell: bash
+        run: node --test test/*.test.cjs
+      - name: Launch smoke test (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          JULIA_NUM_THREADS: "4"
+          OPENBLAS_NUM_THREADS: "1"
+          # A headless runner has no real browser: `open`/`xdg-open` either hangs or leaves an
+          # orphaned window behind. Print the URL instead of opening it.
+          JULIATIME_NO_BROWSER: "1"
+        run: |
+          set -u
+          # Keep stdin open (T3): a plain `julia … &` on a background CI step gets /dev/null
+          # stdin, which `readline` sees as immediate EOF — the server would shut down before
+          # the first request even predating the T1 fix. `tail -f /dev/null` as the pipe source
+          # never reaches EOF, so this smoke passes against an older server too. `$!` right
+          # after the pipeline is the last command's PID (julia itself) — what we poll and kill.
+          tail -f /dev/null | julia --startup-file=no --history-file=no --project=. run.jl >server.log 2>&1 &
+          server_pid=$!
+          ready=0
+          # 480s at 3s polls (T3): the prior 120s/1s budget was too tight on a cold macOS
+          # runner (Pkg precompile + sandbox warmup can dominate), and the step only ever
+          # showed the log's last lines (a finalizer stack printed at `kill`-time), not
+          # whatever actually happened during startup.
+          for _ in $(seq 1 160); do
+            if curl -sf http://127.0.0.1:8000/course/index.html >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            sleep 3
+          done
+          echo "READY=$ready (1 = Case Board answered within 480 s)"
+          echo "---- server.log (first 40 lines) ----"
+          head -n 40 server.log || true
+          kill "$server_pid" 2>/dev/null || true
+          # Bounded shutdown wait: a server that ignores SIGTERM must not hang the job.
+          for _ in $(seq 1 20); do
+            kill -0 "$server_pid" 2>/dev/null || break
+            sleep 1
+          done
+          if kill -0 "$server_pid" 2>/dev/null; then
+            echo "SHUTDOWN=hung (SIGTERM ignored for 20 s; sending SIGKILL)"
+            kill -9 "$server_pid" 2>/dev/null || true
+          else
+            echo "SHUTDOWN=clean"
+          fi
+          pkill -f "tail -f /dev/null" 2>/dev/null || true
+          echo "---- server.log (last 40 lines) ----"
+          tail -n 40 server.log || true
+          if [ "$ready" -ne 1 ]; then
+            echo "Case Board did not come up at http://127.0.0.1:8000/course/index.html within 480 seconds" >&2
+            exit 1
+          fi
+      - name: Launch smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          JULIA_NUM_THREADS: "4"
+          OPENBLAS_NUM_THREADS: "1"
+          JULIATIME_NO_BROWSER: "1"
+        run: |
+          $proc = Start-Process -FilePath julia -ArgumentList "--startup-file=no", "--history-file=no", "--project=.", "run.jl" -PassThru -RedirectStandardOutput server-out.log -RedirectStandardError server-err.log
+          $ready = $false
+          # 480s at 3s polls (T3): see the matching comment in the Linux/macOS step above.
+          for ($i = 0; $i -lt 160; $i++) {
+            try {
+              Invoke-WebRequest -Uri "http://127.0.0.1:8000/course/index.html" -UseBasicParsing -TimeoutSec 2 | Out-Null
+              $ready = $true
+              break
+            } catch {
+              Start-Sleep -Seconds 3
+            }
+          }
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ready) {
+            Write-Error "Case Board did not come up at http://127.0.0.1:8000/course/index.html within 480 seconds"
+            Write-Host "---- server-out.log (first 40 lines) ----"
+            Get-Content server-out.log -TotalCount 40 -ErrorAction SilentlyContinue
+            Write-Host "---- server-out.log (last 40 lines) ----"
+            Get-Content server-out.log -Tail 40 -ErrorAction SilentlyContinue
+            Write-Host "---- server-err.log (first 40 lines) ----"
+            Get-Content server-err.log -TotalCount 40 -ErrorAction SilentlyContinue
+            Write-Host "---- server-err.log (last 40 lines) ----"
+            Get-Content server-err.log -Tail 40 -ErrorAction SilentlyContinue
+            exit 1
+          }

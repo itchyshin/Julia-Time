@@ -11,7 +11,7 @@
   <a class="skip" href="#speed-lab">Skip to the optional comparison</a>
   <header class="shell topbar">
     <div><p class="eyebrow">Julia Time / optional laboratory</p><p class="brand">Bootstrap comparison</p></div>
-    <a class="quiet-link" href="index.html">Return to Case Board</a>
+    <a id="return-case-board" class="quiet-link" href="index.html">Return to Case Board</a>
   </header>
   <main id="speed-lab" class="shell guide-main">
     <section class="guide-section" aria-labelledby="speed-title">
@@ -43,6 +43,7 @@
           <thead><tr><th scope="col">Workload</th><th scope="col">Julia</th><th scope="col">R</th><th scope="col">Python / NumPy</th></tr></thead>
           <tbody id="speed-report-timings"></tbody>
         </table>
+        <p id="speed-report-comparison"></p>
       </section>
     </section>
     <aside class="setup-reminder"><strong>Boundary:</strong> this is an optional local comparison, not a requirement for the mystery and not a claim about a different computer.</aside>
@@ -52,6 +53,9 @@
   (function () {
     "use strict";
     const status = document.getElementById("speed-status");
+    const returnBoard = document.getElementById("return-case-board");
+    const attempt = new URLSearchParams(location.search).get("attempt");
+    if (returnBoard && /^[a-z0-9-]{1,80}$/.test(attempt || "")) returnBoard.href = "index.html?attempt=" + encodeURIComponent(attempt);
     const check = document.getElementById("check-speed-lab");
     const run = document.getElementById("run-speed-lab");
     const client = window.JuliaTimeSpeedLab;
@@ -65,6 +69,7 @@
     const reportMessage = document.getElementById("speed-report-message");
     const reportContext = document.getElementById("speed-report-context");
     const reportTimings = document.getElementById("speed-report-timings");
+    const reportComparison = document.getElementById("speed-report-comparison");
     const INFO_REPLY_TIMEOUT_MS = 60000;
     const RUN_REPLY_TIMEOUT_MS = 150000;
     const CONNECT_TIMEOUT_MS = 5000;
@@ -80,6 +85,7 @@
     function renderReceipt(receipt) {
       reportContext.replaceChildren();
       reportTimings.replaceChildren();
+      reportComparison.textContent = "";
       if (!receipt) { reportMessage.textContent = ""; return; }
       reportMessage.textContent = receipt.title + ". Parity verified before timing; each language ran one warm-up and five timed fixed-kernel repetitions.";
       const context = [
@@ -88,6 +94,7 @@
         ["Versions", "Julia " + receipt.language_versions.julia + " · R " + receipt.language_versions["r-base"] + " · Python / NumPy " + receipt.language_versions["python-numpy"]]
       ];
       context.forEach(function (pair) { reportContext.append(textNode("dt", pair[0]), textNode("dd", pair[1])); });
+      reportComparison.textContent = receipt.workloads.map(client.relativeTimingSummary).filter(Boolean).join(" ");
       receipt.workloads.forEach(function (workload) {
         const row = document.createElement("tr");
         row.append(textNode("th", workload.iterations + " resamples"));

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Julia Time — The missing fleas: Check the report</title>
   <link rel="stylesheet" href="chapter3.css">
+  <link rel="stylesheet" href="answer-reference.css">
   <script defer src="course/course-state.js"></script>
   <script defer src="chapter3.js"></script>
 </head>
@@ -66,7 +67,6 @@
         <section id="case-bindings" class="practice-bridge" aria-label="Julia names for the visible case tables"><p>Loading the Julia names for these case tables…</p></section>
         <p id="challenge-bridge" class="practice-bridge">Use the visible case tables and the required result to decide your next Julia move. This empty editor is for your own result.</p>
         <p id="syntax-note" class="syntax-note"></p>
-        <p id="code-shape" class="practice-bridge" aria-live="polite"></p>
         <details id="demo-panel" class="worked-example demo"><summary>Before the case: practise matching two records <span>one minute, optional; separate data</span></summary>
           <p id="demo-copy">The separate K-A/K-B practice pair uses a shared <code>key</code>, not a case tray. Open this panel to ask the lab for its actual practice tables; the case editor below stays empty.</p>
           <section id="demo-inputs" class="demo-inputs" aria-live="polite"><p>Practice tables will appear here after the lab supplies them.</p></section>
@@ -88,14 +88,15 @@
             </section>
           </section>
         </details>
+        <section id="answer-before-editor" class="practice-bridge" aria-live="polite" hidden></section>
         <label for="code">Your Julia code</label>
         <textarea id="code" rows="8" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea>
         <p id="draft-note" class="keyboard">This challenge editor starts empty. Write your own Julia result.</p>
         <p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p>
         <div class="controls"><button id="run" class="run" type="button" disabled>Run Julia →</button></div>
+        <section id="result" class="result" aria-live="polite" aria-atomic="false" tabindex="-1"></section>
         <details class="help"><summary>Need the full answer? <span>or take small hints first; your editor stays empty</span></summary><div id="help-list" aria-live="polite"></div><div class="controls"><button id="next-help" class="quiet action" type="button">Show the first small hint</button><button id="show-answer" class="quiet action" type="button">Show the complete answer</button></div></details>
         <details class="comparisons"><summary>R and Python comparisons <span>optional bridges, not required moves</span></summary><pre id="comparisons"></pre><p>These are common equivalents for these simple teaching tables. They are not the only valid R or Python approaches, and do not add evidence to the case.</p></details>
-        <section id="result" class="result" aria-live="polite" aria-atomic="false"></section>
         <button id="next-move" class="quiet next" type="button" hidden>Next: inspect the disagreement →</button>
       </section>
 

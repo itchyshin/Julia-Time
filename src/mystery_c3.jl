@@ -510,7 +510,7 @@ Run one C3 challenge in a fresh worker fixture.  Each active input is protected 
 mutation or rebinding, and checking regenerates a separate expected fixture after the worker has
 returned the learner's actual value.
 """
-function mystery_c3_case_run(msg::AbstractDict)
+function mystery_c3_case_run(msg::AbstractDict; on_status::Function=((_, __) -> nothing))
     valid, envelope = _mystery_c3_valid_run_envelope(msg)
     valid || return _mystery_c3_error(envelope)
     move_id = envelope.move_id
@@ -542,7 +542,7 @@ function mystery_c3_case_run(msg::AbstractDict)
     end
     sandbox_result = lock(_RUN_LOCK) do
         run_code(_mystery_c3_guarded_code(String(code), protected_bindings); env=env, budget=RUN_BUDGET,
-                 protected_bindings=protected_bindings)
+                 protected_bindings=protected_bindings, on_status=on_status)
     end
     display = sandbox_result.value isa DataFrames.DataFrame ? sandbox_result.value : nothing
     columns = display === nothing ? String[] : _mystery_columns(display)

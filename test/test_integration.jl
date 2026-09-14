@@ -19,11 +19,16 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
         end
         port == 0 && error("no free port found in 8100:8999")
 
-        # Send one message, parse and return the one reply. Every exchange in this level of the
-        # protocol is single request / single reply, so this is all the client plumbing we need.
+        # Send one message, parse and return the substantive reply. A cold or never-pinged worker
+        # now narrates its own "restarting"/"running" status (S1, B1/B2) before the real reply, so
+        # skip any interleaved `status` frames rather than treating one as the answer.
         function ask(ws, dict)
             HTTP.WebSockets.send(ws, JSON.json(dict))
-            return JSON.parse(String(HTTP.WebSockets.receive(ws)))
+            reply = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+            while reply["type"] == "status"
+                reply = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+            end
+            return reply
         end
 
         try

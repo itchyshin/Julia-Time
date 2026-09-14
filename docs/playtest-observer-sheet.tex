@@ -1,0 +1,74 @@
+\documentclass[10pt]{article}
+\usepackage[letterpaper,margin=0.45in]{geometry}
+\usepackage{array,tabularx}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\renewcommand{\arraystretch}{1.45}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{M}{>{\raggedright\arraybackslash}m{0.15\textwidth}}
+\newcommand{\linefill}{\rule{0.72\linewidth}{0.3pt}}
+\newcommand{\checkbox}{\fbox{\rule{0pt}{0.75em}\rule{0.75em}{0pt}}}
+\begin{document}
+\small
+
+{\Large\bfseries Missing Fleas playtest observer sheet}\\[-2pt]
+\textit{10-15 minutes, no-rescue session. This sheet tests the game, not the player.}
+
+\vspace{3pt}
+\textbf{Before the player arrives}\quad Player type: \checkbox\ new coder \quad \checkbox\ R/Python user \quad \checkbox\ pair\\
+Device/browser: \rule{0.35\linewidth}{0.3pt}\quad Start time: \rule{0.18\linewidth}{0.3pt}\\
+Started from: \checkbox\ Windows setup \quad \checkbox\ Mac setup \quad \checkbox\ already-running game
+
+\vspace{3pt}
+\textbf{Say only:} ``Please play the game without help. If you get stuck, say aloud what you expected to happen. I am testing the game, not you, so I will not teach or point things out.''\\
+\textit{Do not demonstrate code, name a button, or explain Julia while the player is deciding what to do.}
+
+\vspace{4pt}
+\textbf{Observe the first 10-15 minutes}\\[-2pt]
+\begin{tabularx}{\textwidth}{|M|Y|p{0.08\textwidth}|Y|}
+\hline
+\textbf{Moment} & \textbf{What happened?} & \textbf{Time} & \textbf{Exact words, expectation, or question} \\
+\hline
+Open the game & Did they understand what this is and why it is local? & & \\
+\hline
+First minute & Can they state the case question and identify the supplied data/table? & & \\
+\hline
+First move & Can they find the next action and begin without help? & & \\
+\hline
+First Julia run & What code did they expect to run? What did the result mean to them? & & \\
+\hline
+Error or hesitation & What did they think went wrong? Did they use a hint or recovery message? & & \\
+\hline
+Returned evidence & Can they say what Julia did, what it tells the case, and what it does not? & & \\
+\hline
+Navigation & Can they find the next chapter or return to the Case Board? & & \\
+\hline
+\end{tabularx}
+
+\vspace{4pt}
+\textbf{Gate checklist - mark observed, not inferred}\\[-2pt]
+\begin{tabularx}{\textwidth}{@{}YY@{}}
+\checkbox\ Within 1 minute, states the question in their own words. & \checkbox\ Identifies the relevant named input(s). \\
+\checkbox\ Within 3 minutes, makes a first accepted move using on-screen support. & \checkbox\ Explains the effect of their code. \\
+\checkbox\ Explains the case discovery it enabled. & \checkbox\ Recovers from one ordinary error or hesitation without rescue. \\
+\checkbox\ Says what remains unknown; does not infer a causal culprit. & \checkbox\ Finds the Case Board or next-chapter route. \\
+\checkbox\ Says whether they want to continue, and why. & \\
+\end{tabularx}
+
+\vspace{4pt}
+\textbf{If the player stops or asks for help}\\
+Chapter/screen: \rule{0.30\linewidth}{0.3pt}\quad Expected next step: \rule{0.30\linewidth}{0.3pt}\\
+What they tried: \rule{0.84\linewidth}{0.3pt}\\
+What was missing, confusing, or too much: \rule{0.61\linewidth}{0.3pt}\\
+Did a visible hint, table, label, or recovery message resolve it? \checkbox\ yes \quad \checkbox\ no
+
+\vspace{4pt}
+\textbf{Ask only after play}\quad 1. What was the mystery asking you to find out? \quad 2. What did your last Julia move do?\\
+3. What did the game help you understand about Julia? \quad 4. What was most confusing? \quad 5. Would you continue, and why?
+
+\vspace{4pt}
+\textbf{Observer verdict}\quad \checkbox\ pass \quad \checkbox\ revise \quad \checkbox\ unclear\\
+One repair before the next player: \rule{0.68\linewidth}{0.3pt}\\
+Evidence retained (notes or recording location; consent if recorded): \rule{0.40\linewidth}{0.3pt}
+
+\end{document}

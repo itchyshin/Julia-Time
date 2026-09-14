@@ -12,6 +12,15 @@ catch err
     exit(1)
 end
 
+function launcher_start_detail(error)
+    message = sprint(showerror, error)
+    if occursin("Address already in use", message)
+        return "Port 8000 is already in use."
+    end
+    first_line = first(split(message, '\n'; limit=2))
+    return isempty(first_line) ? "Julia reported an unknown local-server error." : first_line
+end
+
 try
     JuliaTime.run_server(; host="127.0.0.1", port=8000)
 catch err
@@ -25,6 +34,6 @@ catch err
     end
     println(stderr, "SERVER_START_FAILED — Julia Time could not start the Case Board at http://127.0.0.1:8000/course/index.html.")
     println(stderr, "Next: close a previous Julia Time launcher or ask the facilitator for help.")
-    println(stderr, "Details: ", sprint(showerror, err))
+    println(stderr, "Details: ", launcher_start_detail(err))
     exit(1)
 end

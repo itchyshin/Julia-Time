@@ -52,6 +52,7 @@ end
 mutable struct _SandboxWorker
     id::Int
     process::Base.Process
+    ready::Bool   # true once one request/response round trip has proven this worker is alive
 end
 
 const _POOL = _SandboxWorker[]
@@ -63,6 +64,15 @@ const _NEXT_WORKER_ID = Ref(0)
 # Kept for the server shutdown and regression contract: replacement is deliberately lazy and
 # synchronous, so no background recovery task can outlive a timed-out learner request.
 const _REFILL = Ref{Union{Nothing,Base.Task}}(nothing)   # Base.Task qualified: levels.jl defines the spec's own `Task`
+# Tracks the background task started by `_run_warmup_in_background!` (used by `start_server`) so
+# `shutdown!()` can wait for it — see that function and `shutdown!()` for why.
+const _WARMUP_TASK = Ref{Union{Nothing,Base.Task}}(nothing)
+# Latches true the first time any worker in this process has ever completed a readiness round
+# trip. Read by `_take_worker!` to pick a truthful restart message: "Warming up Julia for the
+# first run…" before the pool has ever been ready at all, vs "Restarting Julia after the stopped
+# run…" once it has (a later kill/replace). Deliberately never reset by `shutdown!()` — it answers
+# "has this process ever had a ready worker", not "is the pool ready right now".
+const _EVER_READY = Ref(false)
 
 function _spawn_worker()
     project = dirname(Base.active_project())
@@ -70,7 +80,7 @@ function _spawn_worker()
     cmd = `$(Base.julia_cmd()) --startup-file=no --history-file=no --project=$project $script`
     proc = open(pipeline(cmd, stderr=devnull), "r+")
     _NEXT_WORKER_ID[] += 1
-    worker = _SandboxWorker(_NEXT_WORKER_ID[], proc)
+    worker = _SandboxWorker(_NEXT_WORKER_ID[], proc, false)
     lock(_POOL_LOCK) do
         _OWNED_PROCESSES[worker.id] = proc
     end
@@ -101,17 +111,118 @@ function _prewarm_kill_path!()
     return nothing
 end
 
+# Tiny representative calls of the operations the six Missing Fleas chapters ask learners to
+# write (T2): boolean-indexing/filter, groupby+combine, leftjoin, sample/rand with a seeded RNG,
+# and `.<=` comparisons — on throw-away 3-row frames, purely to force Julia to JIT-compile the
+# method specialisations before any learner code runs on this worker. On the reported 2-vCPU CI
+# runner, the *first* `leftjoin` a fresh worker ever saw compiled inside the learner's 5 s
+# `budget` and read back as a false timeout (test/test_mystery_c3.jl); every one of these
+# operations appears in a chapter's reference answer (src/mystery_c2.jl–mystery_c6.jl). This code
+# runs inside `_eval_on_worker`, which never throws — an error here still reports :ok up here and
+# simply fails to warm that one call path; it can never fail the worker or a real learner move.
+const _PREWARM_CODE = """
+let df = DataFrame(id=[1, 2, 3], g=[1, 1, 2], v=[1, 2, 3]), other = DataFrame(g=[1, 2], x=[10, 20])
+    filter(:g => ==(1), df)
+    df[df.v .<= 2, :]
+    combine(groupby(df, :g), :v => sum => :s)
+    leftjoin(df, other, on=:g)
+    sample(MersenneTwister(1), df.id, 2; replace=false)
+    rand(MersenneTwister(1), Bool, 3)
+    nothing
+end
+"""
+
+# Counts how many times a worker's readiness round trip actually ran `_PREWARM_CODE` and got a
+# reply (tag === :ok), i.e. how many workers paid the DataFrames JIT cost. Exposed for tests
+# (T2) — there is no other externally visible signal that prewarm happened, since a warm worker
+# behaves identically to an unwarmed one except in timing.
+const _PREWARM_RUNS = Ref(0)
+
+# Prove `w` can actually process a request before handing it to a learner move. A worker fresh
+# off `_spawn_worker()` is an OS process that may still be starting Julia / JIT-compiling
+# packages; that cost belongs to `ACQUIRE_BUDGET`, never to the caller's `budget`. The readiness
+# round trip runs `_PREWARM_CODE` rather than a no-op, so this same call also pays the DataFrames
+# JIT cost (T2) — whichever call site first makes a worker ready (`warmup!`, or a learner's first
+# move against a fresh replacement worker) is where that cost lands, always inside
+# `ACQUIRE_BUDGET`, never inside a learner's `budget`.
+function _ensure_ready!(w::_SandboxWorker)
+    w.ready && return true
+    tag, _, _ = _worker_round_trip(w, _PREWARM_CODE, (;), nothing, (), ACQUIRE_BUDGET)
+    if tag === :ok
+        w.ready = true
+        _EVER_READY[] = true
+        _PREWARM_RUNS[] += 1
+    end
+    return w.ready
+end
+
+# Prove-ready (and so JIT-prewarm, T2) every worker currently sitting in the pool, not only the
+# one `_prewarm_kill_path!` happens to touch. Already-ready workers return immediately
+# (`_ensure_ready!` is a no-op for them), so calling this repeatedly is cheap. A worker that fails
+# to become ready here is left for the ordinary `_take_worker!` recovery path — prewarm failure
+# must never itself break a worker or `warmup!`.
+function _prewarm_pool!()
+    workers = lock(_POOL_LOCK) do
+        copy(_POOL)
+    end
+    for w in workers
+        try
+            _ensure_ready!(w)
+        catch e
+            @warn "sandbox prewarm failed" worker=w.id exception=(e, catch_backtrace())
+        end
+    end
+    return nothing
+end
+
 """
     warmup!(; n::Integer=2)
 
-Ensure at least `n` idle sandbox workers exist, with packages already loaded. Idempotent: calling
-it again once the pool already holds `n` or more workers does nothing.
+Ensure at least `n` idle sandbox workers exist, with packages already loaded and the DataFrames
+operations the six chapters use already JIT-compiled (T2). Idempotent: calling it again once the
+pool already holds `n` or more ready workers does nothing beyond a fast no-op readiness check.
 """
 function warmup!(; n::Integer=2)
     _top_up!(n)
     _prewarm_kill_path!()  # consumes and kills one pool worker the first time; top up again after
     _top_up!(n)
+    _prewarm_pool!()       # JIT the DataFrames ops every mystery chapter uses, before any learner move
     return nothing
+end
+
+"""
+    _run_warmup_in_background!(warmup_fn::Function=warmup!) -> Task
+
+Run `warmup_fn` on a background task instead of blocking the caller, so the HTTP server (see
+`start_server` in src/server.jl) can start answering requests immediately and warm the sandbox pool
+while learners are already looking at the Case Board. Uses `Threads.@spawn` — a genuine second OS
+thread — when more than one Julia thread is available, since `warmup_fn` blocks on OS process spawn
+and worker round-trip I/O and must not compete with the HTTP event loop for the only thread; falls
+back to a cooperative `@async` task when Julia was started with a single thread (`Threads.nthreads()
+== 1`), which still lets the server answer requests between `warmup_fn`'s own I/O-driven yield
+points (the same cooperative pattern `_worker_round_trip` already relies on) even though there is no
+second thread to run it on in parallel.
+
+The returned task is recorded in `_WARMUP_TASK` so `shutdown!()` can wait for it — see there for why.
+Never throws: a failing `warmup_fn` is caught and printed as a one-line warning, not a crash.
+"""
+function _run_warmup_in_background!(warmup_fn::Function=warmup!)
+    body = function ()
+        try
+            warmup_fn()
+            println("Sandbox ready.")
+        catch e
+            println("Warning: sandbox warm-up failed — ", sprint(showerror, e))
+        finally
+            flush(stdout)
+        end
+        return nothing
+    end
+    task = Threads.nthreads() > 1 ? Threads.@spawn(body()) : @async(body())
+    lock(_POOL_LOCK) do
+        _WARMUP_TASK[] = task
+    end
+    return task
 end
 
 """
@@ -132,9 +243,26 @@ function shutdown!()
         catch
         end
     end
+    # A background warm-up (see `_run_warmup_in_background!`, used by `start_server`) may still be
+    # spawning or proving-ready workers. Wait for it to finish now, with `_SHUTTING_DOWN[]` already
+    # true so any `_top_up!` call still inside it stops growing the pool — otherwise it could spawn
+    # a worker process after this call has already captured/killed `_OWNED_PROCESSES` and reset
+    # `_SHUTTING_DOWN[]`, leaking an untracked process past a "clean shutdown".
+    warmup_task = lock(_POOL_LOCK) do
+        _WARMUP_TASK[]
+    end
+    if warmup_task !== nothing && !istaskdone(warmup_task)
+        try
+            wait(warmup_task)
+        catch
+        end
+    end
+    lock(_POOL_LOCK) do
+        _WARMUP_TASK[] === warmup_task && (_WARMUP_TASK[] = nothing)
+    end
     workers = lock(_POOL_LOCK) do
         _REFILL[] === refill && (_REFILL[] = nothing)
-        workers = [_SandboxWorker(id, proc) for (id, proc) in _OWNED_PROCESSES]
+        workers = [_SandboxWorker(id, proc, true) for (id, proc) in _OWNED_PROCESSES]
         empty!(_POOL)
         workers
     end
@@ -171,19 +299,132 @@ function _await_refill!()
     return nothing
 end
 
-function _take_worker!()
+# Generous cap on getting a live, request-ready worker (fresh process start, package JIT). Kept
+# separate from `budget` (T1): a slow machine's replacement-worker startup must never be charged
+# against the learner's code-execution timeout, or a correct first move after a stopped run reads
+# as a false timeout. 180s, not the earlier 60s: the server now serves the Case Board immediately
+# and warms the pool in the background (`_run_warmup_in_background!`, `start_server` in
+# src/server.jl), so a learner's very first move can now race that background warm-up for the
+# first worker and pay the full cold process-start + package-JIT cost inline, instead of that cost
+# always hiding behind the old blocking pre-start warmup. The ceiling here must be at least as
+# generous as a cold learner laptop's worst case. See docs/design/01-architecture.md §2 and
+# test/test_sandbox.jl.
+const ACQUIRE_BUDGET = 180.0
+
+# Send `(code, env, seed, protected_bindings)` to `w` and wait up to `timeout_s` for its reply.
+# Shared by the real evaluation round trip and the readiness ping below.
+function _worker_round_trip(w::_SandboxWorker, code, env, seed, protected_bindings, timeout_s::Real)
+    task = @async begin
+        try
+            serialize(w.process, (String(code), env, seed, protected_bindings))
+            flush(w.process)
+            (:ok, deserialize(w.process))
+        catch e
+            (:error, e)
+        end
+    end
+    outcome = timedwait(() -> istaskdone(task), Float64(timeout_s); pollint=0.05)
+    outcome == :timed_out && return (:timeout, nothing, task)
+    return (fetch(task)..., task)
+end
+
+# Truthful restart message for `_take_worker!` below: before this process has ever had a ready
+# worker (the very first move, possibly still racing the background warm-up started by
+# `start_server`), vs. after a worker has been killed (timeout, exit()) and must be replaced.
+_restart_message() = _EVER_READY[] ? "Restarting Julia after the stopped run…" : "Warming up Julia for the first run…"
+
+# Wait (bounded by `ACQUIRE_BUDGET`) for an in-flight background warm-up before taking any
+# worker: the warm-up is still spawning and proving the startup workers, and two callers driving
+# one worker's pipes at once garble both. A first move that lands in this window is told the truth
+# ("Warming up Julia for the first run…") and then gets a proven worker. Returns whether a wait
+# actually happened, so the caller can pair it with a "running" status.
+# The warm-up task itself calls `run_code` (kill-path prewarm), so a caller running *inside* that
+# task must never wait on it: that would be a self-deadlock until the budget expires.
+function _warmup_in_flight()
+    warm = lock(_POOL_LOCK) do
+        _WARMUP_TASK[]
+    end
+    (warm === nothing || istaskdone(warm) || warm === current_task()) && return nothing
+    return warm
+end
+
+function _await_warmup!(on_status=nothing)
+    warm = _warmup_in_flight()
+    warm === nothing && return false
+    on_status !== nothing && on_status("restarting", _restart_message())
+    deadline = time() + ACQUIRE_BUDGET
+    while !istaskdone(warm) && time() < deadline && !_SHUTTING_DOWN[]
+        Base.timedwait(() -> istaskdone(warm), 0.5; pollint=0.05)
+    end
+    return true
+end
+
+function _take_worker!(on_status=nothing)
     _await_refill!()
+    waited_for_warmup = _await_warmup!(on_status)
     w = lock(_POOL_LOCK) do
         _SHUTTING_DOWN[] || isempty(_POOL) ? nothing : pop!(_POOL)
     end
-    w === nothing || return w
-    # A learner move needs one replacement worker, not the two-worker startup
-    # reserve.  After several forced kills, bootstrapping a second worker before
-    # answering this move can leave the launcher waiting in teardown.
-    _top_up!(1)
-    return lock(_POOL_LOCK) do
-        isempty(_POOL) ? nothing : pop!(_POOL)
+    # Only a worker that actually needed spawning or proving-ready gets a status pair: an
+    # already-warm pooled worker serves the move immediately, so there is nothing to narrate and
+    # ordinary fast moves stay silent on the wire (no "running" chatter on every keystroke's run).
+    restarted = waited_for_warmup
+    if w === nothing
+        restarted || (on_status !== nothing && on_status("restarting", _restart_message()))
+        restarted = true
+        # A learner move needs one replacement worker, not the two-worker startup
+        # reserve.  After several forced kills, bootstrapping a second worker before
+        # answering this move can leave the launcher waiting in teardown.
+        #
+        # While a background warm-up (`_run_warmup_in_background!`) is still spawning the
+        # startup workers, `_OWNED_PROCESSES` can already be at `MAX_WORKERS`, so `_top_up!(1)`
+        # spawns nothing and an immediate pop finds an empty pool — a first move arriving in
+        # that window must WAIT for the warm-up to hand over a worker, not report "no worker".
+        # The wait is bounded by `ACQUIRE_BUDGET`, the same cap a cold replacement pays.
+        deadline = time() + ACQUIRE_BUDGET
+        while w === nothing && time() < deadline && !_SHUTTING_DOWN[]
+            warm = _warmup_in_flight()
+            if warm !== nothing
+                Base.timedwait(0.5; pollint=0.05) do
+                    istaskdone(warm) || lock(() -> !isempty(_POOL), _POOL_LOCK)
+                end
+            else
+                _top_up!(1)
+                lock(() -> isempty(_POOL), _POOL_LOCK) && sleep(0.2)
+            end
+            w = lock(_POOL_LOCK) do
+                isempty(_POOL) ? nothing : pop!(_POOL)
+            end
+        end
+    elseif !w.ready
+        # A pool worker that has never answered a round trip (fresh off `warmup!`) still
+        # pays the same JIT/process-start cost as a freshly spawned one below — the
+        # learner is about to wait through `_ensure_ready!`, so tell them the same truth
+        # (review 2026-09-12-v02-candidate-panel-adversary.md, S1).
+        restarted || (on_status !== nothing && on_status("restarting", _restart_message()))
+        restarted = true
     end
+    w === nothing && return nothing
+    # A pooled worker can be stale (its process torn down by an earlier shutdown, or crashed
+    # while idle). One dead worker must never fail a learner's move: kill it, spawn a fresh
+    # replacement and prove that one, a bounded number of times inside the same acquisition budget.
+    attempts = 0
+    while !_ensure_ready!(w)
+        _kill_worker!(w)
+        attempts += 1
+        (attempts >= 3 || _SHUTTING_DOWN[]) && return nothing
+        restarted = true
+        on_status !== nothing && on_status("restarting", _restart_message())
+        _top_up!(1)
+        w = lock(_POOL_LOCK) do
+            isempty(_POOL) ? nothing : pop!(_POOL)
+        end
+        w === nothing && return nothing
+    end
+    # Clears a "restarting" line and re-arms a client's deadline timer once the code this
+    # worker was acquired for is actually about to run (B1/B2, same review).
+    restarted && on_status !== nothing && on_status("running", "")
+    return w
 end
 
 _return_worker!(w::_SandboxWorker) = lock(_POOL_LOCK) do
@@ -366,35 +607,34 @@ end
 # --- public entry point ---------------------------------------------------------------------
 
 """
-    run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0) -> SandboxResult
+    run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0, on_status=nothing) -> SandboxResult
 
 Evaluate `code` in a fresh module on a sandbox worker process. `env` is a NamedTuple of bindings
 made available before evaluation; `seed`, if given, seeds the worker's default RNG first. The
-worker is killed if evaluation exceeds `budget` seconds. Optional `protected_bindings` names
-input bindings whose final values must equal their initial snapshots. This does not audit
-intermediate mutations and is not a security boundary; the default leaves legacy runs unchanged.
+worker is killed if evaluation exceeds `budget` seconds. `budget` covers only the learner's code
+running on a live worker: acquiring or replacing a worker (spawning a fresh OS process, paying its
+package JIT cost) is governed separately by `ACQUIRE_BUDGET` so a slow machine's replacement time
+is never charged against the learner's move (T1). Optional `on_status(kind::String,
+message::String)` is called `("restarting", text)` if a worker must be (re)spawned or proven ready
+before this move, followed by `("running", "")` once that same worker is actually handed the code —
+so a caller can surface a truthful status while the learner waits and clear it when the run really
+starts. An already-warm pooled worker serves the move immediately and neither status fires (review
+2026-09-12-v02-candidate-panel-adversary.md, B1/B2/S1). Optional `protected_bindings` names input
+bindings whose
+final values must equal their initial snapshots. This does not audit intermediate mutations and is
+not a security boundary; the default leaves legacy runs unchanged.
 """
-function run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0, protected_bindings=())
+function run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0, protected_bindings=(), on_status=nothing)
     local w
     try
-        w = _take_worker!()
+        w = _take_worker!(on_status)
     catch e
         return SandboxResult(:error, nothing, "", "Something went wrong running this line.\n\n" * sprint(showerror, e))
     end
     w === nothing && return SandboxResult(:error, nothing, "", "No sandbox worker is available.")
 
-    task = @async begin
-        try
-            serialize(w.process, (String(code), env, seed, protected_bindings))
-            flush(w.process)
-            (:ok, deserialize(w.process))
-        catch e
-            (:error, e)
-        end
-    end
-
-    outcome = timedwait(() -> istaskdone(task), Float64(budget); pollint=0.05)
-    if outcome == :timed_out
+    tag, result, task = _worker_round_trip(w, code, env, seed, protected_bindings, budget)
+    if tag === :timeout
         _kill_worker!(w)
         # Closing a direct child pipe makes its blocked deserialisation fail; do not wait
         # indefinitely for a killed worker's final I/O task.
@@ -404,7 +644,6 @@ function run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0,
             "Your code ran for more than $(budget) seconds and was stopped. Loops that never finish are the usual cause.")
     end
 
-    tag, result = fetch(task)
     if tag === :error
         _kill_worker!(w)
         _schedule_refill!()

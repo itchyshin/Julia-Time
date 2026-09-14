@@ -93,6 +93,22 @@ speed_lab_machine_fixture() = Dict(
         @test environment["OPENBLAS_NUM_THREADS"] == "1"
     end
 
+    @testset "an explicit local Python override takes precedence when it is executable" begin
+        previous = get(ENV, "JULIATIME_PYTHON", nothing)
+        try
+            ENV["JULIATIME_PYTHON"] = "/not/an/executable/python"
+            @test JuliaTime._speed_lab_python_executable() === nothing
+
+            executable = Sys.which("python3")
+            executable === nothing || begin
+                ENV["JULIATIME_PYTHON"] = executable
+                @test JuliaTime._speed_lab_python_executable() == executable
+            end
+        finally
+            previous === nothing ? delete!(ENV, "JULIATIME_PYTHON") : (ENV["JULIATIME_PYTHON"] = previous)
+        end
+    end
+
     if isdefined(JuliaTime, :speed_lab_info_reply) && isdefined(JuliaTime, :speed_lab_run_reply)
         @testset "info is a fixed, identity-echoing availability report" begin
             reply = speed_lab_info_reply(SPEED_LAB_VALID_INFO;

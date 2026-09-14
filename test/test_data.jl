@@ -18,5 +18,6 @@
     include(joinpath(@__DIR__, "..", "data", "water_fleas.jl"))
     io = IOBuffer()
     CSV.write(io, simulate_water_fleas())
-    @test String(take!(io)) == read(csvpath, String)
+    normalize_eol(s) = replace(s, "\r\n" => "\n")
+    @test normalize_eol(String(take!(io))) == normalize_eol(read(csvpath, String))
 end

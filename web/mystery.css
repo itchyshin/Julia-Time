@@ -60,6 +60,9 @@ body[data-stage]:not([data-stage="intro"]) .masthead h1 em::before { content: " 
 #practice-output pre, #practice-shape { white-space:pre-wrap; overflow-wrap:anywhere; }
 #learn-indexing { display:block; margin:12px auto; }
 .saved-code-note { font-size:.8rem; color:var(--mint); }
+.answer-reference { margin: 1rem 0; padding: .85rem 1rem; border-left: 5px solid var(--orange); background: #123746; }
+.answer-reference p { margin: 0 0 .65rem; font-weight: 800; }
+.editor-panel .complete-answer-code { display:block; width:100%; margin:.45rem 0; background:#050b0f; color:#fff8e9; border:2px solid #f0ae79; padding:14px; white-space:pre-wrap; font:14px/1.55 var(--mono); }
 [id="evidence-board"] pre, #practice-output pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

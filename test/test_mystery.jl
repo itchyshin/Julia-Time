@@ -195,34 +195,34 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
         try
             HTTP.WebSockets.open("ws://127.0.0.1:$port/ws") do ws
                 HTTP.WebSockets.send(ws, JSON.json(Dict("type" => "case_info")))
-                info = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                info = _receive_reply(ws)
                 @test info["type"] == "case"
                 @test length(info["rows"]) == 12
 
                 HTTP.WebSockets.send(ws, JSON.json(Dict("type" => "case_run", "request_id" => "wire-scalar", "code" => "42")))
-                scalar = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                scalar = _receive_reply(ws)
                 @test scalar["request_id"] == "wire-scalar"
                 @test scalar["value_repr"] == "42"
 
                 HTTP.WebSockets.send(ws, JSON.json(Dict("type" => "case_run", "request_id" => "wire-symbol", "code" => "DataFrame(jar_id = [\"J-x\"], batch_id = [case_batch], tray_id = [\"T-x\"], detected = [:not_a_bool])")))
-                malformed = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                malformed = _receive_reply(ws)
                 @test malformed["pass"] == false
                 @test malformed["rows"][1]["detected"]["type"] == "Symbol"
 
                 HTTP.WebSockets.send(ws, JSON.json(Dict("type" => "case_run", "request_id" => "wire-rational", "code" => "DataFrame(jar_id = [\"J-x\"], batch_id = [case_batch], tray_id = [\"T-x\"], detected = [1 // 2])")))
-                rational = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                rational = _receive_reply(ws)
                 @test rational["pass"] == false
                 @test occursin("Rational", rational["rows"][1]["detected"]["type"])
 
                 HTTP.WebSockets.send(ws, JSON.json(Dict("type"=>"case_info", "chapter"=>"C2")))
-                c2info=JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                c2info=_receive_reply(ws)
                 @test c2info["chapter"] == "C2"
                 @test length(c2info["rows"]) == 6
                 for (step,code) in [("group","groupby(jars, :tray_id)"),
                     ("counts","combine(groupby(jars,:tray_id), nrow=>:n, :detected=>sum=>:detected_n)"),
                     ("rates","combine(groupby(jars,:tray_id), nrow=>:n, :detected=>sum=>:detected_n, :detected=>mean=>:rate)")]
                     HTTP.WebSockets.send(ws,JSON.json(Dict("type"=>"case_run","chapter"=>"C2","step"=>step,"request_id"=>"wire-c2-"*step,"code"=>code)))
-                    reply=JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                    reply=_receive_reply(ws)
                     @test reply["chapter"] == "C2"
                     @test reply["step"] == step
                     @test reply["request_id"] == "wire-c2-"*step

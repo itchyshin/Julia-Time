@@ -261,7 +261,7 @@ function _mystery_c5_valid_run_envelope(msg::AbstractDict)
 end
 
 """Run a C5 challenge against fresh protected counts; only an accepted actual result can be eligible."""
-function mystery_c5_case_run(msg::AbstractDict)
+function mystery_c5_case_run(msg::AbstractDict; on_status::Function=((_, __) -> nothing))
     valid, move_or_error = _mystery_c5_valid_run_envelope(msg)
     valid || return _mystery_c5_error(move_or_error)
     move_id = move_or_error
@@ -275,7 +275,8 @@ function mystery_c5_case_run(msg::AbstractDict)
            observed_count=mystery_c5_observed_count(), n_trials=MYSTERY_C5_N_TRIALS)
     sandbox_result = lock(_RUN_LOCK) do
         run_code(_mystery_c5_guarded_code(String(code)); env=env, budget=RUN_BUDGET,
-                 protected_bindings=(:sim_counts, :n_jars, :p_ref, :observed_count, :n_trials))
+                 protected_bindings=(:sim_counts, :n_jars, :p_ref, :observed_count, :n_trials),
+                 on_status=on_status)
     end
     value_repr = sandbox_result.value === nothing ? "" : _mystery_safe_repr(sandbox_result.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))

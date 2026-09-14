@@ -52,6 +52,17 @@ test("C6 starts with an empty editor and never uses learner-facing culprit langu
   assert.doesNotMatch(html, /culprit/i);
 });
 
+test("C6 distinguishes a restored learner draft from supplied code and names accepted runs", () => {
+  const c6 = require("../web/chapter6.js");
+  assert.equal(typeof c6.draftNotice, "function");
+  assert.match(c6.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
+  assert.match(c6.draftNotice(false, false), /starts empty/i);
+  assert.equal(c6.runOutcomeStatus(reply()), "✓ Accepted — evidence saved.");
+  assert.match(c6.runOutcomeStatus(reply("c6-rejected", {pass:false, progress_eligible:false})), /Not accepted.*no evidence was saved/i);
+  const html = fs.readFileSync("web/chapter6.html", "utf8");
+  assert.match(html, /id="draft-note"/);
+});
+
 test("C6 prepares the inclusive-range decision before the editor and derives candidate cards from current metadata", () => {
   const c6 = require("../web/chapter6.js");
   const html = fs.readFileSync("web/chapter6.html", "utf8");
@@ -302,6 +313,16 @@ test("C6 clears previously accepted evidence before and after a matching failed 
   assert.equal(state.evidence, null);
   assert.equal(state.runFailure.status, "rejected");
   assert.equal(state.runFailure.message, c6.challengeRecovery());
+
+  // S11b-G2 (2026-09-12 panel finding): a server-reported timeout (arriving as an ordinary
+  // case_result, not via the client's own armRunDeadline expiry) must render the honest timeout
+  // message, not the generic "did not meet the stated check" wrong-answer text.
+  state = c6.beginRun(state, "c6-timeout");
+  state = c6.applyCaseResult(state, reply("c6-timeout", {status:"timeout", pass:false, progress_eligible:false, result_data:null}));
+  assert.equal(state.evidence, null);
+  assert.equal(state.runFailure.status, "timeout");
+  assert.equal(c6.runOutcomeStatus(state.runFailure), "Not accepted — the run timed out. No evidence was saved.");
+  assert.notEqual(state.runFailure.message, c6.challengeRecovery());
 
   state = c6.beginRun(state, "c6-malformed");
   state = c6.applyCaseResult(state, reply("c6-malformed", {result_data:{kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {upper:4})]}}));

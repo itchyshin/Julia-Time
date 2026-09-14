@@ -94,6 +94,20 @@ test("missing NumPy is visibly an optional-comparison state, never a result or a
   assert.match(client.viewModel(state).message, /NumPy/i);
 });
 
+test("a measured receipt gives a local, plain-language comparison against Julia without declaring a universal winner", () => {
+  const client = clientUnderTest();
+  const firstWorkload = runReply("speed-run").result.workloads[0];
+  assert.equal(
+    client.relativeTimingSummary(firstWorkload),
+    "On this computer for 1,000 resamples: R took 1.5× Julia's median time; Python / NumPy took the same median time as Julia."
+  );
+
+  const html = fs.readFileSync(pagePath, "utf8");
+  assert.match(html, /id="speed-report-comparison"/);
+  assert.match(html, /relativeTimingSummary/);
+  assert.match(html, /this computer/i);
+});
+
 test("stale or malformed run replies cannot show a benchmark report", () => {
   const client = clientUnderTest();
   let state = client.connect(client.createState());

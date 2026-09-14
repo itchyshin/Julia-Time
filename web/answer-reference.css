@@ -1,0 +1,23 @@
+/* A revealed solution is reference code, not prose and not a result. */
+.answer-reference {
+  margin: 1rem 0;
+  padding: .85rem 1rem;
+  border-left: 5px solid var(--orange, #e66d35);
+  background: #123746;
+}
+
+.answer-reference p {
+  margin: 0 0 .65rem;
+  font-weight: 800;
+}
+
+.complete-answer-code {
+  display: block;
+  width: 100%;
+  margin: .45rem 0;
+  padding: 14px;
+  border: 2px solid #f0ae79;
+  background: #050b0f;
+  color: #fff8e9;
+  white-space: pre-wrap;
+}

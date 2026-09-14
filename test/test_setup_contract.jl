@@ -159,6 +159,8 @@ end
             @test occursin("SERVER_START_FAILED", run_script)
             @test occursin("close a previous Julia Time launcher", run_script)
             @test occursin("JuliaTime.shutdown!()", run_script)
+            @test occursin("launcher_start_detail", run_script)
+            @test !occursin("sprint(showerror, err)", run_script)
 
             @testset "launcher explains a missing project setup" begin
                 mktempdir() do empty_project

@@ -145,12 +145,23 @@ test("C3 offers concept, code shape, solution, bridge comparisons, and error rec
   assert.match(client.recoveryCopy("filter-disagreement"), /\.!=/);
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter3.html"), "utf8");
   assert.match(html, /R and Python/);
-  assert.match(html, /id="code-shape"/);
+  // T2 (2026-09-12 playtest): the code shape used to duplicate into an always-visible
+  // "Template only — not code to run yet" panel, above the real bindings. It now lives only in
+  // the gated "Code shape" help stage (lesson.shape, asserted above), one click away.
+  assert.doesNotMatch(html, /id="code-shape"/);
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
-  assert.match(source, /Template only — not code to run yet/);
+  assert.doesNotMatch(source, /Template only — not code to run yet/);
   assert.doesNotMatch(html, /<textarea id="code"[^>]*>\s*leftjoin/);
   assert.doesNotMatch(html, /Now use this idea on the case table above\./);
   assert.match(html, /Use the visible case tables and the required result/i);
+});
+
+test("C3 distinguishes a restored learner draft from supplied code and names accepted runs", () => {
+  assert.equal(typeof client.draftNotice, "function");
+  assert.match(client.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
+  assert.match(client.draftNotice(false, false), /starts empty/i);
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "✓ Accepted — evidence saved.");
+  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
 });
 
 test("move two stays closed until this browser has a checked join", () => {

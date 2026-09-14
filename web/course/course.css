@@ -40,6 +40,8 @@ a:focus-visible, button:focus-visible { outline:4px solid var(--orange); outline
 .case-thread dl div { padding:.7rem; border-left:4px solid var(--teal); background:#f3ebd9; }
 .case-thread dt { color:var(--teal); font-size:.78rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
 .case-thread dd { margin:.28rem 0 0; }
+.case-established--updated { animation:case-fact-fade .6s ease; }
+@keyframes case-fact-fade { from { background:#fff0d5; } to { background:transparent; } }
 .chapter-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin:1.4rem 0; }
 .chapter-card, .panel, .route-card { border:1px solid var(--line); box-shadow:4px 4px 0 #ddcfb0; background:var(--panel); padding:1.15rem; }
 .chapter-card h2, .panel h2 { font:1.55rem/1.1 Georgia,serif; margin:.25rem 0 .7rem; }

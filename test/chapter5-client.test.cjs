@@ -77,6 +77,16 @@ test("C5 turns a rejected run into a syntax-specific next step without leaking i
   assert.equal(c5.runStatusText({runFailure:{feedback:recovery}}), "Your code is ready to revise.");
 });
 
+test("C5 distinguishes a restored learner draft from supplied code and names accepted runs", () => {
+  assert.equal(typeof c5.draftNotice, "function");
+  assert.match(c5.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
+  assert.match(c5.draftNotice(false, false), /starts empty/i);
+  assert.equal(c5.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "✓ Accepted — evidence saved.");
+  assert.match(c5.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
+  const html = fs.readFileSync("web/chapter5.html", "utf8");
+  assert.match(html, /id="draft-note"/);
+});
+
 test("C5 teaches the Move 2 two-part return before revealing the concrete answer", () => {
   const concept = c5.helpStage("event-frequency", 0);
   const shape = c5.helpStage("event-frequency", 1);
@@ -203,6 +213,16 @@ test("a failed, stale, or malformed Move 2 result cannot replace an accepted res
   assert.equal(failed.runFailure.status, "rejected");
   assert.equal(failed.runFailure.feedback, c5.challengeRecovery("event-frequency"));
   assert.equal(c5.isNewAcceptedResult(state, failed, frequencyResult()), false);
+
+  // S11b-G2 (2026-09-12 panel finding): a server-reported timeout (arriving as an ordinary
+  // case_result, not via the client's own armRunDeadline expiry) must render the honest timeout
+  // message, not the generic "did not meet the stated check" wrong-answer text.
+  const timedOut = c5.applyCaseResult(state, frequencyResult({status:"timeout", pass:false, progress_eligible:false}));
+  assert.equal(timedOut.result, null);
+  assert.equal(timedOut.evidence, null);
+  assert.equal(timedOut.runFailure.status, "timeout");
+  assert.equal(c5.runOutcomeStatus(timedOut.runFailure), "Not accepted — the run timed out. No evidence was saved.");
+  assert.notEqual(timedOut.runFailure.feedback, c5.challengeRecovery("event-frequency"));
   const malformed = c5.applyCaseResult(state, frequencyResult({result_data:{kind:"event-frequency", matching:4, trials:6, frequency:0.2}}));
   assert.equal(malformed.result, null);
   assert.equal(malformed.evidence, null);
@@ -249,6 +269,22 @@ test("C5 derives an honest visible distribution from returned simulation rows be
     {count:6, frequency:1, tail:true}
   ]);
   assert.equal(c5.simulationBins(null), null);
+});
+
+test("C5 turns a few supplied counts into the exact yes-or-no event before free typing", () => {
+  const metadata = acceptedInfo("event-mask").metadata;
+  assert.deepEqual(c5.eventDecisionRows(metadata, 4), [
+    {simulation:1, count:0, meets_event:false},
+    {simulation:2, count:2, meets_event:false},
+    {simulation:3, count:3, meets_event:true},
+    {simulation:4, count:3, meets_event:true}
+  ]);
+  assert.equal(c5.eventDecisionRows(metadata, 0).length, 1);
+  assert.deepEqual(c5.eventDecisionRows(null, 4), []);
+  const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
+  assert.match(source, /From one count to one yes-or-no result/);
+  assert.match(source, /Your Julia move will make this same comparison for every supplied count/);
+  assert.doesNotMatch(source.match(/From one count to one yes-or-no result[\s\S]{0,1800}/)[0], /sim_counts\s*\.>=\s*observed_count/);
 });
 
 test("C5 presents a blank challenge editor, keeps cards optional, and accepts only the exact server card response", () => {

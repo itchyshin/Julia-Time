@@ -1,10 +1,11 @@
 /* Julia Time: Missing Fleas C6. Candidate data and checked conclusions stay server-side. */
 (function(root, factory) {
-  const api = factory();
+  const courseClient = typeof module === "object" && module.exports ? require("./course/course-client.js") : root && root.JuliaTimeCourseClient;
+  const api = factory(courseClient);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.JuliaTimeChapter6 = api;
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", api.init);
-})(typeof window !== "undefined" ? window : null, function() {
+})(typeof window !== "undefined" ? window : null, function(courseClient) {
   "use strict";
 
   const CASE_ID = "missing-fleas-v1";
@@ -40,10 +41,10 @@
     return Boolean(message && expected && message.contract_version === 1 && message.case_id === expected.case_id && message.chapter === expected.chapter && message.move_id === expected.move_id && message.mode === expected.mode && message.activity_id === expected.activity_id && message.simulation_id === expected.simulation_id && message.request_id === expected.request_id);
   }
   function createState() {
-    return { connection: "idle", infoRequest: null, pending: null, metadata: null, result: null, evidence: null, fileUrlRecovery: false, metadataFailure: "", runFailure: null };
+    return { connection: "idle", infoRequest: null, pending: null, expired: false, statusMessage: null, metadata: null, result: null, evidence: null, fileUrlRecovery: false, metadataFailure: "", runFailure: null };
   }
   function beginInfo(state, request_id) {
-    return Object.assign({}, state, { infoRequest: envelope(request_id), pending: null, metadata: null, result: null, evidence: null, metadataFailure: "", runFailure: null });
+    return Object.assign({}, state, { infoRequest: envelope(request_id), pending: null, expired: false, statusMessage: null, metadata: null, result: null, evidence: null, metadataFailure: "", runFailure: null });
   }
   function failCaseInfo(state, message) {
     if (!state.infoRequest || !message || message.type !== "error") return state;
@@ -94,11 +95,18 @@
     return Object.assign({}, state, { infoRequest: null, metadata: message, metadataFailure: "" });
   }
   function beginRun(state, request_id) {
-    return state.metadata ? Object.assign({}, state, { pending: envelope(request_id), result: null, evidence: null, runFailure: null }) : state;
+    return state.metadata ? Object.assign({}, state, { pending: envelope(request_id), expired: false, statusMessage: null, result: null, evidence: null, runFailure: null }) : state;
   }
+  // `pending` is kept (not nulled) on expiry so a correct result arriving late for this same
+  // request is still applied rather than discarded (B1); `isRunPending` makes the run retryable.
   function expireRun(state, request_id) {
     if (!state.pending || state.pending.request_id !== request_id) return state;
-    return Object.assign({}, state, { pending: null, runFailure: { status: "timeout", message: "This check took too long. Your draft is still here; check it, then run again." } });
+    return Object.assign({}, state, { expired: true, statusMessage: null, runFailure: { status: "timeout", message: "This check took too long. Your draft is still here; check it, then run again." } });
+  }
+  function isRunPending(state) { return Boolean(state.pending) && !state.expired; }
+  function applyRunStatus(state, message) {
+    if (!message || message.type !== "status" || !state.pending || state.expired || message.request_id !== state.pending.request_id) return state;
+    return Object.assign({}, state, { statusMessage: message.status === "restarting" ? (message.message || "Restarting Julia after the stopped run…") : "" });
   }
   function validResult(metadata, message) {
     const data = message && message.result_data;
@@ -112,18 +120,36 @@
       return true;
     });
   }
+  // T4 (2026-09-12 panel finding): a server timeout that arrives as a normal case_result (rather
+  // than via the client's own armRunDeadline expiry) used to be flattened into the same generic
+  // "rejected" status as a wrong answer, so a genuinely-hanging run read as "did not meet the
+  // stated check" instead of the honest timeout message. Preserve a reported "timeout" status.
   function applyCaseResult(state, message) {
     if (!state.pending || !message || message.type !== "case_result" || !same(message, state.pending)) return state;
     const accepted = message.status === "ok" && message.pass === true && message.progress_eligible === true && validResult(state.metadata, message);
-    return Object.assign({}, state, { pending: null, result: message, evidence: accepted ? { move_id: MOVE, result_data: message.result_data } : null, runFailure: accepted ? null : { status: "rejected", message: challengeRecovery() } });
+    const runFailure = accepted ? null : message.status === "timeout"
+      ? { status: "timeout", message: "This check took too long. Your draft is still here; check it, then run again." }
+      : { status: "rejected", message: challengeRecovery(), original_error: message.status === "error" ? String(message.message || message.feedback || "") : "" };
+    return Object.assign({}, state, { pending: null, expired: false, statusMessage: null, result: message, evidence: accepted ? { move_id: MOVE, result_data: message.result_data } : null, runFailure });
   }
-  function disconnect(state) { return Object.assign({}, state, { connection: "offline", infoRequest: null, pending: null }); }
+  function disconnect(state) { return Object.assign({}, state, { connection: "offline", infoRequest: null, pending: null, expired: false, statusMessage: null }); }
   function connectionPlan(protocol) {
     return protocol === "file:" ? { open_socket: false, retry: false, message: FILE_URL_RECOVERY_MESSAGE } : { open_socket: true, retry: true, message: null };
   }
   function enterFileUrlRecovery(state) { return Object.assign({}, disconnect(state), { fileUrlRecovery: true }); }
   function connectionStatusText(state) {
-    return state.fileUrlRecovery ? FILE_URL_RECOVERY_MESSAGE : state.runFailure ? "Your code is ready to revise." : state.metadataFailure ? state.metadataFailure : state.pending ? "Checking your Julia result…" : state.connection === "idle" ? "Open the evidence board to load the candidate models." : state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading candidate models…") : "Connecting to the lab…";
+    return state.fileUrlRecovery ? FILE_URL_RECOVERY_MESSAGE : state.runFailure ? "Your code is ready to revise." : state.metadataFailure ? state.metadataFailure : isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.connection === "idle" ? "Open the evidence board to load the candidate models." : state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading candidate models…") : "Connecting to the lab…";
+  }
+  function draftNotice(hasCode, restored) {
+    if (!hasCode) return "This challenge editor starts empty. Write your own Julia result.";
+    return restored ? "Restored your saved draft — it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
+  }
+  function runOutcomeStatus(message) {
+    if (!message) return "";
+    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "✓ Accepted — evidence saved.";
+    if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
+    if (message.status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
+    return "Not accepted — no evidence was saved.";
   }
   function shouldShowReconnect(state) { return !state.fileUrlRecovery && (Boolean(state.metadataFailure) || (state.connection !== "connected" && state.connection !== "connecting" && state.connection !== "idle")); }
   function infoMessage(request_id) { return Object.assign({ type: "case_info", contract_version: 1 }, envelope(request_id)); }
@@ -152,17 +178,29 @@
   function caseClosure(metadata, resultData) {
     if (!validInfo(metadata) || !validResult(metadata, {result_data:resultData})) return null;
     const models = resultData.rows.map(row => row.model).join(", ");
+    const candidateRates = resultData.rows.map(row => `Candidate p = ${row.p}`).join(", ");
     return {
       title:"Case closed for today — a careful conclusion",
       conclusion:"The disputed B09 records do not justify saying the fleas vanished: the report and handling log disagree, so the next responsible action is a reproducible recheck.",
       findings:[
         `The observed B09 count is ${metadata.observed_count}; it is a record, not a biological verdict.`,
         "The report and handling log disagree for tray T-C.",
+        `${candidateRates} stayed compatible with the displayed range check; that does not make either explanation true.`,
+        "The recheck chapter made a plan for new observations; it did not create any.",
+        "The probability chapter described one stated teaching model; it did not identify a cause.",
         `Your range check retained these displayed candidate rows: ${models}.`
       ],
       next:"The planned recheck is the next thing that could distinguish them: collect a new observation rather than assume its outcome.",
       limit:"Compatible candidates are not true or ranked explanations, and this check does not choose a cause."
     };
+  }
+
+  function caseFileRows(acceptedKeys) {
+    if (!courseClient || typeof courseClient.caseFile !== "function") return [];
+    return courseClient.caseFile(new Set(Array.isArray(acceptedKeys) ? acceptedKeys : []));
+  }
+  function boardUpdateLine(accepted, established) {
+    return accepted && established ? "Case Board updated: " + established : "";
   }
 
   function rangePracticeStep(stage) {
@@ -173,6 +211,7 @@
     ][Math.max(0, Math.min(2, Number.isInteger(stage) ? stage : 0))];
   }
 
+  function preEditorBridgeVisible(hintLevel) { return Number.isInteger(hintLevel) && hintLevel >= 2; }
   function preEditorBridge() {
     return {
       lead: "Build the two yes-or-no checks before you write the case version:",
@@ -184,7 +223,7 @@
 
   function init() {
     const $ = id => document.getElementById(id);
-    const el = { scene: $("scene"), work: $("work"), start: $("start"), back: $("back"), board: $("case-board"), sceneBoard: $("case-board-scene"), sceneTitle: $("scene-title"), title: $("move-title"), reconnect: $("reconnect"), status: $("status"), observed: $("observed"), modelCards: $("candidate-model-cards"), data: $("data"), scaffold: $("learning-scaffold"), caseStatus: $("case-status"), preEditorBridge: $("pre-editor-bridge"), code: $("code"), run: $("run"), result: $("result"), visual: $("visual"), hint: $("hint"), nextHint: $("next-hint"), answer: $("answer"), bridges: $("bridges") };
+    const el = { scene: $("scene"), work: $("work"), start: $("start"), back: $("back"), board: $("case-board"), sceneBoard: $("case-board-scene"), sceneTitle: $("scene-title"), title: $("move-title"), reconnect: $("reconnect"), status: $("status"), observed: $("observed"), modelCards: $("candidate-model-cards"), data: $("data"), scaffold: $("learning-scaffold"), caseStatus: $("case-status"), preEditorBridge: $("pre-editor-bridge"), answerReference: $("answer-before-editor"), code: $("code"), draft: $("draft-note"), run: $("run"), result: $("result"), visual: $("visual"), hint: $("hint"), nextHint: $("next-hint"), answer: $("answer"), bridges: $("bridges") };
     if (!el.work) return;
     let state = createState(), socket = null, timer = null, infoTimer = null, runTimer = null, hint = 0, practiceStage = -1, storage = null;
     try { storage = localStorage; } catch (_) {}
@@ -193,11 +232,13 @@
     const caseBoard = boardUrl(location.search);
     if (el.board) el.board.href = caseBoard;
     if (el.sceneBoard) el.sceneBoard.href = caseBoard;
-    try { const drafts = course && course.readChallengeDrafts ? course.readChallengeDrafts(storage, attempt) : {}; el.code.value = drafts && drafts["C6/compatible-models"] || ""; } catch (_) {}
+    let restoredDraft = false;
+    try { const drafts = course && course.readChallengeDrafts ? course.readChallengeDrafts(storage, attempt) : {}; el.code.value = drafts && drafts["C6/compatible-models"] || ""; restoredDraft = el.code.value.length > 0; } catch (_) {}
 
     function text(value) { return value == null ? "" : String(value); }
     function clearInfoTimer() { if (infoTimer) { clearTimeout(infoTimer); infoTimer = null; } }
     function clearRunTimer() { if (runTimer) { clearTimeout(runTimer); runTimer = null; } }
+    function armRunDeadline(requestId) { clearRunTimer(); runTimer = setTimeout(() => { state = expireRun(state, requestId); if (state.runFailure) { showResult(state.runFailure); el.code.focus(); } render(); }, RUN_DEADLINE_MS); }
     function send(message) { if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
     function drawModelCards() {
       if (!el.modelCards) return;
@@ -263,12 +304,31 @@
       why.textContent = status.why_now;
       el.caseStatus.append(eyebrow, title, established, unknown, why);
     }
+    function acceptedMoveKeys() {
+      try { return course && course.acceptedMoves ? course.acceptedMoves(course.readCourseState(storage, attempt)).map(move => move.key) : []; } catch (_) { return []; }
+    }
+    function buildCaseFileSection(rows, closure) {
+      const section = document.createElement("section"), title = document.createElement("h2"), list = document.createElement("ol"), next = document.createElement("p");
+      title.textContent = "Case file";
+      rows.forEach(row => {
+        const item = document.createElement("li"), chapterLabel = document.createElement("strong"), fact = document.createElement("span");
+        if (row.label === "ESTABLISHED") item.className = "case-file-established";
+        chapterLabel.textContent = "Chapter " + row.chapter.slice(1) + ": ";
+        fact.textContent = row.line;
+        item.append(chapterLabel, fact);
+        list.append(item);
+      });
+      next.className = "limit"; next.textContent = closure.next;
+      section.append(title, list, next);
+      return section;
+    }
     function drawVisual(){
       el.visual.replaceChildren();
       if (!state.metadata || !state.result || !state.evidence || state.result.result_data !== state.evidence.result_data) return;
       const closure = caseClosure(state.metadata, state.evidence.result_data);
       if (!closure) return;
-      const section = document.createElement("section"), title = document.createElement("h2"), intro = document.createElement("p"), list = document.createElement("ul"), limit = document.createElement("p"), closing = document.createElement("section"), closingTitle = document.createElement("h3"), closingText = document.createElement("p"), closingFindings = document.createElement("ul"), closingNext = document.createElement("p"), closingLimit = document.createElement("p"), review = document.createElement("a"), speed = document.createElement("a");
+      const rows = caseFileRows(acceptedMoveKeys());
+      const section = document.createElement("section"), title = document.createElement("h2"), intro = document.createElement("p"), list = document.createElement("ul"), limit = document.createElement("p"), closing = document.createElement("section"), closingTitle = document.createElement("h3"), closingText = document.createElement("p"), closingFindings = document.createElement("ul"), closingNext = document.createElement("p"), closingLimit = document.createElement("p"), review = document.createElement("a"), speed = document.createElement("a"), boardUpdate = document.createElement("p");
       title.textContent = "Your compatible candidates"; intro.textContent = "Your Julia result retained these rows because their displayed ranges contain the observation:";
       state.evidence.result_data.rows.forEach(row => { const item = document.createElement("li"); item.textContent = `${row.model}: ${row.lower} ≤ ${state.metadata.observed_count} ≤ ${row.upper}`; list.append(item); });
       limit.className = "limit"; limit.textContent = "This range rule does not rank candidates, estimate support, or explain why detections differed. It does not identify a culprit or prove a model true.";
@@ -276,30 +336,51 @@
       closure.findings.forEach(finding => { const item = document.createElement("li"); item.textContent = finding; closingFindings.append(item); });
       closingNext.textContent = closure.next; closingLimit.className = "limit"; closingLimit.textContent = closure.limit;
       review.href = boardUrl(location.search); review.textContent = "Review the Case Board →";
-      speed.href = "speed-lab.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); speed.textContent = "Optional: open the comparison laboratory →";
-      closing.append(closingTitle, closingText, closingFindings, closingNext, closingLimit, review, document.createTextNode(" "), speed); section.append(title, intro, list, limit, closing); el.visual.append(section);
+      speed.href = "course/speed-lab.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); speed.textContent = "Optional: open the comparison laboratory →";
+      boardUpdate.className = "board-update"; boardUpdate.textContent = boardUpdateLine(rows.length > 0, rows.length ? rows[rows.length - 1].fact : "");
+      closing.append(closingTitle, closingText, closingFindings, closingNext, closingLimit, review, document.createTextNode(" "), speed, boardUpdate); section.append(title, intro, list, limit, closing);
+      if (rows.length) section.append(buildCaseFileSection(rows, closure));
+      el.visual.append(section);
     }
     function render() {
-      if (el.preEditorBridge) { const bridge = preEditorBridge(), first = document.createElement("code"), shape = document.createElement("code"); first.textContent = "candidate_models.lower .<= observed_count"; shape.textContent = bridge.shape; shape.style.whiteSpace = "pre-wrap"; el.preEditorBridge.replaceChildren(document.createTextNode(bridge.lead), document.createElement("br"), first, document.createTextNode(" — one true-or-false value per candidate model."), document.createElement("br"), document.createTextNode("Then use the generic two-check shape:"), document.createElement("br"), shape, document.createElement("br"), document.createTextNode(bridge.explanation)); }
+      if (el.preEditorBridge) {
+        if (preEditorBridgeVisible(hint)) { const bridge = preEditorBridge(), first = document.createElement("code"), shape = document.createElement("pre"); first.textContent = "candidate_models.lower .<= observed_count"; shape.className = "template-code"; shape.style.whiteSpace = "pre-wrap"; shape.textContent = bridge.shape; el.preEditorBridge.replaceChildren(document.createTextNode(bridge.lead), document.createElement("br"), first, document.createTextNode(" — one true-or-false value per candidate model."), document.createElement("br"), document.createTextNode("Template — replace these placeholders; do not run this:"), shape, document.createTextNode(bridge.explanation)); }
+        else el.preEditorBridge.replaceChildren();
+      }
+      if (el.draft) el.draft.textContent = draftNotice(Boolean(el.code.value), restoredDraft);
       el.status.textContent = connectionStatusText(state);
-      el.run.disabled = state.connection !== "connected" || !state.metadata || Boolean(state.pending);
+      el.run.disabled = state.connection !== "connected" || !state.metadata || isRunPending(state);
       el.reconnect.hidden = !shouldShowReconnect(state);
       el.observed.textContent = state.metadata ? `Retained B09 detection count: ${state.metadata.observed_count}. Rule: lower ≤ observed_count ≤ upper.` : state.metadataFailure ? "The candidate table is unavailable; your saved draft is safe." : "The retained observation will appear when the lab file loads.";
-      el.hint.textContent = hint === 0 ? "Open a small hint only if you need it." : hint === 1 ? COPY.concept : hint === 2 ? `Code shape: ${COPY.shape}` : hint === 3 ? `Build the row rule: ${COPY.range_rule}` : hint === 4 ? `Select rows: ${COPY.selection}` : `Complete answer: ${COPY.solution}`;
+      if (el.answerReference) {
+        if (hint >= 5) { const label = document.createElement("p"), code = document.createElement("pre"); label.textContent = "Reference code answer — runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or add evidence."; code.className = "complete-answer-code"; code.textContent = COPY.solution; el.answerReference.replaceChildren(label, code); el.answerReference.hidden = false; }
+        else { el.answerReference.replaceChildren(); el.answerReference.hidden = true; }
+      }
+      el.hint.textContent = hint === 0 ? "Open a small hint only if you need it." : hint === 1 ? COPY.concept : hint === 2 ? `Code shape: ${COPY.shape}` : hint === 3 ? `Build the row rule: ${COPY.range_rule}` : hint === 4 ? `Select rows: ${COPY.selection}` : "Complete runnable answer is shown in the code panel above your editor.";
       el.nextHint.textContent = hint >= 5 ? "All help shown" : hint === 0 ? "Show the concept" : hint === 1 ? "Show the code shape" : hint === 2 ? "Show the row rule" : hint === 3 ? "Show row selection" : "Show complete code now";
       el.nextHint.disabled = hint >= 5;
       el.bridges.textContent = "R (dplyr)\ndplyr::filter(candidate_models, lower <= observed_count, observed_count <= upper)\n\nPython (pandas)\ncandidate_models.loc[(candidate_models[\"lower\"] <= observed_count) & (observed_count <= candidate_models[\"upper\"])]";
       drawModelCards(); drawTable(); drawScaffold(); drawCaseStatus(); drawVisual();
     }
-    function persist() { try { if (course && course.writeChallengeDraft) course.writeChallengeDraft(storage, attempt, CHAPTER, MOVE, el.code.value); } catch (_) {} }
+    function persist() { restoredDraft = false; try { if (course && course.writeChallengeDraft) course.writeChallengeDraft(storage, attempt, CHAPTER, MOVE, el.code.value); } catch (_) {} }
     function record(message) {
       if (!course || !state.evidence || state.result !== message || state.evidence.result_data !== message.result_data) return;
       try { course.recordHistoricalMoveIfMissing(storage, attempt, CHAPTER, MOVE); course.writeEvidenceIfMissing(storage, attempt, { chapter: CHAPTER, move_id: MOVE, title: "Compatible candidate models retained", row_count: message.result_data.rows.length, provenance: "historical-browser" }); course.writeCursor(storage, attempt, { chapter: CHAPTER, move_id: MOVE, mode: "challenge" }); } catch (_) {}
     }
     function showResult(message) {
-      el.result.replaceChildren(); const p = document.createElement("p"); p.textContent = text(message.message || message.feedback || "Julia returned a result."); el.result.append(p);
+      el.result.replaceChildren(); const outcome = document.createElement("p"); outcome.className = "run-outcome"; outcome.textContent = runOutcomeStatus(message); el.result.append(outcome); const p = document.createElement("p"); p.textContent = text(message.message || message.feedback || "Julia returned a result."); el.result.append(p);
+      if (message.original_error) { const details = document.createElement("details"), summary = document.createElement("summary"), original = document.createElement("pre"); summary.textContent = "Original Julia error"; original.textContent = text(message.original_error); details.append(summary, original); el.result.append(details); }
       if (message.explanation) { const explanation = document.createElement("p"); explanation.textContent = `Julia: ${text(message.explanation.julia)} Case: ${text(message.explanation.case)} Limit: ${text(message.explanation.limit)}`; el.result.append(explanation); }
+      if (message.status === "ok" && message.result_data && Array.isArray(message.result_data.columns) && Array.isArray(message.result_data.rows)) {
+        const heading = document.createElement("h3"), table = document.createElement("table"), head = document.createElement("thead"), body = document.createElement("tbody"), header = document.createElement("tr");
+        heading.textContent = "Julia returned this table";
+        message.result_data.columns.forEach(column => { const th = document.createElement("th"); th.textContent = text(column); header.append(th); });
+        head.append(header);
+        message.result_data.rows.forEach(row => { const tr = document.createElement("tr"); message.result_data.columns.forEach(column => { const td = document.createElement("td"); td.textContent = text(row[column]); tr.append(td); }); body.append(tr); });
+        table.append(head, body); el.result.append(heading, table);
+      }
     }
+    function focusResult() { if (el.result) el.result.focus(); }
     function connect(){
       const plan=connectionPlan(location.protocol); clearInfoTimer(); clearRunTimer();
       if(!plan.open_socket) { if (timer) { clearTimeout(timer); timer = null; } state = enterFileUrlRecovery(state); render(); return; }
@@ -310,8 +391,14 @@
         let message; try { message = JSON.parse(event.data); } catch (_) { return; }
         const before = state; state = applyCaseInfo(state, message);
         if (state !== before) clearInfoTimer();
+        else if (message && message.type === "status") {
+          state = applyRunStatus(state, message);
+          if (state !== before) { armRunDeadline(state.pending.request_id); render(); }
+          return;
+        }
         else { state = failCaseInfo(state, message); if (state === before) { state = applyCaseResult(state, message); if (state !== before) { clearRunTimer(); showResult(state.runFailure || message); if (state.evidence) record(message); } } }
         render();
+        if (state.runFailure) el.code.focus(); else if (state.result) focusResult();
       };
       socket.onclose = () => { clearInfoTimer(); clearRunTimer(); state = disconnect(state); render(); if (plan.retry && !timer) timer = setTimeout(() => { timer = null; connect(); }, 1500); };
     }
@@ -320,7 +407,7 @@
     el.back.addEventListener("click", () => { clearRunTimer(); el.work.hidden = true; el.scene.hidden = false; focusElement(el.sceneTitle); });
     el.reconnect.addEventListener("click", connect);
     el.code.addEventListener("input", () => { clearRunTimer(); persist(); });
-    el.run.addEventListener("click", () => { persist(); state = beginRun(state, id("c6-run")); if (state.pending) { const requestId = state.pending.request_id; el.result.replaceChildren(); el.visual.replaceChildren(); send(runMessage(el.code.value, requestId)); clearRunTimer(); runTimer = setTimeout(() => { state = expireRun(state, requestId); if (state.runFailure) { showResult(state.runFailure); el.code.focus(); } render(); }, RUN_DEADLINE_MS); render(); } });
+    el.run.addEventListener("click", () => { persist(); state = beginRun(state, id("c6-run")); if (state.pending) { const requestId = state.pending.request_id; el.result.replaceChildren(); el.visual.replaceChildren(); send(runMessage(el.code.value, requestId)); armRunDeadline(requestId); render(); } });
     el.code.addEventListener("keydown", event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); el.run.click(); } });
     el.nextHint.addEventListener("click", () => { hint = Math.min(5, hint + 1); render(); });
     el.answer.addEventListener("click", () => { hint = 5; render(); });
@@ -328,5 +415,5 @@
     render();
   }
 
-  return { CASE_ID, CHAPTER, MOVE, COPY, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, initialEditorText, challengeRecovery, beginInfo, failCaseInfo, expireInfo, candidateModelCards, applyCaseInfo, beginRun, expireRun, applyCaseResult, disconnect, connectionPlan, enterFileUrlRecovery, connectionStatusText, shouldShowReconnect, infoMessage, runMessage, boardUrl, learningScaffold, caseStatus, caseClosure, rangePracticeStep, preEditorBridge, init };
+  return { CASE_ID, CHAPTER, MOVE, COPY, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, initialEditorText, challengeRecovery, beginInfo, failCaseInfo, expireInfo, candidateModelCards, applyCaseInfo, beginRun, expireRun, isRunPending, applyRunStatus, applyCaseResult, disconnect, connectionPlan, enterFileUrlRecovery, connectionStatusText, draftNotice, runOutcomeStatus, shouldShowReconnect, infoMessage, runMessage, boardUrl, learningScaffold, caseStatus, caseClosure, caseFileRows, boardUpdateLine, rangePracticeStep, preEditorBridge, preEditorBridgeVisible, init };
 });

@@ -38,6 +38,19 @@ function content_type(path)
 end
 
 """
+    _within_root(full::AbstractString, root::AbstractString) -> Bool
+
+Is `full` equal to `root` or a path inside it? Separator-independent: `normpath` on Windows
+joins with backslashes, so a plain `startswith(full, root * "/")` check (POSIX-only) always
+returned `false` there and `safe_web_path` served nothing at all (T1). Takes plain strings —
+no filesystem access — so tests can exercise Windows-style paths on any OS.
+"""
+function _within_root(full::AbstractString, root::AbstractString)
+    startswith(full, root) &&
+        (length(full) == length(root) || full[nextind(full, length(root))] in ('/', '\\'))
+end
+
+"""
     safe_web_path(target::AbstractString, webroot::AbstractString) -> Union{String,Nothing}
 
 Map a request target to an absolute file path under `webroot`. `"/"` maps to `index.html`; a
@@ -49,7 +62,7 @@ function safe_web_path(target::AbstractString, webroot::AbstractString)
     path == "/" && (path = "/index.html")
     root = normpath(abspath(webroot))
     full = normpath(joinpath(root, lstrip(path, '/')))
-    (full == root || startswith(full, root * "/")) || return nothing
+    _within_root(full, root) || return nothing
     isfile(full) || return nothing
     return full
 end

@@ -43,6 +43,14 @@ test("C4 has one evidence move: sample three visibly eligible jar IDs", () => {
   assert.match(client.lessonCopy(MOVE).returnSpec, /three different eligible jar IDs/i);
 });
 
+test("C4 distinguishes a restored learner draft from supplied code and names accepted runs", () => {
+  assert.equal(typeof client.draftNotice, "function");
+  assert.match(client.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
+  assert.match(client.draftNotice(false, false), /starts empty/i);
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "✓ Accepted — evidence saved.");
+  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not accepted.*timed out/i);
+});
+
 test("C4 names the eligible jar-ID list before asking learners to fill the generic sampling shape", () => {
   const copy = client.lessonCopy(MOVE);
   assert.match(copy.itemBridge, /eligible\.jar_id/);

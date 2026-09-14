@@ -79,8 +79,11 @@
 
       const readyForStory = client.canStartStory(state);
       continueAction.setAttribute("aria-disabled", readyForStory ? "false" : "true");
+      // Julia's connection/readiness status is reported in #setup-status; this link's own
+      // name always stays the computed next-move label so its accessible name never drifts
+      // from its visible text (see docs/dev-log/playtest/2026-09-12-agent-fresh-eyes-session.md).
       const readyLabel = continueAction.dataset.readyLabel || "Start Chapter 1 →";
-      text(continueAction, readyForStory ? readyLabel : awaitingPong ? "Checking Julia…" : client.storyActionLabel(state));
+      text(continueAction, readyLabel);
 
       text(version, story ? story.version : "Not checked yet");
       text(checkedAt, story ? story.checked_at : "Not checked yet");

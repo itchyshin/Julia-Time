@@ -28,6 +28,10 @@ release from the [official Julia 1.10 LTS download page](https://julialang.org/d
   option, it is convenient but not required for the supplied double-click
   helpers: they also check the normal Julia 1.10 installation folder. Close and
   reopen a terminal if you choose the PATH option.
+- **Linux:** use [`juliaup`](https://julialang.org/downloads/manual-downloads/#juliaup)
+  or extract the official tarball yourself. The supplied launch helper also
+  checks PATH, the juliaup default install, and a plain 1.10 install under
+  `~/.local` or `/opt`, so PATH is convenient but not required.
 
 Check the version in the extracted Julia Time folder:
 
@@ -52,6 +56,13 @@ threads and BLAS at one thread so the local game does not unexpectedly monopolis
 setup, then leaves its window open so you can read the result. It does not
 install Julia or change Windows settings. The Command Prompt block below does
 the same thing if you prefer to see or type each command.
+
+**Fastest Linux route:** in the extracted folder, run `chmod +x
+tools/setup/launch-linux.sh` once, then run `tools/setup/launch-linux.sh`. It
+checks the folder and Julia version, runs this same one-time setup command for
+you if it has not already succeeded, then opens the Case Board. It does not
+install Julia or change your system configuration. The terminal block below
+does the same setup step if you prefer to see or type each command.
 
 **Mac or Linux Terminal**
 
@@ -136,6 +147,36 @@ The game opens only on this computer at `http://127.0.0.1:8000/course/index.html
 That is the Case Board, where the Julia readiness check and personal investigation dashboard live.
 Keep that terminal open while you play. Press Enter or Ctrl-C there when you are done.
 
-The supplied Mac and Windows launch helpers in `tools/setup/` run the same
-local command after Julia is installed. They never install software or change
-your computer's global Julia choice.
+The supplied Mac, Windows, and Linux launch helpers in `tools/setup/` run the
+same local command after Julia is installed. They never install software or
+change your computer's global Julia choice.
+
+## Optional: make the Speed Lab use a different Python already on your computer
+
+You do **not** need this for the mystery. Use it only when the optional Speed
+Lab says NumPy is missing but you already have a different Python installation
+that contains NumPy. Restart Julia Time with that interpreter's **full
+executable path** selected; this does not install NumPy or change the Python
+used anywhere else.
+
+**Mac or Linux Terminal**
+
+```text
+JULIATIME_PYTHON=/full/path/to/python3 \
+  JULIA_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 \
+  julia --startup-file=no --history-file=no --project=. run.jl
+```
+
+For example, the path might be an interpreter in a virtual environment or a
+Homebrew installation. Ask a facilitator if you do not know that path. Do not
+guess and do not install anything during the mystery. The Speed Lab still
+checks matching answers before it offers timing.
+
+**Windows Command Prompt**
+
+```text
+set JULIATIME_PYTHON=C:\full\path\to\python.exe
+set JULIA_NUM_THREADS=4
+set OPENBLAS_NUM_THREADS=1
+julia --startup-file=no --history-file=no --project=. run.jl
+```
