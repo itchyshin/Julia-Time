@@ -14,16 +14,14 @@ that the Julia code in the investigation is real.
 
 [**Download Julia Time**](https://github.com/itchyshin/Julia-Time/releases/latest)
 
-Download the ZIP from the release page, extract it, then return to these three
-steps. You do not need to clone this repository, create a GitHub account, or
+Download the ZIP from the release page, then follow the four steps below. You do not need to clone this repository, create a GitHub account, or
 understand a terminal before downloading.
 
 You need only three things:
 
 1. a **Julia Time archive** downloaded from this repository's
    [Releases](https://github.com/itchyshin/Julia-Time/releases);
-2. **Julia 1.10.x**, installed once from the
-   [official Julia download page](https://julialang.org/downloads/manual-downloads/#long-term-support-release);
+2. **Julia 1.10.x**, the long-term-support version (not the newest Julia), installed once;
 3. an **internet connection for the first setup**, while Julia downloads this
    folder's declared packages.
 
@@ -33,21 +31,45 @@ separate optional comparison laboratory after the game.
 
 ### Download, install, play
 
-1. Download and extract the Julia Time archive. Keep the extracted `Julia-Time` folder
-   together; do not run the game from inside the ZIP.
-2. Install Julia 1.10.x.
-3. **Windows:** double-click `tools/setup/setup-windows.cmd` once. When it
-   says `SETUP_COMPLETE`, double-click `tools/setup/launch-windows.cmd` every
-   time you want to play.
-4. **Mac:** open Terminal in the extracted folder, run
-   `julia --project=. check_setup.jl` once, then double-click
-   `tools/setup/launch-macos.command` whenever you want to play.
-5. **Linux:** run `chmod +x tools/setup/launch-linux.sh` once, then run
-   `tools/setup/launch-linux.sh` whenever you want to play; it runs the
-   one-time setup for you the first time.
-6. Keep the launcher terminal open. It opens the Case Board in your browser on
-   **your own computer**.
+1. **Download and extract.** On the release page, click the `Julia-Time-<version>.zip`
+   file under *Assets*.
+   - **Windows:** right-click the ZIP and choose **Extract All**. Windows makes a folder
+     inside a folder: open the inner `Julia-Time-<version>` folder, the one that contains
+     `Play-Julia-Time-Windows`. Do not run the game from inside the ZIP.
+   - **Mac:** double-click the ZIP (Safari may already have done this), then open the
+     `Julia-Time-<version>` folder.
+2. **Install Julia 1.10** and keep the installer's suggested choices:
+   - Windows 64-bit: [julia-1.10.12-win64.exe](https://julialang-s3.julialang.org/bin/winnt/x64/1.10/julia-1.10.12-win64.exe)
+   - Mac with Apple Silicon (Apple menu > **About This Mac** shows "Chip Apple M…"):
+     [julia-1.10.12-macaarch64.dmg](https://julialang-s3.julialang.org/bin/mac/aarch64/1.10/julia-1.10.12-macaarch64.dmg);
+     open it and drag Julia into Applications.
+   - Mac with an Intel processor (**About This Mac** shows "Processor … Intel"):
+     [julia-1.10.12-mac64.dmg](https://julialang-s3.julialang.org/bin/mac/x64/1.10/julia-1.10.12-mac64.dmg)
+   - Linux, or a later 1.10.x: the
+     [official Julia 1.10 LTS downloads](https://julialang.org/downloads/manual-downloads/#long_term_support_release).
 
+   A newer Julia already on your computer is fine: Julia Time finds the 1.10 beside it.
+   If the Windows installer asks, choose **Install for me only**; that needs no
+   administrator rights. Julia Time cannot run on a Chromebook, tablet, or phone; use a
+   Windows, Mac, or Linux computer (a lab computer is fine).
+3. **Play: double-click one file** in the extracted folder.
+   - **Windows:** double-click `Play-Julia-Time-Windows`. If Windows says it protected
+     your PC, or asks about an unknown publisher, choose **More info**, then **Run anyway**
+     (or **Run**).
+   - **Mac:** double-click `Play-Julia-Time-Mac.command`. If macOS says it cannot verify
+     the file, click **Done**, open **System Settings > Privacy & Security**, scroll down,
+     click **Open Anyway** next to `Play-Julia-Time-Mac.command`, then double-click it again.
+     If asked whether Terminal may access your Downloads folder, click **Allow**.
+   - **Linux:** run `chmod +x tools/setup/launch-linux.sh` once, then run
+     `tools/setup/launch-linux.sh` whenever you want to play.
+
+   The first time, it prepares this folder's Julia packages (several minutes, needs
+   internet), then opens the Case Board in your browser. Later starts take seconds.
+4. **Keep the black window (Windows) or Terminal window (Mac) open while you play.** It
+   runs the game on **your own computer**. Press Enter in that window when you are done.
+
+The earlier helpers still work: on Windows, `tools/setup/setup-windows.cmd` (one-time
+setup) and `tools/setup/launch-windows.cmd`; on a Mac, `tools/setup/launch-macos.command`.
 The detailed platform-specific commands and recovery steps are in
 [the installation guide](docs/install.md). The bundled visual guide opens from
 your downloaded folder as [Start Here](web/course/getting-started.html).

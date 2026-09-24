@@ -33,7 +33,7 @@ catch err
     catch
     end
     println(stderr, "SERVER_START_FAILED — Julia Time could not start the Case Board at http://127.0.0.1:8000/course/index.html.")
-    println(stderr, "Next: close a previous Julia Time launcher or ask the facilitator for help.")
+    println(stderr, "Next: close a previous Julia Time launcher window. If none is open, another program may be using port 8000 (for example a Python or Jupyter server); close it or restart the computer, then start Julia Time again.")
     println(stderr, "Details: ", launcher_start_detail(err))
     exit(1)
 end

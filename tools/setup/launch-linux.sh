@@ -2,52 +2,43 @@
 # Manual local launcher for the extracted Julia Time folder. It never
 # installs software or changes a learner's system configuration.
 #
-# Mirrors tools/setup/launch-macos.command: same Julia discovery order (PATH
-# first), same thread caps, and the same hand-off to run.jl, which already
+# Mirrors tools/setup/launch-macos.command: same version-checked Julia discovery
+# (tools/setup/find-julia.sh), same thread caps, and the same hand-off to run.jl, which already
 # opens the Case Board (via `xdg-open` on Linux, src/server.jl) and closes the
-# server cleanly on Enter or Ctrl-C (see run_server in src/server.jl). Unlike
-# the Mac launcher, this script also runs the one-time check_setup.jl for you
-# — Linux has no separate double-click setup helper (tools/setup/setup-windows.cmd
-# is Windows-only) — but only when the same readiness check run.jl itself uses
-# (a plain `using JuliaTime` load) has not already succeeded, so repeat launches
-# skip straight to the game.
+# server cleanly on Enter or Ctrl-C (see run_server in src/server.jl). Like the
+# Mac and Windows launchers, it runs the one-time check_setup.jl for you, but
+# only when the same readiness check run.jl itself uses (a plain `using JuliaTime`
+# load) has not already succeeded, so repeat launches skip straight to the game.
 
 set -u
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 course_root="$(cd "$script_dir/../.." && pwd)"
-julia_lts_url="https://julialang.org/downloads/manual-downloads/#long-term-support-release"
+julia_lts_url="https://julialang.org/downloads/manual-downloads/#long_term_support_release"
 
 if [[ ! -f "$course_root/Project.toml" || ! -f "$course_root/run.jl" ]]; then
   echo "COURSE_FOLDER_INVALID — keep this launcher inside the extracted Julia Time folder."
   exit 1
 fi
 
-julia_bin="$(command -v julia 2>/dev/null || true)"
-if [[ -z "$julia_bin" && -x "$HOME/.juliaup/bin/julia" ]]; then
-  julia_bin="$HOME/.juliaup/bin/julia"
-fi
-if [[ -z "$julia_bin" ]]; then
-  for candidate in "$HOME"/.local/julia-1.10*/bin/julia /opt/julia-1.10*/bin/julia /opt/julia/bin/julia; do
-    if [[ -x "$candidate" ]]; then
-      julia_bin="$candidate"
-      break
-    fi
-  done
-fi
-if [[ -z "$julia_bin" ]]; then
-  echo "JULIA_MISSING — install Julia 1.10 manually, then run this launcher again."
-  echo "This launcher checks PATH, the juliaup default install, and a plain 1.10 install under ~/.local or /opt."
+# Looks on PATH and in the usual Julia 1.10 places, and checks each one's version, so a newer
+# Julia first on PATH (for example juliaup's default) cannot hide an installed 1.10.
+. "$course_root/tools/setup/find-julia.sh"
+juliatime_find_julia
+if [[ -z "$JULIATIME_JULIA" ]]; then
+  if [[ -n "$JULIATIME_OTHER_JULIA" ]]; then
+    echo "JULIA_UNSUPPORTED - Julia Time needs Julia 1.10.x. The only Julia found here is:"
+    echo "  $JULIATIME_OTHER_JULIA"
+    echo "Install Julia 1.10 as well (it can sit beside your other Julia), then run this launcher again."
+  else
+    echo "JULIA_MISSING - install Julia 1.10 manually, then run this launcher again."
+    echo "This launcher checks PATH, a juliaup-managed 1.10, and a plain 1.10 install under ~/.local or /opt."
+  fi
   echo "Open: $julia_lts_url"
   exit 1
 fi
-
-version_line="$("$julia_bin" --version)"
-echo "$version_line"
-if [[ "$version_line" != julia\ version\ 1.10.* ]]; then
-  echo "JULIA_UNSUPPORTED — Julia Time needs Julia 1.10.x. Install or select it manually, then try again."
-  exit 1
-fi
+julia_bin="$JULIATIME_JULIA"
+"$julia_bin" --version
 
 cd "$course_root"
 export JULIA_NUM_THREADS=4

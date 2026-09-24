@@ -1,7 +1,7 @@
 name = "JuliaTime"
 uuid = "8a384806-bdb9-46eb-9e4a-7020449bfca6"
 authors = ["Shinichi Nakagawa <itchyshin@gmail.com> and the COSSEE lab"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

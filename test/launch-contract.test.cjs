@@ -78,3 +78,27 @@ test("the human-launch card asks Windows observers to verify the learner setup r
   assert.match(kit, /launch-windows\.cmd/);
   assert.match(kit, /actual Windows computer/i);
 });
+
+test("every Julia download link lands on the live 1.10 LTS section, not the newest release", () => {
+  // julialang.org renamed its section anchors (2026-09 check: id="long_term_support_release");
+  // a dead anchor drops the learner at the top of the page, where the newest (unsupported) Julia is offered first.
+  const learnerFiles = [
+    "README.md",
+    "docs/install.md",
+    "web/course/getting-started.html",
+    "tools/setup/launch-macos.command",
+    "tools/setup/launch-windows.cmd",
+    "tools/setup/setup-windows.cmd",
+    "tools/setup/launch-linux.sh",
+  ];
+  for (const file of learnerFiles) {
+    const text = read(file);
+    assert.doesNotMatch(text, /#long-term-support-release/, `${file} still uses the dead download-page anchor`);
+    const links = text.match(/https:\/\/julialang\.org\/downloads\/manual-downloads\/[^\s"')<]*/g) || [];
+    assert.ok(links.length > 0, `${file} should name the official Julia download page`);
+    for (const link of links) {
+      assert.equal(link, "https://julialang.org/downloads/manual-downloads/#long_term_support_release",
+        `${file} links ${link}; it must land on the 1.10 LTS section`);
+    }
+  }
+});

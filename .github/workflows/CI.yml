@@ -133,3 +133,155 @@ jobs:
             Get-Content server-err.log -Tail 40 -ErrorAction SilentlyContinue
             exit 1
           }
+
+  # The learner's own route, on fresh runners, opt-in with the same `os_matrix` input: download the
+  # published release archive (or this branch as a ZIP), install Julia 1.10 from the official installer
+  # the way the install guide says (not setup-julia, so Julia is not on PATH), run the double-click
+  # helpers from the extracted folder, and play one real Chapter 1 move over the WebSocket.
+  learner-route:
+    if: ${{ inputs.os_matrix }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # julia_on_path: "none" = a learner whose only Julia is the one the guide installs;
+          # "newer" = a learner who already has a newer Julia first on PATH (e.g. from juliaup or a past course).
+          - { os: windows-latest, archive: release, folder: "Downloads", julia_on_path: none }
+          - { os: windows-latest, archive: release, folder: "Kyle Smith (Lab) & Co/Downloads", julia_on_path: none }
+          - { os: windows-latest, archive: branch, folder: "Downloads", julia_on_path: none }
+          - { os: windows-latest, archive: branch, folder: "Kyle Smith (Lab) & Co/Downloads", julia_on_path: newer }
+          - { os: macos-latest, archive: release, folder: "Downloads", julia_on_path: none }
+          - { os: macos-latest, archive: branch, folder: "Downloads", julia_on_path: none }
+          - { os: macos-latest, archive: branch, folder: "Downloads", julia_on_path: newer }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      JULIA_LTS: "1.10.12"
+      JULIATIME_NO_BROWSER: "1"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Get the learner archive and extract it like a learner
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          dl="$RUNNER_TEMP/learner/${{ matrix.folder }}"
+          mkdir -p "$dl" "$RUNNER_TEMP/zip"
+          if [ "${{ matrix.archive }}" = release ]; then
+            gh release download --repo "${{ github.repository }}" --pattern '*.zip' --dir "$RUNNER_TEMP/zip"
+          else
+            git archive --format=zip --prefix=Julia-Time-branch/ -o "$RUNNER_TEMP/zip/Julia-Time-branch.zip" HEAD
+          fi
+          zip_path="$(ls "$RUNNER_TEMP"/zip/*.zip | head -1)"
+          echo "archive: $zip_path"
+          if [ "$RUNNER_OS" = Windows ]; then
+            # Explorer's Extract All makes a folder named after the ZIP around the ZIP's own top folder.
+            target="$dl/$(basename "$zip_path" .zip)"
+            pwsh -NoProfile -Command "Expand-Archive -LiteralPath '$zip_path' -DestinationPath '$target'"
+          else
+            target="$dl"
+            ditto -x -k "$zip_path" "$target"
+          fi
+          course="$(dirname "$(find "$target" -maxdepth 3 -name run.jl | head -1)")"
+          if [ "$RUNNER_OS" = Windows ]; then course="$(cygpath -w "$course")"; fi
+          echo "COURSE=$course" >> "$GITHUB_ENV"
+          echo "extracted course folder: $course"
+      - name: Make PATH match this learner's machine
+        shell: bash
+        run: |
+          set -u
+          if [ "$RUNNER_OS" = Windows ]; then
+            if [ "${{ matrix.julia_on_path }}" = none ]; then
+              # The runner image ships a Chocolatey julia shim; a learner's fresh PC has none.
+              for j in $(where.exe julia 2>/dev/null | tr -d '\r'); do echo "removing preinstalled $j"; rm -f "$j"; done
+            fi
+          elif [ "${{ matrix.julia_on_path }}" = newer ]; then
+            # Stand-in for a juliaup default that is newer than 1.10: first on PATH, wrong version.
+            mkdir -p "$HOME/newer-julia"
+            printf '#!/bin/sh\nif [ "$1" = "--version" ]; then echo "julia version 1.13.0"; exit 0; fi\necho "this stand-in Julia 1.13 cannot run Julia Time" >&2\nexit 3\n' > "$HOME/newer-julia/julia"
+            chmod +x "$HOME/newer-julia/julia"
+            echo "$HOME/newer-julia" >> "$GITHUB_PATH"
+          fi
+          echo "julia first on PATH for this learner: $(command -v julia || echo none)"
+      - name: Install Julia 1.10 from the official installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP "julia-$env:JULIA_LTS-win64.exe"
+          Invoke-WebRequest -Uri "https://julialang-s3.julialang.org/bin/winnt/x64/1.10/julia-$env:JULIA_LTS-win64.exe" -OutFile $installer
+          Start-Process -Wait -FilePath $installer -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CURRENTUSER"
+          Get-ChildItem "$env:LOCALAPPDATA\Programs" | Where-Object Name -like "Julia*" | ForEach-Object { "installed: $($_.FullName)" }
+          $onPath = (Get-Command julia -ErrorAction SilentlyContinue)
+          "julia on PATH after install: $(if ($onPath) { $onPath.Source } else { 'none (as for a default learner install)' })"
+      - name: Install Julia 1.10 from the official disk image (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -eu
+          arch="$(uname -m)"; [ "$arch" = arm64 ] && sub=aarch64 && suffix=macaarch64 || { sub=x64; suffix=mac64; }
+          curl -fsSLo "$RUNNER_TEMP/julia.dmg" "https://julialang-s3.julialang.org/bin/mac/$sub/1.10/julia-$JULIA_LTS-$suffix.dmg"
+          hdiutil attach "$RUNNER_TEMP/julia.dmg" -mountpoint "$RUNNER_TEMP/juliadmg" -nobrowse -quiet
+          ls "$RUNNER_TEMP/juliadmg"
+          cp -R "$RUNNER_TEMP"/juliadmg/Julia-*.app /Applications/
+          hdiutil detach "$RUNNER_TEMP/juliadmg" -quiet
+          ls -d /Applications/Julia-*.app
+          echo "julia on PATH after install: $(command -v julia || echo 'none (as for a default learner install)')"
+      - name: Double-click the one-time setup helper (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          echo.| "%COURSE%\tools\setup\setup-windows.cmd" > "%RUNNER_TEMP%\setup.log" 2>&1
+          set RC=%ERRORLEVEL%
+          type "%RUNNER_TEMP%\setup.log"
+          findstr /c:"SETUP_COMPLETE" "%RUNNER_TEMP%\setup.log" >nul || exit /b 1
+          exit /b %RC%
+      - name: One-time setup as the install guide says (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -u
+          cd "$COURSE"
+          if grep -q "check_setup" tools/setup/launch-macos.command; then
+            echo "this launcher runs the one-time setup itself; skipping the manual Terminal step"
+          else
+            /Applications/Julia-1.10.app/Contents/Resources/julia/bin/julia --startup-file=no --history-file=no --project=. check_setup.jl | tee "$RUNNER_TEMP/setup.log"
+            grep -q "OK — Julia Time is ready" "$RUNNER_TEMP/setup.log"
+          fi
+      - name: Double-click the launcher, then play one move (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $launcher = Join-Path $env:COURSE "tools\setup\launch-windows.cmd"
+          $proc = Start-Process -FilePath $launcher -PassThru -RedirectStandardOutput "$env:RUNNER_TEMP\launch-out.log" -RedirectStandardError "$env:RUNNER_TEMP\launch-err.log"
+          $ready = $false
+          for ($i = 0; $i -lt 200; $i++) {
+            try { Invoke-WebRequest -Uri "http://127.0.0.1:8000/course/index.html" -UseBasicParsing -TimeoutSec 2 | Out-Null; $ready = $true; break } catch { Start-Sleep -Seconds 3 }
+          }
+          "READY=$ready after about $($i * 3) s"
+          $smoke = 1
+          if ($ready) { node tools/release/learner-smoke.cjs 8000; $smoke = $LASTEXITCODE }
+          & taskkill /T /F /PID $proc.Id | Out-Null
+          "---- launcher output ----"; Get-Content "$env:RUNNER_TEMP\launch-out.log" -Tail 40 -ErrorAction SilentlyContinue
+          "---- launcher errors ----"; Get-Content "$env:RUNNER_TEMP\launch-err.log" -Tail 40 -ErrorAction SilentlyContinue
+          if (-not $ready -or $smoke -ne 0) { exit 1 }
+      - name: Double-click the launcher, then play one move (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -u
+          tail -f /dev/null | zsh "$COURSE/tools/setup/launch-macos.command" > "$RUNNER_TEMP/launch.log" 2>&1 &
+          ready=0
+          for i in $(seq 1 200); do
+            curl -sf http://127.0.0.1:8000/course/index.html >/dev/null 2>&1 && { ready=1; break; }
+            sleep 3
+          done
+          echo "READY=$ready after about $((i * 3)) s"
+          smoke=1
+          [ "$ready" -eq 1 ] && { node tools/release/learner-smoke.cjs 8000; smoke=$?; }
+          pkill -f "run.jl" || true; pkill -f "tail -f /dev/null" || true
+          echo "---- launcher output ----"; tail -n 40 "$RUNNER_TEMP/launch.log" || true
+          [ "$ready" -eq 1 ] && [ "$smoke" -eq 0 ]

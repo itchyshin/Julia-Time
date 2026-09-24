@@ -29,7 +29,9 @@ test("Linux has a double-clickable launcher with the same bounded local contract
   assert.match(launcher, /COURSE_FOLDER_INVALID/);
   assert.match(launcher, /JULIA_MISSING/);
   assert.match(launcher, /JULIA_UNSUPPORTED/);
-  assert.match(launcher, /\.juliaup\/bin\/julia/);
+  // Julia discovery moved to the shared, version-checked finder (2026-09-24); it still covers juliaup's launcher.
+  assert.match(launcher, /find-julia\.sh/);
+  assert.match(read("tools/setup/find-julia.sh"), /\.juliaup\/bin\/julia/);
   assert.match(launcher, /check_setup\.jl/);
   assert.match(launcher, /run\.jl/);
 
