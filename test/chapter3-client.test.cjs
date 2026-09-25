@@ -139,7 +139,7 @@ test("C3 offers concept, code shape, solution, bridge comparisons, and error rec
   assert.match(lesson.syntax, /first comma/i);
   assert.match(lesson.syntax, /second comma/i);
   assert.match(client.lessonCopy("filter-disagreement").shape, /table\[table\.left_count \.!= table\.right_count, :\]/);
-  assert.match(client.lessonCopy("filter-disagreement").syntax, /C1.*\.==/i);
+  assert.match(client.lessonCopy("filter-disagreement").syntax, /Chapter 1.*\.==/i);
   assert.match(client.lessonCopy("filter-disagreement").solution, /joined\[joined\.reported_detected_n \.!= joined\.logged_detected_n, :\]/);
   assert.match(client.recoveryCopy("join-report-log"), /comma/i);
   assert.match(client.recoveryCopy("filter-disagreement"), /\.!=/);

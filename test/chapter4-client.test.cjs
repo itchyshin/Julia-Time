@@ -61,7 +61,7 @@ test("C4 names the eligible jar-ID list before asking learners to fill the gener
 test("C4 explains why the plan samples any three eligible jars before asking for code", () => {
   const copy = client.lessonCopy(MOVE);
   assert.match(copy.planningProtocol, /not claiming[^.]*more likely/i);
-  assert.match(copy.planningProtocol, /fair and reproducible/i);
+  assert.match(copy.planningProtocol, /at random, so the plan is fair/i);
   assert.doesNotMatch(copy.planningProtocol, /sample\(eligible\.jar_id/);
 });
 

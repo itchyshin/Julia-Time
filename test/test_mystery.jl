@@ -168,6 +168,27 @@ using DataFrames
         end
     end
 
+    @testset "learner-facing C1 prose has no literal Markdown backticks (UI-14)" begin
+        # The client shows these strings with textContent, so a backtick would appear on screen
+        # as a literal character (and, typed into Julia, would make a command literal).
+        info = JuliaTime.mystery_case_info()
+        prose = String[info["title"], info["goal"], info["return_spec"], info["data_label"],
+                       info["worked_example"]["note"]]
+        append!(prose, [hint["text"] for hint in info["hints"] if hint["stage"] != "solution"])
+        append!(prose, [entry["definition"] for entry in info["glossary"]])
+        for pass in (true, false)
+            append!(prose, collect(values(JuliaTime._mystery_explanation(pass))))
+        end
+        jars = JuliaTime.mystery_jars()
+        for value in (42, jars[:, [:jar_id]], jars, jars[jars.batch_id .== "B09", :])
+            push!(prose, JuliaTime.check_mystery_c1(value)[2])
+        end
+        for text in prose
+            @test !occursin('`', text)
+        end
+        @test occursin("jars.batch_id .== case_batch", JuliaTime._mystery_explanation(true)["julia"])
+    end
+
     @testset "fixtures never share mutable checker state" begin
         poisoned = JuliaTime.mystery_jars()
         poisoned.batch_id .= "B09"

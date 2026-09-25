@@ -168,7 +168,7 @@ test("C6 turns a rejected run into a syntax-specific next step without leaking i
   const c6 = require("../web/chapter6.js");
   const recovery = c6.challengeRecovery();
   assert.match(recovery, /draft is still here/i);
-  assert.match(recovery, /paired-comparisons cue above/i);
+  assert.match(recovery, /Required result line near the top of the page, or open Help me start below/);
   assert.doesNotMatch(recovery, /both comparisons/i);
   assert.match(recovery, /run again/i);
   assert.doesNotMatch(recovery, /candidate_models/);
@@ -184,8 +184,8 @@ test("C6 puts a generic two-check code shape before the empty editor", () => {
   assert.match(bridge.shape, /table\[row_rule, :\]/);
   assert.match(bridge.explanation, /Replace the generic names/i);
   assert.doesNotMatch(bridge.shape, /candidate_models|observed_count/);
-  assert.match(bridge.firstCheck, /candidate_models\.lower \.<= observed_count/);
-  assert.match(bridge.firstCheck, /one true-or-false value per candidate/i);
+  assert.equal(bridge.checks[0].inCase, "candidate_models.lower .<= observed_count");
+  assert.match(bridge.checks[0].note, /one true-or-false value per candidate/i);
   assert.ok(html.indexOf('id="pre-editor-bridge"') < html.indexOf('id="code"'));
 });
 
@@ -312,7 +312,8 @@ test("C6 clears previously accepted evidence before and after a matching failed 
   assert.equal(state.pending, null);
   assert.equal(state.evidence, null);
   assert.equal(state.runFailure.status, "rejected");
-  assert.equal(state.runFailure.message, c6.challengeRecovery());
+  // repair6-4: an error run gets the error step, not "did not meet the stated check".
+  assert.equal(state.runFailure.message, c6.challengeRecovery({status:"error"}));
 
   // S11b-G2 (2026-09-12 panel finding): a server-reported timeout (arriving as an ordinary
   // case_result, not via the client's own armRunDeadline expiry) must render the honest timeout

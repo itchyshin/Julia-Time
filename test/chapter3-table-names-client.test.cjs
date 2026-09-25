@@ -19,15 +19,15 @@ test("C3 puts each friendly table title beside the Julia name and join role", ()
   });
 });
 
-test("C3 explains that an accepted join unlocks the canonical next-check table", () => {
+test("C3 explains that move 2 starts from the lab's fresh copy of the joined table", () => {
   assert.deepEqual(client.tableIdentity("joined"), {
     name: "joined",
-    title: "Canonical joined table for the next check",
-    role: "The lab’s regenerated copy of the table your accepted join matched"
+    title: "Joined table for this move",
+    role: "A fresh copy made by the lab; it matches the join you made in move 1"
   });
 
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
-  assert.match(source, /accepted join unlocked the same canonical comparison table/i);
+  assert.match(source, /starts from a fresh copy of the joined table, made by the lab/i);
   assert.doesNotMatch(source, /not your earlier output/i);
   assert.doesNotMatch(source, /Fresh joined table from the lab/);
 });

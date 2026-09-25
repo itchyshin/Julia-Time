@@ -23,7 +23,7 @@
     "event-frequency": {
       step: "2 of 2 · Calculate a frequency", title: "Calculate the event frequency",
       question: "Among all 1,000 simulations, what fraction meet that event?",
-      required: "Return both the exact event mask and `frequency = matching events / all trials` as `(events=..., frequency=...)`.",
+      required: "Return both the exact event mask and frequency = matching events / all trials, as (events=..., frequency=...).",
       concept: "A simulated frequency is a count of matching events divided by all simulations under this stated teaching model. In plain language: out of every 100 model runs, about how many meet the rule?",
       shape: "events = counts .>= threshold; (events=events, frequency=sum(events)/length(events))",
       solution: "events = sim_counts .>= observed_count; (events=events, frequency=sum(events)/length(events))",
@@ -37,27 +37,36 @@
     const copy = COPY[move];
     if (!copy) return [];
     const beforeFull = {label:"Before the full answer", text:"This will show one complete expression. It will not write into your challenge editor or add case evidence.", button:"Show complete code now"};
+    // B9 (simulated playtest, P21/P43): the shape was run as written. Name the placeholders and map them, as in C3.
+    const shapeNote = "counts and threshold are placeholders, not names in this case. In this case, counts is sim_counts and threshold is observed_count.";
     if (move === "event-frequency") return [
       {label:"Concept", text:copy.concept, button:"Show the code shape"},
-      {label:"Code shape", text:copy.shape, button:"Explain the two returned pieces"},
+      {label:"Code shape", text:copy.shape, note:shapeNote, button:"Explain the two returned pieces"},
       {label:"Two labelled pieces", text:"events is the true-or-false vector: one result for every simulation. frequency is matching events divided by all trials. (events=events, frequency=...) is a Julia named tuple, one returned result with two labelled pieces. Each fresh sandbox run starts fresh, so your code must create events again before it returns both pieces.", button:"Show a full answer?"},
       beforeFull,
       {label:"Full answer", text:copy.solution, button:"All help shown"}
     ];
     return [
       {label:"Concept", text:copy.concept, button:"Show the code shape"},
-      {label:"Code shape", text:copy.shape, button:"Show a full answer?"},
+      {label:"Code shape", text:copy.shape, note:shapeNote, button:"Show a full answer?"},
       beforeFull,
       {label:"Full answer", text:copy.solution, button:"All help shown"}
     ];
   }
   function helpStage(move, index) { return helpStages(move)[index] || null; }
+  // UI-11 (2026-09-24 audit): an opened hint stays on screen when the next one opens, as in C1-C4.
+  // The full answer itself stays in its reference panel above the editor, never in this list.
+  function visibleHints(move, hint) {
+    const stages = helpStages(move), count = Math.max(0, Math.min(stages.length, Number.isInteger(hint) ? hint : 0));
+    if (count === 0) return ["Open a small hint when you need it."];
+    return stages.slice(0, count).flatMap(stage => stage.label === "Full answer" ? ["Complete runnable answer is shown in the code panel above your editor."] : [`${stage.label}: ${stage.text}`].concat(stage.note ? [stage.note] : []));
+  }
   function preEditorBridge(move) {
     const copy = COPY[move];
     if (!copy) return {lead:"", shape:"", explanation:""};
     if (move !== "event-frequency") return {lead:copy.syntax, shape:"", explanation:""};
     return {
-      lead:"Build the yes-or-no event first, then return both labelled pieces:",
+      lead:"Build the yes-or-no event first, then return both labelled pieces, events and frequency, as one result.",
       shape:copy.shape,
       explanation:"events = gives the true-or-false vector a name. The semicolon starts the second expression. The parentheses return one Julia named tuple with labels events and frequency. Replace the generic names with the named case inputs above."
     };
@@ -90,16 +99,48 @@
       /\(events\s*=\s*events\s*,\s*frequency\s*=\s*sum\(events\)\s*\/\s*length\(events\)\s*\)/.test(draft) &&
       !/events\s*=\s*sim_counts\s*\.>=\s*observed_count/.test(draft);
   }
-  function challengeRecovery(move) {
+  // UI-12 (2026-09-24 audit): like C1's T4 recovery, an optional first line is keyed on Julia's
+  // actual error text or actual returned value. The shared next step after it is unchanged and
+  // neither line names the case answer.
+  // repair6-3 (2026-09-24 browser check): Julia returned exactly the strict comparison (count greater
+  // than observed_count). Judged only on the returned true count and preview against the case counts.
+  function returnedStrictComparison(move, message, metadata) {
+    const data = message && message.status === "ok" ? message.result_data : null;
+    if (!data || !validMetadata(metadata)) return false;
+    const trueCount = move === "event-mask" && data.kind === "boolean-vector" ? data.true_count : move === "event-frequency" && data.kind === "event-frequency" ? data.matching : null;
+    const counts = metadata.inputs[0].rows.map(row => row.count), observed = metadata.observed_count;
+    if (data.length !== counts.length || !counts.includes(observed) || !Array.isArray(data.preview) || !data.preview.length) return false;
+    return trueCount === counts.filter(count => count > observed).length && data.preview.every((value, index) => value === counts[index] > observed);
+  }
+  function recoveryLead(move, message, metadata) {
+    if (!message) return "";
+    if (message.status === "error" && /no method matching isless\([^)]*Vector/.test(safeText(message.message))) return "Julia cannot compare a whole vector with one number using a comparison without a dot, such as >= or >. Put a dot before the comparison, as in .>=, so Julia compares every count.";
+    const returned = message.status === "ok" ? safeText(message.value_repr) : "";
+    if (move === "event-frequency" && returned && !/^\(events = [\s\S]*, frequency = /.test(returned)) return "Julia returned a result, but not the labelled pair this move needs: (events=..., frequency=...), with events first and frequency second.";
+    // R1 (2026-09-24 re-test): a pair whose events field Julia printed as one number, one true or
+    // false, or a vector of numbers ([0, 0, 1]). A true-or-false vector prints as Bool[...]; with
+    // other values it still gets the shared step only, and the server's feedback is never passed on.
+    if (move === "event-frequency" && /^\(events = (?:-?\d|true,|false,|\[-?\d)/.test(returned)) return "Julia returned the labelled pair, but events is not a true-or-false vector. events must be the Move 1 result: one true or false for every simulation, not a count or a list of numbers. frequency is the separate number.";
+    if (returnedStrictComparison(move, message, metadata)) return "Julia marked true only the counts greater than the observed count. The event is “at least the observed count”, so a count equal to the observed count must be true as well. In Julia, .>= means at least and .> means greater than.";
+    return "";
+  }
+  function challengeRecovery(move, message, metadata) {
     const currentMove = knownMove(move) ? move : MOVES[0];
-    return `That result did not meet the stated check. Your draft is still here. Use the ${currentMove === "event-mask" ? ".>= comparison" : "event-frequency"} cue above, revise it, and run again.`;
+    // repair5-5 (2026-09-24 walk-through): name the labelled Required result line and the Help me start
+    // control, which the page really shows; no element is labelled as a "cue".
+    // repair6-4 (2026-09-24 browser check): an error run returned no result, so it gets its own step.
+    const shared = message && message.status === "error"
+      ? "Your draft is still here. Use the Original Julia error below to decide what to change, or open Help me start below, then run again."
+      : "That result did not meet the stated check. Your draft is still here. Compare it with the Required result line near the top of the page, or open Help me start below, then revise it and run again.";
+    const lead = recoveryLead(currentMove, message, metadata);
+    return lead ? `${lead} ${shared}` : shared;
   }
   function requestId(prefix) { return (prefix || "c5") + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9); }
   function validAttempt(value) { return /^[a-z0-9-]{1,80}$/.test(value || ""); }
   function caseBoardUrl(search) { const attempt = new URLSearchParams(search || "").get("attempt"); return "course/index.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); }
   function nextChapterUrl(search) { const attempt = new URLSearchParams(search || "").get("attempt"); return "chapter6.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); }
   function nextDestination(move, accepted) { if (!accepted) return null; return move === "event-mask" ? "event-frequency" : move === "event-frequency" ? "chapter6" : null; }
-  function createState() { return {connection:"connecting", activeMove:MOVES[0], infoRequest:null, pending:null, expired:false, statusMessage:null, actionPending:null, actionFailure:null, metadata:null, metadataFailure:"", runFailure:null, result:null, demo:null, cardChoice:null, evidence:null, firstAccepted:false}; }
+  function createState() { return {connection:"connecting", activeMove:MOVES[0], infoRequest:null, pending:null, expired:false, statusMessage:null, actionPending:null, actionFailure:null, metadata:null, metadataFailure:"", runFailure:null, result:null, demo:null, cardChoice:null, evidence:null, firstAccepted:false, secondAccepted:false}; }
   function identity(move, requestId, simulationId) { return {case_id:CASE_ID, chapter:CHAPTER, move_id:move, mode:"challenge", activity_id:null, simulation_id:simulationId == null ? null : simulationId, request_id:requestId}; }
   function sameIdentity(message, expected) { return Boolean(message && expected && message.contract_version === 1 && message.case_id === expected.case_id && message.chapter === expected.chapter && message.move_id === expected.move_id && message.mode === expected.mode && message.activity_id === expected.activity_id && message.simulation_id === expected.simulation_id && message.request_id === expected.request_id); }
   function beginInfo(state, requestId, move) { move = knownMove(move) ? move : MOVES[0]; return Object.assign({}, state, {activeMove:move, infoRequest:identity(move,requestId,null), pending:null, expired:false, statusMessage:null, metadata:null, metadataFailure:"", runFailure:null, result:null}); }
@@ -110,12 +151,32 @@
     return Boolean(input && input.id === "sim_counts" && Array.isArray(input.columns) && input.columns.length === 2 && input.columns[0] === "simulation" && input.columns[1] === "count" && Array.isArray(input.rows) && input.rows.length === message.n_trials && input.rows.every((row,index) => row && row.simulation === index + 1 && Number.isInteger(row.count) && row.count >= 0 && row.count <= message.n_jars));
   }
   function validMetadata(message) { return Boolean(message && Number.isInteger(message.n_jars) && message.n_jars > 0 && Number.isFinite(message.p_ref) && message.p_ref >= 0 && message.p_ref <= 1 && Number.isInteger(message.observed_count) && message.observed_count >= 0 && message.observed_count <= message.n_jars && Number.isInteger(message.n_trials) && message.n_trials > 0 && validSimulationId(message.simulation_id) && expectedInputs(message)); }
-  function caseStatus(metadata) {
+  // repair5-4 (2026-09-24 walk-through): Move 2 gets its own reason; the Move 1 reason is unchanged.
+  function caseStatus(metadata, move) {
     if (!validMetadata(metadata)) return null;
+    const current = knownMove(move) ? move : metadata.move_id;
     return {
       established:`Established in the case: the report and handling log disagree for tray T-C. The observed B09 count is ${metadata.observed_count} of ${metadata.n_jars} jars.`,
       unknown:"Still unknown: this does not establish a biological cause, or tell us which record describes what happened in the jars.",
-      why_now:"Why this move now: Toto asks a smaller probability question under one stated teaching model. Before we estimate how often it happens, we need a yes-or-no event for each simulated count."
+      why_now:current === "event-frequency"
+        ? "Why this move now: Move 1 gave each simulated count a yes-or-no event. Now find how often that event happens across all the simulations, under this one stated teaching model."
+        : "Why this move now: Toto asks a smaller probability question under one stated teaching model. Before we estimate how often it happens, we need a yes-or-no event for each simulated count."
+    };
+  }
+  // repair6-1 (2026-09-24 browser check): once Move 2 is accepted, the move line says it is done.
+  function moveLockText(state) {
+    if (state && state.secondAccepted) return "Frequency saved; Move 2 is done, and Chapter 6 is next.";
+    return state && state.firstAccepted ? "Event saved; Move 2 is now open." : "Complete and run Move 1 to unlock Move 2.";
+  }
+  // repair6-2 (2026-09-24 browser check): the distribution and yes-or-no notes fit the active move.
+  function evidenceNotes(metadata, move) {
+    if (move === "event-frequency") return {
+      distribution:`Each bar is the number of supplied simulations with that count. The bars at least the observed count (${metadata.observed_count}) are the event you named in Move 1. Now find what fraction of all ${metadata.n_trials} simulations fall in those bars.`,
+      comparison:"In Move 1 you made this comparison for every supplied count. Your Move 2 code makes it again, then finds what fraction of all simulations meet the event. This is a preview, not a second dataset and not case evidence."
+    };
+    return {
+      distribution:`Each bar is the number of supplied simulations with that count. Your next Julia move will name the bars at least the observed count (${metadata.observed_count}).`,
+      comparison:"Your Julia move will make this same comparison for every supplied count—so it returns one true-or-false answer per simulation. This is a preview of the intended result, not a second dataset and not case evidence."
     };
   }
   function simulationBins(metadata) {
@@ -168,11 +229,21 @@
     if (!hasCode) return "This challenge editor starts empty. Write your own Julia result.";
     return restored ? "Restored your saved draft — it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
   }
+  // UI-03 (2026-09-24 audit): after a run the caption says what Julia did with this code, as C3 and
+  // C4 do. It says "unrun draft" again only once the learner edits the code.
+  function draftStatus(message) {
+    if (!message || message.status === "timeout") return "This code was not accepted; your draft is still here to check and run again.";
+    if (message.status === "error") return "Julia could not run this code; your draft is still here to revise and run again.";
+    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "Julia checked this code just now and accepted it; you can change it and run again.";
+    if (message.status === "ok") return "Julia ran this code, but the returned result does not yet meet the stated requirement.";
+    return "This code was not accepted; your draft is still here to check and run again.";
+  }
   function runOutcomeStatus(message) {
     if (!message) return "";
     if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "✓ Accepted — evidence saved.";
     if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
-    if (message.status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
+    // repair5-6: a rejected run keeps Julia's own status, so an error gets the same title as C1-C4.
+    if (message.status === "error" || message.run_status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
     return "Not accepted — no evidence was saved.";
   }
   function sameInfoIdentity(message, expected) { return Boolean(message && expected && message.contract_version === 1 && message.case_id === expected.case_id && message.chapter === expected.chapter && message.move_id === expected.move_id && message.mode === expected.mode && message.activity_id === expected.activity_id && message.request_id === expected.request_id && typeof message.simulation_id === "string" && message.simulation_id.length > 0); }
@@ -196,7 +267,7 @@
   // than via the client's own armRunDeadline expiry) used to be flattened into the same generic
   // "rejected" status as a wrong answer, so a genuinely-hanging run read as "did not meet the
   // stated check" instead of the honest timeout message. Preserve a reported "timeout" status.
-  function applyCaseResult(state, message) { if (!state.pending || !message || message.type !== "case_result" || !sameIdentity(message,state.pending)) return state; const accepted = message.status === "ok" && message.pass === true && message.progress_eligible === true && validVisual(state.metadata,state.activeMove,message); if (accepted) return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:message, evidence:{move_id:state.activeMove, result_data:message.result_data}, firstAccepted:true}); const runFailure = message.status === "timeout" ? {status:"timeout", request_id:state.pending.request_id, feedback:"This check took too long. Your code is still here; check it, then run again."} : {status:"rejected", request_id:state.pending.request_id, feedback:challengeRecovery(state.activeMove), original_error:message.status === "error" ? safeText(message.message || message.feedback) : ""}; return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:null, runFailure}); }
+  function applyCaseResult(state, message) { if (!state.pending || !message || message.type !== "case_result" || !sameIdentity(message,state.pending)) return state; const accepted = message.status === "ok" && message.pass === true && message.progress_eligible === true && validVisual(state.metadata,state.activeMove,message); if (accepted) return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:message, evidence:{move_id:state.activeMove, result_data:message.result_data}, firstAccepted:true, secondAccepted:Boolean(state.secondAccepted) || state.activeMove === "event-frequency"}); const runFailure = message.status === "timeout" ? {status:"timeout", request_id:state.pending.request_id, feedback:"This check took too long. Your code is still here; check it, then run again."} : {status:"rejected", run_status:message.status, request_id:state.pending.request_id, feedback:challengeRecovery(state.activeMove, message, state.metadata), original_error:message.status === "error" ? safeText(message.message || message.feedback) : "", value_repr:message.status === "ok" ? safeText(message.value_repr) : ""}; return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:null, runFailure}); }
   function isNewAcceptedResult(before, after, message) { return Boolean(before && after && before !== after && after.result === message && after.evidence && after.evidence.result_data === message.result_data); }
   function actionSimulationId(action) { return action === "draw-six" ? "c5-card-round-v1" : "c5-" + action + "-v1"; }
   function beginAction(state, requestId, action) { if (!validMetadata(state.metadata) || !["draw-six","replay-100","replay-1000"].includes(action)) return state; return Object.assign({}, state, {actionPending:{contract_version:1,case_id:CASE_ID,chapter:CHAPTER,move_id:"card-draw-demo",mode:"demonstration",activity_id:"card-round",simulation_id:actionSimulationId(action),request_id:requestId,action:action}, actionFailure:null, demo:null, cardChoice:action === "draw-six" ? null : state.cardChoice}); }
@@ -220,15 +291,18 @@
     section.append(heading,note,list);parent.append(section);
   }
   function init() {
-    const $ = id => document.getElementById(id); const el={scene:$("scene"),work:$("work"),start:$("start"),back:$("back"),board:$("case-board"),sceneTitle:$("scene-title"),connection:$("connection"),reconnect:$("reconnect"),moves:document.querySelectorAll("[data-move]"),moveLock:$("move-lock"),step:$("move-step"),title:$("move-title"),question:$("move-question"),required:$("required-result"),context:$("case-context"),data:$("simulation-data"),caseStatus:$("case-status"),answerReference:$("answer-before-editor"),code:$("code"),draftNote:$("draft-note"),run:$("run"),status:$("run-status"),syntax:$("syntax"),result:$("result"),visual:$("visual"),next:$("next"),hint:$("hint"),nextHint:$("next-hint"),answer:$("answer"),bridges:$("bridges"),actionButtons:document.querySelectorAll("[data-action]"),prediction:$("card-prediction"),demo:$("demo"),cardEvent:$("card-event"),frequencyComposition:$("frequency-composition"),frequencyCompositionCards:$("frequency-composition-cards"),frequencyCompositionFeedback:$("frequency-composition-feedback"),checkFrequencyComposition:$("check-frequency-composition"),resetFrequencyComposition:$("reset-frequency-composition")};
-    if (!el.work) return; let storage=null; try {storage=localStorage;} catch (_) {} const course=window.JuliaTimeCourseState; const attempt=new URLSearchParams(location.search).get("attempt") || ""; let state=createState(), socket=null, timer=null, infoTimer=null, runTimer=null, actionTimer=null, stopped=false, hint=0, drafts=Object.create(null), restoredDrafts=Object.create(null), frequencyOrder=[]; state.activeMove=initialMove(course,storage,attempt,location.search); state.firstAccepted=canOpenMove(course,storage,attempt,"event-frequency"); if (location.protocol === "file:") state.connection="offline"; if (el.connection) el.connection.textContent=openingConnectionMessageForProtocol(location.protocol); if (el.board) el.board.href=caseBoardUrl(location.search);
+    const $ = id => document.getElementById(id); const el={scene:$("scene"),work:$("work"),start:$("start"),back:$("back"),board:$("case-board"),sceneBoard:$("case-board-scene"),sceneTitle:$("scene-title"),connection:$("connection"),reconnect:$("reconnect"),moves:document.querySelectorAll("[data-move]"),moveLock:$("move-lock"),step:$("move-step"),title:$("move-title"),question:$("move-question"),required:$("required-result"),context:$("case-context"),data:$("simulation-data"),caseStatus:$("case-status"),answerReference:$("answer-before-editor"),code:$("code"),draftNote:$("draft-note"),run:$("run"),status:$("run-status"),syntax:$("syntax"),result:$("result"),visual:$("visual"),next:$("next"),hint:$("hint"),nextHint:$("next-hint"),answer:$("answer"),bridges:$("bridges"),actionButtons:document.querySelectorAll("[data-action]"),prediction:$("card-prediction"),demo:$("demo"),cardEvent:$("card-event"),frequencyComposition:$("frequency-composition"),frequencyCompositionCards:$("frequency-composition-cards"),frequencyCompositionFeedback:$("frequency-composition-feedback"),checkFrequencyComposition:$("check-frequency-composition"),resetFrequencyComposition:$("reset-frequency-composition")};
+    if (!el.work) return; let storage=null; try {storage=localStorage;} catch (_) {} const course=window.JuliaTimeCourseState; const attempt=new URLSearchParams(location.search).get("attempt") || ""; let state=createState(), socket=null, timer=null, infoTimer=null, runTimer=null, actionTimer=null, stopped=false, hint=0, drafts=Object.create(null), restoredDrafts=Object.create(null), frequencyOrder=[]; state.activeMove=initialMove(course,storage,attempt,location.search); state.firstAccepted=canOpenMove(course,storage,attempt,"event-frequency"); state.secondAccepted=acceptedMoveKeys(course,storage,attempt).includes("C5/event-frequency"); if (location.protocol === "file:") state.connection="offline"; if (el.connection) el.connection.textContent=openingConnectionMessageForProtocol(location.protocol); if (el.board) el.board.href=caseBoardUrl(location.search); if (el.sceneBoard) el.sceneBoard.href=caseBoardUrl(location.search);
     const obsoleteDrafts=Object.create(null);
+    let lastRun=null; // UI-03: the run Julia last checked for this editor text; cleared by any edit.
     try {const saved=course && course.readChallengeDrafts ? course.readChallengeDrafts(storage,attempt) : {}; Object.keys(saved || {}).forEach(key=>{if(key.startsWith("C5/") && typeof saved[key] === "string") { const move=key.slice(3), value=saved[key]; if(isObsoleteDraft(move,value)) { drafts[move]=""; restoredDrafts[move]=false; obsoleteDrafts[move]=true; if(course && course.writeChallengeDraft) course.writeChallengeDraft(storage,attempt,CHAPTER,move,""); } else { drafts[move]=value; restoredDrafts[move]=value.length > 0; } }});} catch (_) {}
     function moveCopy() { return COPY[state.activeMove]; }
+    function draftCaption() { return lastRun ? draftStatus(lastRun) : obsoleteDrafts[state.activeMove] ? "An obsolete incomplete draft was cleared. Your valid drafts are safe; open Help me start below for the steps, or start your own." : draftNotice(Boolean(el.code.value),Boolean(restoredDrafts[state.activeMove])); }
+    function renderHints(lines) { const shown=Array.from(el.hint.children,item=>item.textContent), grows=shown.length <= lines.length && shown.every((text,index)=>text===lines[index]); if(!grows) el.hint.replaceChildren(); lines.slice(grows ? shown.length : 0).forEach(line=>{const p=document.createElement("p");p.textContent=line;el.hint.append(p);}); }
     function clearResult() { el.result.replaceChildren(); el.visual.replaceChildren(); el.next.hidden=true; el.next.dataset.destination=""; }
     function clearInfoTimer() { if(infoTimer) { clearTimeout(infoTimer); infoTimer=null; } }
     function clearRunTimer() { if(runTimer) { clearTimeout(runTimer); runTimer=null; } }
-    function armRunDeadline(id) { clearRunTimer(); runTimer=setTimeout(()=>{const before=state;state=expireRun(state,id);if(state===before)return;resultMessage(state.runFailure);render();el.code.focus();},RUN_DEADLINE_MS); }
+    function armRunDeadline(id) { clearRunTimer(); runTimer=setTimeout(()=>{const before=state;state=expireRun(state,id);if(state===before)return;lastRun=state.runFailure;resultMessage(state.runFailure);render();el.code.focus();},RUN_DEADLINE_MS); }
     function clearActionTimer() { if(actionTimer) { clearTimeout(actionTimer); actionTimer=null; } }
     function renderData() {
       el.data.replaceChildren();
@@ -256,9 +330,6 @@
       previewHeading.textContent = "First 12 supplied counts";
       const previewNote = document.createElement("p");
       previewNote.textContent = "You do not need to count these by hand. Use only the count values in Julia: sim_counts contains every supplied count; this small window lets you see what one count looks like, and the histogram below shows all simulations.";
-      const fixture = document.createElement("p");
-      fixture.className = "limit";
-      fixture.textContent = `Simulation fixture ID: ${state.metadata.simulation_id}. This opaque ID identifies the supplied fixed teaching simulation; Julia receives it but does not derive it.`;
       const columnDetails = document.createElement("details"), columnSummary = document.createElement("summary"), columnExplanation = document.createElement("p");
       columnSummary.textContent = "Why the table has two columns but Julia uses one vector";
       columnExplanation.textContent = "The simulation column is the row label. sim_counts contains the count column in that same order.";
@@ -269,16 +340,17 @@
       el.data.append(label, model, lead, binding, previewHeading, previewNote);
       table(el.data,state.metadata.inputs[0].rows,12);
       table(moreTable, rows.slice(12,30), 18);
-      el.data.append(moreDetails, fixture, columnDetails);
+      el.data.append(moreDetails, columnDetails);
       const bins = simulationBins(state.metadata);
-      if (bins) renderDistribution(el.data, bins, "Before you write: see the full simulated distribution", `Each bar is the number of supplied simulations with that count. Your next Julia move will name the bars at least the observed count (${state.metadata.observed_count}).`, false);
+      const notes = evidenceNotes(state.metadata, state.activeMove);
+      if (bins) renderDistribution(el.data, bins, "Before you write: see the full simulated distribution", notes.distribution, false);
       const bridgeRows = eventDecisionRows(state.metadata, 4);
       if (bridgeRows.length) {
         const bridge = document.createElement("section"), heading = document.createElement("h3"), lead = document.createElement("p"), explanation = document.createElement("p");
         bridge.className = "practice-bridge";
         heading.textContent = "From one count to one yes-or-no result";
         lead.textContent = `For each supplied simulation, ask: is its count at least ${state.metadata.observed_count}?`;
-        explanation.textContent = "Your Julia move will make this same comparison for every supplied count—so it returns one true-or-false answer per simulation. This is a preview of the intended result, not a second dataset and not case evidence.";
+        explanation.textContent = notes.comparison;
         bridge.append(heading, lead);
         eventDecisionTable(bridge, bridgeRows);
         bridge.append(explanation);
@@ -304,7 +376,7 @@
       });
       el.frequencyCompositionFeedback.textContent=frequencyOrder.length === 0 ? "Choose the first piece." : "Your construction: " + frequencyOrder.map(id=>cards.find(card=>card.id===id).text).join(" → ");
     }
-    function renderCaseStatus() { if(!el.caseStatus) return; el.caseStatus.replaceChildren(); const status=caseStatus(state.metadata); if(!status) return; const eyebrow=document.createElement("p"), title=document.createElement("h2"), established=document.createElement("p"), unknown=document.createElement("p"), why=document.createElement("p"); eyebrow.className="eyebrow";eyebrow.textContent="Case status before you write";title.textContent="Why this move now";established.textContent=status.established;unknown.textContent=status.unknown;why.textContent=status.why_now;el.caseStatus.append(eyebrow,title,established,unknown,why); }
+    function renderCaseStatus() { if(!el.caseStatus) return; el.caseStatus.replaceChildren(); const status=caseStatus(state.metadata, state.activeMove); if(!status) return; const eyebrow=document.createElement("p"), title=document.createElement("h2"), established=document.createElement("p"), unknown=document.createElement("p"), why=document.createElement("p"); eyebrow.className="eyebrow";eyebrow.textContent="Case status before you write";title.textContent="Why this move now";established.textContent=status.established;unknown.textContent=status.unknown;why.textContent=status.why_now;el.caseStatus.append(eyebrow,title,established,unknown,why); }
     function renderAnswerReference(stage, copy) {
       if (!el.answerReference) return;
       if (!stage || stage.label !== "Full answer") { el.answerReference.replaceChildren(); el.answerReference.hidden = true; return; }
@@ -315,15 +387,16 @@
       el.answerReference.replaceChildren(label,code);
       el.answerReference.hidden=false;
     }
-    function render() { const c=moveCopy(), stages=helpStages(state.activeMove), stage=hint > 0 ? stages[hint - 1] : null, bridge=preEditorBridge(state.activeMove); el.step.textContent=c.step;el.title.textContent=c.title;el.question.textContent=c.question;el.required.textContent=c.required;el.syntax.replaceChildren(document.createTextNode(bridge.lead));if(el.draftNote)el.draftNote.textContent=obsoleteDrafts[state.activeMove] ? "An obsolete incomplete draft was cleared. Your valid drafts are safe; use the runnable answer above or start your own." : draftNotice(Boolean(el.code.value),Boolean(restoredDrafts[state.activeMove]));el.run.disabled=!challengeReady(state);el.status.textContent=runStatusText(state);el.reconnect.hidden=(state.connection === "connected" && !state.metadataFailure) || state.connection === "connecting";el.moves.forEach(button=>{const current=button.dataset.move === state.activeMove;button.setAttribute("aria-current",String(current));button.disabled=button.dataset.move === "event-frequency" && !state.firstAccepted;});if(el.moveLock) {el.moveLock.textContent=state.firstAccepted ? "Event saved; Move 2 is now open." : "Complete and run Move 1 to unlock Move 2.";}el.actionButtons.forEach(button=>{button.disabled=state.connection !== "connected" || !validMetadata(state.metadata)||Boolean(state.actionPending);});renderAnswerReference(stage,c);el.hint.textContent=stage ? (stage.label === "Full answer" ? "Complete runnable answer is shown in the code panel above your editor." : `${stage.label}: ${stage.text}`) : "Open a small hint when you need it.";el.nextHint.textContent=hint >= stages.length ? "All help shown" : hint === 0 ? "Show the concept" : stages[hint - 1].button;el.nextHint.disabled=hint >= stages.length;el.bridges.textContent=`${c.bridge_note ? `${c.bridge_note}\n\n` : ""}R\n${c.r}\n\nPython\n${c.python}`;renderFrequencyComposition();renderData();renderCaseStatus();renderVisual();renderDemo();}
+    function render() { const c=moveCopy(), stages=helpStages(state.activeMove), stage=hint > 0 ? stages[hint - 1] : null, bridge=preEditorBridge(state.activeMove); el.step.textContent=c.step;el.title.textContent=c.title;el.question.textContent=c.question;el.required.textContent=c.required;el.syntax.replaceChildren(document.createTextNode(bridge.lead));if(el.draftNote)el.draftNote.textContent=draftCaption();el.run.disabled=!challengeReady(state);el.status.textContent=runStatusText(state);el.reconnect.hidden=(state.connection === "connected" && !state.metadataFailure) || state.connection === "connecting";el.moves.forEach(button=>{const current=button.dataset.move === state.activeMove;button.setAttribute("aria-current",String(current));button.disabled=button.dataset.move === "event-frequency" && !state.firstAccepted;});if(el.moveLock) el.moveLock.textContent=moveLockText(state);el.actionButtons.forEach(button=>{button.disabled=state.connection !== "connected" || !validMetadata(state.metadata)||Boolean(state.actionPending);});renderAnswerReference(stage,c);renderHints(visibleHints(state.activeMove,hint));el.nextHint.textContent=hint >= stages.length ? "All help shown" : hint === 0 ? "Show the concept" : stages[hint - 1].button;el.nextHint.disabled=hint >= stages.length;el.bridges.textContent=`${c.bridge_note ? `${c.bridge_note}\n\n` : ""}R\n${c.r}\n\nPython\n${c.python}`;renderFrequencyComposition();renderData();renderCaseStatus();renderVisual();renderDemo();}
     function persistDraft() { drafts[state.activeMove]=el.code.value;restoredDrafts[state.activeMove]=false;try{if(course && course.writeChallengeDraft) course.writeChallengeDraft(storage,attempt,CHAPTER,state.activeMove,el.code.value);}catch(_){} }
-    function selectMove(move) { if(!knownMove(move) || (move === "event-frequency" && !state.firstAccepted)) return; clearInfoTimer();clearRunTimer();drafts[state.activeMove]=el.code.value;state=beginInfo(state,requestId("c5-info"),move);hint=0;frequencyOrder=[];el.code.value=drafts[move] || initialEditorText();clearResult();send(infoMessage(move,state.infoRequest.request_id));const id=state.infoRequest.request_id;infoTimer=setTimeout(()=>{const before=state;state=expireInfo(state,id);if(state!==before)render();},INFO_DEADLINE_MS);render(); }
+    function selectMove(move) { if(!knownMove(move) || (move === "event-frequency" && !state.firstAccepted)) return; clearInfoTimer();clearRunTimer();lastRun=null;drafts[state.activeMove]=el.code.value;state=beginInfo(state,requestId("c5-info"),move);hint=0;frequencyOrder=[];el.code.value=drafts[move] || initialEditorText();clearResult();send(infoMessage(move,state.infoRequest.request_id));const id=state.infoRequest.request_id;infoTimer=setTimeout(()=>{const before=state;state=expireInfo(state,id);if(state!==before)render();},INFO_DEADLINE_MS);render(); }
     function persistAccepted(result) { if(!course || !result || !state.evidence) return;try{course.recordHistoricalMoveIfMissing(storage,attempt,CHAPTER,result.move_id);course.writeEvidenceIfMissing(storage,attempt,{chapter:CHAPTER,move_id:result.move_id,title:result.move_id === "event-mask" ? "Simulation event named" : "Simulation event frequency calculated",row_count:result.result_data.trials || result.result_data.length,provenance:"historical-browser"});course.writeCursor(storage,attempt,{chapter:CHAPTER,move_id:result.move_id === "event-mask" ? "event-frequency" : "event-frequency",mode:"challenge"});}catch(_){}}
     function resultMessage(message) {
       el.result.replaceChildren();
       const outcome=document.createElement("p");outcome.className="run-outcome";outcome.textContent=runOutcomeStatus(message);el.result.append(outcome);
       const p=document.createElement("p");p.textContent=safeText(message.message || message.feedback || "Julia returned a result.");el.result.append(p);
       if(message.original_error){const details=document.createElement("details"),summary=document.createElement("summary"),original=document.createElement("pre");summary.textContent="Original Julia error";original.textContent=safeText(message.original_error);details.append(summary,original);el.result.append(details);}
+      if(message.status === "rejected" && message.value_repr){const details=document.createElement("details"),summary=document.createElement("summary"),returned=document.createElement("pre");summary.textContent="Actual Julia output";returned.textContent=safeText(message.value_repr);details.append(summary,returned);el.result.append(details);}
       if(message.explanation){const e=document.createElement("p");e.textContent=`Julia: ${safeText(message.explanation.julia)} Case: ${safeText(message.explanation.case)} Limit: ${safeText(message.explanation.limit)}`;el.result.append(e);}
       const data=message && message.status === "ok" ? message.result_data : null;
       if (!data || !Array.isArray(data.preview)) return;
@@ -339,7 +412,7 @@
     }
     function focusResult() { if (el.result) el.result.focus(); }
     function send(message) { if(socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
-    function connect() { if(stopped) return; clearTimeout(timer); timer=null;clearInfoTimer();clearRunTimer(); if(!canOpenSocket(location.protocol)){const old=socket;socket=null;if(old)try{old.close();}catch(_){}state=disconnect(state);if(el.connection)el.connection.textContent=connectionMessageForProtocol(location.protocol);render();return;} const old=socket;socket=null;if(old)try{old.close();}catch(_){}state.connection="connecting";if(el.connection)el.connection.textContent="● Connecting to the lab…";render();try{socket=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws");}catch(_){return retry();}const ws=socket;ws.onopen=()=>{if(socket!==ws)return;state.connection="connected";if(el.connection)el.connection.textContent="● Lab link ready";selectMove(state.activeMove);};ws.onmessage=event=>{if(socket!==ws)return;let message;try{message=JSON.parse(event.data);}catch(_){return;} const before=state;state=applyCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;} if(message && message.type === "status"){state=applyRunStatus(state,message);if(state!==before){armRunDeadline(state.pending.request_id);render();}return;} if(message && message.type === "error"){state=failCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;}}state=applyCaseResult(state,message);if(state!==before){clearRunTimer();resultMessage(state.runFailure || message);const destination=nextDestination(message.move_id,isNewAcceptedResult(before,state,message));if(destination){persistAccepted(message);el.next.hidden=false;el.next.dataset.destination=destination;el.next.textContent=destination==="chapter6"?"Next: compare explanations →":"Next: calculate the event frequency →";}render();if(state.runFailure) el.code.focus(); else focusResult();return;}state=applyActionResult(state,message);if(state!==before)renderDemo();render();};ws.onclose=()=>{if(socket!==ws)return;clearInfoTimer();clearRunTimer();state=disconnect(state);render();retry();};ws.onerror=()=>{};}
+    function connect() { if(stopped) return; clearTimeout(timer); timer=null;clearInfoTimer();clearRunTimer(); if(!canOpenSocket(location.protocol)){const old=socket;socket=null;if(old)try{old.close();}catch(_){}state=disconnect(state);if(el.connection)el.connection.textContent=connectionMessageForProtocol(location.protocol);render();return;} const old=socket;socket=null;if(old)try{old.close();}catch(_){}state.connection="connecting";if(el.connection)el.connection.textContent="● Connecting to the lab…";render();try{socket=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws");}catch(_){return retry();}const ws=socket;ws.onopen=()=>{if(socket!==ws)return;state.connection="connected";if(el.connection)el.connection.textContent="● Lab link ready";selectMove(state.activeMove);};ws.onmessage=event=>{if(socket!==ws)return;let message;try{message=JSON.parse(event.data);}catch(_){return;} const before=state;state=applyCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;} if(message && message.type === "status"){state=applyRunStatus(state,message);if(state!==before){armRunDeadline(state.pending.request_id);render();}return;} if(message && message.type === "error"){state=failCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;}}state=applyCaseResult(state,message);if(state!==before){clearRunTimer();lastRun=state.result === message ? message : {status:message.status, pass:false};resultMessage(state.runFailure || message);const destination=nextDestination(message.move_id,isNewAcceptedResult(before,state,message));if(destination){persistAccepted(message);el.next.hidden=false;el.next.dataset.destination=destination;el.next.textContent=destination==="chapter6"?"Next: compare explanations →":"Next: calculate the event frequency →";}render();if(state.runFailure) el.code.focus(); else focusResult();return;}state=applyActionResult(state,message);if(state!==before)renderDemo();render();};ws.onclose=()=>{if(socket!==ws)return;clearInfoTimer();clearRunTimer();state=disconnect(state);render();retry();};ws.onerror=()=>{};}
     function retry() { if(stopped || !canOpenSocket(location.protocol) || timer) return; timer=setTimeout(()=>{timer=null;connect();},1500); }
     el.checkFrequencyComposition.addEventListener("click",()=>{
       const cards=frequencyCompositionCards();
@@ -348,7 +421,7 @@
     });
     el.resetFrequencyComposition.addEventListener("click",()=>{frequencyOrder=[];renderFrequencyComposition();});
     function focusElement(element) { if (element) element.focus(); }
-    el.start.addEventListener("click",()=>{el.scene.hidden=true;el.work.hidden=false;connect();focusElement(el.title);});el.back.addEventListener("click",()=>{el.work.hidden=true;el.scene.hidden=false;focusElement(el.sceneTitle);});el.reconnect.addEventListener("click",connect);el.moves.forEach(button=>button.addEventListener("click",()=>selectMove(button.dataset.move)));el.code.addEventListener("input",()=>{clearRunTimer();persistDraft();});el.run.addEventListener("click",()=>{persistDraft();state=beginRun(state,requestId("c5-run"));if(state.pending){clearResult();send(runMessage(state,el.code.value,state.pending.request_id));armRunDeadline(state.pending.request_id);render();}});el.code.addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key==="Enter"){event.preventDefault();el.run.click();}});el.next.addEventListener("click",()=>{const destination=el.next.dataset.destination;if(destination==="chapter6"){window.location.assign(nextChapterUrl(location.search));return;}if(destination==="event-frequency")selectMove(destination);});el.nextHint.addEventListener("click",()=>{hint=Math.min(helpStages(state.activeMove).length,hint+1);render();});el.answer.addEventListener("click",()=>{hint=helpStages(state.activeMove).length;render();});el.actionButtons.forEach(button=>button.addEventListener("click",()=>{const action=button.dataset.action;if(!action || !validMetadata(state.metadata))return;state=beginAction(state,requestId("c5-card"),action);if(state.actionPending)send(actionMessage(action,state.actionPending.request_id));render();}));window.addEventListener("pagehide",()=>{stopped=true;clearTimeout(timer);clearInfoTimer();clearRunTimer();timer=null;const old=socket;socket=null;if(old)try{old.close();}catch(_){}});render();
+    el.start.addEventListener("click",()=>{el.scene.hidden=true;el.work.hidden=false;connect();focusElement(el.title);});el.back.addEventListener("click",()=>{el.work.hidden=true;el.scene.hidden=false;focusElement(el.sceneTitle);});el.reconnect.addEventListener("click",connect);el.moves.forEach(button=>button.addEventListener("click",()=>selectMove(button.dataset.move)));el.code.addEventListener("input",()=>{clearRunTimer();lastRun=null;persistDraft();if(el.draftNote)el.draftNote.textContent=draftCaption();});el.run.addEventListener("click",()=>{persistDraft();state=beginRun(state,requestId("c5-run"));if(state.pending){clearResult();send(runMessage(state,el.code.value,state.pending.request_id));armRunDeadline(state.pending.request_id);render();}});el.code.addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key==="Enter"){event.preventDefault();el.run.click();}});el.next.addEventListener("click",()=>{const destination=el.next.dataset.destination;if(destination==="chapter6"){window.location.assign(nextChapterUrl(location.search));return;}if(destination==="event-frequency")selectMove(destination);});el.nextHint.addEventListener("click",()=>{hint=Math.min(helpStages(state.activeMove).length,hint+1);render();});el.answer.addEventListener("click",()=>{hint=helpStages(state.activeMove).length;render();});el.actionButtons.forEach(button=>button.addEventListener("click",()=>{const action=button.dataset.action;if(!action || !validMetadata(state.metadata))return;state=beginAction(state,requestId("c5-card"),action);if(state.actionPending)send(actionMessage(action,state.actionPending.request_id));render();}));window.addEventListener("pagehide",()=>{stopped=true;clearTimeout(timer);clearInfoTimer();clearRunTimer();timer=null;const old=socket;socket=null;if(old)try{old.close();}catch(_){}});render();
     el.actionButtons.forEach(button => button.addEventListener("click", () => {
       if (state.connection !== "connected" || !state.actionPending) return;
       const id = state.actionPending.request_id;
@@ -359,5 +432,5 @@
       }, RUN_DEADLINE_MS);
     }));
   }
-  return {CASE_ID,CHAPTER,MOVES,INFO_DEADLINE_MS,RUN_DEADLINE_MS,COPY,helpStage,preEditorBridge,frequencyCompositionCards,frequencyCompositionIsCorrect,challengeRecovery,requestedMove,acceptedMoveKeys,canOpenMove,initialMove,canOpenSocket,connectionMessageForProtocol,openingConnectionMessageForProtocol,createState,initialEditorText,isObsoleteDraft,beginInfo,beginRun,applyCaseInfo,failCaseInfo,expireInfo,expireRun,isRunPending,applyRunStatus,applyCaseResult,isNewAcceptedResult,beginAction,expireAction,applyActionResult,simulationBins,eventDecisionRows,cardEventFeedback,answerCardEvent,hasAnsweredCard,challengeReady,runStatusText,runOutcomeStatus,draftNotice,histogramData,validMetadata,caseStatus,disconnect,infoMessage,runMessage,actionMessage,caseBoardUrl,nextChapterUrl,nextDestination,requestId,init};
+  return {CASE_ID,CHAPTER,MOVES,INFO_DEADLINE_MS,RUN_DEADLINE_MS,COPY,helpStage,visibleHints,preEditorBridge,frequencyCompositionCards,frequencyCompositionIsCorrect,challengeRecovery,requestedMove,acceptedMoveKeys,canOpenMove,initialMove,canOpenSocket,connectionMessageForProtocol,openingConnectionMessageForProtocol,createState,initialEditorText,isObsoleteDraft,beginInfo,beginRun,applyCaseInfo,failCaseInfo,expireInfo,expireRun,isRunPending,applyRunStatus,applyCaseResult,isNewAcceptedResult,beginAction,expireAction,applyActionResult,simulationBins,eventDecisionRows,cardEventFeedback,answerCardEvent,hasAnsweredCard,challengeReady,runStatusText,runOutcomeStatus,draftNotice,draftStatus,histogramData,validMetadata,caseStatus,moveLockText,evidenceNotes,disconnect,infoMessage,runMessage,actionMessage,caseBoardUrl,nextChapterUrl,nextDestination,requestId,init};
 });

@@ -270,6 +270,14 @@ test("a copied C2 template word gets a direct correction beside its Julia error"
   assert.equal(client.c2ErrorNextStep({status:"error", message:"MethodError: no method"}), "");
 });
 
+test("the template-word line still fires on the sandbox's plain first line, keyed on Julia's own text", () => {
+  // src/sandbox.jl's first line no longer says "doesn't exist"; Julia's "not defined" carries the match.
+  for (const word of ["table", "group_column", "count_rows"]) {
+    const message = word + " is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `" + word + "` not defined";
+    assert.match(client.c2ErrorNextStep({status:"error", message}), /template word/i, word);
+  }
+});
+
 function validRows() { return [{tray_id:"T1", n:2, detected_n:1, rate:0.5}, {tray_id:"T2", n:3, detected_n:0, rate:0}]; }
 function validRatesResult(overrides = {}) { return Object.assign({type:"case_result", chapter:"C2", request_id:"r1", step:"rates", status:"ok", pass:true, rows:validRows(), columns:["tray_id", "n", "detected_n", "rate"]}, overrides); }
 function memoryStorage() { const values = new Map(); return {getItem:key => values.has(key) ? values.get(key) : null, setItem:(key, value) => values.set(key, String(value))}; }

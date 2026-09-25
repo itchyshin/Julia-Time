@@ -32,16 +32,26 @@ using Distributions, DataFrames
     @test length(r.value) == 3
 
     # 5. UndefVarError
+    # The page shows messages as plain text (textContent), so our own first line carries no
+    # Markdown backticks; Julia's own text below it stays exactly as Julia wrote it.
     r = JuliaTime.run_code("undefined_name")
     @test r.status === :error
-    @test occursin("doesn't exist", r.message)
-    @test occursin("UndefVarError", r.message)
+    novice, julia_text = split(r.message, "\n\n"; limit=2)
+    @test novice == "undefined_name is a name Julia does not know yet. Check the spelling, or define it first."
+    @test occursin("UndefVarError: `undefined_name` not defined", julia_text)
     @test !occursin("RemoteException", r.message)
 
     # 6. parse error
     r = JuliaTime.run_code("1 +")
     @test r.status === :error
-    @test occursin("couldn't parse", r.message)
+    @test first(split(r.message, "\n\n")) ==
+          "Julia couldn't parse this line. Look for a missing bracket, a missing comma, or a missing end keyword."
+
+    # Every plain-language first line is plain text: no Markdown backticks.
+    for e in (UndefVarError(:tray_id), MethodError(sqrt, ("a",)), BoundsError([1], 5),
+              Meta.ParseError("x"), DivideError(), JuliaTime.Distributed.ProcessExitedException(2), ErrorException("x"))
+        @test !occursin('`', JuliaTime._novice_line(e))
+    end
 
     # 7. BoundsError / MethodError
     r = JuliaTime.run_code("[1,2,3][5]")
@@ -200,5 +210,113 @@ end
     @test r.status === :ok
     @test r.value == 2
     @test "restarting" in statuses
+    JuliaTime.shutdown!()
+end
+
+# Kill a pooled worker's OS process the way something outside the sandbox would (an out-of-band
+# kill, or a stop that left it dead), without going through `_kill_worker!`.
+_kill_out_of_band(w) = Sys.iswindows() ? kill(w.process) : kill(w.process, Base.SIGKILL)
+_pooled_workers() = lock(() -> copy(JuliaTime._POOL), JuliaTime._POOL_LOCK)
+
+@testset "a warm pooled worker that died while idle does not reject the next correct move" begin
+    # 2026-09-24 (CI Linux/Windows/macOS, local full-suite runs): a pooled worker that had already
+    # proven itself ready died while idle, and the next move taken from the pool failed with
+    # "IOError: write: broken pipe" (death already visible here) or "EOFError: read end of file"
+    # (killed but not yet reaped) — a correct answer rejected, and the move after it too while
+    # the rest of the pool was dead. The learner's code never reached a live worker, so the move
+    # must be answered on the FIRST call, and replacing the worker is acquisition, not budget.
+    JuliaTime.shutdown!()
+    JuliaTime.warmup!(n=2)
+    dead = _pooled_workers()
+    @test length(dead) >= 2
+    @test all(w -> w.ready, dead)          # proven ready: the path that trusts `ready` is exercised
+    for w in dead
+        _kill_out_of_band(w)
+        wait(w.process)                    # the death is fully visible: the broken-pipe variant
+    end
+    statuses = String[]
+    withenv("JULIATIME_TEST_SLOW_WORKER_START" => "4") do   # the replacement takes longer than `budget`
+        r = JuliaTime.run_code("1+1"; budget=3.0, on_status=(k, m) -> push!(statuses, k))
+        @test r.status === :ok
+        @test r.value == 2
+    end
+    @test "restarting" in statuses && last(statuses) == "running"
+    owned = lock(() -> copy(JuliaTime._OWNED_PROCESSES), JuliaTime._POOL_LOCK)
+    @test !any(w -> haskey(owned, w.id), dead)   # the dead workers were reaped, not left owned
+
+    # Killed but not yet reaped by this process: the EOFError variant.
+    JuliaTime.warmup!(n=2)
+    foreach(_kill_out_of_band, _pooled_workers())
+    r = JuliaTime.run_code("1+1")
+    @test r.status === :ok
+    @test r.value == 2
+    JuliaTime.shutdown!()
+end
+
+@testset "a line that stops Julia itself is reported once and never re-run" begin
+    # The dead-worker recovery above must never run a learner's line twice. Each line appends one
+    # row to a file before stopping, so a second run would show as a second row.
+    JuliaTime.shutdown!()
+    JuliaTime.warmup!(n=2)
+    mktempdir() do dir
+        runs = joinpath(dir, "runs.txt")
+        append_row = "open(io -> println(io, \"ran\"), $(repr(runs)), \"a\")"
+
+        # The ordinary spelling is shadowed inside the sandbox and reads as a learner error.
+        r = JuliaTime.run_code("$append_row; exit()")
+        @test r.status === :error
+        @test occursin("That line stopped Julia itself (exit() or a crash)", r.message)
+        @test countlines(runs) == 1
+
+        # `Base.exit()` really ends the worker process after the line started running: that must
+        # stay a reported error, not be re-sent to a fresh worker.
+        r = JuliaTime.run_code("$append_row; Base.exit()")
+        @test r.status === :error
+        @test countlines(runs) == 2
+        @test JuliaTime.run_code("1+1").value == 2   # the next move still works
+    end
+    JuliaTime.shutdown!()
+end
+
+@testset "a live worker whose reply stream was detached is not sent the move twice" begin
+    # Adversarial review 2026-09-24: an earlier move can leave a background task that closes the
+    # worker's reply stream while the worker itself stays alive and keeps reading requests. The
+    # next move then sees the stream end with no start receipt, although the live worker already
+    # has the request and may run it. Only a worker positively observed dead may be sent the move
+    # again, so this sequence must run the line at most once.
+    JuliaTime.shutdown!()
+    JuliaTime.warmup!(n=1)
+    mktempdir() do dir
+        runs = joinpath(dir, "runs.txt")
+        touch(runs)
+        detach = "@async (sleep(0.3); orig = stdout; redirect_stdout(devnull); close(orig)); nothing"
+        @test JuliaTime.run_code(detach).status === :ok
+        sleep(0.8)                                   # the worker is idle when the stream closes
+        r = JuliaTime.run_code("open(io -> println(io, \"ran\"), $(repr(runs)), \"a\"); 1")
+        sleep(1.0)                                   # give a second copy time to land, if sent
+        @test countlines(runs) <= 1
+        @test JuliaTime.run_code("1+1").value == 2   # the next move still works
+    end
+    JuliaTime.shutdown!()
+end
+
+@testset "stray output left by an earlier move does not make a stopped line run twice" begin
+    # Adversarial review 2026-09-24: a background task from an earlier move can print into the
+    # reply stream after that move returned. Those bytes garble the next move's start receipt, and
+    # if that line then ends the worker the read fails. A stream that carried any bytes is not an
+    # empty stream, so the line must be reported once and never sent to another worker.
+    JuliaTime.shutdown!()
+    JuliaTime.warmup!(n=1)
+    mktempdir() do dir
+        runs = joinpath(dir, "runs.txt")
+        touch(runs)
+        @test JuliaTime.run_code("Timer(_ -> println(\"...\"), 0.5); nothing").status === :ok
+        sleep(1.5)                                   # the stray line lands while the worker is idle
+        r = JuliaTime.run_code("open(io -> println(io, \"ran\"), $(repr(runs)), \"a\"); Base.exit()")
+        @test r.status === :error
+        sleep(1.0)
+        @test countlines(runs) == 1
+        @test JuliaTime.run_code("1+1").value == 2
+    end
     JuliaTime.shutdown!()
 end

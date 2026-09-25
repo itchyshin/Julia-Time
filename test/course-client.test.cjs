@@ -18,7 +18,7 @@ test("Case Board recognises and routes the one C4 recheck-planning move plus C5-
   }
   const model = client.dashboardModel(client.loadCourseState(storage, "field-7"));
   assert.deepEqual(model.cards.slice(3).map(card => card.playable), [true, true, true]);
-  assert.match(model.cards[5].status, /saved|playable/i);
+  assert.match(model.cards[5].status, /in this browser|playable/i);
 });
 
 test("attempt identifiers create isolated additive course namespaces", () => {
@@ -207,7 +207,7 @@ test("changed legacy data is reported and does not silently fill a destination",
   const loaded = client.loadCourseState(storage, attempt);
   assert.deepEqual(courseState.acceptedMoves(loaded), []);
   assert.deepEqual(loaded.historicalChanged, [legacy.c2ProgressKey(attempt)]);
-  assert.match(client.dashboardModel(loaded).historicalNotice, /historical browser data changed/i);
+  assert.match(client.dashboardModel(loaded).historicalNotice, /^Earlier saved data in this browser changed\./);
   assert.equal(storage.writes.length, beforeWrites);
 });
 
@@ -318,7 +318,7 @@ test("C3 becomes the next playable investigation only after its real route exist
   assert.deepEqual(joinedC3.continue, {chapter:"C3", move:"filter-disagreement", label:"Continue Chapter 3: filter the recording disagreement"});
   assert.equal(firstC3.cards[2].playable, true);
   assert.match(firstC3.cards[2].status, /Playable now/i);
-  assert.match(joinedC3.cards[2].status, /Historical browser progress saved/i);
+  assert.match(joinedC3.cards[2].status, /Started in this browser/i);
   assert.equal(client.legacyDestination("C3", "field-7", "join-report-log"), "../chapter3.html?attempt=field-7&move=join-report-log");
   assert.equal(client.adapterDestination("C3", "field-7", "filter-disagreement"), "chapter.html?chapter=C3&attempt=field-7&move=filter-disagreement");
 });

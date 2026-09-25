@@ -47,7 +47,7 @@ test("each playable chapter exposes its data, required result, and an optional a
   assert.match(c5, /id="simulation-data"/);
   assert.match(c5Script, /Julia inputs: sim_counts/);
   assert.match(c5, /Help me start/);
-  assert.match(c5, /id="answer"[^>]*>Show complete code now/);
+  assert.match(c5, /id="answer"[^>]*>Show the complete answer/);
 
   const c6 = page("chapter6.html");
   const c6Script = page("chapter6.js");
@@ -56,5 +56,5 @@ test("each playable chapter exposes its data, required result, and an optional a
   assert.match(c6, /id="learning-scaffold"/);
   assert.match(c6Script, /candidate_models/);
   assert.match(c6, /Help me start/);
-  assert.match(c6, /id="answer"[^>]*>Show complete code now/);
+  assert.match(c6, /id="answer"[^>]*>Show the complete answer/);
 });

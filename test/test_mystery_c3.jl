@@ -97,8 +97,17 @@ end
               "leftjoin(report, handling_log, on=:tray_id)"
         @test disagreement_move["code_shape"] ==
               "table[table.left_count .!= table.right_count, :]"
-        @test only(hint["text"] for hint in disagreement_move["hints"] if hint["stage"] == "shape") ==
-              "Use table[table.left_count .!= table.right_count, :] to keep rows where two columns differ."
+        # B9 (simulated playtest): the shape hint names its placeholders and maps them to the case.
+        disagreement_shape = only(hint["text"] for hint in disagreement_move["hints"]
+                                  if hint["stage"] == "shape")
+        @test startswith(disagreement_shape,
+              "Use table[table.left_count .!= table.right_count, :] to keep rows where two columns differ.")
+        @test occursin("placeholders", disagreement_shape)
+        @test occursin("table is joined", disagreement_shape)
+        @test occursin("left_count is reported_detected_n", disagreement_shape)
+        @test occursin("right_count is logged_detected_n", disagreement_shape)
+        @test !occursin("joined[joined.reported_detected_n .!= joined.logged_detected_n, :]",
+                        disagreement_shape)
         @test only(hint["text"] for hint in disagreement_move["hints"] if hint["stage"] == "solution") ==
               "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]"
         @test !haskey(first_info, "extension")
@@ -183,6 +192,70 @@ end
         @test !JuliaTime.check_mystery_c3(discrepancy, "not-a-move")[1]
     end
 
+    # UI-14 (2026-09-24 browser check): the client shows this prose as plain text, so Markdown
+    # backticks appeared literally on screen (and in Julia a backtick starts a command literal).
+    @testset "C3 learner-facing prose has no literal Markdown backticks" begin
+        explanations = [JuliaTime._mystery_c3_explanation("join-report-log", true;
+                                                          mode="demonstration")]
+        for move_id in JuliaTime.MYSTERY_C3_MOVES, pass in (true, false)
+            push!(explanations, JuliaTime._mystery_c3_explanation(move_id, pass))
+        end
+        for explanation in explanations, text in values(explanation)
+            @test !occursin('`', text)
+        end
+        joined = JuliaTime.mystery_c3_expected_join()
+        wrong_row = joined[joined.tray_id .== "T-A", :]
+        passed, feedback = JuliaTime.check_mystery_c3(wrong_row, "filter-disagreement")
+        @test !passed
+        @test occursin(".!=", feedback)
+        @test !occursin('`', feedback)
+        for move in JuliaTime._mystery_c3_moves(), hint in move["hints"]
+            @test !occursin('`', hint["text"])
+        end
+    end
+
+    # Repair 5 (2026-09-24 browser walk-through): a failed run showed "No C3 case finding ...".
+    # The client shows every explanation line, so none names an internal chapter id.
+    @testset "C3 learner-facing explanations name no internal chapter id" begin
+        explanations = [JuliaTime._mystery_c3_explanation("join-report-log", true;
+                                                          mode="demonstration")]
+        for move_id in JuliaTime.MYSTERY_C3_MOVES, pass in (true, false)
+            push!(explanations, JuliaTime._mystery_c3_explanation(move_id, pass))
+        end
+        for explanation in explanations, text in values(explanation)
+            @test !occursin(r"\bC[1-6]\b", text)
+        end
+        failed = JuliaTime._mystery_c3_explanation("join-report-log", false)
+        @test startswith(failed["case"], "No case finding from this chapter is established")
+    end
+
+    # B10 (simulated playtest P03/P27, verified 2026-09-24): the checkers compare values only, so a
+    # swapped leftjoin, an innerjoin, a hand-typed table or a row slice is accepted. The accepted
+    # explanations must describe the checked result and the taught way, not claim what the
+    # learner's own code did.
+    @testset "C3 accepted explanations describe the checked result and the taught way" begin
+        join_text = JuliaTime._mystery_c3_explanation("join-report-log", true)
+        filter_text = JuliaTime._mystery_c3_explanation("filter-disagreement", true)
+        practice_text = JuliaTime._mystery_c3_explanation("join-report-log", nothing;
+                                                          mode="demonstration")
+        @test startswith(join_text["julia"], "The returned table")
+        @test startswith(filter_text["julia"], "The returned row")
+        @test occursin("leftjoin", join_text["julia"]) && occursin("on=", join_text["julia"])
+        @test occursin(".!=", filter_text["julia"])
+        claims = r"matched each report row|checked the two count columns|kept the returned record|matched the separate practice rows|now matched safely"
+        for text in (join_text["julia"], filter_text["julia"], practice_text["julia"])
+            @test occursin("taught way", lowercase(text))
+            @test !occursin(claims, text)
+            @test !occursin('—', text)
+        end
+        @test !occursin(claims, join_text["case"])
+        @test !occursin('—', join_text["case"])
+        # The does-not-establish limit lines stay.
+        @test occursin("does not tell us why recorded counts differ", join_text["limit"])
+        @test occursin("does not tell us which record is biologically true", filter_text["limit"])
+        @test occursin("does not establish", practice_text["limit"])
+    end
+
     @testset "C3 challenge runs protect each active input and echo exact identities" begin
         JuliaTime.warmup!()
         try
@@ -226,6 +299,18 @@ end
             @test occursin("recording disagreement", lowercase(discrepancy["evidence"]["text"]))
             @test occursin("does not tell us", lowercase(discrepancy["explanation"]["limit"]))
 
+            # B10: other routes to the same values are accepted; the explanation must not claim
+            # that the taught leftjoin or .!= ran.
+            for (move_id, code) in [("join-report-log", "leftjoin(handling_log, report, on=:tray_id)"),
+                                    ("filter-disagreement", "joined[3:3, :]")]
+                other = JuliaTime.handle_message(c3_run_request(move_id, code;
+                    request_id="c3-b10-" * move_id))
+                @test other["pass"] == true
+                @test occursin("taught way", lowercase(other["explanation"]["julia"]))
+                @test !occursin(r"matched each report row|checked the two count columns",
+                                other["explanation"]["julia"])
+            end
+
             for (name, move_id, code) in [
                 ("report mutation", "join-report-log", "answer = leftjoin(report, handling_log, on=:tray_id); report.reported_detected_n[1] = 99; answer"),
                 ("report rebinding", "join-report-log", "report = copy(report); leftjoin(report, handling_log, on=:tray_id)"),
@@ -252,6 +337,79 @@ end
         finally
             JuliaTime.shutdown!()
         end
+    end
+
+    # Repair 3 R7 (simulated re-test, 2026-09-24): the identity guard wraps the learner's code, so a
+    # parse error used to point at wrapper lines ("@ none:3") and print the internal wrapper text.
+    # A parse error must be Julia's own error for the learner's code alone, verbatim.
+    @testset "C3 parse errors report the learner's own code, not the guard wrapper" begin
+        JuliaTime.warmup!()
+        try
+            for (move_id, mode, code, location) in [
+                ("filter-disagreement", "challenge", "joined[joined.reported_detected_n <> joined.logged_detected_n, :]", "none:1:36"),
+                ("filter-disagreement", "challenge", "row_rule = joined.reported_detected_n .!= joined.logged_detected_n\njoined[row_rule <> 1, :]", "none:2:18"),
+                ("filter-disagreement", "challenge", "joined[joined.reported_detected_n .!= joined.logged_detected_n, :", "none:1:66"),
+                ("join-report-log", "challenge", "leftjoin(report handling_log, on=:tray_id)", "none:1:17"),
+                ("join-report-log", "demonstration", "leftjoin(practice_report practice_log, on=:key)", "none:1:26"),
+            ]
+                request = c3_run_request(move_id, code; request_id="c3-parse", mode=mode,
+                    activity_id=mode == "demonstration" ? "practice-join-v1" : nothing)
+                reply = JuliaTime.handle_message(request)
+                parsed = Meta.parseall(code; filename="none")
+                julia_error = only(arg.args[1] for arg in parsed.args
+                                   if arg isa Expr && arg.head in (:error, :incomplete))
+                @test reply["status"] == "error"
+                @test reply["message"] == "Julia couldn't parse this line. Look for a missing bracket, a missing comma, or a missing end keyword.\n\n" *
+                                          sprint(showerror, julia_error)
+                @test occursin("# Error @ " * location, reply["message"])
+                @test !occursin("__juliatime_", reply["message"])
+                @test reply["stdout"] == ""
+                @test reply["progress_eligible"] == false
+                @test !haskey(reply, "evidence")
+                mode == "challenge" && @test reply["pass"] == false
+            end
+
+            # R2 and R6: the exact error texts web/chapter3.js keys its leads on.
+            for (move_id, code, text) in [
+                ("filter-disagreement", "joined = leftjoin(report, handling_log, on=:tray_id)\nrow_rule = joined.reported_detected_n .!= joined.logged_detected_n\njoined[row_rule, :]", "UndefVarError: `report` not defined"),
+                ("filter-disagreement", "jars[jars.reported_detected_n .!= jars.logged_detected_n, :]", "UndefVarError: `jars` not defined"),
+                ("join-report-log", "leftjoin(left_table, right_table, on=:shared_column)", "UndefVarError: `left_table` not defined"),
+                ("join-report-log", "leftjoin(report, handling_log, on=:shared_column)", "column :shared_column not found in the left data frame"),
+                # Repair 4: a bare column name, R's $, and move 2's own placeholders.
+                ("join-report-log", "leftjoin(report, handling_log, on=tray_id)", "UndefVarError: `tray_id` not defined"),
+                ("join-report-log", "leftjoin(report, handling_log, on=report\$tray_id)", "UndefVarError: `\$` not defined"),
+                ("filter-disagreement", "joined[reported_detected_n .!= logged_detected_n, :]", "UndefVarError: `reported_detected_n` not defined"),
+                ("filter-disagreement", "joined[joined\$reported_detected_n .!= joined\$logged_detected_n, :]", "UndefVarError: `\$` not defined"),
+                ("filter-disagreement", "table[table.left_count .!= table.right_count, :]", "UndefVarError: `table` not defined"),
+                ("filter-disagreement", "joined[joined.left_count .!= joined.right_count, :]", "column name :left_count not found in the data frame"),
+            ]
+                reply = JuliaTime.handle_message(c3_run_request(move_id, code; request_id="c3-lead"))
+                @test reply["status"] == "error"
+                @test occursin(text, reply["message"])
+            end
+        finally
+            JuliaTime.shutdown!()
+        end
+    end
+
+    # Repair 4 (review of repair 3): the pre-parse runs in the server process with no time limit.
+    # When the parser itself throws (Meta.parseall threw StackOverflowError on deeply nested input),
+    # or the code is longer than 20000 characters, the helper returns nothing, so the guarded
+    # worker run, which is time-limited, handles the code. A stub parser stands in for the throw.
+    @testset "the pre-parse falls back to the guarded run when the parser throws or the code is long" begin
+        broken = "joined[joined.reported_detected_n <> joined.logged_detected_n, :]"
+        @test JuliaTime._mystery_c3_parse_error(broken) isa Meta.ParseError
+        @test JuliaTime._mystery_c3_parse_error(broken; parser=(code; kwargs...) -> throw(StackOverflowError())) === nothing
+        @test JuliaTime._mystery_c3_parse_error(broken; parser=(code; kwargs...) -> error("parser failed")) === nothing
+        called = Ref(false)
+        spy = (code; kwargs...) -> (called[] = true; Meta.parseall(code; kwargs...))
+        @test JuliaTime._mystery_c3_parse_error(broken * " "^20_000; parser=spy) === nothing
+        # Overnight 2026-09-24: 20000 characters of deep nesting still took about 20 s to parse in the
+        # server; learner code is a few hundred characters, so the cap is 4000.
+        @test JuliaTime._mystery_c3_parse_error(broken * " "^4_000; parser=spy) === nothing
+        @test !called[]
+        @test JuliaTime._mystery_c3_parse_error(broken * " "^100; parser=spy) isa Meta.ParseError
+        @test called[]
     end
 
     @testset "practice join uses separate protected inputs and never awards case progress" begin

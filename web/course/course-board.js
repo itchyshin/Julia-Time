@@ -49,10 +49,10 @@
       }
       const evidence = document.getElementById("saved-evidence");
       evidence.replaceChildren();
-      if (!model.evidence.length) text(evidence, "No historical browser evidence is saved here yet.");
+      if (!model.evidence.length) text(evidence, "No evidence is saved in this browser yet.");
       for (const item of model.evidence) {
         const line = document.createElement("p");
-        text(line, item.title + " — " + item.row_count + " saved record" + (item.row_count === 1 ? "" : "s") + ". Restored browser progress, not checked in this visit.");
+        text(line, item.line);
         evidence.append(line);
       }
       const concepts = document.getElementById("concept-list");

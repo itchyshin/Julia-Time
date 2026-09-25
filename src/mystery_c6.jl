@@ -159,7 +159,7 @@ function _mystery_c6_explanation(pass)
     if pass === true
         return Dict(
             "julia" => "The two comparisons make a Boolean row mask: the observation must be at least the lower bound and at most the upper bound.",
-            "case" => "These candidates are compatible with the retained observation under this displayed-range rule.",
+            "case" => "These candidates are compatible with the observed B09 count under this displayed-range rule.",
             "limit" => "This range check does not rank candidates, estimate their support, or explain why detections differed.",
         )
     end
@@ -203,6 +203,30 @@ function _mystery_c6_guarded_code(code::String)
            "__juliatime_c6_answer__"
 end
 
+# R7 (2026-09-24 re-test): the guard above wraps the learner's code, so a ParseError raised on the
+# wrapped text named wrapper lines and shifted line numbers. Parse the learner's code on its own
+# first; Julia stores its own ParseError in the first :error or :incomplete node.
+# Repair 4: this parse runs in the server process with no time limit. Code longer than 4000
+# characters skips it, and a parser that throws (StackOverflowError on deeply nested input) returns
+# nothing; either way the guarded worker run, which is time-limited, handles the code, as C3 does.
+# Deep nesting can also make Julia fall back to its older parser, which reports a plain String;
+# it is shown as a ParseError, as C4 does. `parser` lets a test stand in for the parser.
+function _mystery_c6_parse_error(code::String; parser=Meta.parseall)
+    length(code) > 4_000 && return nothing
+    parsed = try
+        parser(code; filename="none")
+    catch
+        return nothing
+    end
+    parsed isa Expr || return nothing
+    for ex in parsed.args
+        ex isa Expr && ex.head in (:error, :incomplete) || continue
+        problem = ex.args[1]
+        return problem isa String ? Meta.ParseError(problem) : problem
+    end
+    return nothing
+end
+
 function _mystery_c6_valid_run_envelope(msg::AbstractDict)
     get(msg, "type", nothing) == "case_run" || return (false, "C6 requires type case_run.")
     version = get(msg, "contract_version", nothing)
@@ -233,10 +257,13 @@ function mystery_c6_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
 
     env = (candidate_models=mystery_c6_candidates(), observed_count=mystery_c6_observed_count(),
            n_trials=MYSTERY_C6_N_TRIALS)
-    sandbox_result = lock(_RUN_LOCK) do
-        run_code(_mystery_c6_guarded_code(String(code)); env=env, budget=RUN_BUDGET,
-                 protected_bindings=(:candidate_models, :observed_count, :n_trials), on_status=on_status)
-    end
+    parse_error = _mystery_c6_parse_error(String(code))
+    sandbox_result = parse_error !== nothing ?
+        SandboxResult(:error, nothing, "", _format_error(parse_error)) :
+        lock(_RUN_LOCK) do
+            run_code(_mystery_c6_guarded_code(String(code)); env=env, budget=RUN_BUDGET,
+                     protected_bindings=(:candidate_models, :observed_count, :n_trials), on_status=on_status)
+        end
     display = sandbox_result.value
     columns, rows = display isa DataFrames.DataFrame ?
         (_mystery_columns(display), _mystery_c6_rows(display)) : (String[], Any[])

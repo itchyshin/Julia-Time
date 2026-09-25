@@ -4,9 +4,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
-test("C5 renders the opaque simulation fixture ID with the visible model inputs", () => {
+// repair5-7 (2026-09-24 walk-through): the opaque id stays in the data flow, not on the page.
+test("C5 keeps the opaque simulation fixture ID off the visible page", () => {
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
-  assert.match(source, /Simulation fixture ID:/);
+  assert.doesNotMatch(source, /Simulation fixture ID:/);
 });
 
 test("C5 frames its probability move as the next bounded question in the B09 investigation", () => {
@@ -70,7 +71,7 @@ test("C5 keeps concrete challenge bindings for the warned final answer, not the 
 test("C5 turns a rejected run into a syntax-specific next step without leaking its answer", () => {
   const recovery = c5.challengeRecovery("event-mask");
   assert.match(recovery, /draft is still here/i);
-  assert.match(recovery, /\.>= comparison cue above/i);
+  assert.match(recovery, /Required result line near the top of the page, or open Help me start below/);
   assert.doesNotMatch(recovery, /compare every count/i);
   assert.match(recovery, /run again/i);
   assert.doesNotMatch(recovery, /sim_counts\s*\.>=\s*observed_count/);
@@ -105,7 +106,9 @@ test("C5 teaches the Move 2 two-part return before revealing the concrete answer
   assert.match(c5.COPY["event-frequency"].bridge_note, /two labelled pieces/i);
 });
 
-test("C5 puts the generic Move 2 assignment and named-return bridge before the editor", () => {
+// Since T2 (2026-09-12) only bridge.lead renders before the editor; the shape is a gated hint stage
+// (UI-02, 2026-09-24). These assertions keep the unrendered bridge fields generic and answer-free.
+test("C5 keeps the Move 2 bridge generic: only its lead renders before the editor", () => {
   const bridge = c5.preEditorBridge("event-frequency");
   assert.match(bridge.lead, /build.*event.*return/i);
   assert.match(bridge.shape, /events = counts \.>= threshold/);
@@ -211,7 +214,8 @@ test("a failed, stale, or malformed Move 2 result cannot replace an accepted res
   assert.equal(failed.result, null);
   assert.equal(failed.evidence, null);
   assert.equal(failed.runFailure.status, "rejected");
-  assert.equal(failed.runFailure.feedback, c5.challengeRecovery("event-frequency"));
+  // repair6-4: an error run gets the error step, not "did not meet the stated check".
+  assert.equal(failed.runFailure.feedback, c5.challengeRecovery("event-frequency", {status:"error"}));
   assert.equal(c5.isNewAcceptedResult(state, failed, frequencyResult()), false);
 
   // S11b-G2 (2026-09-12 panel finding): a server-reported timeout (arriving as an ordinary

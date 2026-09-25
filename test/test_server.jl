@@ -129,6 +129,9 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                     @info "server test: arithmetic"
                     HTTP.WebSockets.send(ws, JSON.json(Dict("type" => "run", "code" => "1+1")))
                     r1 = _receive_reply(ws)
+                    # Diagnostic (2026-09-24): this first run has intermittently returned status "error" on
+                    # slow CI runners (macOS, then Windows); print the whole reply when it does.
+                    get(r1, "status", nothing) == "ok" || @info "server test: first run did not return ok" r1
                     @test r1["type"] == "result"
                     @test r1["status"] == "ok"
                     @test r1["value_repr"] == "2"
@@ -160,7 +163,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                     HTTP.WebSockets.send(ws, JSON.json(Dict("type" => "run", "code" => "undefined_name")))
                     r4 = _receive_reply(ws)
                     @test r4["status"] == "error"
-                    @test occursin("doesn't exist", r4["message"])
+                    @test startswith(r4["message"], "undefined_name is a name Julia does not know yet. Check the spelling, or define it first.\n\n")
                 end
             end
 

@@ -157,7 +157,7 @@ end
 function _mystery_explanation(pass::Bool)
     if pass
         return Dict(
-            "julia" => "The taught indexing path uses `jars[rows, columns]`: `jars.batch_id .== case_batch` makes one true-or-false value per jar, and `jars[that_result, :]` keeps the matching rows and every column.",
+            "julia" => "The taught indexing path is jars[rows, columns]. Here jars.batch_id .== case_batch makes one true-or-false value per jar, and jars[that_result, :] keeps the matching rows and every column.",
             "case" => "The returned table contains Toto's B09 report records. The records alone do not establish why any detection was or was not recorded.",
         )
     end

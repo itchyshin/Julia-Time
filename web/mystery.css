@@ -4,6 +4,9 @@
 body[data-connection="connected"] .connection-mark { background: var(--teal); }
 .run-button { color: var(--navy); }
 .sandbox-note { padding: 9px 11px; border: 1px dashed var(--teal); font-size: .88rem; }
+/* The result box sits inside the dark editor panel but paints paper, so it sets ink text too;
+   without this its feedback, error label and returned table inherit the panel's cream text. */
+.result-area { color: var(--ink); }
 @media (min-width: 761px) {
   .hero, .lab-stage { min-height: 190px; }
   .hero-copy { padding: 25px; }
@@ -21,6 +24,8 @@ body[data-connection="connected"] .connection-mark { background: var(--teal); }
 }
 
 .start-link { display: inline-block; margin-top: 4px; color: var(--cream); font-weight: 800; text-decoration-color: var(--orange); text-underline-offset: 4px; }
+/* The same link style closes the paper evidence board (Chapter 2 link): cream there is invisible. */
+.evidence-board .start-link { color: var(--teal); }
 .binding-note { margin: 0 0 12px; padding: 8px 10px; border-left: 3px solid var(--orange); background: #143b4c; font-size: .8rem; line-height: 1.45; }
 .binding-note code { color: #fff3d7; font-family: var(--mono); }
 
@@ -60,6 +65,8 @@ body[data-stage]:not([data-stage="intro"]) .masthead h1 em::before { content: " 
 #practice-output pre, #practice-shape { white-space:pre-wrap; overflow-wrap:anywhere; }
 #learn-indexing { display:block; margin:12px auto; }
 .saved-code-note { font-size:.8rem; color:var(--mint); }
+/* The practice panel is paper, not the navy editor: its restored-draft note needs a dark colour. */
+#indexing-practice .saved-code-note { color: var(--muted); }
 .answer-reference { margin: 1rem 0; padding: .85rem 1rem; border-left: 5px solid var(--orange); background: #123746; }
 .answer-reference p { margin: 0 0 .65rem; font-weight: 800; }
 .editor-panel .complete-answer-code { display:block; width:100%; margin:.45rem 0; background:#050b0f; color:#fff8e9; border:2px solid #f0ae79; padding:14px; white-space:pre-wrap; font:14px/1.55 var(--mono); }
@@ -68,3 +75,6 @@ body[data-stage]:not([data-stage="intro"]) .masthead h1 em::before { content: " 
   overflow-wrap: anywhere;
   max-width: 100%;
 }
+/* A long Julia error or returned value wraps inside the result box instead of pushing a narrow
+   window sideways; pre-wrap keeps Julia's text, spaces and line breaks exactly as sent. */
+.result-area pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }

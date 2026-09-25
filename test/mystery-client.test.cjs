@@ -123,7 +123,7 @@ test("C1 challenge errors name the missing row-rule decision without supplying a
 test("T4: the R-$ habit and the missing-broadcast-dot error get different first lines, then the shared step", () => {
   const dollarError = client.challengeRecovery({
     status: "error",
-    message: "`$` is a name that doesn't exist yet — check the spelling, or define it first.\n\nUndefVarError: `$` not defined",
+    message: "$ is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `$` not defined",
   });
   const boolError = client.challengeRecovery({
     status: "error",
@@ -133,7 +133,7 @@ test("T4: the R-$ habit and the missing-broadcast-dot error get different first 
   assert.match(dollarError, /\$ does not exist in Julia/);
   assert.match(boolError, /not one per row/);
   // Both still end in the same shared next step, so the recovery reads as one continuous path.
-  const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge if you need to place that rule in the table. Your draft is unchanged.";
+  const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Need the full answer?” below if you need to place that rule in the table. Your draft is unchanged.";
   assert.ok(dollarError.endsWith(shared));
   assert.ok(boolError.endsWith(shared));
 });

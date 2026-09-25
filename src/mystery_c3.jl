@@ -141,7 +141,7 @@ function _mystery_c3_check_exact_rows(value, expected, move_id::String)
         end
         expected_row === nothing && return (false, move_id == "join-report-log" ?
             "Check each tray_id: keep every report row once and keep its matched log values unchanged." :
-            "Check the `.!=` mask and return only the recorded row where the two counts differ.")
+            "Check the .!= row rule and return only the recorded row where the two counts differ.")
         matched[expected_row] = true
     end
     all(matched) || return (false, "At least one required tray row is missing.")
@@ -231,7 +231,7 @@ function _mystery_c3_moves()
             ],
             "hints" => [
                 Dict("stage" => "concept", "text" => "Keep a row only where the report count is not equal to the log count."),
-                Dict("stage" => "shape", "text" => "Use table[table.left_count .!= table.right_count, :] to keep rows where two columns differ."),
+                Dict("stage" => "shape", "text" => "Use table[table.left_count .!= table.right_count, :] to keep rows where two columns differ. table, left_count and right_count are placeholders, not names in this case: here table is joined, left_count is reported_detected_n, and right_count is logged_detected_n."),
                 Dict("stage" => "solution", "text" => "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]"),
             ],
             "demo_id" => "practice-join-v1",
@@ -375,20 +375,20 @@ end
 function _mystery_c3_explanation(move_id::String, pass; mode::String="challenge")
     if mode == "demonstration"
         return Dict(
-            "julia" => "`leftjoin(..., on=:key)` matched the separate practice rows by their shared key.",
+            "julia" => "The taught way in this practice is leftjoin(practice_report, practice_log, on=:key), which pairs rows from the two practice tables that share a key.",
             "case" => "This result used the separate K-A/K-B practice tables. It adds no Missing Fleas case finding.",
             "limit" => "Practice output does not establish a recording disagreement in the case.",
         )
     end
     if pass && move_id == "join-report-log"
         return Dict(
-            "julia" => "`leftjoin(..., on=:tray_id)` matched each report row to the log row carrying the same tray_id. `on=` names the join key, and `:tray_id` names that column.",
-            "case" => "The two sheets are now matched safely, one report tray to one log row. This move does not identify a disagreement or explain any biological pattern.",
+            "julia" => "The returned table passed the check. The taught way to build it is leftjoin(report, handling_log, on=:tray_id): on= names the join key, and :tray_id names that column.",
+            "case" => "In the returned table, each report tray is matched to one handling-log row. This move does not identify a disagreement or explain any biological pattern.",
             "limit" => "A matching key tells us which records were compared; it does not tell us why recorded counts differ.",
         )
     elseif pass
         return Dict(
-            "julia" => "`.!=` compared the two count columns row by row, and the true row mask kept the returned record.",
+            "julia" => "The returned row passed the check. The taught way uses .!= to compare the two count columns row by row, then keeps the rows where the answer is true.",
             "case" => "The returned row is a recording disagreement between these simulated teaching records.",
             "limit" => "This does not tell us which record is biologically true, why the records differ, or who entered them.",
         )
@@ -396,8 +396,8 @@ function _mystery_c3_explanation(move_id::String, pass; mode::String="challenge"
     return Dict(
         "julia" => move_id == "join-report-log" ?
             "Return a DataFrame that matches each report tray to its handling-log row by tray_id." :
-            "Return the one joined row selected by the `.!=` comparison.",
-        "case" => "No C3 case finding is established until the actual returned rows match the stated move.",
+            "Return the one joined row selected by the .!= comparison.",
+        "case" => "No case finding from this chapter is established until the actual returned rows match the stated move.",
         "limit" => "A failed run does not establish a biological cause or a problem with any person.",
     )
 end
@@ -470,6 +470,28 @@ function _mystery_c3_guarded_code(code::String, protected_bindings)
            "\n__juliatime_c3_answer__"
 end
 
+# R7 (simulated re-test, 2026-09-24): a parse error in the wrapped text pointed at wrapper lines
+# ("@ none:3") and printed the wrapper itself. Parse the learner's code on its own first and return
+# Julia's own ParseError for it, or `nothing` when it parses (or the parser itself fails, in which
+# case the guarded run below reports what the worker sees, as before).
+# Repair 4: this parse runs in the server process with no time limit, so code longer than 4000
+# characters skips it and goes to the guarded worker run, which is time-limited. `parser` lets a
+# test stand in for a parser that throws.
+function _mystery_c3_parse_error(code::String; parser=Meta.parseall)
+    length(code) > 4_000 && return nothing
+    parsed = try
+        parser(code; filename="none")
+    catch
+        return nothing
+    end
+    parsed isa Expr || return nothing
+    for arg in parsed.args
+        arg isa Expr && arg.head in (:error, :incomplete) && !isempty(arg.args) &&
+            arg.args[1] isa Meta.ParseError && return arg.args[1]
+    end
+    return nothing
+end
+
 function _mystery_c3_valid_run_envelope(msg::AbstractDict)
     version = get(msg, "contract_version", nothing)
     version isa Integer && !(version isa Bool) && version == 1 ||
@@ -540,9 +562,16 @@ function mystery_c3_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     else
         ((joined=mystery_c3_joined(),), (:joined,))
     end
-    sandbox_result = lock(_RUN_LOCK) do
-        run_code(_mystery_c3_guarded_code(String(code), protected_bindings); env=env, budget=RUN_BUDGET,
-                 protected_bindings=protected_bindings, on_status=on_status)
+    # A parse error runs none of the learner's code (as with the wrapper) and is formatted exactly as
+    # run_code formats every error, so the page shows Julia's own text for the learner's lines.
+    parse_error = _mystery_c3_parse_error(String(code))
+    sandbox_result = if parse_error === nothing
+        lock(_RUN_LOCK) do
+            run_code(_mystery_c3_guarded_code(String(code), protected_bindings); env=env, budget=RUN_BUDGET,
+                     protected_bindings=protected_bindings, on_status=on_status)
+        end
+    else
+        SandboxResult(:error, nothing, "", _format_error(parse_error))
     end
     display = sandbox_result.value isa DataFrames.DataFrame ? sandbox_result.value : nothing
     columns = display === nothing ? String[] : _mystery_columns(display)

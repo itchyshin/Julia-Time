@@ -65,7 +65,7 @@
       <section class="editor">
         <div class="editor-title"><div><p class="eyebrow">Write Julia</p><h2 id="editor-title">Your independent challenge</h2></div></div>
         <p>Use <code>candidate_models</code> and <code>observed_count</code> from the displayed lab file. This editor starts empty.</p>
-        <p id="pre-editor-bridge" class="bridge"></p>
+        <div id="pre-editor-bridge" class="bridge"></div>
         <section id="answer-before-editor" class="answer-reference" aria-live="polite" hidden></section>
         <label for="code">Your Julia code</label>
         <textarea id="code" rows="7" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea>
@@ -73,7 +73,7 @@
         <p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p>
         <button id="run" class="run" type="button" disabled>Run Julia →</button>
         <section id="result" class="result" aria-live="polite" tabindex="-1"></section>
-        <details class="help"><summary>Help me start <span>one small step at a time</span></summary><p id="hint" aria-live="polite"></p><button id="next-hint" class="quiet" type="button">Show the concept</button><button id="answer" class="quiet" type="button">Show complete code now</button></details>
+        <details class="help"><summary>Help me start <span>one small step at a time</span></summary><div id="hint" aria-live="polite"></div><button id="next-hint" class="quiet" type="button">Show the concept</button><button id="answer" class="quiet" type="button">Show the complete answer</button></details>
         <details><summary>R and Python comparisons <span>optional bridges, not required moves</span></summary><pre id="bridges"></pre><p>Several equivalent expressions are possible. These bridges do not add case evidence.</p></details>
       </section>
       <section id="visual" class="visual" aria-live="polite"></section>

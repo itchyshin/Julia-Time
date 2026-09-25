@@ -73,6 +73,29 @@ end
         @test !JuliaTime.check_mystery_c4(ids[[1, 2, 3]], "select-eligible")[1]
     end
 
+    @testset "learner-facing text describes the checked result, not a promised draw or expression" begin
+        # UI-07: live runs are unseeded, so the scene must not promise a reproducible plan.
+        scene = JuliaTime.mystery_c4_case_info()["scene"]["line"]
+        @test !occursin(r"reproduc"i, scene)
+        @test occursin("fair, random three-jar plan", scene)
+        # Playtest B1: the checker accepts any three distinct eligible IDs, so the accepted
+        # explanation must not claim the learner ran a particular expression.
+        accepted = JuliaTime._mystery_c4_explanation(true)["julia"]
+        @test !occursin("sample", accepted)
+        @test !occursin("replace=false", accepted)
+        @test occursin("returned three different IDs", accepted)
+        @test occursin("eligible.jar_id", accepted)
+        # Retest R3: the pass feedback is the first line under "Accepted". Code without
+        # replace=false can still draw three different IDs, so the line must describe the
+        # checked result and never claim the plan was drawn without replacement.
+        ids = JuliaTime.mystery_c4_expected_eligible().jar_id
+        passed, feedback = JuliaTime.check_mystery_c4(ids[[1, 2, 3]], C4_MOVE)
+        @test passed
+        @test !occursin("without replacement", feedback)
+        @test !occursin("replace=false", feedback)
+        @test feedback == "These are three different eligible jar IDs, so no jar is planned twice."
+    end
+
     @testset "the learner-owned sampling result is checked against fresh server truth" begin
         JuliaTime.warmup!()
         try
@@ -109,9 +132,57 @@ end
             @test wrong["status"] == "ok"
             @test wrong["pass"] == false
             @test wrong["progress_eligible"] == false
+
+            # Retest R7: a parse error is reported against the learner's own lines, as
+            # Julia reports it for that code alone, with no guard-wrapper text or line shift.
+            for (code, location) in [
+                ("sample(eligible.jar_id <> 3)", "none:1:"),
+                ("sample(eligible.jar_id, 3; replace=false))", "none:1:"),
+                ("ids = eligible.jar_id\nsample(ids, 3, replace = false", "none:2:"),
+                ("for id in eligible.jar_id\n  println(id)\n", "none:2:"),
+            ]
+                bad = JuliaTime.mystery_c4_case_run(c4_run_request(code; request_id="c4-parse"))
+                @test bad["status"] == "error"
+                @test bad["pass"] == false
+                @test bad["progress_eligible"] == false
+                @test occursin("ParseError", bad["message"])
+                @test occursin(location, bad["message"])
+                @test !occursin("__juliatime_", bad["message"])
+                @test !occursin("objectid", bad["message"])
+                @test bad["message"] == JuliaTime.run_code(code;
+                    env=(eligible=JuliaTime.mystery_c4_expected_eligible(),)).message
+                @test bad["feedback"] ==
+                    "Julia did not complete this move. Keep the supplied eligible table unchanged, then try again."
+            end
         finally
             JuliaTime.shutdown!()
         end
+    end
+
+    # Repair 4 (review of repair 3): the pre-parse runs in the server process with no time limit.
+    # When the parser itself throws (Meta.parseall threw StackOverflowError on deeply nested input),
+    # or the code is longer than 20000 characters, the helper returns nothing, so the guarded
+    # worker run, which is time-limited, handles the code. A stub parser stands in for the throw.
+    @testset "the pre-parse falls back to the guarded run when the parser throws or the code is long" begin
+        broken = "sample(eligible.jar_id <> 3)"
+        @test JuliaTime._mystery_c4_parse_error(broken) isa Meta.ParseError
+        @test JuliaTime._mystery_c4_parse_error(broken; parser=(code; kwargs...) -> throw(StackOverflowError())) === nothing
+        @test JuliaTime._mystery_c4_parse_error(broken; parser=(code; kwargs...) -> error("parser failed")) === nothing
+        called = Ref(false)
+        spy = (code; kwargs...) -> (called[] = true; Meta.parseall(code; kwargs...))
+        @test JuliaTime._mystery_c4_parse_error(broken * " "^20_000; parser=spy) === nothing
+        # Overnight 2026-09-24: 20000 characters of deep nesting still took about 20 s to parse in the
+        # server; learner code is a few hundred characters, so the cap is 4000.
+        @test JuliaTime._mystery_c4_parse_error(broken * " "^4_000; parser=spy) === nothing
+        @test !called[]
+        @test JuliaTime._mystery_c4_parse_error(broken * " "^100; parser=spy) isa Meta.ParseError
+        @test called[]
+        # Deep nesting can make Julia fall back to its older parser, which reports a plain String
+        # (measured on Julia 1.10.0: "\">\" is not a unary operator"); it still reaches the page as a ParseError.
+        flisp = (code; kwargs...) -> Expr(:toplevel, Expr(:error, "\">\" is not a unary operator"))
+        problem = JuliaTime._mystery_c4_parse_error(broken; parser=flisp)
+        @test problem isa Meta.ParseError
+        @test problem.msg == "\">\" is not a unary operator"
     end
 
     @testset "malformed envelopes cannot substitute a second C4 move" begin

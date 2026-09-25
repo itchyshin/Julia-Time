@@ -45,7 +45,7 @@ function _mystery_c4_check_plan(value)
     eligible_ids = Set(String.(mystery_c4_expected_eligible().jar_id))
     all(id -> id in eligible_ids, ids) ||
         return (false, "Each planned jar must be one of the supplied eligible IDs.")
-    return (true, "These are three distinct eligible jar IDs for a planned recheck without replacement.")
+    return (true, "These are three different eligible jar IDs, so no jar is planned twice.")
 end
 
 """Check C4's one meaningful move against a fresh, server-owned eligible list."""
@@ -97,7 +97,7 @@ function mystery_c4_case_info(; move_id::String="plan-distinct-recheck", request
         "key_note" => "The list is already eligible under the stated planning rule. A plan names what to inspect next; it does not say what a recheck would find.",
         "scene" => Dict(
             "id" => "c4-recheck-plan", "speaker" => "Toto",
-            "line" => "The question is not which jar looks suspicious. Our stated rule already made the eligible list; now make a reproducible three-jar plan.",
+            "line" => "The question is not which jar looks suspicious. Our stated rule already made the eligible list; now make a fair, random three-jar plan.",
             "image" => "assets/lab-cast.png",
             "alt" => "Itchy, Toto, Momo, and Eddie together in the Missing Fleas teaching lab.",
         ),
@@ -131,7 +131,7 @@ end
 function _mystery_c4_explanation(pass)
     if pass === true
         return Dict(
-            "julia" => "eligible.jar_id extracted the supplied jar-ID list. sample(...; replace=false) returned three different IDs from that list.",
+            "julia" => "Your code returned three different IDs, and each one is on the supplied eligible.jar_id list.",
             "case" => "These three IDs form the simulated planned recheck rack. No new observations have been made or inferred.",
             "limit" => "The plan does not tell us what a recheck would find, establish a biological cause, or explain the recording difference.",
         )
@@ -179,6 +179,28 @@ function _mystery_c4_guarded_code(code::String)
            "\nend\nobjectid(eligible) == $(identity) || error(\"The supplied eligible binding changed. Keep the source table unchanged; create a separate plan, then try again.\")\n__juliatime_c4_answer__"
 end
 
+# Retest R7: parse the learner's code on its own first, so a syntax mistake is reported by
+# Julia against the learner's own lines, not the guard wrapper's lines and names above.
+# Repair 4: this parse runs in the server process with no time limit. Code longer than 4000
+# characters skips it, and a parser that throws (StackOverflowError on deeply nested input) returns
+# nothing; either way the guarded worker run, which is time-limited, handles the code, as C3 does.
+# `parser` lets a test stand in for a parser that throws.
+function _mystery_c4_parse_error(code::String; parser=Meta.parseall)
+    length(code) > 4_000 && return nothing
+    parsed = try
+        parser(code; filename="none")
+    catch
+        return nothing
+    end
+    parsed isa Expr || return nothing
+    for node in parsed.args
+        node isa Expr && node.head in (:error, :incomplete) || continue
+        problem = node.args[1]
+        return problem isa String ? Meta.ParseError(problem) : problem
+    end
+    return nothing
+end
+
 function _mystery_c4_valid_run_envelope(msg::AbstractDict)
     version = get(msg, "contract_version", nothing)
     version isa Integer && !(version isa Bool) && version == 1 ||
@@ -214,11 +236,14 @@ function mystery_c4_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
         request_id=request_id, message="Write some Julia before running the case.",
         feedback="The editor is empty, so no sandbox worker was started.")
 
-    sandbox_result = lock(_RUN_LOCK) do
-        run_code(_mystery_c4_guarded_code(String(code));
-                 env=(eligible=mystery_c4_expected_eligible(),), budget=RUN_BUDGET,
-                 protected_bindings=(:eligible,), on_status=on_status)
-    end
+    parse_error = _mystery_c4_parse_error(String(code))
+    sandbox_result = parse_error !== nothing ?
+        SandboxResult(:error, nothing, "", _format_error(parse_error)) :
+        lock(_RUN_LOCK) do
+            run_code(_mystery_c4_guarded_code(String(code));
+                     env=(eligible=mystery_c4_expected_eligible(),), budget=RUN_BUDGET,
+                     protected_bindings=(:eligible,), on_status=on_status)
+        end
     display = sandbox_result.value
     columns, rows = if display isa AbstractVector && all(id -> id isa AbstractString, display)
         (["jar_id"], _mystery_c4_plan_rows(display))

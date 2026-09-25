@@ -118,6 +118,9 @@ end
             @test reply["result_data"]["rows"] == reply["rows"]
             @test reply["result_visual"]["data"]["rows"] == reply["rows"]
             @test occursin("compatible", lowercase(reply["explanation"]["case"]))
+            # repair6-6 (2026-09-24 browser check): the page calls it the observed B09 count, as Chapter 5 does.
+            @test occursin("observed B09 count", reply["explanation"]["case"])
+            @test !occursin("retained", lowercase(reply["explanation"]["case"]))
             @test occursin("does not rank", lowercase(reply["explanation"]["limit"]))
 
             for (label, bad_code) in [
@@ -140,6 +143,63 @@ end
         finally
             JuliaTime.shutdown!()
         end
+    end
+
+    # R7 (2026-09-24 re-test): the identity guard wraps the learner's code before it is parsed, so a
+    # ParseError used to name a line the learner never wrote (__juliatime_c6_answer__ = begin, or
+    # the wrapper's own end), shift the line number by three, and could even change the reason.
+    # Julia's own error for the learner's code alone is what reaches the page; measured on 1.10.0.
+    @testset "a parse error points at the learner's own code, not the guard wrapper (R7)" begin
+        JuliaTime.warmup!()
+        try
+            for (code, location, learner_line, reason) in [
+                ("candidate_models[candidate_models.lower <> observed_count, :]", "none:1:42",
+                 "candidate_models[candidate_models.lower <> observed_count, :]", "not a unary operator"),
+                ("row_rule = (candidate_models.lower .<= observed_count)\ncandidate_models[row_rule, :",
+                 "none:2:29", "candidate_models[row_rule, :", "Expected `]`"),
+            ]
+                reply = JuliaTime.mystery_c6_case_run(c6_run_request(code; request_id="c6-parse"))
+                @test reply["status"] == "error"
+                @test reply["pass"] == false
+                @test reply["progress_eligible"] == false
+                @test reply["value_repr"] == ""
+                message = reply["message"]
+                @test startswith(message, "Julia couldn't parse this line")
+                @test occursin("# Error @ $(location)\n", message)
+                @test occursin(learner_line, message)
+                @test occursin(reason, message)
+                @test !occursin("__juliatime_", message)
+                @test !occursin("\nend\n", message)   # no wrapper end line
+            end
+        finally
+            JuliaTime.shutdown!()
+        end
+    end
+
+    # Repair 4 (review of repair 3): the pre-parse runs in the server process with no time limit.
+    # When the parser itself throws (Meta.parseall threw StackOverflowError on deeply nested input),
+    # or the code is longer than 20000 characters, the helper returns nothing, so the guarded
+    # worker run, which is time-limited, handles the code. A stub parser stands in for the throw.
+    @testset "the pre-parse falls back to the guarded run when the parser throws or the code is long" begin
+        broken = "candidate_models[candidate_models.lower <> observed_count, :]"
+        @test JuliaTime._mystery_c6_parse_error(broken) isa Meta.ParseError
+        @test JuliaTime._mystery_c6_parse_error(broken; parser=(code; kwargs...) -> throw(StackOverflowError())) === nothing
+        @test JuliaTime._mystery_c6_parse_error(broken; parser=(code; kwargs...) -> error("parser failed")) === nothing
+        called = Ref(false)
+        spy = (code; kwargs...) -> (called[] = true; Meta.parseall(code; kwargs...))
+        @test JuliaTime._mystery_c6_parse_error(broken * " "^20_000; parser=spy) === nothing
+        # Overnight 2026-09-24: 20000 characters of deep nesting still took about 20 s to parse in the
+        # server; learner code is a few hundred characters, so the cap is 4000.
+        @test JuliaTime._mystery_c6_parse_error(broken * " "^4_000; parser=spy) === nothing
+        @test !called[]
+        @test JuliaTime._mystery_c6_parse_error(broken * " "^100; parser=spy) isa Meta.ParseError
+        @test called[]
+        # Deep nesting can make Julia fall back to its older parser, which reports a plain String
+        # (measured on Julia 1.10.0: "\">\" is not a unary operator"); it still reaches the page as a ParseError.
+        flisp = (code; kwargs...) -> Expr(:toplevel, Expr(:error, "\">\" is not a unary operator"))
+        problem = JuliaTime._mystery_c6_parse_error(broken; parser=flisp)
+        @test problem isa Meta.ParseError
+        @test problem.msg == "\">\" is not a unary operator"
     end
 
     @testset "identity fences reject malformed metadata and requests" begin

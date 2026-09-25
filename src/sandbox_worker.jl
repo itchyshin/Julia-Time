@@ -1,7 +1,9 @@
 # Private worker entry point for Julia Time's process sandbox.
 #
 # The parent and this process exchange only Julia-serialised request/response values over
-# stdin/stdout.  Keeping the worker outside `Distributed.addprocs` matters: after several
+# stdin/stdout.  Each request is acknowledged with a start receipt before anything in it is
+# evaluated (`_eval_on_worker`), which lets the parent tell a worker that died while idle from
+# one that died while running a learner's line.  Keeping the worker outside `Distributed.addprocs` matters: after several
 # forced worker kills, Julia 1.10's Distributed launcher can stop starting fresh workers even
 # when it reports none alive.  A learner should always receive either a result or a timeout,
 # never inherit that launcher dead end.

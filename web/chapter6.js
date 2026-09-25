@@ -18,6 +18,8 @@
   const COPY = {
     concept: "A candidate is compatible here only when its displayed range contains the observed count. This is a stated range rule, not a ranking.",
     shape: "table[row_rule, :]",
+    // B9 (simulated playtest, P21/P43): name the template placeholders and map them, as in C3.
+    shape_note: "table, lower_bound, target and upper_bound are placeholders, not names in this case. In this case, table is candidate_models, lower_bound is candidate_models.lower, target is observed_count, and upper_bound is candidate_models.upper. row_rule is a name you make yourself: first set row_rule = your yes-or-no rule, then use it.",
     range_rule: "Template only — not code to run yet: row_rule = (lower_bound .<= target) .& (target .<= upper_bound). .<= compares the target with every displayed bound; .& keeps true only when both bound checks are true.",
     selection: "Template only — not code to run yet: table[row_rule, :]. Put the yes/no row rule before the comma; : means keep all columns.",
     solution: "candidate_models[(candidate_models.lower .<= observed_count) .& (observed_count .<= candidate_models.upper), :]",
@@ -25,8 +27,25 @@
   };
 
   function initialEditorText() { return ""; }
-  function challengeRecovery() {
-    return "That result did not meet the stated check. Your draft is still here. Use the paired-comparisons cue above, revise it, and run again.";
+  // UI-12 (2026-09-24 audit): like C1's T4 recovery, an optional first line is keyed on Julia's
+  // actual error text for a missing broadcast dot. The shared next step after it is unchanged and
+  // names no case input.
+  function recoveryLead(message) {
+    const text = message && message.status === "error" ? String(message.message || "") : "";
+    if (/non-boolean \(BitVector\) used in boolean context/.test(text)) return "Julia needed a single true or false here, which is what && and || expect, but each dotted comparison gives one value per row. Use .& to keep a row only when both checks are true.";
+    if (/no method matching isless\([^)]*Vector/.test(text)) return "Julia cannot compare a whole column with one number using a comparison without a dot, such as <=. Put a dot before the comparison, as in .<=, so Julia compares every row.";
+    if (/no method matching &\(::BitVector, ::BitVector\)/.test(text)) return "A plain & cannot combine two columns of true-or-false values. Put a dot before it, as in .&, so Julia combines them row by row.";
+    return "";
+  }
+  function challengeRecovery(message) {
+    // repair5-5 (2026-09-24 walk-through): name the labelled Required result line and the Help me start
+    // control, which the page really shows; no element is labelled as a "cue".
+    // repair6-4 (2026-09-24 browser check): an error run returned no result, so it gets its own step.
+    const shared = message && message.status === "error"
+      ? "Your draft is still here. Use the Original Julia error below to decide what to change, or open Help me start below, then run again."
+      : "That result did not meet the stated check. Your draft is still here. Compare it with the Required result line near the top of the page, or open Help me start below, then revise it and run again.";
+    const lead = recoveryLead(message);
+    return lead ? `${lead} ${shared}` : shared;
   }
   function id(prefix) { return (prefix || "c6") + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9); }
   function validAttempt(value) { return /^[a-z0-9-]{1,80}$/.test(value || ""); }
@@ -90,6 +109,11 @@
     if (!validInfo(metadata)) return [];
     return metadata.inputs[0].rows.map(row => ({ model: row.model, p: row.p }));
   }
+  // repair6-5 (2026-09-24 browser check): a card shows p separately only when its name does not already.
+  function cardProbabilityLabel(card) {
+    const label = `p = ${card.p}`;
+    return String(card.model).includes(label) ? "" : label;
+  }
   function applyCaseInfo(state, message) {
     if (!state.infoRequest || !message || message.type !== "case" || !same(message, state.infoRequest) || !validInfo(message)) return state;
     return Object.assign({}, state, { infoRequest: null, metadata: message, metadataFailure: "" });
@@ -129,7 +153,7 @@
     const accepted = message.status === "ok" && message.pass === true && message.progress_eligible === true && validResult(state.metadata, message);
     const runFailure = accepted ? null : message.status === "timeout"
       ? { status: "timeout", message: "This check took too long. Your draft is still here; check it, then run again." }
-      : { status: "rejected", message: challengeRecovery(), original_error: message.status === "error" ? String(message.message || message.feedback || "") : "" };
+      : { status: "rejected", run_status: message.status, message: challengeRecovery(message), original_error: message.status === "error" ? String(message.message || message.feedback || "") : "" };
     return Object.assign({}, state, { pending: null, expired: false, statusMessage: null, result: message, evidence: accepted ? { move_id: MOVE, result_data: message.result_data } : null, runFailure });
   }
   function disconnect(state) { return Object.assign({}, state, { connection: "offline", infoRequest: null, pending: null, expired: false, statusMessage: null }); }
@@ -144,11 +168,21 @@
     if (!hasCode) return "This challenge editor starts empty. Write your own Julia result.";
     return restored ? "Restored your saved draft — it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
   }
+  // UI-03 (2026-09-24 audit): after a run the caption says what Julia did with this code, as C3 and
+  // C4 do. It says "unrun draft" again only once the learner edits the code.
+  function draftStatus(message) {
+    if (!message || message.status === "timeout") return "This code was not accepted; your draft is still here to check and run again.";
+    if (message.status === "error") return "Julia could not run this code; your draft is still here to revise and run again.";
+    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "Julia checked this code just now and accepted it; you can change it and run again.";
+    if (message.status === "ok") return "Julia ran this code, but the returned result does not yet meet the stated requirement.";
+    return "This code was not accepted; your draft is still here to check and run again.";
+  }
   function runOutcomeStatus(message) {
     if (!message) return "";
     if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "✓ Accepted — evidence saved.";
     if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
-    if (message.status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
+    // repair5-6: a rejected run keeps Julia's own status, so an error gets the same title as C1-C4.
+    if (message.status === "error" || message.run_status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
     return "Not accepted — no evidence was saved.";
   }
   function shouldShowReconnect(state) { return !state.fileUrlRecovery && (Boolean(state.metadataFailure) || (state.connection !== "connected" && state.connection !== "connecting" && state.connection !== "idle")); }
@@ -177,18 +211,16 @@
 
   function caseClosure(metadata, resultData) {
     if (!validInfo(metadata) || !validResult(metadata, {result_data:resultData})) return null;
-    const models = resultData.rows.map(row => row.model).join(", ");
     const candidateRates = resultData.rows.map(row => `Candidate p = ${row.p}`).join(", ");
     return {
       title:"Case closed for today — a careful conclusion",
-      conclusion:"The disputed B09 records do not justify saying the fleas vanished: the report and handling log disagree, so the next responsible action is a reproducible recheck.",
+      conclusion:"The disputed B09 records do not justify saying the fleas vanished: the report and handling log disagree, so the next responsible action is a fair recheck of new observations.",
       findings:[
         `The observed B09 count is ${metadata.observed_count}; it is a record, not a biological verdict.`,
         "The report and handling log disagree for tray T-C.",
         `${candidateRates} stayed compatible with the displayed range check; that does not make either explanation true.`,
         "The recheck chapter made a plan for new observations; it did not create any.",
-        "The probability chapter described one stated teaching model; it did not identify a cause.",
-        `Your range check retained these displayed candidate rows: ${models}.`
+        "The probability chapter described one stated teaching model; it did not identify a cause."
       ],
       next:"The planned recheck is the next thing that could distinguish them: collect a new observation rather than assume its outcome.",
       limit:"Compatible candidates are not true or ranked explanations, and this check does not choose a cause."
@@ -199,8 +231,11 @@
     if (!courseClient || typeof courseClient.caseFile !== "function") return [];
     return courseClient.caseFile(new Set(Array.isArray(acceptedKeys) ? acceptedKeys : []));
   }
-  function boardUpdateLine(accepted, established) {
-    return accepted && established ? "Case Board updated: " + established : "";
+  // repair5-8 (2026-09-24 walk-through): the Chapter 6 fact is the last line of the Case file just
+  // below, so this line points there instead of repeating it, and only when Chapter 6 is saved.
+  function boardUpdateLine(rows) {
+    const row = Array.isArray(rows) ? rows.find(item => item && item.chapter === "C6") : null;
+    return row && row.label === "ESTABLISHED" ? "Case Board updated: your Chapter 6 finding is now the last line of the Case file below." : "";
   }
 
   function rangePracticeStep(stage) {
@@ -211,11 +246,24 @@
     ][Math.max(0, Math.min(2, Number.isInteger(stage) ? stage : 0))];
   }
 
+  // UI-11 (2026-09-24 audit): an opened hint stays on screen when the next one opens, as in C1-C4.
+  // The full answer itself stays in its reference panel above the editor, never in this list.
+  function visibleHints(hint) {
+    const stages = [[COPY.concept], [`Code shape: ${COPY.shape}`, COPY.shape_note], [`Build the row rule: ${COPY.range_rule}`], [`Select rows: ${COPY.selection}`], ["Complete runnable answer is shown in the code panel above your editor."]];
+    const count = Math.max(0, Math.min(stages.length, Number.isInteger(hint) ? hint : 0));
+    return count === 0 ? ["Open a small hint only if you need it."] : stages.slice(0, count).flat();
+  }
+
   function preEditorBridgeVisible(hintLevel) { return Number.isInteger(hintLevel) && hintLevel >= 2; }
+  // repair5-1 (2026-09-24 walk-through): the lead promises two checks, so both are listed, in the
+  // row-rule hint's placeholders. Only the lower one is also shown with case names (2026-09-09).
   function preEditorBridge() {
     return {
       lead: "Build the two yes-or-no checks before you write the case version:",
-      firstCheck: "Start with the named lower-bound check: candidate_models.lower .<= observed_count. This returns one true-or-false value per candidate model. Then add the upper-bound check and combine them.",
+      checks: [
+        { label: "Lower-bound check", template: "lower_bound .<= target", inCase: "candidate_models.lower .<= observed_count", note: "This gives one true-or-false value per candidate model." },
+        { label: "Upper-bound check", template: "target .<= upper_bound", inCase: "", note: "Write it with the named case inputs in the same way. It also gives one true-or-false value per candidate model." }
+      ],
       shape: "row_rule = (lower_bound .<= target) .& (target .<= upper_bound)\ntable[row_rule, :]",
       explanation: "Replace the generic names with the named case inputs above. This is a code shape, not the case answer."
     };
@@ -233,12 +281,20 @@
     if (el.board) el.board.href = caseBoard;
     if (el.sceneBoard) el.sceneBoard.href = caseBoard;
     let restoredDraft = false;
+    let lastRun = null; // UI-03: the run Julia last checked for this editor text; cleared by any edit.
     try { const drafts = course && course.readChallengeDrafts ? course.readChallengeDrafts(storage, attempt) : {}; el.code.value = drafts && drafts["C6/compatible-models"] || ""; restoredDraft = el.code.value.length > 0; } catch (_) {}
 
     function text(value) { return value == null ? "" : String(value); }
     function clearInfoTimer() { if (infoTimer) { clearTimeout(infoTimer); infoTimer = null; } }
     function clearRunTimer() { if (runTimer) { clearTimeout(runTimer); runTimer = null; } }
-    function armRunDeadline(requestId) { clearRunTimer(); runTimer = setTimeout(() => { state = expireRun(state, requestId); if (state.runFailure) { showResult(state.runFailure); el.code.focus(); } render(); }, RUN_DEADLINE_MS); }
+    function armRunDeadline(requestId) { clearRunTimer(); runTimer = setTimeout(() => { state = expireRun(state, requestId); if (state.runFailure) { lastRun = state.runFailure; showResult(state.runFailure); el.code.focus(); } render(); }, RUN_DEADLINE_MS); }
+    function draftCaption() { return lastRun ? draftStatus(lastRun) : draftNotice(Boolean(el.code.value), restoredDraft); }
+    function renderHints(lines) {
+      const shown = Array.from(el.hint.children, item => item.textContent);
+      const grows = shown.length <= lines.length && shown.every((line, index) => line === lines[index]);
+      if (!grows) el.hint.replaceChildren();
+      lines.slice(grows ? shown.length : 0).forEach(line => { const p = document.createElement("p"); p.textContent = line; el.hint.append(p); });
+    }
     function send(message) { if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
     function drawModelCards() {
       if (!el.modelCards) return;
@@ -250,10 +306,11 @@
         return;
       }
       candidateModelCards(state.metadata).forEach(card => {
-        const item = document.createElement("li"), name = document.createElement("strong"), probability = document.createElement("code");
+        const item = document.createElement("li"), name = document.createElement("strong"), label = cardProbabilityLabel(card);
         name.textContent = card.model;
-        probability.textContent = `p = ${card.p}`;
-        item.append(name, " · ", probability, " · assumed recorded-detection chance for one jar in this candidate model.");
+        item.append(name);
+        if (label) { const probability = document.createElement("code"); probability.textContent = label; item.append(" · ", probability); }
+        item.append(" · assumed recorded-detection chance for one jar in this candidate model.");
         el.modelCards.append(item);
       });
     }
@@ -263,12 +320,14 @@
         if (state.metadataFailure) { const p = document.createElement("p"); p.className = "recovery"; p.textContent = state.metadataFailure; el.data.append(p); }
         return;
       }
+      const label = document.createElement("p"), name = document.createElement("code");
+      label.className = "data-label"; name.textContent = state.metadata.inputs[0].id; label.append("Julia name: ", name);
       const caption = document.createElement("p"); caption.textContent = "Candidate detection models — supplied simulated teaching table.";
       const table = document.createElement("table"), head = document.createElement("thead"), body = document.createElement("tbody"), header = document.createElement("tr");
       state.metadata.inputs[0].columns.forEach(column => { const th = document.createElement("th"); th.textContent = column; header.append(th); });
       head.append(header);
       state.metadata.inputs[0].rows.forEach(row => { const tr = document.createElement("tr"); state.metadata.inputs[0].columns.forEach(column => { const td = document.createElement("td"); td.textContent = text(row[column]); tr.append(td); }); body.append(tr); });
-      table.append(head, body); el.data.append(caption, table);
+      table.append(head, body); el.data.append(label, caption, table);
     }
     function drawScaffold() {
       el.scaffold.replaceChildren();
@@ -307,8 +366,10 @@
     function acceptedMoveKeys() {
       try { return course && course.acceptedMoves ? course.acceptedMoves(course.readCourseState(storage, attempt)).map(move => move.key) : []; } catch (_) { return []; }
     }
-    function buildCaseFileSection(rows, closure) {
-      const section = document.createElement("section"), title = document.createElement("h2"), list = document.createElement("ol"), next = document.createElement("p");
+    // UI-15 (2026-09-24 audit): the recheck sentence is shown once, in the closing block above,
+    // where "them" follows the retained candidates; the Case file no longer repeats it.
+    function buildCaseFileSection(rows) {
+      const section = document.createElement("section"), title = document.createElement("h2"), list = document.createElement("ol");
       title.textContent = "Case file";
       rows.forEach(row => {
         const item = document.createElement("li"), chapterLabel = document.createElement("strong"), fact = document.createElement("span");
@@ -318,8 +379,7 @@
         item.append(chapterLabel, fact);
         list.append(item);
       });
-      next.className = "limit"; next.textContent = closure.next;
-      section.append(title, list, next);
+      section.append(title, list);
       return section;
     }
     function drawVisual(){
@@ -337,26 +397,35 @@
       closingNext.textContent = closure.next; closingLimit.className = "limit"; closingLimit.textContent = closure.limit;
       review.href = boardUrl(location.search); review.textContent = "Review the Case Board →";
       speed.href = "course/speed-lab.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); speed.textContent = "Optional: open the comparison laboratory →";
-      boardUpdate.className = "board-update"; boardUpdate.textContent = boardUpdateLine(rows.length > 0, rows.length ? rows[rows.length - 1].fact : "");
+      boardUpdate.className = "board-update"; boardUpdate.textContent = boardUpdateLine(rows);
       closing.append(closingTitle, closingText, closingFindings, closingNext, closingLimit, review, document.createTextNode(" "), speed, boardUpdate); section.append(title, intro, list, limit, closing);
-      if (rows.length) section.append(buildCaseFileSection(rows, closure));
+      if (rows.length) section.append(buildCaseFileSection(rows));
       el.visual.append(section);
     }
     function render() {
       if (el.preEditorBridge) {
-        if (preEditorBridgeVisible(hint)) { const bridge = preEditorBridge(), first = document.createElement("code"), shape = document.createElement("pre"); first.textContent = "candidate_models.lower .<= observed_count"; shape.className = "template-code"; shape.style.whiteSpace = "pre-wrap"; shape.textContent = bridge.shape; el.preEditorBridge.replaceChildren(document.createTextNode(bridge.lead), document.createElement("br"), first, document.createTextNode(" — one true-or-false value per candidate model."), document.createElement("br"), document.createTextNode("Template — replace these placeholders; do not run this:"), shape, document.createTextNode(bridge.explanation)); }
+        if (preEditorBridgeVisible(hint)) {
+          const bridge = preEditorBridge(), lead = document.createElement("p"), checks = document.createElement("ol"), templateLabel = document.createElement("p"), shape = document.createElement("pre"), explanation = document.createElement("p");
+          const code = value => { const item = document.createElement("code"); item.textContent = value; return item; };
+          lead.textContent = bridge.lead;
+          bridge.checks.forEach(check => { const item = document.createElement("li"); item.append(`${check.label}: `, code(check.template), "."); if (check.inCase) item.append(" In this case: ", code(check.inCase), "."); item.append(` ${check.note}`); checks.append(item); });
+          templateLabel.textContent = "Template — replace these placeholders; do not run this:";
+          shape.className = "template-code"; shape.style.whiteSpace = "pre-wrap"; shape.textContent = bridge.shape;
+          explanation.textContent = bridge.explanation;
+          el.preEditorBridge.replaceChildren(lead, checks, templateLabel, shape, explanation);
+        }
         else el.preEditorBridge.replaceChildren();
       }
-      if (el.draft) el.draft.textContent = draftNotice(Boolean(el.code.value), restoredDraft);
+      if (el.draft) el.draft.textContent = draftCaption();
       el.status.textContent = connectionStatusText(state);
       el.run.disabled = state.connection !== "connected" || !state.metadata || isRunPending(state);
       el.reconnect.hidden = !shouldShowReconnect(state);
-      el.observed.textContent = state.metadata ? `Retained B09 detection count: ${state.metadata.observed_count}. Rule: lower ≤ observed_count ≤ upper.` : state.metadataFailure ? "The candidate table is unavailable; your saved draft is safe." : "The retained observation will appear when the lab file loads.";
+      el.observed.textContent = state.metadata ? `Observed B09 count: ${state.metadata.observed_count}. Rule: lower ≤ observed_count ≤ upper.` : state.metadataFailure ? "The candidate table is unavailable; your saved draft is safe." : "The observed B09 count will appear when the lab file loads.";
       if (el.answerReference) {
         if (hint >= 5) { const label = document.createElement("p"), code = document.createElement("pre"); label.textContent = "Reference code answer — runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or add evidence."; code.className = "complete-answer-code"; code.textContent = COPY.solution; el.answerReference.replaceChildren(label, code); el.answerReference.hidden = false; }
         else { el.answerReference.replaceChildren(); el.answerReference.hidden = true; }
       }
-      el.hint.textContent = hint === 0 ? "Open a small hint only if you need it." : hint === 1 ? COPY.concept : hint === 2 ? `Code shape: ${COPY.shape}` : hint === 3 ? `Build the row rule: ${COPY.range_rule}` : hint === 4 ? `Select rows: ${COPY.selection}` : "Complete runnable answer is shown in the code panel above your editor.";
+      renderHints(visibleHints(hint));
       el.nextHint.textContent = hint >= 5 ? "All help shown" : hint === 0 ? "Show the concept" : hint === 1 ? "Show the code shape" : hint === 2 ? "Show the row rule" : hint === 3 ? "Show row selection" : "Show complete code now";
       el.nextHint.disabled = hint >= 5;
       el.bridges.textContent = "R (dplyr)\ndplyr::filter(candidate_models, lower <= observed_count, observed_count <= upper)\n\nPython (pandas)\ncandidate_models.loc[(candidate_models[\"lower\"] <= observed_count) & (observed_count <= candidate_models[\"upper\"])]";
@@ -396,7 +465,7 @@
           if (state !== before) { armRunDeadline(state.pending.request_id); render(); }
           return;
         }
-        else { state = failCaseInfo(state, message); if (state === before) { state = applyCaseResult(state, message); if (state !== before) { clearRunTimer(); showResult(state.runFailure || message); if (state.evidence) record(message); } } }
+        else { state = failCaseInfo(state, message); if (state === before) { state = applyCaseResult(state, message); if (state !== before) { clearRunTimer(); lastRun = state.evidence ? message : { status: message.status, pass: false }; showResult(state.runFailure || message); if (state.evidence) record(message); } } }
         render();
         if (state.runFailure) el.code.focus(); else if (state.result) focusResult();
       };
@@ -406,7 +475,7 @@
     el.start.addEventListener("click", () => { el.scene.hidden = true; el.work.hidden = false; connect(); focusElement(el.title); });
     el.back.addEventListener("click", () => { clearRunTimer(); el.work.hidden = true; el.scene.hidden = false; focusElement(el.sceneTitle); });
     el.reconnect.addEventListener("click", connect);
-    el.code.addEventListener("input", () => { clearRunTimer(); persist(); });
+    el.code.addEventListener("input", () => { clearRunTimer(); lastRun = null; persist(); if (el.draft) el.draft.textContent = draftCaption(); });
     el.run.addEventListener("click", () => { persist(); state = beginRun(state, id("c6-run")); if (state.pending) { const requestId = state.pending.request_id; el.result.replaceChildren(); el.visual.replaceChildren(); send(runMessage(el.code.value, requestId)); armRunDeadline(requestId); render(); } });
     el.code.addEventListener("keydown", event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); el.run.click(); } });
     el.nextHint.addEventListener("click", () => { hint = Math.min(5, hint + 1); render(); });
@@ -415,5 +484,5 @@
     render();
   }
 
-  return { CASE_ID, CHAPTER, MOVE, COPY, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, initialEditorText, challengeRecovery, beginInfo, failCaseInfo, expireInfo, candidateModelCards, applyCaseInfo, beginRun, expireRun, isRunPending, applyRunStatus, applyCaseResult, disconnect, connectionPlan, enterFileUrlRecovery, connectionStatusText, draftNotice, runOutcomeStatus, shouldShowReconnect, infoMessage, runMessage, boardUrl, learningScaffold, caseStatus, caseClosure, caseFileRows, boardUpdateLine, rangePracticeStep, preEditorBridge, preEditorBridgeVisible, init };
+  return { CASE_ID, CHAPTER, MOVE, COPY, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, initialEditorText, challengeRecovery, beginInfo, failCaseInfo, expireInfo, candidateModelCards, applyCaseInfo, beginRun, expireRun, isRunPending, applyRunStatus, applyCaseResult, disconnect, connectionPlan, enterFileUrlRecovery, connectionStatusText, draftNotice, draftStatus, runOutcomeStatus, shouldShowReconnect, infoMessage, runMessage, boardUrl, learningScaffold, caseStatus, caseClosure, cardProbabilityLabel, caseFileRows, boardUpdateLine, rangePracticeStep, visibleHints, preEditorBridge, preEditorBridgeVisible, init };
 });

@@ -52,6 +52,42 @@ function _mystery_c2_rows(df::DataFrames.DataFrame)
             for i in 1:DataFrames.nrow(df)]
 end
 
+# B14 (2026-09-24 playtest): JSON turns Julia's Float64 1.0 into the browser number 1, so the
+# page drew it as "1". Send Julia's own printed text for each numeric cell next to the numbers.
+function _mystery_c2_row_text(df::DataFrames.DataFrame)
+    columns = _mystery_columns(df)
+    return [Dict{String, String}(column => sprint(print, df[i, column]) for column in columns
+                                 if df[i, column] isa Real && !(df[i, column] isa Bool))
+            for i in 1:DataFrames.nrow(df)]
+end
+
+# B12 (2026-09-24 playtest): R's summary$rate = ... raises no error in Julia. Julia's parser reads
+# it as a one-line definition of a new function named $, so summary is returned unchanged. Only
+# that parse (name$name on the left of =) is recognised; string interpolation is a different form.
+function _mystery_c2_dollar_note(code::AbstractString)
+    found = Ref{Any}(nothing)
+    function visit(ex)
+        found[] === nothing || return
+        ex isa Expr || return
+        lhs = ex.head == :(=) ? ex.args[1] : nothing
+        if lhs isa Expr && lhs.head == :call && length(lhs.args) == 3 && lhs.args[1] == :$ &&
+           lhs.args[2] isa Symbol && lhs.args[3] isa Symbol
+            found[] = (lhs.args[2], lhs.args[3])
+            return
+        end
+        foreach(visit, ex.args)
+    end
+    try
+        visit(Meta.parseall(code))
+    catch
+        return nothing
+    end
+    found[] === nothing && return nothing
+    table, column = found[]
+    return "Julia read $(table)\$$(column) = ... as a new function named \$, so $(table) did not change. " *
+           "R's \$ does not reach a column in Julia: write $(table).$(column), with a dot."
+end
+
 function _mystery_c2_columns(value, expected_columns)
     value isa DataFrames.DataFrame || return false
     actual = _mystery_columns(value)
@@ -129,17 +165,17 @@ end
 function _mystery_c2_explanation(step::String, pass::Bool)
     if pass && step == "group"
         return Dict(
-            "julia" => "In the taught approach, `groupby(jars, :tray_id)` keeps the B09 records and partitions them by tray label. This accepted result has that partition.",
+            "julia" => "In the taught approach, groupby(jars, :tray_id) keeps the B09 records and partitions them by tray label. This accepted result has that partition.",
             "case" => "The records are now organised for a tray-by-tray comparison; this is not a causal finding.",
         )
     elseif pass && step == "counts"
         return Dict(
-            "julia" => "In the taught approach, `nrow` counts rows in each tray group and `sum` adds true detected values. This accepted table has those B09 counts.",
+            "julia" => "In the taught approach, nrow counts rows in each tray group and sum adds true detected values. This accepted table has those B09 counts.",
             "case" => "The displayed counts describe the recorded B09 observations, not why they differ.",
         )
     elseif pass
         return Dict(
-            "julia" => "In the taught approach, `detected_n ./ n` divides each tray's detected count by its number of records. This accepted table has those B09 rates.",
+            "julia" => "In the taught approach, detected_n ./ n divides each tray's detected count by its number of records. This accepted table has those B09 rates.",
             "case" => "The rates describe a pattern in this simulated teaching fixture; they do not identify its cause.",
         )
     end
@@ -245,10 +281,13 @@ function mystery_c2_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     value_repr = r.value === nothing ? "" : _mystery_safe_repr(r.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     pass, feedback = r.status == :ok ? check_mystery_c2(r.value, String(step)) :
-        (false, "Julia did not produce the requested C2 result.")
+        (false, "Julia did not produce the requested result for this move.")
+    dollar_note = pass ? nothing : _mystery_c2_dollar_note(code)
+    dollar_note === nothing || (feedback = dollar_note * " " * feedback)
     result = _mystery_c2_result(request_id=String(request_id), step=String(step), status=String(r.status),
         pass=pass, message=r.message, stdout=r.stdout, rows=rows, columns=columns, feedback=feedback,
         value_repr=value_repr)
+    result["row_text"] = display === nothing ? Any[] : _mystery_c2_row_text(display)
     if pass && step == "rates"
         result["evidence"] = Dict(
             "id" => "c2-b09-tray-rates",

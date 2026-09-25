@@ -214,6 +214,96 @@ end
             @test !haskey(reply, "evidence")
         end
     end
+
+    # R7 (2026-09-24 re-test): the identity guard wraps the learner's code before it is parsed, so a
+    # ParseError used to name a line the learner never wrote (__juliatime_c5_answer__ = begin, or
+    # the wrapper's own end) and shift the line number by two. Julia's own error for the learner's
+    # code alone is what reaches the page; locations below were measured on Julia 1.10.0.
+    @testset "a parse error points at the learner's own code, not the guard wrapper (R7)" begin
+        info = JuliaTime.mystery_c5_case_info(c5_info_request(request_id="c5-info-parse"))
+        simulation_id = info["simulation_id"]
+        JuliaTime.warmup!()
+        try
+            for (move_id, code, location, learner_line, reason) in [
+                ("event-mask", "sim_counts <> observed_count", "none:1:13",
+                 "sim_counts <> observed_count", "not a unary operator"),
+                ("event-frequency", "events = sim_counts .>= observed_count\n(events = events, frequency = sum(events) / length(events)",
+                 "none:2:59", "(events = events, frequency = sum(events) / length(events)", "Expected `)`"),
+                ("event-frequency", "events = sim_counts .>= observed_count\nend", "none:2:1", "end", "invalid identifier"),
+            ]
+                reply = JuliaTime.mystery_c5_case_run(c5_run_request(move_id, code, simulation_id;
+                    request_id="c5-parse"))
+                @test reply["status"] == "error"
+                @test reply["pass"] == false
+                @test reply["progress_eligible"] == false
+                @test reply["value_repr"] == ""
+                message = reply["message"]
+                @test startswith(message, "Julia couldn't parse this line")
+                @test occursin("# Error @ $(location)\n", message)
+                @test occursin(learner_line, message)
+                @test occursin(reason, message)
+                @test !occursin("__juliatime_", message)
+                @test occursin("end", code) || !occursin("\nend\n", message)   # no wrapper end line
+            end
+        finally
+            JuliaTime.shutdown!()
+        end
+    end
+
+    # Repair 4 (review of repair 3): the pre-parse runs in the server process with no time limit.
+    # When the parser itself throws (Meta.parseall threw StackOverflowError on deeply nested input),
+    # or the code is longer than 20000 characters, the helper returns nothing, so the guarded
+    # worker run, which is time-limited, handles the code. A stub parser stands in for the throw.
+    @testset "the pre-parse falls back to the guarded run when the parser throws or the code is long" begin
+        broken = "sim_counts <> observed_count"
+        @test JuliaTime._mystery_c5_parse_error(broken) isa Meta.ParseError
+        @test JuliaTime._mystery_c5_parse_error(broken; parser=(code; kwargs...) -> throw(StackOverflowError())) === nothing
+        @test JuliaTime._mystery_c5_parse_error(broken; parser=(code; kwargs...) -> error("parser failed")) === nothing
+        called = Ref(false)
+        spy = (code; kwargs...) -> (called[] = true; Meta.parseall(code; kwargs...))
+        @test JuliaTime._mystery_c5_parse_error(broken * " "^20_000; parser=spy) === nothing
+        # Overnight 2026-09-24: 20000 characters of deep nesting still took about 20 s to parse in the
+        # server; learner code is a few hundred characters, so the cap is 4000.
+        @test JuliaTime._mystery_c5_parse_error(broken * " "^4_000; parser=spy) === nothing
+        @test !called[]
+        @test JuliaTime._mystery_c5_parse_error(broken * " "^100; parser=spy) isa Meta.ParseError
+        @test called[]
+        # Deep nesting can make Julia fall back to its older parser, which reports a plain String
+        # (measured on Julia 1.10.0: "\">\" is not a unary operator"); it still reaches the page as a ParseError.
+        flisp = (code; kwargs...) -> Expr(:toplevel, Expr(:error, "\">\" is not a unary operator"))
+        problem = JuliaTime._mystery_c5_parse_error(broken; parser=flisp)
+        @test problem isa Meta.ParseError
+        @test problem.msg == "\">\" is not a unary operator"
+    end
+
+    # UI-14 (2026-09-24 audit): clients insert this prose with textContent, so Markdown backticks
+    # showed on screen as literal characters. Julia's own error text is not checked here.
+    @testset "learner-facing C5 prose has no literal Markdown backticks" begin
+        for move in ("event-mask", "event-frequency"), pass in (true, false)
+            for text in values(JuliaTime._mystery_c5_explanation(move, pass))
+                @test !occursin('`', text)
+            end
+        end
+        info = JuliaTime.mystery_c5_case_info(c5_info_request(request_id="c5-info-prose"))
+        for move in info["moves"]
+            @test !occursin('`', move["required_result"])
+        end
+        events = JuliaTime.mystery_c5_sim_counts() .>= JuliaTime.mystery_c5_observed_count()
+        for (value, move) in [(sum(events) / length(events), "event-frequency"),
+                              ((events=.!events, frequency=sum(events) / length(events)), "event-frequency")]
+            passed, feedback = JuliaTime.check_mystery_c5(value, move)
+            @test !passed
+            @test !occursin('`', feedback)
+        end
+    end
+    # 2026-09-24 walk-through: learner prose names no internal chapter id.
+    @testset "a failed run's case line names no internal chapter id" begin
+        failed = JuliaTime.handle_message(Dict("type" => "case_run", "contract_version" => 1, "case_id" => "missing-fleas-v1",
+            "chapter" => "C5", "move_id" => "event-mask", "mode" => "challenge", "activity_id" => nothing,
+            "simulation_id" => "c5-simulated-counts-v1", "code" => "1", "request_id" => "no-id-check"))
+        @test !occursin("C5", failed["explanation"]["case"])
+        @test startswith(failed["explanation"]["case"], "No case finding from this chapter")
+    end
 end
 
 end # C5 module present

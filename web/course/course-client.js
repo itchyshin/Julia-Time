@@ -144,8 +144,8 @@
   function chapterStatus(keys, entries, fallback) {
     const complete = entries.every(key => keys.has(key));
     const started = entries.some(key => keys.has(key));
-    if (complete) return "Historical browser progress saved — run the chapter again for a fresh check";
-    if (started) return "Historical browser progress saved — continue the next move";
+    if (complete) return "Completed in this browser. Run the chapter again for a fresh check.";
+    if (started) return "Started in this browser. Continue the next move.";
     return fallback;
   }
   function conceptsFor(keys) {
@@ -233,6 +233,16 @@
       return {chapter, label, fact, line: label + ": " + fact};
     });
   }
+  // Chapter 5 saves the number of simulations as row_count: its answer is one true-or-false value per
+  // simulation (and, for event-frequency, their frequency), not a table of records.
+  function evidenceLine(item) {
+    const n = item.row_count;
+    const results = n + " yes-or-no result" + (n === 1 ? "" : "s") + ", one per simulation";
+    const saved = item.chapter === "C5" && item.move_id === "event-mask" ? results
+      : item.chapter === "C5" && item.move_id === "event-frequency" ? "from " + results
+      : n + " saved record" + (n === 1 ? "" : "s");
+    return item.title + " — " + saved + ". This board does not re-check saved work.";
+  }
   function dashboardModel(state) {
     const keys = acceptedKeys(state);
     const fallback = nextMove(keys);
@@ -246,20 +256,22 @@
       {chapter:"C5", title:"Test a suspicion", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Playable now — name a simulated event and its frequency")},
       {chapter:"C6", title:"Compare explanations", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Playable now — retain compatible candidate ranges")}
     ];
-    const evidence = Array.isArray(state && state.evidence) ? state.evidence.map(item => ({title:item.title, chapter:item.chapter, move_id:item.move_id, row_count:item.row_count, provenance:item.provenance})) : [];
-    const draftKeys = state && state.drafts && typeof state.drafts === "object" ? Object.keys(state.drafts).sort() : [];
+    const evidence = Array.isArray(state && state.evidence) ? state.evidence.map(item => ({title:item.title, chapter:item.chapter, move_id:item.move_id, row_count:item.row_count, provenance:item.provenance, line:evidenceLine(item)})) : [];
+    const draftKeys = state && state.drafts && typeof state.drafts === "object" ? ORDERED_KEYS.filter(key => Object.prototype.hasOwnProperty.call(state.drafts, key) && !keys.has(key)) : [];
+    const draftNames = draftKeys.map(key => "Chapter " + MOVE_COPY[key].chapter.slice(1) + ": " + MOVE_COPY[key].label);
+    const complete = ORDERED_KEYS.every(key => keys.has(key));
     const changedHistory = Boolean(state && Array.isArray(state.historicalChanged) && state.historicalChanged.length);
     return {
-      continue:{chapter:next.chapter, move:next.move, label:(resumed || (keys.size > 0 && keys.size < ORDERED_KEYS.length) ? "Continue" : keys.size === ORDERED_KEYS.length ? "Review" : "Start") + " Chapter " + next.chapter.slice(1) + ": " + next.label},
+      continue:{chapter:next.chapter, move:next.move, label:(complete ? "Review" : resumed || keys.size > 0 ? "Continue" : "Start") + " Chapter " + next.chapter.slice(1) + ": " + next.label},
       cards,
       caseThread:caseThread(keys, next),
       evidence,
       concepts:conceptsFor(keys),
-      draftNotice:draftKeys.length ? "Saved browser draft available for " + draftKeys.join(", ") + "." : "",
+      draftNotice:draftNames.length ? "Saved browser draft" + (draftNames.length === 1 ? "" : "s") + " available for " + draftNames.join("; ") + "." : "",
       changedHistoryAction:changedHistory ? "Add changed browser history" : "",
       historicalNotice:changedHistory
-        ? "Historical browser data changed. Your saved work was left unchanged; this board will not import the change automatically."
-        : keys.size ? "Your earlier answers are saved in this browser; run a chapter again for a fresh check today." : "No historical browser progress is saved here yet."
+        ? "Earlier saved data in this browser changed. Your saved work was left unchanged; this board will not import the change automatically."
+        : keys.size ? "Your earlier answers are saved in this browser; run a chapter again for a fresh check today." : "No progress is saved in this browser yet."
     };
   }
 

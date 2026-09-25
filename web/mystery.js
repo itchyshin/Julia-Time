@@ -50,8 +50,8 @@
   // variants below carry the same instruction; only the entry-path-specific lead differs.
   function bridgeText(visitedPractice) {
     return visitedPractice
-      ? '<strong>Bridge from practice:</strong> The practice used a true-or-false row rule. Now use that same rule on the case table: make one true-or-false choice for each jar whose batch label matches <code>case_batch</code>; put those choices in the <strong>rows position</strong>; then keep <strong>all columns</strong>. The code shape and hints below are there if you need the Julia punctuation.'
-      : '<strong>Make your move:</strong> Make one true-or-false choice for each jar whose batch label matches <code>case_batch</code>; put those choices in the <strong>rows position</strong>; then keep <strong>all columns</strong>. The code shape and hints below are there if you need the Julia punctuation.';
+      ? '<strong>Bridge from practice:</strong> The practice used a true-or-false row rule. Now use that same rule on the case table: make one true-or-false choice for each jar whose batch label matches <code>case_batch</code>; put those choices in the <strong>rows position</strong>; then keep <strong>all columns</strong>. If you need the Julia punctuation, open <strong>Need the full answer?</strong> below the editor for small hints, one at a time.'
+      : '<strong>Make your move:</strong> Make one true-or-false choice for each jar whose batch label matches <code>case_batch</code>; put those choices in the <strong>rows position</strong>; then keep <strong>all columns</strong>. If you need the Julia punctuation, open <strong>Need the full answer?</strong> below the editor for small hints, one at a time.';
   }
   // T4 (2026-09-12 playtest): the shared next step used to open with identical wording after two
   // different errors, which read as "no progress made" even when the player had fixed the first
@@ -59,15 +59,48 @@
   function challengeRecovery(message) {
     if (message?.status !== "error") return "";
     const text = message.message || "";
-    const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge if you need to place that rule in the table. Your draft is unchanged.";
+    const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Need the full answer?” below if you need to place that rule in the table. Your draft is unchanged.";
     if (/UndefVarError.*`\$`/.test(text)) {
       return "R's $ does not exist in Julia — write jars.batch_id, not jars$batch_id. " + shared;
     }
     if (/invalid row index of type Bool/.test(text)) {
       return "Close: a plain == on a whole column gives one true-or-false answer, not one per row. " + shared;
     }
+    // 2026-09-24 playtest: pandas, MATLAB and missing-column habits, each keyed on Julia's own text.
+    if (/syntax df\[column\] is not supported/.test(text)) {
+      return "A Julia table needs two positions in square brackets, rows then columns: jars[rows, columns]. One position, pandas style, does not work here; to read one column, write jars.batch_id rather than jars[\"batch_id\"]. " + shared;
+    }
+    if (/objects of type (?:DataFrames\.)?DataFrame are not callable/.test(text)) {
+      return "Round brackets ask Julia to run jars like a function, but jars is a table. Tables use square brackets: jars[rows, columns]. " + shared;
+    }
+    if (/no method matching getindex\(::(?:DataFrames\.)?DataFrame, ::[^,\n]*\)/.test(text)) {
+      return "Close: you gave the rows, but no columns position. Julia tables need both, jars[rows, columns]; put : in the columns position to keep every column. " + shared;
+    }
     return shared;
   }
+  // Re-test (2026-09-24): a copied practice batch or the glossary's jars[1:6, :] ran without error
+  // and heard only the generic checker line. This lead reads the rows Julia actually returned,
+  // never the code, and sits in front of that line.
+  function returnedRowsLead(result, info) {
+    if (!result || result.status !== "ok" || result.pass === true || !info) return "";
+    const rows = Array.isArray(result.rows) ? result.rows : [], caseRows = Array.isArray(info.rows) ? info.rows : [];
+    const batches = rows.map(row => row && row.batch_id);
+    if (!rows.length || !batches.every(batch => typeof batch === "string")) return "";
+    const practice = info.worked_example && info.worked_example.batch_id;
+    if (typeof practice === "string" && batches.every(batch => batch === practice)) {
+      return "Every row you returned has batch_id " + practice + ", the practice batch used in the examples. This case needs the rows whose batch_id matches case_batch (" + info.case_batch + ").";
+    }
+    const start = caseRows.findIndex(row => row && row.jar_id === rows[0].jar_id);
+    const distinct = Array.from(new Set(batches));
+    const isRun = start >= 0 && rows.length < caseRows.length && rows.every((row, index) => caseRows[start + index] && row.jar_id === caseRows[start + index].jar_id);
+    if (isRun && distinct.length > 1) {
+      return "These are rows " + (start + 1) + " to " + (start + rows.length) + " of the table, in order, so they mix batches " + distinct.join(" and ") + ". The report rows must be chosen by their batch label, not by where they sit: keep each row whose batch_id matches case_batch.";
+    }
+    return "";
+  }
+  // UI-10 (2026-09-24): the recovery line above sends the learner to the first nudge, so the drawer
+  // that holds it stays on screen after any run that was not accepted, as in Chapters 2 to 6.
+  function helpDrawerVisible(stage, result) { return stage === "code" || (stage === "result" && !(result && result.pass === true)); }
   function boardUpdateLine(rows) {
     return Array.isArray(rows) && rows.length ? "Case Board updated: the disputed B09 records have been identified in the supplied case table." : "";
   }
@@ -94,6 +127,10 @@
     return {indices:Array.from({length:Math.max(0, end - start)}, (_, index) => start + index), shown:end};
   }
   function retainedJarIds(rows) { return rows.map(row => row && row.jar_id).filter(id => typeof id === "string"); }
+  function evidenceSummary(evidence, rows) {
+    const title = evidence.title || evidence.id || "Evidence";
+    return (rows.length ? rows.length + " retained record" + (rows.length === 1 ? "" : "s") + " from disputed batch B09. " : "Saved evidence: ") + title + (/[.!?]$/.test(title) ? "" : ".");
+  }
   function discoveryText(rows) {
     if (!rows.length || !rows.every(row => row && typeof row.detected === "boolean")) return "";
     const detected = rows.filter(row => row.detected).length;
@@ -144,6 +181,21 @@
   }
   function disconnect(state) { return Object.assign({}, state, { connection: "offline", infoRequestId:null, outstandingRequestId: null, expired: false, statusMessage: null }); }
   function persistEvidence(storage, evidence) { try { storage.setItem(EVIDENCE_KEY, JSON.stringify(evidence)); return true; } catch (_) { return false; } }
+  // UI-05 (2026-09-24): the legacy key above reaches the shared course record only when the Case
+  // Board page runs its importer, so a learner who followed the Next links to Chapter 6 saw Chapter 1
+  // as still unknown. Write the accepted move directly, the "T3" pattern chapter2.js..chapter6.js use.
+  function persistAcceptedCourseState(courseState, storage, attempt, message) {
+    if (!message || message.status !== "ok" || message.pass !== true || !message.evidence || typeof message.evidence !== "object") return false;
+    if (!courseState || typeof courseState.recordHistoricalMoveIfMissing !== "function" || typeof courseState.writeEvidenceIfMissing !== "function" || typeof courseState.writeCursor !== "function") return false;
+    const title = typeof message.evidence.title === "string" && message.evidence.title.trim() ? message.evidence.title.trim().slice(0, 160) : "Saved B09 records";
+    const rowCount = Array.isArray(message.rows) && message.rows.length > 0 ? Math.min(message.rows.length, 10000) : 1;
+    try {
+      courseState.recordHistoricalMoveIfMissing(storage, attempt, "C1", "select-records");
+      courseState.writeEvidenceIfMissing(storage, attempt, {chapter:"C1", move_id:"select-records", title, row_count:rowCount, provenance:"historical-browser"});
+      courseState.writeCursor(storage, attempt, {chapter:"C2", move_id:"group", mode:"challenge"});
+      return true;
+    } catch (_) { return false; }
+  }
   function validEvidenceDisplay(value) {
     return Boolean(value && typeof value === "object" && value.evidence &&
       typeof value.evidence === "object" && !Array.isArray(value.evidence) &&
@@ -169,6 +221,8 @@
 
   function init() {
     const $ = (id) => document.getElementById(id);
+    const courseState = typeof window !== "undefined" ? window.JuliaTimeCourseState : null;
+    const attempt = new URLSearchParams(location.search).get("attempt") || "";
     $("new-attempt").addEventListener("click", () => {
       const url = new URL(location.href); url.searchParams.set("attempt", requestId()); url.hash = "";
       location.assign(url.href);
@@ -208,7 +262,7 @@
       document.querySelector(".data-panel").hidden = stage !== "notebook" && stage !== "code";
       document.querySelector(".move-stack").hidden = stage === "notebook";
       document.querySelector(".editor-panel").hidden = stage !== "code" && stage !== "result";
-      document.querySelector(".help-drawer").hidden = stage !== "code";
+      document.querySelector(".help-drawer").hidden = !helpDrawerVisible(stage, state.result);
       el["result-area"].hidden = stage !== "result";
       el["evidence-board"].hidden = stage !== "result" || !state.result?.pass;
       $("step-back").hidden = stage === "intro";
@@ -333,6 +387,7 @@
         if (message.status === "ok" && message.pass === true && message.evidence) {
           const display = { evidence: message.evidence, rows: message.rows || [], explanation: message.explanation || null };
           if ((!storage || !persistEvidence(storage, display)) && !storageWarningShown) { storageWarningShown = true; appendNotice("Your evidence is visible, but this browser could not save it for a later visit."); }
+          if (storage) persistAcceptedCourseState(courseState, storage, attempt, message);
           renderEvidence(message.evidence, message.rows || [], message.explanation || null);
         }
         updateRunControl();
@@ -416,7 +471,9 @@
           el["result-area"].appendChild(original);
         }
       }
-      if (result.stdout) appendText(el["result-area"], "pre", "stdout", result.stdout); if (result.value_repr && !(result.columns && result.columns.length)) appendText(el["result-area"], "pre", "value-repr", "Julia returned:\n" + result.value_repr); if (result.feedback) appendText(el["result-area"], "p", "feedback", result.feedback);
+      if (result.stdout) appendText(el["result-area"], "pre", "stdout", result.stdout); if (result.value_repr && !(result.columns && result.columns.length)) appendText(el["result-area"], "pre", "value-repr", "Julia returned:\n" + result.value_repr);
+      const rowsLead = returnedRowsLead(result, caseInfo); if (rowsLead) appendText(el["result-area"], "p", "recovery-next-step", rowsLead);
+      if (result.feedback) appendText(el["result-area"], "p", "feedback", result.feedback);
       const recovery = challengeRecovery(result); if (recovery) appendText(el["result-area"], "p", "recovery-next-step", recovery);
       if (Array.isArray(result.rows) && Array.isArray(result.columns) && result.columns.length) {
         const tableParent = el["result-area"];
@@ -432,7 +489,7 @@
     function renderEvidence(evidence, rows, explanation, restored = false) {
       acceptedRows = rows; highlightSource();
       el["evidence-board"].hidden = false; el["evidence-board"].classList.remove("evidence-arrived"); void el["evidence-board"].offsetWidth; el["evidence-board"].classList.add("evidence-arrived");
-      el["evidence-summary"].textContent = (rows.length ? rows.length + " retained record" + (rows.length === 1 ? "" : "s") + " from disputed batch B09. " : "Saved evidence: ") + (evidence.title || evidence.id || "Evidence"); el["evidence-rows"].textContent = "";
+      el["evidence-summary"].textContent = evidenceSummary(evidence, rows); el["evidence-rows"].textContent = "";
       rows.forEach((row, index) => { const card = document.createElement("article"), title = document.createElement("h3"), text = document.createElement("p"); card.className = "evidence-card"; card.style.animationDelay = (index * 70) + "ms"; title.textContent = row.jar_id || "Record " + (index + 1); const jar = document.createElement("div"); jar.className = "evidence-jar"; jar.setAttribute("aria-hidden", "true"); jar.textContent = row.batch_id || ""; text.textContent = Array.isArray(row) ? row.map(displayCell).join(" · ") : Object.keys(row).map((key) => key + ": " + displayCell(row[key])).join(" · "); card.append(jar, title, text); el["evidence-rows"].appendChild(card); });
       let reaction = $("toto-reaction");
       if (!reaction) { reaction = document.createElement("p"); reaction.id = "toto-reaction"; reaction.className = "toto-reaction"; el["evidence-summary"].after(reaction); }
@@ -456,5 +513,5 @@
     el.run.addEventListener("click", run); el["reset-code"].addEventListener("click", () => { state = Object.assign({}, cancelRun(state), { code: "" }); el.code.value = ""; updateRunControl(); if (storage && !persistCode(storage, "") && !storageWarningShown) { storageWarningShown = true; appendNotice("Your code is reset on screen, but the reset could not be saved."); } el.code.focus(); }); el.reconnect.addEventListener("click", () => connect(true));
     window.addEventListener("pagehide", () => { stopped = true; clearInfoTimer(); clearRunTimer(); state = disconnect(state); clearTimeout(reconnectTimer); if (socket) socket.close(); }); if (!storage) appendNotice("Browser storage is unavailable: evidence and code cannot be restored after reload."); showStage(initialStage, false); connect(false);
   }
-  return { STORAGE_PREFIX, EVIDENCE_KEY, CODE_KEY, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, beginInfo, failCaseInfo, expireInfo, isCurrentCaseInfo, beginRun, expireRun, cancelRun, isRunPending, applyRunStatus, isCurrentSocket, applyCaseResult, disconnect, persistEvidence, loadEvidence, persistCode, loadCode, validEvidenceDisplay, displayCell, retainedJarIds, hintButtonLabel, hintIndicesThrough, nextStage, previousStage, restoreStage, practiceFeedback, challengeRecovery, boardUpdateLine, runOutcomeStatus, restoredEvidenceDisplay, readPractice, storagePrefix, discoveryText, chapter2Url, caseBoardUrl, caseLocation, init, bridgeText };
+  return { STORAGE_PREFIX, EVIDENCE_KEY, CODE_KEY, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, beginInfo, failCaseInfo, expireInfo, isCurrentCaseInfo, beginRun, expireRun, cancelRun, isRunPending, applyRunStatus, isCurrentSocket, applyCaseResult, disconnect, persistEvidence, persistAcceptedCourseState, loadEvidence, persistCode, loadCode, validEvidenceDisplay, displayCell, retainedJarIds, hintButtonLabel, hintIndicesThrough, nextStage, previousStage, restoreStage, practiceFeedback, challengeRecovery, returnedRowsLead, helpDrawerVisible, boardUpdateLine, runOutcomeStatus, restoredEvidenceDisplay, readPractice, storagePrefix, discoveryText, evidenceSummary, chapter2Url, caseBoardUrl, caseLocation, init, bridgeText };
 });

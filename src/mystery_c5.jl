@@ -72,12 +72,12 @@ function check_mystery_c5(value, move_id)
     end
 
     value isa NamedTuple && keys(value) == (:events, :frequency) ||
-        return (false, "Return `(events=events, frequency=sum(events)/length(events))` with both named fields.")
+        return (false, "Return (events=events, frequency=sum(events)/length(events)) with both named fields.")
     actual_events = _mystery_c5_exact_events(value.events)
     actual_events === nothing &&
         return (false, "The events field needs one Boolean value for every simulated trial.")
     actual_events == expected_events ||
-        return (false, "The events field must use `sim_counts .>= observed_count` exactly.")
+        return (false, "The events field must use sim_counts .>= observed_count exactly.")
     frequency = _mystery_c5_frequency(value.frequency)
     frequency === nothing &&
         return (false, "The frequency must be one finite numeric value.")
@@ -109,7 +109,7 @@ function _mystery_c5_moves()
         Dict{String, Any}(
             "id" => "event-frequency",
             "title" => "Calculate the event frequency",
-            "required_result" => "Return `(events=events, frequency=sum(events)/length(events))` so both the event vector and matching-events / all-trials frequency can be checked.",
+            "required_result" => "Return (events=events, frequency=sum(events)/length(events)) so both the event vector and matching-events / all-trials frequency can be checked.",
             "concept" => "The frequency is matching events divided by all simulations under this stated teaching model.",
             "code_shape" => "events = sim_counts .>= observed_count; (events=events, frequency=sum(events)/length(events))",
             "syntax" => [
@@ -185,18 +185,18 @@ end
 
 function _mystery_c5_explanation(move_id::String, pass)
     if pass === true && move_id == "event-mask"
-        return Dict("julia" => "`.>=` compared every simulated count to the observed count and returned one Boolean event value per trial.",
+        return Dict("julia" => "The dotted comparison .>= checked every simulated count against the observed count and returned one Boolean event value per trial.",
                     "case" => "The event mask describes this fixed simulation under the stated teaching model.",
                     "limit" => "It is not a probability that the model is true and is not a new flea observation.")
     elseif pass === true
-        return Dict("julia" => "`sum(events) / length(events)` divides matching simulated events by all simulated trials.",
+        return Dict("julia" => "sum(events) / length(events) divides matching simulated events by all simulated trials.",
                     "case" => "This is a frequency under the stated teaching model.",
                     "limit" => "The frequency does not prove the model, explain the recording disagreement, or establish a biological cause.")
     end
     return Dict("julia" => move_id == "event-mask" ?
-                    "Return the Boolean comparison `sim_counts .>= observed_count`." :
+                    "Return the Boolean comparison sim_counts .>= observed_count." :
                     "Return both the exact event vector and its matching-events / all-trials frequency.",
-                "case" => "No C5 case finding is established until the actual returned result matches the move.",
+                "case" => "No case finding from this chapter is established until the actual returned result matches the move.",
                 "limit" => "A failed run says nothing about causes, people, or whether the teaching model is true.")
 end
 
@@ -245,6 +245,30 @@ function _mystery_c5_guarded_code(code::String)
            "__juliatime_c5_answer__"
 end
 
+# R7 (2026-09-24 re-test): the guard above wraps the learner's code, so a ParseError raised on the
+# wrapped text named wrapper lines and shifted line numbers. Parse the learner's code on its own
+# first; Julia stores its own ParseError in the first :error or :incomplete node.
+# Repair 4: this parse runs in the server process with no time limit. Code longer than 4000
+# characters skips it, and a parser that throws (StackOverflowError on deeply nested input) returns
+# nothing; either way the guarded worker run, which is time-limited, handles the code, as C3 does.
+# Deep nesting can also make Julia fall back to its older parser, which reports a plain String;
+# it is shown as a ParseError, as C4 does. `parser` lets a test stand in for the parser.
+function _mystery_c5_parse_error(code::String; parser=Meta.parseall)
+    length(code) > 4_000 && return nothing
+    parsed = try
+        parser(code; filename="none")
+    catch
+        return nothing
+    end
+    parsed isa Expr || return nothing
+    for ex in parsed.args
+        ex isa Expr && ex.head in (:error, :incomplete) || continue
+        problem = ex.args[1]
+        return problem isa String ? Meta.ParseError(problem) : problem
+    end
+    return nothing
+end
+
 function _mystery_c5_valid_run_envelope(msg::AbstractDict)
     version = get(msg, "contract_version", nothing)
     version isa Integer && !(version isa Bool) && version == 1 || return (false, "C5 case_run requires contract_version 1.")
@@ -273,11 +297,14 @@ function mystery_c5_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
         message="Write some Julia before running the case.")
     env = (sim_counts=mystery_c5_sim_counts(), n_jars=MYSTERY_C5_N_JARS, p_ref=MYSTERY_C5_P_REF,
            observed_count=mystery_c5_observed_count(), n_trials=MYSTERY_C5_N_TRIALS)
-    sandbox_result = lock(_RUN_LOCK) do
-        run_code(_mystery_c5_guarded_code(String(code)); env=env, budget=RUN_BUDGET,
-                 protected_bindings=(:sim_counts, :n_jars, :p_ref, :observed_count, :n_trials),
-                 on_status=on_status)
-    end
+    parse_error = _mystery_c5_parse_error(String(code))
+    sandbox_result = parse_error !== nothing ?
+        SandboxResult(:error, nothing, "", _format_error(parse_error)) :
+        lock(_RUN_LOCK) do
+            run_code(_mystery_c5_guarded_code(String(code)); env=env, budget=RUN_BUDGET,
+                     protected_bindings=(:sim_counts, :n_jars, :p_ref, :observed_count, :n_trials),
+                     on_status=on_status)
+        end
     value_repr = sandbox_result.value === nothing ? "" : _mystery_safe_repr(sandbox_result.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     checked, feedback = sandbox_result.status == :ok ? check_mystery_c5(sandbox_result.value, move_id) :

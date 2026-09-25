@@ -9,7 +9,8 @@
 # works. See docs/design/01-architecture.md §2 (verified live on this machine).
 #
 # Workers run `src/sandbox_worker.jl`, which loads JuliaTime and exchanges serialised
-# request/response values with this process through stdin/stdout.  This avoids Julia 1.10's
+# request/response values with this process through stdin/stdout (each reply is preceded by a
+# start receipt, `_REQUEST_RECEIVED` — see `_worker_round_trip`).  This avoids Julia 1.10's
 # `Distributed.addprocs` recovery failure after several forced worker kills, while preserving the
 # non-negotiable process-kill timeout boundary.
 #
@@ -311,13 +312,38 @@ end
 # test/test_sandbox.jl.
 const ACQUIRE_BUDGET = 180.0
 
+# The worker writes this (from `_eval_on_worker`) as soon as a request has arrived whole, and
+# flushes it before evaluating anything from that request.
+const _REQUEST_RECEIVED = :juliatime_request_received
+
 # Send `(code, env, seed, protected_bindings)` to `w` and wait up to `timeout_s` for its reply.
 # Shared by the real evaluation round trip and the readiness ping below.
+#
+# Returns `(:ok, reply, task)`, `(:timeout, nothing, task)`, `(:error, e, task)`, or
+# `(:not_started, e, task)`: the worker's reply stream ended with no bytes at all after the request.
+# Bytes a process has written to a pipe stay readable after it dies, and the worker writes the
+# receipt before it evaluates anything, so an empty stream is evidence that this request's code
+# never started: the worker was already dead (killed while idle, say), or died before it had the
+# whole request. It is evidence, not proof: an earlier move's background task can close the reply
+# stream of a worker that is still alive, so `run_code` also requires the worker to be seen dead
+# (`_may_resend`) before it sends the move again. Any byte on the stream makes the outcome
+# `:error`, because stray output from an earlier move's background task can garble the receipt
+# (adversarial review 2026-09-24). A failed write proves nothing on its own (the final flush can
+# fail after every byte was delivered), so the reply stream is read either way. Anything after
+# the receipt, including the stream ending because the line called `Base.exit()` or crashed the
+# worker, may have run, and stays `:error`.
 function _worker_round_trip(w::_SandboxWorker, code, env, seed, protected_bindings, timeout_s::Real)
     task = @async begin
         try
-            serialize(w.process, (String(code), env, seed, protected_bindings))
-            flush(w.process)
+            try
+                serialize(w.process, (String(code), env, seed, protected_bindings))
+                flush(w.process)
+            catch e
+                e isa Base.IOError || rethrow()   # a request that cannot be serialised stays :error
+            end
+            eof(w.process) && return (:not_started, EOFError())
+            deserialize(w.process) === _REQUEST_RECEIVED ||
+                error("the sandbox worker replied before acknowledging the request")
             (:ok, deserialize(w.process))
         catch e
             (:error, e)
@@ -359,12 +385,16 @@ function _await_warmup!(on_status=nothing)
     return true
 end
 
-function _take_worker!(on_status=nothing)
+function _take_worker!(on_status=nothing; reprove::Bool=false)
     _await_refill!()
     waited_for_warmup = _await_warmup!(on_status)
     w = lock(_POOL_LOCK) do
         _SHUTTING_DOWN[] || isempty(_POOL) ? nothing : pop!(_POOL)
     end
+    # `run_code`'s retry after a pooled worker was found dead: an earlier readiness proof is no
+    # longer evidence, because whatever killed one idle worker (an out-of-band kill, an earlier
+    # stop) may have killed the rest of the pool too. Prove this one again, or replace it, below.
+    reprove && w !== nothing && (w.ready = false)
     # Only a worker that actually needed spawning or proving-ready gets a status pair: an
     # already-warm pooled worker serves the move immediately, so there is nothing to narrate and
     # ordinary fast moves stay silent on the wire (no "running" chatter on every keystroke's run).
@@ -420,6 +450,7 @@ function _take_worker!(on_status=nothing)
             isempty(_POOL) ? nothing : pop!(_POOL)
         end
         w === nothing && return nothing
+        reprove && (w.ready = false)   # the same doubt covers every pooled worker, not only the first
     end
     # Clears a "restarting" line and re-arms a client's deadline timer once the code this
     # worker was acquired for is actually about to run (B1/B2, same review).
@@ -444,6 +475,21 @@ function _reap_killed_worker!(w::_SandboxWorker; timeout_s::Real=0.5)
     end
     return nothing
 end
+
+# May `run_code` send a `:not_started` move to another worker? Only if `w` is seen dead, and
+# nothing on this side ended it. An empty reply stream from a worker that is still alive means an
+# earlier move's background task closed that stream, and the live worker may already be running
+# this request, so it is never sent again (adversarial review 2026-09-24). `shutdown!()` closes
+# every owned worker's pipes itself, and a stream closed here can read as "no receipt" even though
+# the receipt was already waiting in it. `shutdown!()` raises `_SHUTTING_DOWN` before it kills
+# anything, and it empties `_OWNED_PROCESSES` before it lowers that flag again. So, checked under
+# the lock after the wait and before our own `_kill_worker!(w)` (which removes `w` from
+# `_OWNED_PROCESSES`), a dead worker still registered outside a shutdown died on its own.
+_may_resend(w::_SandboxWorker) =
+    Base.timedwait(() -> process_exited(w.process), 0.5; pollint=0.01) === :ok &&
+    lock(_POOL_LOCK) do
+        !_SHUTTING_DOWN[] && get(_OWNED_PROCESSES, w.id, nothing) === w.process
+    end
 
 function _kill_worker!(w::_SandboxWorker; timeout_s::Real=0.5)
     try
@@ -482,8 +528,15 @@ function _softscope(@nospecialize ex)
 end
 
 # Runs on the worker. Always returns plain, easily-serialised data except `value` itself — never
-# throws (every failure path is caught and turned into a `:error` tuple).
+# throws (every failure path is caught and turned into a `:error` tuple), except when the start
+# receipt below cannot be written because the parent's pipe is gone.
 function _eval_on_worker(code::String, env, seed, protected_bindings=())
+    # Start receipt first, before anything from the request is evaluated. Only
+    # src/sandbox_worker.jl calls this function, and there `stdout` is the reply pipe to the parent.
+    # Once the receipt is in that pipe the parent treats this request as possibly run and never
+    # sends it to another worker (`_worker_round_trip`, `run_code`).
+    serialize(stdout, _REQUEST_RECEIVED)
+    flush(stdout)
     m = Module(:Sandbox)
     Core.eval(m, :(using Random, Distributions, DataFrames, Statistics))
     # A learner's bare `exit()` is almost always an accidental experiment, not a request to tear
@@ -583,13 +636,13 @@ end
 
 function _novice_line(e)
     if e isa UndefVarError
-        return "`$(e.var)` is a name that doesn't exist yet — check the spelling, or define it first."
+        return "$(e.var) is a name Julia does not know yet. Check the spelling, or define it first."
     elseif e isa MethodError
         return "A function was called with the wrong kind of argument."
     elseif e isa BoundsError
         return "An index was outside the range of the collection."
     elseif e isa Base.Meta.ParseError
-        return "Julia couldn't parse this line — look for a missing bracket, comma or `end`."
+        return "Julia couldn't parse this line. Look for a missing bracket, a missing comma, or a missing end keyword."
     elseif e isa DivideError
         return "Integer division by zero."
     elseif e isa ProcessExitedException
@@ -614,8 +667,12 @@ made available before evaluation; `seed`, if given, seeds the worker's default R
 worker is killed if evaluation exceeds `budget` seconds. `budget` covers only the learner's code
 running on a live worker: acquiring or replacing a worker (spawning a fresh OS process, paying its
 package JIT cost) is governed separately by `ACQUIRE_BUDGET` so a slow machine's replacement time
-is never charged against the learner's move (T1). Optional `on_status(kind::String,
-message::String)` is called `("restarting", text)` if a worker must be (re)spawned or proven ready
+is never charged against the learner's move (T1). If the pooled worker turns out to have died
+while idle (its reply stream ends with nothing in it and its process is seen to have exited, so the
+code never started), that worker is replaced and the move is sent once more to a re-proven worker, with a
+fresh `budget`: the recovery is acquisition. A worker that dies after acknowledging (a line that
+calls `Base.exit()`, or crashes Julia) is reported as an error and never re-run. Optional
+`on_status(kind::String, message::String)` is called `("restarting", text)` if a worker must be (re)spawned or proven ready
 before this move, followed by `("running", "")` once that same worker is actually handed the code —
 so a caller can surface a truthful status while the learner waits and clear it when the run really
 starts. An already-warm pooled worker serves the move immediately and neither status fires (review
@@ -625,15 +682,23 @@ final values must equal their initial snapshots. This does not audit intermediat
 not a security boundary; the default leaves legacy runs unchanged.
 """
 function run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0, protected_bindings=(), on_status=nothing)
-    local w
-    try
-        w = _take_worker!(on_status)
-    catch e
-        return SandboxResult(:error, nothing, "", "Something went wrong running this line.\n\n" * sprint(showerror, e))
-    end
-    w === nothing && return SandboxResult(:error, nothing, "", "No sandbox worker is available.")
+    local w, tag, result, task
+    for attempt in 1:2
+        try
+            w = _take_worker!(on_status; reprove=attempt > 1)
+        catch e
+            return SandboxResult(:error, nothing, "", "Something went wrong running this line.\n\n" * sprint(showerror, e))
+        end
+        w === nothing && return SandboxResult(:error, nothing, "", "No sandbox worker is available.")
 
-    tag, result, task = _worker_round_trip(w, code, env, seed, protected_bindings, budget)
+        tag, result, task = _worker_round_trip(w, code, env, seed, protected_bindings, budget)
+        # The pooled worker had died while idle: its reply stream ended empty and its process is
+        # gone, so the learner's code never started (see `_worker_round_trip`, `_may_resend`). Replace
+        # it and send the same move once more, with a fresh `budget` — finding a live worker is
+        # acquisition, never the learner's run time.
+        (tag === :not_started && attempt == 1 && _may_resend(w)) || break
+        _kill_worker!(w)
+    end
     if tag === :timeout
         _kill_worker!(w)
         # Closing a direct child pipe makes its blocked deserialisation fail; do not wait
@@ -644,7 +709,7 @@ function run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0,
             "Your code ran for more than $(budget) seconds and was stopped. Loops that never finish are the usual cause.")
     end
 
-    if tag === :error
+    if tag === :error || tag === :not_started
         _kill_worker!(w)
         _schedule_refill!()
         return SandboxResult(:error, nothing, "", _format_error(result))

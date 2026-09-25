@@ -44,6 +44,7 @@ h2 { font-size:1.85rem; }
 .moves > button { width:auto; flex:1; font-size:.85rem; border-radius:0; padding:.6rem; }
 .moves details { width:100%; margin-top:.3rem; font-size:.85rem; }
 .moves button:disabled { opacity:.55; cursor:not-allowed; }
+#show-hint:disabled { opacity:.55; cursor:not-allowed; }
 .return { border-radius:0; border-left:4px solid var(--gold); background:#fff0d9; }
 pre,textarea { border-radius:0; background:var(--navy); color:var(--paper); font-family:"SFMono-Regular",Consolas,monospace; }
 .run,#show-hint,.attempt button { border-radius:0; background:var(--gold); color:var(--navy); }
