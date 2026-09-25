@@ -7,10 +7,6 @@ const path = require("node:path");
 
 const root = path.join(__dirname, "..");
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
-const observerSheetPath = path.join(root, "output", "pdf", "playtest-observer-sheet.pdf");
-const observerSheetSkip = fs.existsSync(observerSheetPath)
-  ? false
-  : "dev-only material not present in the curated export: output/pdf/playtest-observer-sheet.pdf";
 
 test("the participant Start Here page explains the local game before asking for setup or code", () => {
   const guidePath = path.join(root, "web", "course", "getting-started.html");
@@ -78,11 +74,11 @@ test("the repository landing page is a public first door before the learner has 
   assert.doesNotMatch(firstInstallSection, /127\.0\.0\.1/i, "a public reader should not be sent to a local address before downloading and launching the game");
 });
 
-test("the no-rescue playtest material has a printable observer sheet", {skip:observerSheetSkip}, () => {
+test("the no-rescue playtest material has a printable observer sheet", () => {
   const readme = read("README.md");
-  const pdfPath = path.join(root, "output", "pdf", "playtest-observer-sheet.pdf");
+  const pdfPath = path.join(root, "docs", "playtest-observer-sheet.pdf");
 
-  assert.match(readme, /\[one-page observer sheet \(PDF\)\]\(output\/pdf\/playtest-observer-sheet\.pdf\)/i);
+  assert.match(readme, /\[one-page observer sheet \(PDF\)\]\(docs\/playtest-observer-sheet\.pdf\)/i);
   assert.equal(fs.existsSync(pdfPath), true, "observers need a printable sheet without reconstructing one from the Markdown guide");
   assert.ok(fs.statSync(pdfPath).size > 0, "the printable observer sheet must not be empty");
 });

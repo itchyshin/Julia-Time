@@ -96,7 +96,7 @@ Run the same one-time setup and launcher on your own computer. The local
 sandbox runs player code in a separate Julia process with a five-second budget;
 it is a teaching convenience, not a security boundary. See
 [the playtest observer sheet](docs/playtest-observer-sheet.md) for the
-no-rescue learner sessions. A printable [one-page observer sheet (PDF)](output/pdf/playtest-observer-sheet.pdf)
+no-rescue learner sessions. A printable [one-page observer sheet (PDF)](docs/playtest-observer-sheet.pdf)
 is ready for the person observing; do not help the player through a sticking
 point—record where their own next action became unclear.
 
