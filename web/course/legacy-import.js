@@ -17,6 +17,18 @@
   function prefix(base, attempt) { return attemptId(attempt) ? base + "attempt:" + attempt + ":" : base; }
   function c1EvidenceKey(attempt) { return prefix(C1_BASE, attempt) + "evidence"; }
   function c2ProgressKey(attempt) { return prefix(C2_BASE, attempt) + "progress-v2"; }
+  // Where Chapter 1 and Chapter 2 keep their editor drafts (mystery.js CODE_KEY, chapter2.js persistDraft).
+  function c1CodeKey(attempt) { return prefix(C1_BASE, attempt) + "code"; }
+  function c2DraftKey(attempt, step) { return prefix(C2_BASE, attempt) + "draft:" + step; }
+  // The drafts Chapters 1 and 2 will actually restore, keyed like course-state challenge drafts.
+  function chapterDrafts(storage, attempt) {
+    const drafts = {};
+    const read = key => { try { const value = storage && storage.getItem(key); return typeof value === "string" && value.trim() ? value : null; } catch (_) { return null; } };
+    const c1 = read(c1CodeKey(attempt));
+    if (c1) drafts["C1/select-records"] = c1;
+    for (const step of C2_STEPS) { const value = read(c2DraftKey(attempt, step)); if (value) drafts[C2_MOVES[step]] = value; }
+    return drafts;
+  }
   function plainRecord(value) { return Boolean(value && typeof value === "object" && !Array.isArray(value)); }
   function readEntry(storage, key) {
     try {
@@ -69,5 +81,5 @@
     return {moves, evidence, sources};
   }
 
-  return {c1EvidenceKey, c2ProgressKey, validC1Evidence, validC2Progress, importLegacy, fingerprint, courseStateAvailable:Boolean(courseState)};
+  return {c1EvidenceKey, c2ProgressKey, c1CodeKey, c2DraftKey, chapterDrafts, validC1Evidence, validC2Progress, importLegacy, fingerprint, courseStateAvailable:Boolean(courseState)};
 });

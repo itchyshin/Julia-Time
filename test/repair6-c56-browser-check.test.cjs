@@ -92,13 +92,13 @@ const STRICT_FREQUENCY = {status:"ok", pass:false, progress_eligible:false, mess
 
 const C6_COLUMNS = ["model", "p", "lower", "upper"];
 const C6_ROWS = [
-  {lower:0, model:"Candidate p = 0.1", p:0.1, upper:2},
-  {lower:1, model:"Candidate p = 0.5", p:0.5, upper:5},
-  {lower:4, model:"Candidate p = 0.8", p:0.8, upper:6}
+  {lower:0, model:"Vanishing", p:0.1, upper:2},
+  {lower:1, model:"Coin flip", p:0.5, upper:5},
+  {lower:4, model:"Thriving", p:0.8, upper:6}
 ];
 function c6Ready() {
   let state = c6.beginInfo(c6.createState(), "c6-info");
-  state = c6.applyCaseInfo(state, {type:"case", contract_version:1, case_id:CASE_ID, chapter:"C6", move_id:"compatible-models", mode:"challenge", activity_id:null, simulation_id:null, request_id:"c6-info", observed_count:5, n_trials:6, inputs:[{id:"candidate_models", columns:C6_COLUMNS, rows:C6_ROWS}]});
+  state = c6.applyCaseInfo(state, {type:"case", contract_version:1, case_id:CASE_ID, chapter:"C6", move_id:"compatible-models", mode:"challenge", activity_id:null, simulation_id:null, request_id:"c6-info", observed_count:5, n_trials:6, inputs:[{id:"stories", columns:C6_COLUMNS, rows:C6_ROWS}]});
   assert.ok(state.metadata);
   return state;
 }
@@ -106,18 +106,18 @@ function c6Run(request_id, fields) {
   const state = c6.beginRun(c6Ready(), request_id);
   return c6.applyCaseResult(state, Object.assign({type:"case_result", contract_version:1, case_id:CASE_ID, chapter:"C6", move_id:"compatible-models", mode:"challenge", activity_id:null, simulation_id:null, request_id}, fields));
 }
-// candidate_models[(candidate_models.lower .<= observed_count) && (observed_count .<= candidate_models.upper), :]
+// stories[(stories.lower .<= observed_count) && (observed_count .<= stories.upper), :]
 const C6_ANDAND = {status:"error", pass:false, progress_eligible:false, value_repr:"", result_data:null,
   feedback:"Julia did not complete this move. Keep the supplied inputs unchanged, then try again.",
   message:"Something went wrong running this line.\n\nTypeError: non-boolean (BitVector) used in boolean context"};
-// candidate_models[(lower .<= observed_count) .& (observed_count .<= upper), :]
+// stories[(lower .<= observed_count) .& (observed_count .<= upper), :]
 const C6_UNDEFINED = {status:"error", pass:false, progress_eligible:false, value_repr:"", result_data:null,
   feedback:"Julia did not complete this move. Keep the supplied inputs unchanged, then try again.",
   message:"lower is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `lower` not defined"};
-// candidate_models[candidate_models.lower .<= observed_count, :]
+// stories[stories.lower .<= observed_count, :]
 const C6_LOWER_ONLY = {status:"ok", pass:false, progress_eligible:false, message:"",
   feedback:"Return every candidate whose displayed bounds contain the observation, once each.",
-  value_repr:"3×4 DataFrame\n Row │ model              p        lower  upper\n     │ String             Float64  Int64  Int64\n─────┼──────────────────────────────────────────\n   1 │ Candidate p = 0.1      0.1      0      2\n   2 │ Candidate p = 0.5      0.5      1      5\n   3 │ Candidate p = 0.8      0.8      4      6",
+  value_repr:"3×4 DataFrame\n Row │ model      p        lower  upper\n     │ String     Float64  Int64  Int64\n─────┼──────────────────────────────────\n   1 │ Vanishing      0.1      0      2\n   2 │ Coin flip      0.5      1      5\n   3 │ Thriving       0.8      4      6",
   result_data:{kind:"table", columns:C6_COLUMNS, rows:C6_ROWS}};
 // The reference answer (accepted).
 const C6_ACCEPTED_DATA = {kind:"table", columns:C6_COLUMNS, rows:[C6_ROWS[1], C6_ROWS[2]]};
@@ -133,16 +133,16 @@ test("the real counts fixture matches the captured totals", () => {
 test("item 1: after Move 2 is accepted the move line says Move 2 is done, not that it is now open", () => {
   assert.equal(typeof c5.moveLockText, "function");
   let state = c5.createState();
-  assert.equal(c5.moveLockText(state), "Complete and run Move 1 to unlock Move 2.");
+  assert.equal(c5.moveLockText(state), "Complete and run Step 1 to unlock Step 2.");
 
   state = c5Run(c5Ready(state, "event-mask", "c5-info-1"), "event-mask", "c5-run-1", ACCEPTED_MASK);
   assert.ok(state.evidence, "the real Move 1 answer is accepted");
-  assert.equal(c5.moveLockText(state), "Event saved; Move 2 is now open.");
+  assert.equal(c5.moveLockText(state), "Event saved; Step 2 is now open.");
 
   state = c5Run(c5Ready(state, "event-frequency", "c5-info-2"), "event-frequency", "c5-run-2", ACCEPTED_FREQUENCY);
   assert.ok(state.evidence, "the real Move 2 answer is accepted");
   const done = c5.moveLockText(state);
-  assert.match(done, /Move 2 is done/);
+  assert.match(done, /Step 2 is done/);
   assert.doesNotMatch(done, /now open/);
   assert.doesNotMatch(done, EM_DASH);
 
@@ -161,21 +161,21 @@ test("item 1: after Move 2 is accepted the move line says Move 2 is done, not th
 test("item 2: once Move 1 is done, the evidence area shows Move 2 text instead of Move 1 text", () => {
   assert.equal(typeof c5.evidenceNotes, "function");
   const first = c5.evidenceNotes(realC5Info("event-mask"), "event-mask");
-  assert.equal(first.distribution, "Each bar is the number of supplied simulations with that count. Your next Julia move will name the bars at least the observed count (5).", "Move 1 is unchanged");
-  assert.match(first.comparison, /so it returns one true-or-false answer per simulation/, "Move 1 is unchanged");
+  assert.equal(first.distribution, "Each bar is the number of supplied simulations with that count. Your next Julia move will name the bars at least the observed count (5).", "Step 1 is unchanged");
+  assert.match(first.comparison, /so it returns one true-or-false answer per simulation/, "Step 1 is unchanged");
 
   const second = c5.evidenceNotes(realC5Info("event-frequency"), "event-frequency");
   for (const text of [second.distribution, second.comparison]) {
     assert.doesNotMatch(text, /Your next Julia move will name the bars/);
     assert.doesNotMatch(text, /so it returns one true-or-false answer per simulation/);
-    assert.match(text, /Move 1/);
+    assert.match(text, /Step 1/);
     assert.match(text, /fraction of all/);
     assert.doesNotMatch(text, EM_DASH);
     assert.doesNotMatch(text, NO_ANSWER, "no code and no answer");
   }
   assert.match(second.distribution, /observed count \(5\)/);
   assert.match(second.distribution, /1000 simulations/);
-  assert.match(second.comparison, /not a second dataset and not case evidence/);
+  assert.match(second.comparison, /not a second dataset; it does not count for the case/);
 
   const source = web("chapter5.js");
   assert.match(source, /evidenceNotes\(state\.metadata,\s*state\.activeMove\)/, "the page passes the active move");
@@ -222,7 +222,7 @@ test("item 3: other returned values and errors do not get the equal-counts lead"
 // ---- 4. An error run ends with words that are true for an error ----
 test("item 4: C6 and C5 error runs end with next steps that fit an error, not 'did not meet the stated check'", () => {
   const andand = c6Run("c6-andand", C6_ANDAND);
-  assert.equal(c6.runOutcomeStatus(andand.runFailure), "Not accepted — Julia could not run this code. No evidence was saved.");
+  assert.equal(c6.runOutcomeStatus(andand.runFailure), "Not yet. Julia could not run this code. Your code is still here.");
   const errorShared = c6.challengeRecovery({status:"error"});
   for (const text of [andand.runFailure.message, c6Run("c6-undefined", C6_UNDEFINED).runFailure.message]) {
     assert.doesNotMatch(text, /did not meet the stated check/);
@@ -230,7 +230,7 @@ test("item 4: C6 and C5 error runs end with next steps that fit an error, not 'd
     assert.match(text, /Original Julia error below/);
     assert.match(text, /run again/);
     assert.ok(text.endsWith(errorShared), "one shared error step");
-    assert.doesNotMatch(text, /candidate_models|observed_count/);
+    assert.doesNotMatch(text, /stories|observed_count/);
     assert.doesNotMatch(text, EM_DASH);
   }
   assert.match(andand.runFailure.message, /&&/, "the && lead is kept");
@@ -250,11 +250,13 @@ test("item 4: C6 and C5 error runs end with next steps that fit an error, not 'd
   for (const page of ["chapter5.js", "chapter6.js"]) assert.match(web(page), /summary\.textContent\s*=\s*"Original Julia error"/, `${page} really shows that label`);
 });
 
-// ---- 5. Candidate cards show p once ----
-test("item 5: a candidate card shows p once when the model name already states it", () => {
+// ---- 5. Story cards show p unless the story name already states it ----
+test("item 5: a story card shows p once, skipping it only when the story name already states it", () => {
   assert.equal(typeof c6.cardProbabilityLabel, "function");
-  for (const row of C6_ROWS) assert.equal(c6.cardProbabilityLabel({model:row.model, p:row.p}), "", row.model);
+  // The story names (Vanishing, Coin flip, Thriving) do not state p, so the card shows it.
+  for (const row of C6_ROWS) assert.equal(c6.cardProbabilityLabel({model:row.model, p:row.p}), "p = " + row.p, row.model);
   assert.equal(c6.cardProbabilityLabel({model:"Rare recorded detection", p:0.2}), "p = 0.2", "a name without p still shows p");
+  assert.equal(c6.cardProbabilityLabel({model:"Rare (p = 0.2)", p:0.2}), "", "a name that already states p is not repeated");
   assert.match(web("chapter6.js"), /cardProbabilityLabel\(card\)/, "the page uses it");
 });
 
@@ -263,16 +265,22 @@ test("item 6: C6 calls the count what C5 calls it: Observed B09 count", () => {
   const c6source = web("chapter6.js");
   assert.doesNotMatch(c6source, /Retained B09/);
   assert.doesNotMatch(c6source, /retained observation/);
-  assert.match(c6source, /`Observed B09 count: \$\{state\.metadata\.observed_count\}\. Rule: lower ≤ observed_count ≤ upper\.`/);
+  // 2026-09-25 (short-scroll): the "Rule: lower <= observed_count <= upper" clause was dropped from
+  // this line because it repeats the required-result line directly above it on screen; the count
+  // wording this test protects ("Observed B09 count: N.") is unchanged.
+  assert.match(c6source, /`Observed B09 count: \$\{state\.metadata\.observed_count\}\.`/);
   assert.match(web("chapter5.js"), /`Observed B09 count: \$\{state\.metadata\.observed_count\}\./, "the same words as Chapter 5");
 });
 
-// ---- 7. The conclusion names the kept candidates once ----
-test("item 7: the case conclusion lists the kept candidates once", () => {
+// ---- 7. The conclusion is short and names both claims ----
+// Repair 7 (2026-09-26): the closure no longer lists the kept candidate names dynamically (that
+// list had no "and" before its last item, e.g. "Coin flip, Thriving can give 5 of 6"); it now uses
+// the bible's fixed, plain three-line summary (docs/design/05-story-bible.md, "Both claims checked").
+test("item 7: the case conclusion is short and names both claims plainly", () => {
   const closure = c6.caseClosure(c6Ready().metadata, C6_ACCEPTED_DATA);
   const text = closure.findings.join("\n");
-  assert.equal(text.split("Candidate p = 0.5").length - 1, 1);
-  assert.equal(text.split("Candidate p = 0.8").length - 1, 1);
   assert.doesNotMatch(text, /retained these displayed candidate rows/);
-  assert.match(text, /Candidate p = 0\.5, Candidate p = 0\.8 stayed compatible with the displayed range check/);
+  assert.ok(closure.findings.length <= 4);
+  assert.match(text, /Claim 1/);
+  assert.match(text, /Claim 2/);
 });

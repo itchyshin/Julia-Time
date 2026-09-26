@@ -7,20 +7,20 @@
 </head>
 <body>
 <a class="skip" href="#case-board">Skip to the Case Board</a>
-<header class="shell topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><p>Local browser record</p></header>
+<header class="shell topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><p>Saved on this computer</p></header>
 <main id="case-board" class="shell">
   <section class="hero" aria-labelledby="board-title">
-    <div class="hero-copy"><p class="eyebrow">Your case board</p><h1 id="board-title">Find your next move.</h1><p>This board remembers work saved in this browser. It does not grade it or replace a fresh Julia check.</p><a id="continue-action" class="primary-action" href="chapter.html" aria-disabled="true">Checking Julia…</a><a class="quiet-link hero-guide-link" href="getting-started.html">How to play</a></div>
+    <div class="hero-copy"><p class="eyebrow">Your Case Board</p><h1 id="board-title">Your next step.</h1><p id="case-progress" class="case-progress" role="status"></p><p>Where the case stands, and what to do next. It shows the work saved on this computer. No scores.</p><a id="continue-action" class="primary-action" href="chapter.html" aria-disabled="true">Checking Julia…</a><a class="quiet-link hero-guide-link" href="getting-started.html">How to play</a></div>
     <img src="../assets/lab-cast.png" alt="Itchy, Toto, Momo and Eddie gathered around jars and the Missing Fleas notebook.">
   </section>
   <section id="case-thread" class="panel" aria-labelledby="case-thread-heading">
-    <p class="eyebrow">The case, in one glance</p>
-    <h2 id="case-thread-heading">Keep the question in view</h2>
+    <p class="eyebrow">The case so far</p>
+    <h2 id="case-thread-heading">The case so far</h2>
     <dl>
-      <div><dt>Question</dt><dd id="case-question">Loading the case question…</dd></div>
-      <div><dt>Established in this browser</dt><dd id="case-established">Loading saved case history…</dd></div>
-      <div><dt>Still unknown</dt><dd id="case-unknown">Loading the boundary…</dd></div>
-      <div><dt>Why this next move?</dt><dd id="case-why-next">Loading the next move…</dd></div>
+      <div><dt>The question</dt><dd id="case-question">Loading the case question…</dd></div>
+      <div><dt>What we know so far</dt><dd id="case-established">Loading saved case history…</dd></div>
+      <div><dt>Still to find out</dt><dd id="case-unknown">Loading…</dd></div>
+      <div><dt>Why this next step</dt><dd id="case-why-next">Loading the next step…</dd></div>
     </dl>
   </section>
   <section id="setup-readiness" class="setup-readiness panel" aria-labelledby="setup-heading" aria-busy="true">
@@ -41,13 +41,13 @@
       </dl>
     </details>
   </section>
-  <p id="board-status" class="board-status" aria-live="polite">Loading browser-local case history…</p>
-  <button id="changed-history-action" class="changed-history-action" type="button" aria-describedby="board-status" hidden>Add changed browser history</button>
-  <section aria-labelledby="chapters-heading"><p class="eyebrow">Case route</p><h2 id="chapters-heading">Six chapters, one investigation</h2><div id="chapter-cards" class="chapter-grid"></div></section>
-  <section id="speed-lab-entry" class="panel" aria-labelledby="speed-lab-heading"><p class="eyebrow">Optional laboratory</p><h2 id="speed-lab-heading">Compare a fixed bootstrap calculation</h2><p>This is not a seventh chapter, does not affect case progress, and has no score.</p><p>It first checks that Julia, R, and Python return the same answers before timing the fixed local calculation.</p><a id="speed-lab-link" class="secondary-action" href="speed-lab.html">Open the optional speed laboratory</a></section>
+  <p id="board-status" class="board-status" aria-live="polite">Loading your saved work…</p>
+  <button id="changed-history-action" class="changed-history-action" type="button" aria-describedby="board-status" hidden>Use the changed save</button>
+  <section aria-labelledby="chapters-heading"><p class="eyebrow">Six chapters, one case</p><h2 id="chapters-heading">The six chapters</h2><div id="chapter-cards" class="chapter-grid"></div></section>
+  <section id="speed-lab-entry" class="panel" aria-labelledby="speed-lab-heading"><p class="eyebrow">Optional: the speed lab</p><h2 id="speed-lab-heading">The speed lab</h2><p>Time the same calculation in Julia, R and Python. Not part of the case, no score.</p><p>It first checks that Julia, R, and Python return the same answers before timing the fixed local calculation.</p><a id="speed-lab-link" class="secondary-action" href="speed-lab.html">Open the optional speed laboratory</a></section>
   <div class="lower-grid">
-    <section class="panel" aria-labelledby="evidence-heading"><p class="eyebrow">Saved evidence</p><h2 id="evidence-heading">What this browser remembers</h2><div id="saved-evidence"></div></section>
-    <section class="panel" aria-labelledby="concepts-heading"><p class="eyebrow">Julia tools met so far</p><h2 id="concepts-heading">Concepts from your saved work</h2><ul id="concept-list"></ul><p id="draft-notice" class="draft-notice"></p></section>
+    <section class="panel" aria-labelledby="evidence-heading"><p class="eyebrow">What you found</p><h2 id="evidence-heading">What you found so far</h2><div id="saved-evidence"></div></section>
+    <section class="panel" aria-labelledby="concepts-heading"><p class="eyebrow">Julia you have used so far</p><h2 id="concepts-heading">Concepts from your saved work</h2><ul id="concept-list"></ul><p id="draft-notice" class="draft-notice"></p></section>
   </div>
   <aside class="setup-reminder"><strong>Before you play:</strong> start Julia Time with the supplied local launcher. The game runs on your own computer; this board runs a fixed Julia readiness check but never installs anything.</aside>
 </main>

@@ -22,7 +22,8 @@ test("learner-facing launcher configuration directs the story to the Case Board 
 
   assert.match(server, /if\s*open_browser[\s\S]*?_browser_url\(host,\s*port\)/s);
   assert.match(server, /course\/index\.html/);
-  assert.match(runner, /JuliaTime\.run_server\(; host="127\.0\.0\.1", port=8000\)/);
+  assert.match(runner, /JuliaTime\.launch\(; host="127\.0\.0\.1", ports=JuliaTime\.LAUNCH_PORTS\)/);
+  assert.match(server, /const LAUNCH_PORTS = 8000:8009/);
   assert.match(macLauncher, /JULIA_NUM_THREADS=4/);
   assert.match(macLauncher, /OPENBLAS_NUM_THREADS=1/);
   assert.match(windowsLauncher, /set "JULIA_NUM_THREADS=4"/);

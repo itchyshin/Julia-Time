@@ -23,7 +23,7 @@ const PAIRS_WITHOUT_GROUPS = errorResult("counts", "A function was called with t
 const PLAIN_SLASH = errorResult("rates", "Something went wrong running this line.\n\nArgumentError: It is only allowed to pass a vector as a column of a DataFrame. Instead use `df[!, col_ind] .= v` if you want to use broadcasting.");
 const FOLLOWED_DOT_EQUALS = errorResult("rates", "Something went wrong running this line.\n\nDimensionMismatch: cannot broadcast array to have fewer non-singleton dimensions");
 
-const ANSWER_LINES = ["groupby(jars, :tray_id)", "combine(groups, nrow => :n, :detected => sum => :detected_n)", "summary.rate = summary.detected_n ./ summary.n"];
+const ANSWER_LINES = ["groupby(jars, :tray_id)", "combine(groups, nrow => :n, :detected => sum => :detected_n)", "counts.rate = counts.detected_n ./ counts.n"];
 
 function assertNoAnswerLine(text) {
   for (const line of ANSWER_LINES) assert.ok(!text.includes(line), "coaching must not print the reference line " + line);
@@ -79,8 +79,20 @@ test("C2 puts the error-specific line in front of the existing recovery copy, wh
 
 test("C2 coaching is keyed on actual error text only; other errors and passing runs add nothing", () => {
   assert.equal(client.c2ErrorNextStep(errorResult("counts", "MethodError: no method matching length(::Symbol)")), "");
-  assert.equal(client.c2ErrorNextStep(errorResult("rates", "summary is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `summary` not defined")), "");
   assert.equal(client.c2ErrorNextStep({status:"ok", pass:false, step:"rates", message:"", feedback:"Return exactly these columns: tray_id, n, detected_n, rate."}), "");
   const accepted = client.resultText({status:"ok", pass:true, step:"group", feedback:"The records match.", explanation:{julia:"In the taught approach, groupby(jars, :tray_id) keeps the B09 records."}});
   assert.ok(accepted.startsWith("The records match."));
+});
+
+test("a returning player's draft using the old name summary is coached to the renamed counts table", () => {
+  const undefSummary = errorResult("rates", "summary is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `summary` not defined");
+  const line = client.c2ErrorNextStep(undefSummary);
+  assert.match(line, /This name changed: use counts instead of summary/);
+});
+
+test("C2 counts: nrow called directly on the groups is coached toward combine's nrow => :n pair", () => {
+  const message = errorResult("counts", "A function was called with the wrong kind of argument.\n\nMethodError: no method matching nrow(::DataFrames.GroupedDataFrame{DataFrames.DataFrame})");
+  const line = client.c2ErrorNextStep(message);
+  assert.match(line, /nrow => :n/);
+  assert.match(line, /combine/i);
 });

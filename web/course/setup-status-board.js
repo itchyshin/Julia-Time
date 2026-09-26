@@ -69,7 +69,7 @@
       const story = view.story;
       const message = openedFromFile
         ? "This page was opened from a file. Start the supplied Julia Time launcher, then open http://127.0.0.1:8000/."
-        : transportNotice || (awaitingPong ? "Connecting to the local Julia lab…" : view.message);
+        : transportNotice || (awaitingPong ? "Connecting to the local Julia lab… This usually takes a few seconds." : view.message);
 
       text(status, message);
       panel.setAttribute("aria-busy", state.phase === "checking" ? "true" : "false");
@@ -92,7 +92,7 @@
 
     function requestStoryStatus() {
       if (!socketIsOpen()) {
-        settleConnectionFailure(null, "Disconnected — this check is no longer current. Your saved browser work is still here. Reconnect to check Julia.");
+        settleConnectionFailure(null, "Disconnected. This check is no longer current. Your saved browser work is still here. Reconnect to check Julia.");
         return;
       }
 
@@ -106,7 +106,7 @@
         socket.send(JSON.stringify(started.message));
         armConnectionTimer(socket);
       } catch (_) {
-        settleConnectionFailure(null, "Disconnected — this check is no longer current. Your saved browser work is still here. Reconnect to check Julia.");
+        settleConnectionFailure(null, "Disconnected. This check is no longer current. Your saved browser work is still here. Reconnect to check Julia.");
       }
     }
 
@@ -205,7 +205,7 @@
 
       candidate.addEventListener("close", function () {
         if (socket !== candidate) return;
-        settleConnectionFailure(candidate, "Disconnected — this check is no longer current. Your saved browser work is still here. Reconnect to check Julia.");
+        settleConnectionFailure(candidate, "Disconnected. This check is no longer current. Your saved browser work is still here. Reconnect to check Julia.");
       });
     }
 

@@ -23,8 +23,12 @@ rem one-time setup has installed its packages.
 "%JULIA_EXE%" --startup-file=no --history-file=no --project=. -e "using JuliaTime" >nul 2>&1
 if not errorlevel 1 goto :play
 echo Julia Time has not finished its one-time setup yet. Running it once now; this can take several minutes.
+rem This launcher says what happens next itself, so check_setup.jl skips its docs/install.md line.
+rem Clear the setting only after EXIT_CODE is saved: in a .cmd file, set resets ERRORLEVEL.
+set "JULIATIME_SETUP_FROM_HELPER=1"
 "%JULIA_EXE%" --startup-file=no --history-file=no --project=. check_setup.jl
 set "EXIT_CODE=%ERRORLEVEL%"
+set "JULIATIME_SETUP_FROM_HELPER="
 if not "%EXIT_CODE%"=="0" goto :setup_failed
 
 :play

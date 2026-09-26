@@ -7,6 +7,18 @@ probe programs in this directory.
 """
 
 const SETUP_CONTRACT_VERSION = "setup-v1"
+
+const SETUP_NEXT_ACTION = "Next: open the Case Board with the matching command in docs/install.md."
+
+"""
+    setup_next_action(env=ENV) -> Union{String,Nothing}
+
+The line check_setup.jl prints after a successful setup. A person who ran the setup command by hand
+(the docs/install.md route) is told how to open the Case Board. The learner-facing helpers (the Play
+launchers and setup-windows.cmd) run the setup for the learner and say what happens next themselves;
+they set `JULIATIME_SETUP_FROM_HELPER=1` for that one call, and then there is no line to print.
+"""
+setup_next_action(env=ENV) = get(env, "JULIATIME_SETUP_FROM_HELPER", "") == "1" ? nothing : SETUP_NEXT_ACTION
 const SETUP_REPORT_FIELDS = (
     "contract_version",
     "component",

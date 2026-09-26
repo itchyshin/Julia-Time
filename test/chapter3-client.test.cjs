@@ -7,11 +7,11 @@ const path = require("node:path");
 const client = require("../web/chapter3.js");
 
 const CASE_ID = "missing-fleas-v1";
-const JOIN_COLUMNS = ["tray_id", "reported_detected_n", "logged_detected_n", "log_status"];
+const JOIN_COLUMNS = ["tray_id", "notebook_detected", "sheet_detected", "entry_status"];
 const JOIN_ROWS = [
-  {tray_id:"T-A", reported_detected_n:2, logged_detected_n:2, log_status:"entered"},
-  {tray_id:"T-B", reported_detected_n:2, logged_detected_n:2, log_status:"entered"},
-  {tray_id:"T-C", reported_detected_n:1, logged_detected_n:0, log_status:"not entered"}
+  {tray_id:"T-A", notebook_detected:2, sheet_detected:2, entry_status:"filled in"},
+  {tray_id:"T-B", notebook_detected:2, sheet_detected:2, entry_status:"filled in"},
+  {tray_id:"T-C", notebook_detected:1, sheet_detected:0, entry_status:"left blank"}
 ];
 
 test("C3 begins with its handling-desk scene and an empty challenge editor", () => {
@@ -25,15 +25,14 @@ test("C3 begins with its handling-desk scene and an empty challenge editor", () 
   assert.match(html, /id="case-board"/);
   assert.match(html, /<a class="skip" href="#chapter-title">/);
   assert.match(html, /<textarea id="code"[^>]*><\/textarea>/);
-  assert.match(html, /recording disagreement/);
-  assert.match(html, /does not tell us which record is biologically true/i);
+  assert.match(html, /The report was typed from a tally sheet/i);
 });
 
 test("C3 recognises only the two contract move IDs and their visible input sets", () => {
   assert.equal(client.knownMove("join-report-log"), true);
   assert.equal(client.knownMove("filter-disagreement"), true);
   assert.equal(client.knownMove("join"), false);
-  assert.deepEqual(client.activeInputIds("join-report-log"), ["report", "handling_log"]);
+  assert.deepEqual(client.activeInputIds("join-report-log"), ["tray_counts", "tally_sheet"]);
   assert.deepEqual(client.activeInputIds("filter-disagreement"), ["joined"]);
 });
 
@@ -101,12 +100,12 @@ test("only a passing, current returned join becomes fresh evidence", () => {
 test("key-alignment and disagreement visuals are derived only from returned rows", () => {
   assert.deepEqual(client.visualData("join-report-log", {columns:JOIN_COLUMNS, rows:JOIN_ROWS}), {
     kind:"key-alignment",
-    rows:JOIN_ROWS.map(row => ({tray_id:row.tray_id, report:row.reported_detected_n, log:row.logged_detected_n, log_status:row.log_status}))
+    rows:JOIN_ROWS.map(row => ({tray_id:row.tray_id, notebook:row.notebook_detected, sheet:row.sheet_detected, entry_status:row.entry_status}))
   });
   const disagreement = client.visualData("filter-disagreement", {columns:JOIN_COLUMNS, rows:[JOIN_ROWS[2]]});
   assert.deepEqual(disagreement, {
-    kind:"recording-disagreement",
-    rows:[{tray_id:"T-C", report:1, log:0, log_status:"not entered"}]
+    kind:"tray-disagrees",
+    rows:[{tray_id:"T-C", notebook:1, sheet:0, entry_status:"left blank"}]
   });
   assert.equal(client.visualData("filter-disagreement", {columns:JOIN_COLUMNS, rows:[JOIN_ROWS[0]]}), null);
   assert.equal(client.visualData("join-report-log", {columns:JOIN_COLUMNS, rows:[JOIN_ROWS[0], JOIN_ROWS[0]]}), null);
@@ -132,19 +131,20 @@ test("a table-shaped rejected case result never receives the evidence visual", (
 
 test("C3 offers concept, code shape, solution, bridge comparisons, and error recovery without supplying editor code", () => {
   const lesson = client.lessonCopy("join-report-log");
-  assert.match(lesson.concept, /one-to-one/i);
+  assert.match(lesson.concept, /Match each tray/i);
   assert.match(lesson.shape, /leftjoin\(left_table, right_table, on=:shared_column\)/);
-  assert.match(lesson.solution, /leftjoin\(report, handling_log, on=:tray_id\)/);
+  assert.match(lesson.solution, /leftjoin\(tray_counts, tally_sheet, on=:tray_id\)/);
   assert.match(lesson.syntax, /leftjoin means/i);
-  assert.match(lesson.syntax, /first comma/i);
-  assert.match(lesson.syntax, /second comma/i);
   assert.match(client.lessonCopy("filter-disagreement").shape, /table\[table\.left_count \.!= table\.right_count, :\]/);
   assert.match(client.lessonCopy("filter-disagreement").syntax, /Chapter 1.*\.==/i);
-  assert.match(client.lessonCopy("filter-disagreement").solution, /joined\[joined\.reported_detected_n \.!= joined\.logged_detected_n, :\]/);
+  assert.match(client.lessonCopy("filter-disagreement").solution, /joined\[joined\.notebook_detected \.!= joined\.sheet_detected, :\]/);
   assert.match(client.recoveryCopy("join-report-log"), /comma/i);
   assert.match(client.recoveryCopy("filter-disagreement"), /\.!=/);
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter3.html"), "utf8");
+  // 2026-09-25: the old always-visible "R and Python comparisons" details is gone; the same
+  // substring now names the post-acceptance bridge card instead (see test/move-first-c3.test.cjs).
   assert.match(html, /R and Python/);
+  assert.match(html, /id="bridge-card"/);
   // T2 (2026-09-12 playtest): the code shape used to duplicate into an always-visible
   // "Template only — not code to run yet" panel, above the real bindings. It now lives only in
   // the gated "Code shape" help stage (lesson.shape, asserted above), one click away.
@@ -160,8 +160,8 @@ test("C3 distinguishes a restored learner draft from supplied code and names acc
   assert.equal(typeof client.draftNotice, "function");
   assert.match(client.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
   assert.match(client.draftNotice(false, false), /starts empty/i);
-  assert.equal(client.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "✓ Accepted — evidence saved.");
-  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "Julia checked it: that's right.");
+  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not yet\. Julia ran your code/i);
 });
 
 test("move two stays closed until this browser has a checked join", () => {
@@ -186,7 +186,7 @@ test("a valid saved C3 challenge cursor offers a fresh-check resume target", () 
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter3.html"), "utf8");
   assert.match(html, /id="resume-saved"[^>]*hidden/);
   assert.match(html, /id="resume-saved-move"/);
-  assert.match(html, /fresh Julia check/i);
+  assert.match(html, /run it again to check it today/i);
 });
 
 test("only an accepted current challenge persists a draft-free historical progress, evidence, and next cursor", () => {
@@ -211,14 +211,14 @@ test("only an accepted current challenge persists a draft-free historical progre
 });
 
 test("C3 makes joining the first question and gives keyboard users a recovery route", () => {
-  assert.match(client.lessonCopy("join-report-log").question, /put each report tray beside its matching handling record/i);
-  assert.match(client.lessonCopy("filter-disagreement").question, /disagree/i);
+  assert.match(client.lessonCopy("join-report-log").question, /put each tray.s notebook count next to its tally-sheet box/i);
+  assert.match(client.lessonCopy("filter-disagreement").question, /differ/i);
   assert.equal(client.needsRecoveryFocus({status:"error"}), true);
   assert.equal(client.needsRecoveryFocus({status:"timeout"}), true);
   assert.equal(client.needsRecoveryFocus({status:"ok"}), false);
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter3.html"), "utf8");
   assert.match(html, /id="reconnect"/);
-  assert.match(html, /Before the case: practise matching two records/);
+  assert.match(html, /Practice first: line up two small tables/);
   assert.doesNotMatch(html, /The practice step is optional/);
 });
 
@@ -231,20 +231,20 @@ test("a checked C3 disagreement gives the learner one named route to the recheck
 });
 
 test("C3 never calls a checked result an unrun draft", () => {
-  assert.match(client.draftStatus({status:"ok", pass:true}), /checked this code just now/i);
-  assert.match(client.draftStatus({status:"ok", pass:false}), /ran this code/i);
-  assert.match(client.draftStatus({status:"timeout"}), /not accepted/i);
+  assert.match(client.draftStatus({status:"ok", pass:true}), /that's right/i);
+  assert.match(client.draftStatus({status:"ok", pass:false}), /not quite what we need/i);
+  assert.match(client.draftStatus({status:"timeout"}), /too long/i);
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
   assert.match(source, /el\.draftNote\.textContent = draftStatus\(message\);/);
 });
 
 test("the full-answer hint stops for an explicit confirmation and never supplies challenge code", () => {
-  assert.equal(client.helpStage("join-report-log", 0).label, "Concept");
+  assert.equal(client.helpStage("join-report-log", 0).label, "Idea");
   assert.equal(client.helpStage("join-report-log", 0).button, "Show the code shape");
   assert.equal(client.helpStage("join-report-log", 1).label, "Code shape");
-  assert.equal(client.helpStage("join-report-log", 1).button, "Show a full answer?");
+  assert.equal(client.helpStage("join-report-log", 1).button, "Show the full answer");
   const warning = client.helpStage("join-report-log", 2);
-  assert.match(warning.text, /will not write into your challenge editor/i);
+  assert.match(warning.text, /will not write into your editor/i);
   assert.equal(warning.button, "Show complete code now");
   assert.equal(client.helpStage("join-report-log", 3).label, "Full answer");
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
@@ -256,13 +256,13 @@ test("C3 teaches a generic Boolean row mask in two small moves before the case a
   assert.equal(comparison.label, "Build the row rule");
   assert.equal(comparison.text, "row_rule = table.left_count .!= table.right_count");
   assert.equal(comparison.button, "Use the row rule to select rows");
-  assert.doesNotMatch(comparison.text, /joined|reported_detected_n|logged_detected_n/);
+  assert.doesNotMatch(comparison.text, /joined|notebook_detected|sheet_detected/);
 
   const selection = client.helpStage("filter-disagreement", 2);
   assert.equal(selection.label, "Select with the row rule");
   assert.equal(selection.text, "table[row_rule, :]");
   assert.equal(selection.button, "Show the combined code shape");
-  assert.doesNotMatch(selection.text, /joined|reported_detected_n|logged_detected_n/);
+  assert.doesNotMatch(selection.text, /joined|notebook_detected|sheet_detected/);
 
   assert.equal(client.helpStage("filter-disagreement", 3).label, "Code shape");
   assert.equal(client.helpStage("filter-disagreement", 4).label, "Before the full answer");
@@ -276,7 +276,7 @@ test("practice metadata and results need a separate exact demonstration identity
   assert.equal(client.applyDemoInfo(state, validDemoInfo({inputs:[practiceReport()]})), state);
   state = client.applyDemoInfo(state, validDemoInfo());
   assert.equal(state.demoInfoRequest, null);
-  assert.deepEqual(state.demoMetadata.inputs.map(input => input.id), ["practice_report", "practice_log"]);
+  assert.deepEqual(state.demoMetadata.inputs.map(input => input.id), ["practice_counts", "practice_sheet"]);
   state = client.beginDemoRun(state, "practice-run");
   assert.equal(client.applyDemoResult(state, validDemoResult({request_id:"old"})), state);
   assert.equal(client.applyDemoResult(state, validDemoResult({mode:"challenge", activity_id:null, pass:true, progress_eligible:true})), state);
@@ -299,20 +299,22 @@ test("practice drafts use their own demonstration key and never create case evid
 test("the optional practice panel has its own blank editor and deliberate build/run controls", () => {
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter3.html"), "utf8");
   assert.match(html, /id="demo-panel"/);
-  assert.match(html, /Before the case: practise matching two records/);
-  assert.ok(html.indexOf('id="demo-panel"') < html.indexOf('id="code"'));
+  assert.match(html, /Practice first: line up two small tables/);
+  // Move-first layout (2026-09-25): optional aids, including this worked example, now live in
+  // one collapsed <details class="jt-help"> after the editor's Run/result area, not before it.
+  assert.ok(html.indexOf('id="demo-panel"') > html.indexOf('id="code"'));
   assert.match(html, /id="demo-inputs"/);
   assert.match(html, /<textarea id="demo-code"[^>]*><\/textarea>/);
   assert.match(html, /data-demo-token="open"/);
   assert.match(html, /data-demo-token="key"/);
   assert.match(html, /id="run-demo"/);
   assert.match(html, /Run demonstration/);
-  assert.match(html, /predict.*shared key.*how many rows/i);
+  assert.match(html, /which labels will match.*how many rows/i);
   assert.match(html, /id="demo-case-bridge"/);
-  assert.match(html, /<code>report<\/code>.*<code>tray_id<\/code>.*<code>reported_detected_n<\/code>/s);
-  assert.match(html, /<code>handling_log<\/code>.*<code>tray_id<\/code>.*<code>logged_detected_n<\/code>.*<code>log_status<\/code>/s);
-  assert.match(html, /How can we put each report tray beside its matching handling record\?/);
-  assert.match(html, /One row per report tray, with that tray’s matching handling-log fields\./);
+  assert.match(html, /<code>tray_counts<\/code>.*<code>tray_id<\/code>.*<code>notebook_detected<\/code>/s);
+  assert.match(html, /<code>tally_sheet<\/code>.*<code>tray_id<\/code>.*<code>sheet_detected<\/code>.*<code>entry_status<\/code>/s);
+  assert.match(html, /How do we put each tray.s notebook count next to its tally-sheet box\?/);
+  assert.match(html, /One row per tray, with its notebook count and its tally-sheet columns\./);
   assert.match(html, /<a id="return-to-case"[^>]*href="#code"/);
   assert.equal(client.shouldOfferCaseReturn(validDemoResult()), true);
   assert.equal(client.shouldOfferCaseReturn(validDemoResult({status:"error"})), true);
@@ -346,19 +348,19 @@ test("a disconnected or hidden practice request cannot settle later", () => {
 });
 
 function reportInput() {
-  return {id:"report", columns:["tray_id", "reported_detected_n"], rows:[{tray_id:"T-A", reported_detected_n:2}]};
+  return {id:"tray_counts", columns:["tray_id", "notebook_detected"], rows:[{tray_id:"T-A", notebook_detected:2}]};
 }
 function logInput() {
-  return {id:"handling_log", columns:["tray_id", "logged_detected_n", "log_status"], rows:[{tray_id:"T-A", logged_detected_n:2, log_status:"entered"}]};
+  return {id:"tally_sheet", columns:["tray_id", "sheet_detected", "entry_status"], rows:[{tray_id:"T-A", sheet_detected:2, entry_status:"filled in"}]};
 }
 function joinedInput() {
   return {id:"joined", columns:JOIN_COLUMNS, rows:JOIN_ROWS};
 }
 function practiceReport() {
-  return {id:"practice_report", columns:["key", "reported_detected_n"], rows:[{key:"K-A", reported_detected_n:2}, {key:"K-B", reported_detected_n:1}]};
+  return {id:"practice_counts", columns:["key", "notebook_detected"], rows:[{key:"K-A", notebook_detected:2}, {key:"K-B", notebook_detected:1}]};
 }
 function practiceLog() {
-  return {id:"practice_log", columns:["key", "logged_detected_n", "log_status"], rows:[{key:"K-A", logged_detected_n:2, log_status:"entered"}, {key:"K-B", logged_detected_n:0, log_status:"not entered"}]};
+  return {id:"practice_sheet", columns:["key", "sheet_detected", "entry_status"], rows:[{key:"K-A", sheet_detected:2, entry_status:"filled in"}, {key:"K-B", sheet_detected:0, entry_status:"left blank"}]};
 }
 function validDemoInfo(overrides = {}) {
   return Object.assign({
@@ -370,8 +372,8 @@ function validDemoInfo(overrides = {}) {
 function validDemoResult(overrides = {}) {
   return Object.assign({
     type:"case_result", contract_version:1, case_id:CASE_ID, chapter:"C3", move_id:"join-report-log", mode:"demonstration", activity_id:"practice-join-v1", simulation_id:null,
-    request_id:"practice-run", status:"ok", pass:null, practice_pass:true, progress_eligible:false, columns:["key", "reported_detected_n", "logged_detected_n", "log_status"],
-    rows:[{key:"K-A", reported_detected_n:2, logged_detected_n:2, log_status:"entered"}, {key:"K-B", reported_detected_n:1, logged_detected_n:0, log_status:"not entered"}]
+    request_id:"practice-run", status:"ok", pass:null, practice_pass:true, progress_eligible:false, columns:["key", "notebook_detected", "sheet_detected", "entry_status"],
+    rows:[{key:"K-A", notebook_detected:2, sheet_detected:2, entry_status:"filled in"}, {key:"K-B", notebook_detected:1, sheet_detected:0, entry_status:"left blank"}]
   }, overrides);
 }
 function validInfo(overrides = {}) {

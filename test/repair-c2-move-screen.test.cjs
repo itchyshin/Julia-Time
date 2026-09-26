@@ -37,8 +37,7 @@ test("UI-17: C2 teaching copy only points at things that are on the page", () =>
     assert.doesNotMatch(teaching, /build plan|named-input card|code shape/i, step);
   }
   const group = client.lessonCopy("group").teaching;
-  assert.match(group, /Use these real names/);
-  assert.match(html, /<p class="eyebrow">Use these real names<\/p>/);
+  assert.match(html, /<p class="eyebrow">Names you can type<\/p>/);
 });
 
 test("C2 flow: the move screen says each run starts fresh from jars and must end with the table", () => {
@@ -51,7 +50,7 @@ test("C2 flow: the move screen says each run starts fresh from jars and must end
     assert.doesNotMatch(note, /—/, step + ": no em dash in new learner copy");
   }
   assert.match(client.freshRunNote("counts"), /groups again/i);
-  assert.match(client.freshRunNote("rates"), /summary again/i);
+  assert.match(client.freshRunNote("rates"), /counts again/i);
   const html = read("chapter2.html");
   const returnBox = html.slice(html.indexOf('<p class="return"><strong>Return:</strong>'), html.indexOf('<details class="source-notebook"'));
   assert.match(returnBox, /id="fresh-run"/, "the note sits in the visible Return box, not in a closed panel");

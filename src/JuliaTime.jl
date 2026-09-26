@@ -14,9 +14,9 @@ export run_server, run_code, warmup!, shutdown!, SandboxResult, water_fleas, DAT
        Level, Task, LEVELS, level_by_id, context, env_for, payload,
        mystery_jars, mystery_case_info, mystery_case_run, check_mystery_c1,
        mystery_c2_case_info, mystery_c2_case_run, check_mystery_c2,
-       mystery_c3_report, mystery_c3_handling_log, mystery_c3_joined,
+       mystery_c3_tray_counts, mystery_c3_tally_sheet, mystery_c3_joined,
        mystery_c3_expected_join, mystery_c3_expected_discrepancy,
-       mystery_c3_practice_report, mystery_c3_practice_log,
+       mystery_c3_practice_counts, mystery_c3_practice_sheet,
        mystery_c3_practice_expected_join, check_mystery_c3_practice_join,
        mystery_c3_case_info, mystery_c3_case_run, check_mystery_c3,
        mystery_c4_candidates, mystery_c4_expected_eligible,
@@ -54,5 +54,6 @@ include("mystery_c3.jl")
 include("mystery_c4.jl")
 include("mystery_c5.jl")
 include("mystery_c6.jl")
+include("mystery_epilogue.jl")
 
 end # module

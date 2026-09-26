@@ -40,15 +40,15 @@ test("C4 has one evidence move: sample three visibly eligible jar IDs", () => {
   assert.equal(client.knownMove(MOVE), true);
   assert.equal(client.knownMove("select-eligible"), false);
   assert.equal(client.lessonCopy(MOVE).solution, "sample(eligible.jar_id, 3; replace=false)");
-  assert.match(client.lessonCopy(MOVE).returnSpec, /three different eligible jar IDs/i);
+  assert.match(client.lessonCopy(MOVE).returnSpec, /three different jar IDs/i);
 });
 
 test("C4 distinguishes a restored learner draft from supplied code and names accepted runs", () => {
   assert.equal(typeof client.draftNotice, "function");
   assert.match(client.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
   assert.match(client.draftNotice(false, false), /starts empty/i);
-  assert.equal(client.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "✓ Accepted — evidence saved.");
-  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not accepted.*timed out/i);
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "Julia checked it: that's right.");
+  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not yet.*too long/i);
 });
 
 test("C4 names the eligible jar-ID list before asking learners to fill the generic sampling shape", () => {
@@ -60,8 +60,8 @@ test("C4 names the eligible jar-ID list before asking learners to fill the gener
 
 test("C4 explains why the plan samples any three eligible jars before asking for code", () => {
   const copy = client.lessonCopy(MOVE);
-  assert.match(copy.planningProtocol, /not claiming[^.]*more likely/i);
   assert.match(copy.planningProtocol, /at random, so the plan is fair/i);
+  assert.match(copy.planningProtocol, /any three different jars are right/i);
   assert.doesNotMatch(copy.planningProtocol, /sample\(eligible\.jar_id/);
 });
 
@@ -69,7 +69,7 @@ test("C4 starts with a supplied eligible list, a separate practice rack, and an 
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter4.html"), "utf8");
   assert.match(html, /id="visible-inputs"/);
   assert.match(html, /id="distinct-practice"/);
-  assert.match(html, /Practice only.*does not add case evidence/i);
+  assert.match(html, /Practice: does not count for the case/i);
   assert.match(html, /<textarea id="code"[^>]*><\/textarea>/);
   assert.doesNotMatch(html, /<textarea id="code"[^>]*>\s*sample\(/);
   assert.doesNotMatch(html, /data-move=/);
@@ -115,6 +115,22 @@ test("C4 keeps recovery, keyboard use, and no-invented-observation wording", () 
   const css = fs.readFileSync(path.join(__dirname, "../web/chapter4.css"), "utf8");
   assert.equal(client.needsRecoveryFocus({status:"timeout"}), true);
   assert.match(html, /Ctrl.*Enter/);
-  assert.match(html, /no new observations/i);
+  assert.match(html, /A plan finds nothing yet/i);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});
+
+test("C4 ends on Momo's teaser about the five jars, hidden until the step is accepted", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../web/chapter4.html"), "utf8");
+  const source = fs.readFileSync(path.join(__dirname, "../web/chapter4.js"), "utf8");
+  const nextIndex = html.indexOf('id="next-move"');
+  const teaserIndex = html.indexOf('id="c4-teaser"');
+  assert.ok(nextIndex >= 0 && teaserIndex > nextIndex, "the teaser sits after the Next button");
+  const teaserMatch = html.match(/<p id="c4-teaser"[^>]*>(.*?)<\/p>/);
+  assert.ok(teaserMatch, "the teaser paragraph exists");
+  assert.match(teaserMatch[0], /\bhidden\b/, "the teaser starts hidden, like the Next button");
+  assert.match(teaserMatch[1], /Momo/);
+  assert.match(teaserMatch[1], /Something about those five jars bothers me/);
+  // The doubt itself is said once, in the C5 opening (story bible section 5, C4/C5 seam); this is a teaser only.
+  assert.doesNotMatch(teaserMatch[1], /too good to be true/i);
+  assert.match(source, /el\.teaser\.hidden\s*=\s*false/, "the teaser reveals alongside the Next button");
 });

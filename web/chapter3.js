@@ -13,55 +13,51 @@
   const CHAPTER = "C3";
   const MOVES = ["join-report-log", "filter-disagreement"];
   const DEMO_ACTIVITY = "practice-join-v1";
-  const DEMO_INPUTS = ["practice_report", "practice_log"];
+  const DEMO_INPUTS = ["practice_counts", "practice_sheet"];
   const TABLE_IDENTITIES = Object.freeze({
-    report:Object.freeze({name:"report", title:"Tray summary from Chapter 2", role:"Left table — keep every tray summary row"}),
-    handling_log:Object.freeze({name:"handling_log", title:"Simulated handling log", role:"Right table — add its matching log fields"}),
-    joined:Object.freeze({name:"joined", title:"Joined table for this move", role:"A fresh copy made by the lab; it matches the join you made in move 1"}),
-    practice_report:Object.freeze({name:"practice_report", title:"Practice report", role:"Practice-only left table"}),
-    practice_log:Object.freeze({name:"practice_log", title:"Practice log", role:"Practice-only right table"})
+    tray_counts:Object.freeze({name:"tray_counts", title:"Your counts from the notebook (Chapter 2)", role:"Left table: keep every tray"}),
+    tally_sheet:Object.freeze({name:"tally_sheet", title:"The tally sheet the report was typed from", role:"Right table: add its matching sheet columns"}),
+    joined:Object.freeze({name:"joined", title:"A fresh copy of the lined-up table", role:"The same as your step 1 result"}),
+    practice_counts:Object.freeze({name:"practice_counts", title:"Practice counts", role:"Practice-only left table"}),
+    practice_sheet:Object.freeze({name:"practice_sheet", title:"Practice sheet", role:"Practice-only right table"})
   });
   const INPUTS = {
-    "join-report-log": ["report", "handling_log"],
+    "join-report-log": ["tray_counts", "tally_sheet"],
     "filter-disagreement": ["joined"]
   };
-  const JOIN_COLUMNS = ["tray_id", "reported_detected_n", "logged_detected_n", "log_status"];
+  const JOIN_COLUMNS = ["tray_id", "notebook_detected", "sheet_detected", "entry_status"];
   const COPY = {
     "join-report-log": {
-      label: "1 of 2 · Connect the two records",
-      title: "Connect the tray summary to its handling record",
-      question: "How can we put each report tray beside its matching handling record?",
-      returnSpec: "One row per report tray, with that tray’s matching handling-log fields.",
-      bridge: "Both tables use tray_id. Each tray ID occurs once in each table, so every report tray can safely meet one handling record.",
-      concept: "A key is the shared label that tells Julia which row in one table belongs with which row in the other. Here the matching is one-to-one: one report row and one handling-log row for each tray.",
+      label: "Step 1 of 2 · Line up the two records",
+      title: "Step 1 · Put each tray’s two records side by side",
+      question: "How do we put each tray’s notebook count next to its tally-sheet box?",
+      returnSpec: "One row per tray, with its notebook count and its tally-sheet columns.",
+      bridge: "Both tables have a tray_id column, and each tray appears once in each. That shared label tells Julia which rows belong together.",
+      concept: "Match each tray in tray_counts with the row for the same tray in tally_sheet.\n\nComing from R? In R you’d reach for dplyr’s left_join; Julia’s is spelled leftjoin.",
       shape: "leftjoin(left_table, right_table, on=:shared_column)",
-      shapeNote: "left_table, right_table and shared_column are placeholders, not names in this case. Swap in the names listed above under “Use these exact Julia names in your editor”.",
-      solution: "leftjoin(report, handling_log, on=:tray_id)",
-      syntax: "leftjoin means ‘keep every row from the left table, and add matching details from the right table’. The first comma separates the left table from the right table. The second comma separates those table inputs from the on= instruction. on= means ‘join using’; :shared_column means ‘the column named shared_column’.",
+      shapeNote: "The three words are placeholders: use the table names above and :tray_id.",
+      solution: "leftjoin(tray_counts, tally_sheet, on=:tray_id)",
+      syntax: "leftjoin means: keep every row of the left table, and add the matching columns from the right table. on= means “match using”; :tray_id is the column.",
       recovery: "Check that leftjoin has two tables separated by a comma, then check the second comma comes before the on= instruction that names their shared column. Run the join again.",
-      r: "dplyr::left_join(left_table, right_table, by = \"shared_column\")",
-      python: "left_table.merge(right_table, on=\"shared_column\", how=\"left\")",
-      visualTitle: "Rows connected by their shared key"
+      visualTitle: "Rows lined up by tray"
     },
     "filter-disagreement": {
-      label: "2 of 2 · Inspect the disagreement",
-      title: "Keep only the row whose two records differ",
-      question: "Which returned joined row has records that disagree?",
-      returnSpec: "Exactly the returned joined row where reported_detected_n and logged_detected_n differ.",
-      bridge: "This move starts from a fresh copy of the joined table, made by the lab. It matches the join you made in move 1, and the lab does not use your earlier result to check this move. Use a Boolean rule to keep the row where the two count columns are not equal.",
-      concept: "A dotted comparison checks each row. .!= asks whether the two values are not equal for that row, producing a true-or-false rule that can select rows.",
+      label: "Step 2 of 2 · Find the tray that disagrees",
+      title: "Step 2 · Keep the tray where the notebook and the sheet disagree",
+      question: "On which tray do the two counts differ?",
+      returnSpec: "Only the row where notebook_detected and sheet_detected differ.",
+      bridge: "A fresh copy of the lined-up table, the same as your step 1 result.",
+      concept: "Keep a row only where the notebook count is not equal to the sheet count.\n\nComing from R? In R you’d reach for dplyr’s filter with !=; Julia uses the same true/false row rule as Chapter 1.",
       scaffolds: [
         // B9 (simulated playtest, P21/P43): the placeholders were typed as written. Say so and map them.
-        {label:"Build the row rule", text:"row_rule = table.left_count .!= table.right_count", note:"table, left_count and right_count are placeholders, not names in this case. In this case, table is joined, left_count is reported_detected_n, and right_count is logged_detected_n.", button:"Use the row rule to select rows"},
+        {label:"Build the row rule", text:"row_rule = table.left_count .!= table.right_count", note:"table, left_count and right_count are placeholders, not names in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected.", button:"Use the row rule to select rows"},
         {label:"Select with the row rule", text:"table[row_rule, :]", button:"Show the combined code shape"}
       ],
       shape: "table[table.left_count .!= table.right_count, :]",
-      solution: "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]",
-      syntax: "Chapter 1’s .== compared each value with a target. .!= is its ‘not equal’ partner: it checks each paired count and is true when they differ. Inside brackets, the comma separates the rows rule from the columns position; : in the second position means all columns.",
+      solution: "joined[joined.notebook_detected .!= joined.sheet_detected, :]",
+      syntax: "Chapter 1’s .== compared each value with a target. .!= is its “not equal” partner: it checks each paired count and is true when they differ. Inside brackets, the comma separates the rows rule from the columns position; : in the second position means all columns. The dot: .!= compares row by row; a plain != compares the two whole columns and gives one answer.",
       recovery: "Check that .!= has the dot, then keep the comma before : so Julia knows you want every column of the matching row.",
-      r: "dplyr::filter(table, left_count != right_count)",
-      python: "table.loc[table[\"left_count\"] != table[\"right_count\"]]",
-      visualTitle: "The returned recording disagreement"
+      visualTitle: "The tray that disagrees"
     }
   };
 
@@ -90,6 +86,7 @@
     if (!message || message.status !== "error") return "";
     const text = String(message.message || "");
     if (/invalid row index of type Bool|returned value of type `Bool` while it must return an `AbstractVector`/.test(text)) return "Julia got just one true or false, but it needs one for each row. Without the dot, != compares the two whole columns at once and gives a single answer. Write .!= so each row gets its own true or false.";
+    if (/objects of type (?:DataFrames\.)?DataFrame are not callable/.test(text)) return "Julia's filter takes the rule first: filter(row -> ..., joined), or keep rows with joined[rule, :].";
     return "";
   }
   // Repair 3 R6 (simulated re-test): the join shape's placeholders typed as written. Challenge
@@ -98,7 +95,7 @@
     if (!message || message.status !== "error") return "";
     const text = String(message.message || "");
     const placeholder = text.match(/UndefVarError: `(left_table|right_table|shared_column)` not defined|column :(shared_column) not found/);
-    if (placeholder) return (placeholder[1] || placeholder[2]) + " is a placeholder from the code shape, not a name in this case. Here the left table is report, the right table is handling_log, and the shared column is :tray_id.";
+    if (placeholder) return (placeholder[1] || placeholder[2]) + " is a placeholder from the code shape, not a name in this case. Here the left table is tray_counts, the right table is tally_sheet, and the shared column is :tray_id.";
     return "";
   }
   // Repair 4 (review of repair 3): move 2's own code-shape placeholders typed as written, mapped
@@ -107,7 +104,7 @@
     if (!message || message.status !== "error") return "";
     const text = String(message.message || "");
     const placeholder = text.match(/UndefVarError: `(table|left_count|right_count)` not defined|column name (?::|")(left_count|right_count)"? not found/);
-    if (placeholder) return (placeholder[1] || placeholder[2]) + " is a placeholder from the code shape, not a name in this case. Here table is joined, left_count is reported_detected_n, and right_count is logged_detected_n.";
+    if (placeholder) return (placeholder[1] || placeholder[2]) + " is a placeholder from the code shape, not a name in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected.";
     return "";
   }
   function undefinedName(message) {
@@ -120,15 +117,26 @@
     if (!message || message.status !== "error") return "";
     const name = undefinedName(message);
     const join = move === "join-report-log";
-    if (name === "$") return "R's $ does not exist in Julia: Julia reads a column with a dot, as in " + (join ? "report.tray_id. In leftjoin, name the shared column with a colon: on=:tray_id." : "joined.reported_detected_n.");
+    if (name === "$") return "R's $ does not exist in Julia: Julia reads a column with a dot, as in " + (join ? "tray_counts.tray_id. In leftjoin, name the shared column with a colon: on=:tray_id." : "joined.notebook_detected.");
     if (!JOIN_COLUMNS.includes(name)) return "";
     return join ? name + " is a column name, not a name Julia knows on its own. Name a column with a colon, as in on=:tray_id."
       : name + " is a column of joined, not a name Julia knows on its own. Read a column from joined with a dot, as in joined." + name + ".";
   }
+  // A returning player's saved draft may still use a name from before the story rename (bible v2
+  // section 3.1). Keyed on Julia's own UndefVarError so the coaching leads with the actual cause.
+  const RENAMED_NAMES = Object.freeze({
+    report:"tray_counts", handling_log:"tally_sheet", reported_detected_n:"notebook_detected",
+    logged_detected_n:"sheet_detected", log_status:"entry_status"
+  });
+  function oldNameCoaching(message) {
+    const name = undefinedName(message);
+    const renamed = RENAMED_NAMES[name];
+    return renamed ? "This name changed: use " + renamed + " instead of " + name + "." : "";
+  }
   // Repair 3 R2 (simulated re-test): move 2 supplies only joined, so rebuilding the join from
   // report, handling_log or jars fails. Repair 4: keyed on Julia's UndefVarError for a case table
   // name that is not an active input of this move, and only for those.
-  const CASE_TABLES = ["report", "handling_log", "jars", "joined", "practice_report", "practice_log"];
+  const CASE_TABLES = ["tray_counts", "tally_sheet", "jars", "joined", "practice_counts", "practice_sheet"];
   function missingInputCoaching(move, message) {
     if (!message || message.status !== "error") return "";
     const name = undefinedName(message);
@@ -141,15 +149,15 @@
   function errorRecovery(move, message) {
     const named = move === "join-report-log" ? joinErrorCoaching(message) : move === "filter-disagreement" ? filterErrorCoaching(message) : "";
     if (named) return named + " " + recoveryCopy(move);
-    const nameLead = !knownMove(move) ? "" : (move === "join-report-log" ? joinPlaceholderCoaching(message) : filterPlaceholderCoaching(message)) || columnNameCoaching(move, message) || missingInputCoaching(move, message);
+    const nameLead = !knownMove(move) ? "" : oldNameCoaching(message) || (move === "join-report-log" ? joinPlaceholderCoaching(message) : filterPlaceholderCoaching(message)) || columnNameCoaching(move, message) || missingInputCoaching(move, message);
     return nameLead ? nameLead + " " + NAME_LEAD_NEXT : recoveryCopy(move);
   }
   function needsRecoveryFocus(message) { return Boolean(message && (message.status === "error" || message.status === "timeout")); }
   function draftStatus(message) {
-    if (!message || message.status === "timeout") return "This code was not accepted; your draft is still here to check and run again.";
-    if (message.status === "error") return "Julia could not run this code; your draft is still here to revise and run again.";
-    if (message.status === "ok" && message.pass === true) return "✓ Accepted — evidence saved. Julia checked this code just now; you can change it and run again.";
-    if (message.status === "ok") return "Julia ran this code, but the returned result does not yet meet the stated requirement.";
+    if (!message || message.status === "timeout") return "Not yet. Your code took too long, so the lab stopped it. Your code is still here.";
+    if (message.status === "error") return "Not yet. Julia could not run this code. Your code is still here.";
+    if (message.status === "ok" && message.pass === true) return "Julia checked it: that's right. You can change it and run again.";
+    if (message.status === "ok") return "Not yet. Julia ran your code; the result below is not quite what we need.";
     return "This is your own unrun draft for this move.";
   }
   // UI-08 (2026-09-24 browser check): the practice lines used to keep saying "not run yet" above
@@ -167,24 +175,27 @@
     return "This practice run did not finish, so there is no result to compare with your prediction yet.";
   }
   function draftNotice(hasCode, restored) {
-    if (!hasCode) return "This challenge editor starts empty. Write your own Julia result.";
-    return restored ? "Restored your saved draft — it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
+    if (!hasCode) return "This editor starts empty. Write your own Julia result.";
+    return restored ? "Restored your saved draft: it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
   }
-  function runOutcomeStatus(message) {
+  const NOT_SAVED_STATUS = "Right answer, but this computer could not save it, so the Case Board will not show it. Run it once more; if this keeps happening, ask your helper.";
+  // Ask the saved record itself, never the write call: a write can fail silently (blocked storage, a damaged record).
+  function savedMove(courseState, storage, attempt, chapter, moveId) { try { return Boolean(storage && courseState && typeof courseState.hasSavedMove === "function" && courseState.hasSavedMove(storage, attempt, chapter, moveId)); } catch (_) { return false; } }
+  function runOutcomeStatus(message, saved) {
     if (!message) return "";
-    if (message.status === "ok" && message.pass === true) return "✓ Accepted — evidence saved.";
-    if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
-    if (message.status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
-    return "Not accepted — no evidence was saved.";
+    if (message.status === "ok" && message.pass === true) return saved === false ? NOT_SAVED_STATUS : "Julia checked it: that's right.";
+    if (message.status === "timeout") return "Not yet. Your code took too long, so the lab stopped it. Your code is still here.";
+    if (message.status === "error") return "Not yet. Julia could not run this code. Your code is still here.";
+    return "Not yet. Julia ran your code; the result below is not quite what we need.";
   }
   function helpStages(move) {
     const copy = lessonCopy(move);
     const scaffolds = Array.isArray(copy.scaffolds) ? copy.scaffolds : [];
     return [
-      {label:"Concept", text:copy.concept, button:"Show the code shape"},
+      {label:"Idea", text:copy.concept, button:"Show the code shape"},
       ...scaffolds,
-      Object.assign({label:"Code shape", text:copy.shape, button:"Show a full answer?"}, copy.shapeNote ? {note:copy.shapeNote} : {}),
-      {label:"Before the full answer", text:"This will show one complete expression for the idea above. It will not write into your challenge editor or add case evidence.", button:"Show complete code now"},
+      Object.assign({label:"Code shape", text:copy.shape, button:"Show the full answer"}, copy.shapeNote ? {note:copy.shapeNote} : {}),
+      {label:"Before the full answer", text:"This will show one complete expression for the idea above. It will not write into your editor or count for the case.", button:"Show complete code now"},
       {label:"Full answer", text:copy.solution, button:"All help shown"}
     ];
   }
@@ -286,7 +297,7 @@
   }
   function expireDemoInfo(state, requestId) {
     if (!state || !state.demoInfoRequest || state.demoInfoRequest.request_id !== requestId) return state;
-    return Object.assign({}, state, {demoInfoRequest:null, demoMetadata:null, demoPending:null, demoResult:{type:"case_result", status:"timeout", request_id:requestId, message:"The practice tables took too long to arrive. Reconnect or reopen this practice section to try again; your challenge editor is unchanged."}});
+    return Object.assign({}, state, {demoInfoRequest:null, demoMetadata:null, demoPending:null, demoResult:{type:"case_result", status:"timeout", request_id:requestId, message:"The practice tables took too long to arrive. Reconnect or reopen this practice section to try again; your editor is unchanged."}});
   }
   function applyDemoInfo(state, message) {
     if (!state.demoInfoRequest || !message || message.type !== "case" || !sameCaseIdentity(message, state.demoInfoRequest) || message.mode !== "demonstration" || message.activity_id !== DEMO_ACTIVITY || !exactDemoInputSet(message.inputs)) return state;
@@ -316,15 +327,15 @@
   }
   function normalisedJoinRows(payload) {
     if (!payload || !Array.isArray(payload.columns) || !Array.isArray(payload.rows) || !JOIN_COLUMNS.every(column => payload.columns.includes(column))) return null;
-    if (payload.rows.length === 0 || !payload.rows.every(row => row && typeof row === "object" && typeof row.tray_id === "string" && row.tray_id.length > 0 && Number.isFinite(row.reported_detected_n) && Number.isFinite(row.logged_detected_n) && typeof row.log_status === "string")) return null;
+    if (payload.rows.length === 0 || !payload.rows.every(row => row && typeof row === "object" && typeof row.tray_id === "string" && row.tray_id.length > 0 && Number.isFinite(row.notebook_detected) && Number.isFinite(row.sheet_detected) && typeof row.entry_status === "string")) return null;
     if (new Set(payload.rows.map(row => row.tray_id)).size !== payload.rows.length) return null;
-    return payload.rows.map(row => ({tray_id:row.tray_id, report:row.reported_detected_n, log:row.logged_detected_n, log_status:row.log_status}));
+    return payload.rows.map(row => ({tray_id:row.tray_id, notebook:row.notebook_detected, sheet:row.sheet_detected, entry_status:row.entry_status}));
   }
   function visualData(move, payload) {
     const rows = normalisedJoinRows(payload);
     if (!rows) return null;
     if (move === "join-report-log") return {kind:"key-alignment", rows:rows};
-    if (move === "filter-disagreement" && rows.length === 1 && rows[0].report !== rows[0].log) return {kind:"recording-disagreement", rows:rows};
+    if (move === "filter-disagreement" && rows.length === 1 && rows[0].notebook !== rows[0].sheet) return {kind:"tray-disagrees", rows:rows};
     return null;
   }
   function acceptedMoveKeys(courseState, storage, attempt) {
@@ -339,8 +350,11 @@
     if (!knownMove(move)) return false;
     return move === "join-report-log" || acceptedMoveKeys(courseState, storage, attempt).includes("C3/join-report-log");
   }
+  // No step in the address: resume at the first unsolved step, or the last when both are solved (2026-09-25).
   function initialMove(courseState, storage, attempt, requested) {
-    const move = knownMove(requested) ? requested : "join-report-log";
+    const solved = acceptedMoveKeys(courseState, storage, attempt);
+    const resume = MOVES.find(item => !solved.includes(CHAPTER + "/" + item)) || MOVES[MOVES.length - 1];
+    const move = knownMove(requested) ? requested : resume;
     return canOpenMove(courseState, storage, attempt, move) ? move : "join-report-log";
   }
   // UI-04 (2026-09-24 browser check): C2 hands over a C3 cursor when its last move is accepted, so
@@ -353,6 +367,9 @@
       return Object.entries(courseState.readChallengeDrafts(storage, attempt) || {}).some(([key, value]) => key.startsWith(CHAPTER + "/") && typeof value === "string" && value.trim() !== "");
     } catch (_) { return false; }
   }
+  // With saved Chapter 3 work or a step in the address, open the investigation directly (round-4 bot,
+  // 2026-09-26), as Chapter 2 does; the story stays one click away via "Back to the story".
+  function landsInInvestigation(hasSavedWork, requested) { return Boolean(hasSavedWork) || Boolean(requested); }
   function savedChallengeResume(courseState, storage, attempt) {
     if (!courseState || typeof courseState.readCursor !== "function") return null;
     try {
@@ -381,7 +398,7 @@
   }
   function persistAcceptedCourseResult(courseState, storage, attempt, result) {
     if (!isAcceptedChallengeResult(result) || !courseState || typeof courseState.recordHistoricalMoveIfMissing !== "function" || typeof courseState.writeEvidenceIfMissing !== "function" || typeof courseState.writeCursor !== "function") return false;
-    const title = result.move_id === "join-report-log" ? "Connected tray records" : "Recording disagreement";
+    const title = result.move_id === "join-report-log" ? "Connected tray records" : "The 0 was a blank box";
     try {
       courseState.recordHistoricalMoveIfMissing(storage, attempt, CHAPTER, result.move_id);
       courseState.writeEvidenceIfMissing(storage, attempt, {chapter:CHAPTER, move_id:result.move_id, title:title, row_count:result.rows.length, provenance:"historical-browser"});
@@ -407,15 +424,21 @@
       board:$("case-board"), location:$("course-location"), reconnect:$("reconnect"), moveButtons:document.querySelectorAll("[data-move]"),
       title:$("move-title"), question:$("move-question"), bridge:$("move-bridge"), returnSpec:$("return-spec"), syntax:$("syntax-note"), challengeBridge:$("challenge-bridge"),
       inputs:$("visible-inputs"), bindings:$("case-bindings"), code:$("code"), run:$("run"), runStatus:$("run-status"), result:$("result"), visual:$("returned-visual"),
-      help:$("help-list"), nextHelp:$("next-help"), showAnswer:$("show-answer"), answerReference:$("answer-before-editor"), comparisons:$("comparisons"), connection:$("connection"), nextMove:$("next-move"), draftNote:$("draft-note"),
+      help:$("help-list"), nextHelp:$("next-help"), showAnswer:$("show-answer"), answerReference:$("answer-before-editor"), bridgeCard:$("bridge-card"), connection:$("connection"), nextMove:$("next-move"), draftNote:$("draft-note"),
       demoPanel:$("demo-panel"), demoCopy:$("demo-copy"), demoInputs:$("demo-inputs"), demoCode:$("demo-code"), demoTokenButtons:document.querySelectorAll("[data-demo-token]"), runDemo:$("run-demo"), demoPlan:$("demo-plan"), demoResult:$("demo-result"), demoCaseBridge:$("demo-case-bridge"), returnToCase:$("return-to-case"), demoDraftNote:$("demo-draft-note")
     };
     let storage = null;
     try { storage = localStorage; } catch (_) {}
     const courseState = typeof window !== "undefined" ? window.JuliaTimeCourseState : null;
+    const bridges = typeof window !== "undefined" ? window.JuliaTimeBridges : null;
+    const submittedCode = Object.create(null);
+    // Separate from submittedCode: only ever written inside the accepted branch below, so a later
+    // failed resubmit (which overwrites submittedCode) can never leak into the bridge card when the
+    // learner switches moves and back (renderMove() below reads only this map).
+    const acceptedCode = Object.create(null);
     const requestedAttempt = new URLSearchParams(location.search).get("attempt");
     const attempt = validAttempt(requestedAttempt) ? requestedAttempt : "";
-    let state = createState();
+    let state = createState(), saveOk = true;
     let socket = null;
     let stopped = false;
     let timer = null;
@@ -437,6 +460,9 @@
     state.joinAccepted = canOpenMove(courseState, storage, attempt, "filter-disagreement");
     if (el.board) el.board.href = caseBoardUrl(location.search);
     if (el.demoCode) el.demoCode.value = demoDraft;
+    if (el.scene && el.investigation) {
+      if (landsInInvestigation(Boolean(savedChallengeResume(courseState, storage, attempt)), requested)) { el.scene.hidden = true; el.investigation.hidden = false; }
+    }
 
     function current() { return lessonCopy(state.activeMove); }
     function renderSavedResume() {
@@ -444,12 +470,12 @@
       if (!el.resumeSaved) return;
       el.resumeSaved.hidden = !move;
       if (!move) return;
-      if (el.resumeSavedNote) el.resumeSavedNote.textContent = "Your earlier work in this chapter is saved only in this browser. Reopen your next move for a fresh Julia check.";
-      if (el.resumeSavedMove) el.resumeSavedMove.textContent = "Resume saved move: " + lessonCopy(move).title + " →";
+      if (el.resumeSavedNote) el.resumeSavedNote.textContent = "Your earlier work in this chapter is saved only on this computer. Run it again to check it today.";
+      if (el.resumeSavedMove) el.resumeSavedMove.textContent = "Back to your saved step: " + lessonCopy(move).title + " →";
     }
     function updateControls() {
       if (el.run) el.run.disabled = state.connection !== "connected" || !state.metadata || isRunPending(state);
-      if (el.runStatus) el.runStatus.textContent = isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result) : (state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading the case file…") : "Connect to the lab to run Julia"));
+      if (el.runStatus) el.runStatus.textContent = isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result, saveOk) : (state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading the case file…") : "Connect to the lab to run Julia"));
       if (el.reconnect) el.reconnect.hidden = !state.metadataFailure && (state.connection === "connected" || state.connection === "connecting");
       const demoReady = state.connection === "connected" && state.activeMove === "join-report-log" && Boolean(state.demoMetadata) && !isDemoRunPending(state);
       if (el.runDemo) el.runDemo.disabled = !demoReady;
@@ -492,14 +518,14 @@
       if (!el.demoInputs) return;
       el.demoInputs.replaceChildren();
       const p = document.createElement("p");
-      p.textContent = state.demoResult && state.demoResult.status === "timeout" ? state.demoResult.message : "The separate K-A/K-B practice tables will appear here when the lab supplies them. They are not Missing Fleas case evidence.";
+      p.textContent = state.demoResult && state.demoResult.status === "timeout" ? state.demoResult.message : "The K-A/K-B practice tables will appear here when the lab supplies them. Practice only.";
       el.demoInputs.append(p);
       if (el.demoCaseBridge) el.demoCaseBridge.hidden = true;
       if (el.returnToCase) el.returnToCase.hidden = true;
     }
     function renderMove() {
       const copy = current();
-      if (el.location) el.location.textContent = "Case 3 of 6 · " + copy.label;
+      if (el.location) el.location.textContent = "Chapter 3 of 6 · " + copy.label;
       if (el.title) el.title.textContent = copy.title;
       if (el.question) el.question.textContent = copy.question;
       if (el.bridge) el.bridge.textContent = copy.bridge;
@@ -508,13 +534,13 @@
       // T2 (2026-09-12 playtest): the code shape used to leak into this always-visible panel,
       // duplicating the gated "Code shape" hint stage below and turning the move into
       // substitution rather than a decision. It now lives only in that staged hint.
-      if (el.challengeBridge) el.challengeBridge.textContent = "Use the visible case tables and the required result to decide your next Julia move. This empty editor is for your own result.";
-      if (el.comparisons) el.comparisons.textContent = "R (dplyr): " + copy.r + "\n\nPython (pandas): " + copy.python;
+      if (el.challengeBridge) el.challengeBridge.textContent = "Use the visible case tables and the required result to decide your next Julia move.";
+      if (bridges) bridges.renderCard(el.bridgeCard, "C3/"+state.activeMove, acceptedCode[state.activeMove] || "");
       if (el.code) el.code.value = drafts[state.activeMove] || "";
       if (el.draftNote) el.draftNote.textContent = draftNotice(Boolean(el.code && el.code.value), Boolean(restoredDrafts[state.activeMove]));
       if (el.help) el.help.replaceChildren();
       if (el.answerReference) { el.answerReference.hidden = true; el.answerReference.replaceChildren(); }
-      if (el.nextHelp) el.nextHelp.textContent = "Show the first small hint";
+      if (el.nextHelp) el.nextHelp.textContent = "Show the idea";
       hintIndex = 0;
       clearResult();
       if (el.demoPanel) el.demoPanel.hidden = state.activeMove !== "join-report-log";
@@ -541,7 +567,11 @@
       });
       updateControls();
     }
-    function renderTable(input) {
+    const DEFAULT_DATA_LABEL = "Simulated data made for this game: no real jars, no real fleas.";
+    // short-scroll (2026-09-25): when every visible table shares the same data-label sentence,
+    // renderInputs hoists one shared line above them instead of repeating it per table.
+    function renderTable(input, opts) {
+      const hideDataLabel = Boolean(opts && opts.hideDataLabel);
       const panel = document.createElement("section");
       panel.className = "input-table";
       const heading = document.createElement("h3");
@@ -553,12 +583,13 @@
         binding.append("Julia name: ");
         const code = document.createElement("code");
         code.textContent = identity.name;
-        binding.append(code, " — " + identity.role);
+        binding.append(code, ": " + identity.role);
         panel.append(heading, binding);
       } else panel.append(heading);
       const label = document.createElement("p");
       label.className = "data-label";
-      label.textContent = input.data_label || "Simulated teaching case — seeded fixture; no real experiment.";
+      label.textContent = input.data_label || DEFAULT_DATA_LABEL;
+      if (hideDataLabel) label.hidden = true;
       const wrap = document.createElement("div");
       wrap.className = "table-wrap";
       wrap.tabIndex = 0;
@@ -575,7 +606,7 @@
       if (!el.bindings) return;
       el.bindings.replaceChildren();
       const heading = document.createElement("strong");
-      heading.textContent = "Use these exact Julia names in your editor";
+      heading.textContent = "Names you can type";
       el.bindings.append(heading);
       (metadata.inputs || []).forEach(input => {
         const identity = tableIdentity(input.id);
@@ -583,7 +614,7 @@
         const line = document.createElement("p");
         const code = document.createElement("code");
         code.textContent = identity.name;
-        line.append(code, " — " + identity.title + ". " + identity.role + ".");
+        line.append(code, ": " + identity.title + ". " + identity.role + ".");
         el.bindings.append(line);
       });
       if (state.activeMove === "join-report-log") {
@@ -597,24 +628,32 @@
     function renderInputs(metadata) {
       if (!el.inputs) return;
       el.inputs.replaceChildren();
-      const copy = current();
       const heading = document.createElement("div");
       const label = document.createElement("p"); label.className = "eyebrow"; label.textContent = "Evidence in hand";
-      const h = document.createElement("h2"); h.textContent = state.activeMove === "join-report-log" ? "Two sheets, one shared tray label" : "Your accepted join, ready for the next check";
-      const note = document.createElement("p"); note.className = "shared-key"; note.textContent = state.activeMove === "join-report-log" ? "tray_id names the same tray in both tables; every tray ID occurs once in each table." : "This is a fresh copy of the joined table, made by the lab. It matches the join you made in move 1, and the lab does not use your earlier result to check this move. It has the columns you need for the next rule.";
-      heading.append(label, h, note); el.inputs.append(heading);
-      metadata.inputs.forEach(input => el.inputs.append(renderTable(input)));
-      const returnNote = document.createElement("p"); returnNote.className = "return-bridge"; returnNote.textContent = "Your task: " + copy.returnSpec;
+      const h = document.createElement("h2"); h.textContent = state.activeMove === "join-report-log" ? "Left/right tags" : "Your lined-up table, ready for the next check";
+      const note = document.createElement("p"); note.className = "shared-key"; note.textContent = state.activeMove === "join-report-log" ? "Left table: keep every tray. Right table: add its matching sheet columns." : "A fresh copy of the lined-up table, the same as your step 1 result.";
+      heading.append(label, h, note);
+      // short-scroll (2026-09-25): both move-1 tables normally carry the identical "simulated
+      // teaching case" sentence; show it once above them instead of once per table, and lay the
+      // tables out side by side (CSS, #visible-inputs.two-up) so the code box is not stacked below
+      // two full-height tables. A single table (move 2) keeps its own label and full width.
+      const dataLabels = metadata.inputs.map(input => input.data_label || DEFAULT_DATA_LABEL);
+      const sharedLabel = metadata.inputs.length > 1 && dataLabels.every(text => text === dataLabels[0]) ? dataLabels[0] : null;
+      if (sharedLabel) { const shared = document.createElement("p"); shared.className = "data-label"; shared.textContent = sharedLabel; heading.append(shared); }
+      el.inputs.append(heading);
+      el.inputs.classList.toggle("two-up", metadata.inputs.length > 1);
+      metadata.inputs.forEach(input => el.inputs.append(renderTable(input, {hideDataLabel: Boolean(sharedLabel)})));
+      const returnNote = document.createElement("p"); returnNote.className = "return-bridge"; returnNote.textContent = "Use these tables to meet the return above.";
       el.inputs.append(returnNote);
     }
     function renderDemoInputs(metadata) {
       if (!el.demoInputs) return;
       el.demoInputs.replaceChildren();
-      const label = document.createElement("p"); label.className = "data-label"; label.textContent = "Simulated practice data — separate from the Missing Fleas case.";
+      const label = document.createElement("p"); label.className = "data-label"; label.textContent = "Practice data with labels K-A and K-B. Does not count for the case.";
       el.demoInputs.append(label);
       metadata.inputs.forEach(input => el.demoInputs.append(renderTable(input)));
-      if (el.demoCopy) el.demoCopy.textContent = "These are the separate K-A/K-B practice tables supplied by the lab. Build the join below; it cannot add a Missing Fleas case finding.";
-      if (el.demoPlan) el.demoPlan.textContent = "Before you run, predict which shared keys will match and how many rows Julia will return. Then add the join’s opening, followed by the two practice tables and their shared key. These controls write only this practice editor.";
+      if (el.demoCopy) el.demoCopy.textContent = "Practice data with labels K-A and K-B. Does not count for the case.";
+      if (el.demoPlan) el.demoPlan.textContent = "Before you run: which labels will match, and how many rows will Julia return? Then add the join’s opening, followed by the two practice tables and their shared key. These controls write only this practice editor.";
     }
     function appendTechnical(message, target) {
       const raw = [message && message.stdout, message && message.message, message && message.value_repr].filter(Boolean).join("\n");
@@ -638,18 +677,35 @@
       visual.rows.forEach(row => {
         const card = document.createElement("article");
         const tray = document.createElement("h3"); tray.textContent = row.tray_id;
-        const line = document.createElement("p"); line.textContent = "Report: " + row.report + " · Handling log: " + row.log + " · " + row.log_status;
+        const line = document.createElement("p"); line.textContent = "Notebook: " + row.notebook + " · Sheet: " + row.sheet + " · " + row.entry_status;
         card.append(tray, line); section.append(card);
       });
       const note = document.createElement("p"); note.className = "caution";
-      note.textContent = visual.kind === "recording-disagreement" ? "This is a recording disagreement. It does not tell us which record is biologically true, why the entries differ, who entered them, or whether anyone is at fault." : "These connections show matching record keys. They do not establish a biological cause.";
+      note.textContent = visual.kind === "tray-disagrees" ? "We know the box was left blank, not why; a recheck of the jars will tell us more." : "These connections show which tray each row belongs to; a shared tray label is not a cause.";
       section.append(note); el.visual.append(section);
+    }
+    function renderBlankNote() {
+      const section = document.createElement("section");
+      section.className = "blank-note";
+      const h = document.createElement("h3"); h.textContent = "How each language stores a blank"; section.append(h);
+      const intro = document.createElement("p");
+      intro.textContent = "On the tally sheet, T-C\u2019s box was left blank, yet the table shows 0. A 0 and a blank are not the same thing. Here is what happens if you store the blank as a blank instead:";
+      section.append(intro);
+      const list = document.createElement("ul");
+      [
+        "R, the trap: if T-C\u2019s box were NA, dplyr::filter(joined, notebook_detected != sheet_detected) would quietly drop T-C, with no warning. The one tray that disagrees would vanish.",
+        "Julia: missing. The same row rule stops with an error, so you notice. sum([1, missing]) gives missing.",
+        "R: NA. sum(c(1, NA)) gives NA; na.rm = TRUE gives 1.",
+        "pandas: NaN. pd.Series([1, None]).sum() gives 1.0: it quietly skips the blank."
+      ].forEach(text => { const li = document.createElement("li"); li.textContent = text; list.append(li); });
+      section.append(list);
+      return section;
     }
     function renderResult(message) {
       if (!el.result) return;
       el.result.replaceChildren();
       if (el.draftNote) el.draftNote.textContent = draftStatus(message);
-      const outcome = document.createElement("p"); outcome.className = "run-outcome"; outcome.textContent = runOutcomeStatus(message); el.result.append(outcome);
+      const outcome = document.createElement("p"); outcome.className = "run-outcome"; outcome.textContent = runOutcomeStatus(message, saveOk); el.result.append(outcome);
       const p = document.createElement("p");
       if (message.status === "error") p.textContent = errorRecovery(state.activeMove, message);
       else if (message.status === "timeout") p.textContent = "The lab stopped this run to keep the session responsive. Your code is still here; check it and run again.";
@@ -666,12 +722,17 @@
         }
         if (shouldRenderCaseVisual(message)) renderVisual(message);
       }
+      if (state.activeMove === "filter-disagreement" && message.status === "ok" && message.pass === true) {
+        const toto = document.createElement("p"); toto.textContent = "Toto: \u201cSo my zero was a box nobody filled in. Zero fleas, or zero ink?\u201d"; el.result.append(toto);
+        const claim = document.createElement("p"); claim.className = "claim-stamp"; claim.textContent = "Claim 1, \u201cT-C has no fleas\u201d: not supported."; el.result.append(claim);
+        el.result.append(renderBlankNote());
+      }
       appendTechnical(message, el.result);
       const destination = nextDestination(state.activeMove, message);
       if (destination && el.nextMove) {
         el.nextMove.hidden = false;
         el.nextMove.dataset.destination = destination;
-        el.nextMove.textContent = destination === "chapter4" ? "Next: plan a recheck →" : "Next: inspect the disagreement →";
+        el.nextMove.textContent = destination === "chapter4" ? "Chapter 4: plan a fair recheck →" : "Step 2: find the tray that disagrees →";
       }
     }
     function focusResult() { if (el.result) el.result.focus(); }
@@ -679,9 +740,9 @@
       if (!el.demoResult) return;
       el.demoResult.replaceChildren();
       const p = document.createElement("p");
-      if (message.status === "error") p.textContent = [joinErrorCoaching(message), "Check the practice table names and the shared key, then run this demonstration again. Your challenge editor is unchanged."].filter(Boolean).join(" ");
+      if (message.status === "error") p.textContent = [joinErrorCoaching(message), "Check the practice table names and the shared key, then run this demonstration again. Your editor is unchanged."].filter(Boolean).join(" ");
       else if (message.status === "timeout") p.textContent = message.message || "The lab stopped this practice run. Your practice code is still here; check it and run again.";
-      else p.textContent = message.feedback || "Julia returned the separate practice result. It adds no case evidence.";
+      else p.textContent = message.feedback || "Julia lined up the K-A/K-B practice tables. Practice only.";
       el.demoResult.append(p);
       const explanation = message.explanation;
       if (explanation && typeof explanation === "object") [explanation.julia, explanation.case, explanation.limit].filter(Boolean).forEach(text => { const item = document.createElement("p"); item.textContent = String(text); el.demoResult.append(item); });
@@ -692,7 +753,7 @@
       const showCaseBridge = shouldShowDemoCaseBridge(message);
       if (el.demoCaseBridge) el.demoCaseBridge.hidden = !showCaseBridge;
       if (el.returnToCase) el.returnToCase.hidden = !showCaseBridge;
-      if (showCaseBridge && el.challengeBridge) el.challengeBridge.textContent = "That practice result used separate K-A/K-B data. The visible case tables and required result are your guide for the independent challenge.";
+      if (showCaseBridge && el.challengeBridge) el.challengeBridge.textContent = "Case tables: tray_counts (tray_id, notebook_detected) and tally_sheet (tray_id, sheet_detected, entry_status). Case question: How do we put each tray’s notebook count next to its tally-sheet box?";
     }
     function renderDemoRunStatus(message) {
       if (el.demoDraftNote) el.demoDraftNote.textContent = demoDraftStatus(message);
@@ -725,6 +786,7 @@
       const id = requestId("run");
       state = beginRun(state, id, state.activeMove);
       armRunDeadline(id);
+      submittedCode[state.activeMove] = el.code.value;
       socket.send(JSON.stringify(runMessage(state.activeMove, el.code.value, id)));
       clearResult();
       updateControls();
@@ -773,7 +835,10 @@
           if (state.evidence !== before.evidence && isAcceptedChallengeResult(state.result)) {
             state = Object.assign({}, state, {joinAccepted:state.joinAccepted || state.result.move_id === "join-report-log"});
             persistAcceptedCourseResult(courseState, storage, attempt, state.result);
+            saveOk = savedMove(courseState, storage, attempt, CHAPTER, state.result.move_id);
             renderSavedResume();
+            acceptedCode[state.result.move_id] = submittedCode[state.result.move_id] || "";
+            if (bridges) bridges.renderCard(el.bridgeCard, "C3/"+state.result.move_id, acceptedCode[state.result.move_id]);
           }
           renderResult(state.result); renderMoveButtons(); updateControls();
           if (needsRecoveryFocus(state.result) && el.code) setTimeout(() => el.code.focus(), 0);
@@ -791,8 +856,8 @@
     function retry() {
       if (stopped) return;
       clearInfoTimer(); clearRunTimer(); clearDemoInfoTimer(); clearDemoRunTimer(); state = disconnect(state); updateControls();
-      if (++reconnects > 3) { if (el.connection) el.connection.textContent = "Lab link offline — your draft is still here."; return; }
-      if (el.connection) el.connection.textContent = "Lab link interrupted — reconnecting…";
+      if (++reconnects > 3) { if (el.connection) el.connection.textContent = "Lab link offline: your draft is still here."; return; }
+      if (el.connection) el.connection.textContent = "Lab link interrupted, reconnecting…";
       timer = setTimeout(connect, 900 * reconnects);
     }
     function connect() {
@@ -861,11 +926,11 @@
       if (!el.demoCode || !state.demoMetadata || state.demoPending) return;
       const currentCode = el.demoCode.value.trim();
       if (button.dataset.demoToken === "open" && currentCode === "") el.demoCode.value = "leftjoin(";
-      if (button.dataset.demoToken === "key" && currentCode === "leftjoin(") el.demoCode.value = "leftjoin(practice_report, practice_log, on=:key)";
+      if (button.dataset.demoToken === "key" && currentCode === "leftjoin(") el.demoCode.value = "leftjoin(practice_counts, practice_sheet, on=:key)";
       demoDraft = el.demoCode.value;
       persistDemoDraft(courseState, storage, attempt, demoDraft);
       state = cancelDemo(state); clearDemoResult();
-      if (el.demoDraftNote) el.demoDraftNote.textContent = "Planned practice code — not run yet. It is separate from the case editor.";
+      if (el.demoDraftNote) el.demoDraftNote.textContent = "Planned practice code, not run yet. It is separate from the case editor.";
       if (el.demoPlan) el.demoPlan.textContent = "Not run yet. The practice expression below will run only when you choose Run demonstration.";
       updateControls();
     }));
@@ -876,7 +941,7 @@
         if (!stage) break;
         if (stage.label === "Full answer" && el.answerReference) {
           const label = document.createElement("p"), code = document.createElement("pre");
-          label.textContent = "Reference code answer — runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or add evidence.";
+          label.textContent = "Reference code answer: runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or count as a saved answer.";
           code.className = "complete-answer-code";
           code.textContent = stage.text;
           el.answerReference.replaceChildren(label, code);
@@ -909,5 +974,5 @@
     return null;
   }
 
-  return {CASE_ID, CHAPTER, INFO_DEADLINE_MS, RUN_DEADLINE_MS, knownMove, tableIdentity, activeInputIds, lessonCopy, recoveryCopy, joinErrorCoaching, filterErrorCoaching, errorRecovery, needsRecoveryFocus, draftStatus, demoDraftStatus, demoPlanStatus, draftNotice, runOutcomeStatus, helpStage, caseBoardUrl, nextChapterUrl, nextDestination, requestedMove, createState, beginInfo, failCaseInfo, expireInfo, beginRun, expireRun, cancelRun, cancelDemo, disconnect, isRunPending, isDemoRunPending, applyRunStatus, applyDemoRunStatus, applyCaseInfo, applyCaseResult, beginDemoInfo, expireDemoInfo, applyDemoInfo, beginDemoRun, expireDemoRun, applyDemoResult, visualData, shouldRenderCaseVisual, shouldOfferCaseReturn, shouldShowDemoCaseBridge, acceptedMoveKeys, canOpenMove, initialMove, savedChallengeResume, persistChallengeDraft, persistDemoDraft, persistAcceptedCourseResult, infoMessage, runMessage, demoInfoMessage, demoRunMessage, init};
+  return {landsInInvestigation, CASE_ID, CHAPTER, INFO_DEADLINE_MS, RUN_DEADLINE_MS, knownMove, tableIdentity, activeInputIds, lessonCopy, recoveryCopy, joinErrorCoaching, filterErrorCoaching, errorRecovery, needsRecoveryFocus, draftStatus, demoDraftStatus, demoPlanStatus, draftNotice, runOutcomeStatus, helpStage, caseBoardUrl, nextChapterUrl, nextDestination, requestedMove, createState, beginInfo, failCaseInfo, expireInfo, beginRun, expireRun, cancelRun, cancelDemo, disconnect, isRunPending, isDemoRunPending, applyRunStatus, applyDemoRunStatus, applyCaseInfo, applyCaseResult, beginDemoInfo, expireDemoInfo, applyDemoInfo, beginDemoRun, expireDemoRun, applyDemoResult, visualData, shouldRenderCaseVisual, shouldOfferCaseReturn, shouldShowDemoCaseBridge, acceptedMoveKeys, canOpenMove, initialMove, savedChallengeResume, persistChallengeDraft, persistDemoDraft, persistAcceptedCourseResult, infoMessage, runMessage, demoInfoMessage, demoRunMessage, init};
 });

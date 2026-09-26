@@ -10,13 +10,35 @@ test("C5 keeps the opaque simulation fixture ID off the visible page", () => {
   assert.doesNotMatch(source, /Simulation fixture ID:/);
 });
 
-test("C5 frames its probability move as the next bounded question in the B09 investigation", () => {
+test("C5 frames its probability move as Momo's doubt about the notebook's 5 of 6", () => {
   const html = fs.readFileSync("web/chapter5.html", "utf8");
-  assert.match(html, /cannot say why B09 differs/i);
-  assert.match(html, /under one explicitly stated model/i);
-  assert.match(html, /at least as high as B09/i);
+  assert.match(html, /too good to be true/i);
+  assert.match(html, /each jar were a coin flip/i);
+  assert.match(html, /5 or more of 6 jars show fleas/i);
 });
+
+// Hana playtest (2026-09-26): the abstract card round took a beat to reconnect to "jars with
+// fleas"; tie the cards to the jars in the scene, before the card game opens.
+test("C5 ties the cards to the jars before the card game opens", () => {
+  const html = fs.readFileSync("web/chapter5.html", "utf8");
+  const sceneStart = html.indexOf('id="scene"');
+  const cardsStart = html.indexOf('id="cards"');
+  const tie = html.indexOf("Each card is one jar; teal means fleas.");
+  assert.ok(tie > sceneStart && tie < cardsStart, "the tie-in line sits in the scene, before the card game");
+});
+// Panel adversary item 10 (2026-09-26): the static case-context line named the conclusion ("This
+// shows 5 of 6 is not strange...") before the player ran step 2 to find it out. The limit line is
+// shown dynamically in the result panel once step 2 is accepted (mystery_c5.jl "limit"); the
+// static paragraph must start empty so it never leaks the answer on page load.
+test("C5's static case-context paragraph starts empty; the limit line comes from the run result, not the page", () => {
+  const html = fs.readFileSync("web/chapter5.html", "utf8");
+  const match = html.match(/<p id="case-context"[^>]*>([\s\S]*?)<\/p>/);
+  assert.ok(match, "case-context element exists");
+  assert.equal(match[1].trim(), "");
+});
+
 const c5 = require("../web/chapter5.js");
+const bridges = require("../web/course/bridges.js");
 
 const CASE_ID = "missing-fleas-v1";
 const COUNTS = [0, 2, 3, 3, 5, 6];
@@ -33,7 +55,9 @@ test("C5 only resumes Move 2 from a recorded C5 event-mask, never from a query s
   assert.equal(c5.initialMove(priorMask, null, "pilot-c5", "?move=event-frequency"), "event-frequency");
   assert.equal(c5.initialMove(noPriorMask, null, "pilot-c5", "?move=event-frequency"), "event-mask");
   assert.equal(c5.initialMove(null, null, "pilot-c5", "?move=event-frequency"), "event-mask");
-  assert.equal(c5.initialMove(priorMask, null, "pilot-c5", "?move=not-a-move"), "event-mask");
+  // An unknown step counts as no step: resume at the first unsolved step (2026-09-25 resume fix).
+  assert.equal(c5.initialMove(priorMask, null, "pilot-c5", "?move=not-a-move"), "event-frequency");
+  assert.equal(c5.initialMove(noPriorMask, null, "pilot-c5", "?move=not-a-move"), "event-mask");
 });
 
 test("a checked C5 frequency gives the learner one named route to the model-comparison chapter", () => {
@@ -63,15 +87,16 @@ test("C5 opening tells the learner which action begins its deferred lab connecti
 test("C5 keeps concrete challenge bindings for the warned final answer, not the code shape", () => {
   assert.equal(c5.COPY["event-mask"].shape, "counts .>= threshold");
   assert.equal(c5.COPY["event-frequency"].shape,
-    "events = counts .>= threshold; (events=events, frequency=sum(events)/length(events))");
+    "events = counts .>= threshold, then on the next line sum(events) / length(events)");
   assert.match(c5.COPY["event-mask"].solution, /sim_counts \.>= observed_count/);
   assert.match(c5.COPY["event-frequency"].solution, /sim_counts \.>= observed_count/);
+  assert.match(c5.COPY["event-frequency"].solution, /sum\(events\) \/ length\(events\)/);
 });
 
 test("C5 turns a rejected run into a syntax-specific next step without leaking its answer", () => {
   const recovery = c5.challengeRecovery("event-mask");
   assert.match(recovery, /draft is still here/i);
-  assert.match(recovery, /Required result line near the top of the page, or open Help me start below/);
+  assert.match(recovery, /Required result line near the top of the page, or open Help me start in Stuck\? Hints below/);
   assert.doesNotMatch(recovery, /compare every count/i);
   assert.match(recovery, /run again/i);
   assert.doesNotMatch(recovery, /sim_counts\s*\.>=\s*observed_count/);
@@ -82,52 +107,52 @@ test("C5 distinguishes a restored learner draft from supplied code and names acc
   assert.equal(typeof c5.draftNotice, "function");
   assert.match(c5.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
   assert.match(c5.draftNotice(false, false), /starts empty/i);
-  assert.equal(c5.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "✓ Accepted — evidence saved.");
-  assert.match(c5.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
+  assert.equal(c5.runOutcomeStatus({status:"ok", pass:true, progress_eligible:true}), "Julia checked it: that's right.");
+  assert.match(c5.runOutcomeStatus({status:"ok", pass:false}), /Not yet\. Julia ran your code/i);
   const html = fs.readFileSync("web/chapter5.html", "utf8");
   assert.match(html, /id="draft-note"/);
 });
 
-test("C5 teaches the Move 2 two-part return before revealing the concrete answer", () => {
-  const concept = c5.helpStage("event-frequency", 0);
+test("C5 teaches the plain-number Move 2 return before revealing the concrete answer", () => {
+  const idea = c5.helpStage("event-frequency", 0);
   const shape = c5.helpStage("event-frequency", 1);
-  const parts = c5.helpStage("event-frequency", 2);
-  const warning = c5.helpStage("event-frequency", 3);
-  const full = c5.helpStage("event-frequency", 4);
-  assert.match(concept.text, /matching events divided by all simulations/i);
+  const full = c5.helpStage("event-frequency", 2);
+  assert.match(idea.text, /rounds that matched divided by all rounds/i);
+  assert.match(idea.text, /Coming from R\?/);
   assert.match(shape.text, /counts/);
-  assert.match(parts.text, /events.*true-or-false/i);
-  assert.match(parts.text, /frequency.*matching.*all/i);
-  assert.match(parts.text, /named tuple/i);
-  assert.match(parts.text, /fresh.*run.*events/i);
-  assert.doesNotMatch(parts.text, /sim_counts\s*\.>=\s*observed_count/);
-  assert.match(warning.text, /will not write/i);
+  assert.match(shape.note, /counts is sim_counts/i);
+  assert.doesNotMatch(shape.text, /sim_counts\s*\.>=\s*observed_count/);
+  assert.equal(full.label, "Full answer");
   assert.match(full.text, /sim_counts\s*\.>=\s*observed_count/);
-  assert.match(c5.COPY["event-frequency"].bridge_note, /two labelled pieces/i);
+  assert.match(full.text, /sum\(events\) \/ length\(events\)/);
+  // The older labelled-pair answer still runs; it is no longer taught here. The shared R/Python
+  // bridge card (shown only after Move 2 is accepted) now teaches the plain-number shape instead.
+  assert.match(bridges.BRIDGES["C5/event-frequency"].differences.join(" "), /sum\(events\) \/ length\(events\)/i);
 });
 
 // Since T2 (2026-09-12) only bridge.lead renders before the editor; the shape is a gated hint stage
 // (UI-02, 2026-09-24). These assertions keep the unrendered bridge fields generic and answer-free.
 test("C5 keeps the Move 2 bridge generic: only its lead renders before the editor", () => {
   const bridge = c5.preEditorBridge("event-frequency");
-  assert.match(bridge.lead, /build.*event.*return/i);
+  assert.match(bridge.lead, /fresh.*events/i);
   assert.match(bridge.shape, /events = counts \.>= threshold/);
-  assert.match(bridge.shape, /\(events=events, frequency=/);
-  assert.match(bridge.explanation, /semicolon/i);
-  assert.match(bridge.explanation, /named tuple/i);
+  assert.match(bridge.explanation, /sum\(events\)/i);
   assert.doesNotMatch(bridge.shape, /sim_counts\s*\.>=\s*observed_count/);
 });
 
 test("C5 lets learners rehearse the generic event-to-frequency construction before free typing", () => {
   const cards = c5.frequencyCompositionCards();
-  assert.deepEqual(cards.map(card => card.id), ["event", "frequency", "return"]);
+  assert.deepEqual(cards.map(card => card.id), ["event", "frequency"]);
   assert.ok(cards.every(card => !/sim_counts|observed_count/.test(card.text)));
-  assert.equal(c5.frequencyCompositionIsCorrect(["event", "frequency", "return"]), true);
-  assert.equal(c5.frequencyCompositionIsCorrect(["frequency", "event", "return"]), false);
+  assert.equal(c5.frequencyCompositionIsCorrect(["event", "frequency"]), true);
+  assert.equal(c5.frequencyCompositionIsCorrect(["frequency", "event"]), false);
   const html = fs.readFileSync("web/chapter5.html", "utf8");
   const scaffold = html.indexOf('id="frequency-composition"');
   const editor = html.indexOf('<textarea id="code"');
-  assert.ok(scaffold > -1 && scaffold < editor);
+  // move-first (2026-09-25): this rehearsal is optional, so it now lives in the collapsed
+  // "Stuck? Help and practice" details after the editor rather than before the textarea; it still
+  // never writes into the editor, which the next assertion protects.
+  assert.ok(scaffold > -1 && scaffold > editor);
   assert.match(html, /practice only.*does not write into your editor/i);
 });
 
@@ -138,25 +163,32 @@ test("C5 keeps its raw simulation window small while leaving the full vector and
   assert.match(source, /First 12 supplied counts/);
   assert.match(source, /You do not need to count these by hand/);
   assert.match(source, /Show 18 more supplied counts/);
-  assert.match(source, /table\(el\.data,state\.metadata\.inputs\[0\]\.rows,12\)/);
-  assert.match(c5.COPY["event-mask"].python, /import numpy as np/);
-  assert.match(c5.COPY["event-mask"].python, /np\.asarray\(sim_counts\) >= observed_count/);
+  // 2026-09-25: the 12-row window is drawn inside one closed "See the first 30 counts as a table" section.
+  assert.match(source, /table\(tableBox,state\.metadata\.inputs\[0\]\.rows,12\)/);
+  assert.match(source, /See the first 30 counts as a table/);
+  // 2026-09-25: chapter5.js's own COPY.python moved to web/course/bridges.js (the shared
+  // post-acceptance "same move in R and Python" card); this still pins the exact Python line.
+  assert.match(bridges.BRIDGES["C5/event-mask"].python, /import numpy as np/);
+  assert.match(bridges.BRIDGES["C5/event-mask"].python, /np\.asarray\(sim_counts\) >= observed_count/);
 });
 
 test("C5 names both case inputs before asking for an observed-count comparison", () => {
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
   assert.match(source, /Julia inputs: sim_counts/);
-  assert.match(source, /observed_count — the supplied B09 count/);
+  assert.match(source, /observed_count: the supplied B09 count/);
 });
 
 test("C5 puts a reader-first case status before the empty challenge without supplying code", () => {
   const html = fs.readFileSync("web/chapter5.html", "utf8");
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
   const status = c5.caseStatus(caseInfo());
-  assert.match(status.established, /report and handling log disagree.*T-C/i);
+  assert.match(status.established, /notebook and the tally sheet disagree.*T-C/i);
+  assert.match(status.established, /notebook has 1, the tally sheet.s box was left blank/i);
   assert.match(status.established, /observed B09 count is 3 of 6 jars/i);
-  assert.match(status.unknown, /does not establish a biological cause/i);
-  assert.match(status.why_now, /smaller probability question/i);
+  assert.match(status.unknown, /does not show what really happened in the jars/i);
+  assert.doesNotMatch(status.unknown, /which record is right/i);
+  assert.match(status.why_now, /too good to be true/i);
+  assert.match(status.why_now, /mark each card round/i);
   assert.doesNotMatch(status.why_now, /sim_counts\s*\.>=\s*observed_count/);
   assert.ok(html.indexOf('id="case-status"') < html.indexOf('id="editor-title"'));
   assert.match(html, /Case status before you write/i);
@@ -225,7 +257,7 @@ test("a failed, stale, or malformed Move 2 result cannot replace an accepted res
   assert.equal(timedOut.result, null);
   assert.equal(timedOut.evidence, null);
   assert.equal(timedOut.runFailure.status, "timeout");
-  assert.equal(c5.runOutcomeStatus(timedOut.runFailure), "Not accepted — the run timed out. No evidence was saved.");
+  assert.equal(c5.runOutcomeStatus(timedOut.runFailure), "Not yet. Your code took too long, so the lab stopped it. Your code is still here.");
   assert.notEqual(timedOut.runFailure.feedback, c5.challengeRecovery("event-frequency"));
   const malformed = c5.applyCaseResult(state, frequencyResult({result_data:{kind:"event-frequency", matching:4, trials:6, frequency:0.2}}));
   assert.equal(malformed.result, null);
@@ -299,12 +331,12 @@ test("C5 presents a blank challenge editor, keeps cards optional, and accepts on
   assert.match(html, /id="cards"/);
   assert.match(html, /id="card-event"/);
   assert.match(html, /Show Toto’s six cards/);
-  assert.match(html, /Optional: try Toto’s card round first/);
-  assert.match(html, /id="cards"[\s\S]*?<details[\s\S]*?<summary>Optional physical rehearsal/i);
+  assert.match(html, /Try one round yourself \(optional\)/);
+  assert.match(html, /id="cards"[\s\S]*?<details[\s\S]*?<summary>Try one round yourself/i);
   assert.doesNotMatch(html, /id="cards"[\s\S]*?<details\s+open/i);
   assert.match(html, /id="card-prediction"/);
   assert.match(html, /optional prediction/i);
-  assert.match(html, /not case evidence/i);
+  assert.match(html, /does not count for the case/i);
 
   assert.equal(c5.beginAction(c5.createState(), "c5-card", "draw-six").actionPending, null);
   let state = acceptedInfo();
@@ -332,7 +364,7 @@ test("C5 keeps optional model context and toy syntax practice available without 
   assert.match(html, /<details id="practice-event"[^>]*>/);
   assert.doesNotMatch(html, /<details id="model-recipe"[^>]*\bopen\b/);
   assert.doesNotMatch(html, /<details id="practice-event"[^>]*\bopen\b/);
-  assert.match(html, /Why use a simple simulation\?/);
+  assert.match(html, /How the cards work/);
   assert.match(html, /Practise the \.(&gt;|>)= rule with six toy counts/);
   assert.ok(html.indexOf('id="simulation-data"') < html.indexOf('id="case-status"'));
   assert.ok(html.indexOf('id="simulation-data"') < html.indexOf('id="editor-title"'));

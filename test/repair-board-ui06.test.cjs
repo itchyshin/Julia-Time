@@ -61,9 +61,9 @@ test("a finished course is reviewed, not continued, after Chapter 6 saves its ow
     playWholeCourse(storage, attempt);
     const model = client.dashboardModel(client.loadCourseState(storage, attempt));
 
-    assert.match(model.caseThread.whyNext, /^Case closed for today/);
+    assert.match(model.caseThread.whyNext, /^Both claims are checked\./);
     assert.doesNotMatch(model.continue.label, /^Continue/);
-    assert.equal(model.continue.label, "Review Chapter 6: retain compatible model rows");
+    assert.equal(model.continue.label, "Review Chapter 6: keep the stories that fit");
   }
 });
 
@@ -72,8 +72,8 @@ test("a resumed cursor still says Continue while the course is unfinished", () =
   courseState.recordHistoricalMoveIfMissing(storage, "field-7", "C4", "plan-distinct-recheck");
   courseState.writeCursor(storage, "field-7", {chapter: "C1", move_id: "select-records", mode: "challenge"});
   const model = client.dashboardModel(client.loadCourseState(storage, "field-7"));
-  assert.equal(model.continue.label, "Continue Chapter 1: select the disputed records");
-  assert.equal(client.dashboardModel(courseState.emptyCourseState()).continue.label, "Start Chapter 1: select the disputed records");
+  assert.equal(model.continue.label, "Continue Chapter 1: find the B09 jars");
+  assert.equal(client.dashboardModel(courseState.emptyCourseState()).continue.label, "Start Chapter 1: find the B09 jars");
 });
 
 test("chapter cards say the work was done in this browser, not that it is historical, and still ask for a fresh check", () => {
@@ -82,16 +82,15 @@ test("chapter cards say the work was done in this browser, not that it is histor
   const finished = client.dashboardModel(client.loadCourseState(storage, ""));
   for (const card of finished.cards) {
     assert.doesNotMatch(card.status, /Historical/i);
-    assert.match(card.status, /^Completed in this browser\./);
-    assert.match(card.status, /fresh check/);
+    assert.match(card.status, /^Done\./);
     assert.doesNotMatch(card.status, /—/);
   }
 
   const partway = client.dashboardModel(courseState.makeCourseState({moves: [{key: "C3/join-report-log", provenance: "historical-browser"}]}));
   assert.doesNotMatch(partway.cards[2].status, /Historical/i);
-  assert.match(partway.cards[2].status, /^Started in this browser\./);
+  assert.match(partway.cards[2].status, /^Started\./);
   assert.doesNotMatch(partway.cards[2].status, /—/);
-  assert.match(partway.cards[0].status, /^Playable now/);
+  assert.match(partway.cards[0].status, /^Ready/);
 });
 
 test("the draft notice names moves in plain words and skips moves already accepted", () => {
@@ -102,23 +101,23 @@ test("the draft notice names moves in plain words and skips moves already accept
 
   const midway = memoryStorage();
   courseState.recordHistoricalMoveIfMissing(midway, "", "C3", "join-report-log");
-  courseState.writeChallengeDraft(midway, "", "C3", "join-report-log", "leftjoin(report, handling_log, on=:tray_id)");
+  courseState.writeChallengeDraft(midway, "", "C3", "join-report-log", "leftjoin(tray_counts, tally_sheet, on=:tray_id)");
   courseState.writeChallengeDraft(midway, "", "C3", "filter-disagreement", "joined[");
   courseState.writeChallengeDraft(midway, "", "C5", "event-mask", "events =");
   const model = client.dashboardModel(client.loadCourseState(midway, ""));
   assert.doesNotMatch(model.draftNotice, /C\d\/[a-z-]+/);
-  assert.doesNotMatch(model.draftNotice, /join the report/);
+  assert.doesNotMatch(model.draftNotice, /line up the notebook/);
   assert.doesNotMatch(model.draftNotice, /—/);
-  assert.equal(model.draftNotice, "Saved browser drafts available for Chapter 3: filter the recording disagreement; Chapter 5: name a simulation event.");
+  assert.equal(model.draftNotice, "Saved drafts available for Chapter 3: find the tray that disagrees; Chapter 5: mark the rounds with 5 or more.");
 
   const single = memoryStorage();
   courseState.writeChallengeDraft(single, "", "C4", "plan-distinct-recheck", "sample(");
-  assert.equal(client.dashboardModel(client.loadCourseState(single, "")).draftNotice, "Saved browser draft available for Chapter 4: plan three distinct rechecks.");
+  assert.equal(client.dashboardModel(client.loadCourseState(single, "")).draftNotice, "Saved draft available for Chapter 4: pick three jars by chance.");
 });
 
 test("saved evidence lines no longer claim the work was not checked in this visit", () => {
   // Repair 6: the line is composed in course-client.js (dashboardModel evidence[].line); the board shows it.
   const board = ["course-board.js", "course-client.js"].map(file => fs.readFileSync(path.join(__dirname, "../web/course", file), "utf8")).join("\n");
   assert.doesNotMatch(board, /not checked in this visit/);
-  assert.match(board, /This board does not re-check saved work\./);
+  assert.doesNotMatch(board, /This board does not re-check saved work\./);
 });

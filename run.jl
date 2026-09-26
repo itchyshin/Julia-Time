@@ -13,27 +13,24 @@ catch err
 end
 
 function launcher_start_detail(error)
-    message = sprint(showerror, error)
-    if occursin("Address already in use", message)
-        return "Port 8000 is already in use."
-    end
-    first_line = first(split(message, '\n'; limit=2))
+    error isa JuliaTime.AllPortsBusy && return sprint(showerror, error)
+    first_line = first(split(sprint(showerror, error), '\n'; limit=2))
     return isempty(first_line) ? "Julia reported an unknown local-server error." : first_line
 end
 
 try
-    JuliaTime.run_server(; host="127.0.0.1", port=8000)
+    # Tries port 8000, then 8001 to 8009 if another program holds it; if Julia Time is already
+    # running in an earlier window, reopens that game in the browser instead.
+    JuliaTime.launch(; host="127.0.0.1", ports=JuliaTime.LAUNCH_PORTS)
 catch err
-    # `run_server` can fail before its own lifecycle `try` begins when the
-    # loopback port is already occupied. Its warmup has already created owned
-    # sandbox workers, so reap those before giving the learner an actionable
+    # Reap any sandbox workers a failed start created before giving the learner an actionable
     # local recovery rather than a raw exception as their only next step.
     try
         JuliaTime.shutdown!()
     catch
     end
-    println(stderr, "SERVER_START_FAILED — Julia Time could not start the Case Board at http://127.0.0.1:8000/course/index.html.")
-    println(stderr, "Next: close a previous Julia Time launcher window. If none is open, another program may be using port 8000 (for example a Python or Jupyter server); close it or restart the computer, then start Julia Time again.")
+    println(stderr, "SERVER_START_FAILED — Julia Time could not start the Case Board on this computer.")
+    println(stderr, "Next: close a previous Julia Time launcher window. If none is open, another program may be using ports 8000 to 8009 (for example a Python or Jupyter server); close it or restart the computer, then start Julia Time again.")
     println(stderr, "Details: ", launcher_start_detail(err))
     exit(1)
 end

@@ -56,7 +56,7 @@ test("R1: an events field that is not a true-or-false vector gets a lead keyed o
     assert.match(failure.feedback, /true-or-false/, repr);
     assert.match(failure.feedback, /every simulation/, repr);
     assert.match(failure.feedback, /not a count/i, repr);
-    assert.match(failure.feedback, /Move 1/, repr);
+    assert.match(failure.feedback, /Step 1/, repr);
     assert.ok(failure.feedback.endsWith(shared), `${repr}: the lead sits in front of the unchanged shared step`);
     assert.doesNotMatch(failure.feedback, NO_ANSWER, `${repr}: no answer leak`);
     assert.doesNotMatch(failure.feedback, EM_DASH, repr);
@@ -78,10 +78,16 @@ test("R1: a vector of true and false values keeps the shared step only, so no hi
 });
 
 test("R1: the lead stays on Move 2, needs a returned pair, and never forwards the server's own feedback", () => {
-  assert.equal(rejected("event-mask", "(events = 113, frequency = 0.113)").feedback, c5.challengeRecovery("event-mask"), "Move 1 does not ask for the pair");
-  assert.match(rejected("event-frequency", "113").feedback, /labelled pair/i, "a bare count keeps the existing labelled-pair lead");
+  assert.equal(rejected("event-mask", "(events = 113, frequency = 0.113)").feedback, c5.challengeRecovery("event-mask"), "Step 1 does not ask for the pair");
+  // A bare number is now a valid returned shape (the taught plain-number answer); whether 113 is the
+  // right number is the server's call, so the client gives the shared step only, not a shape lead.
+  assert.equal(rejected("event-frequency", "113").feedback, c5.challengeRecovery("event-frequency"), "a bare number keeps the shared step, since a plain number is now a valid shape");
+  // Repair 7 (2026-09-26): `events` is made in move 1 and does not survive to a fresh move 2 run,
+  // so this specific error now gets its own named coaching (the fresh-start beginner trap) instead
+  // of falling through to the shared step alone.
   const error = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {status:"error", message:"UndefVarError: `events` not defined", value_repr:""}));
-  assert.equal(error.runFailure.feedback, c5.challengeRecovery("event-frequency", {status:"error"}), "an error has no returned value to judge");
+  assert.match(error.runFailure.feedback, /`events` was made in step 1/);
+  assert.ok(error.runFailure.feedback.endsWith(c5.challengeRecovery("event-frequency", {status:"error"})));
 
   // Other server messages print the answer. The page must not pass any of them through.
   const leaking = rejected("event-frequency", "(events = 113, frequency = 0.113)", "The events field must use sim_counts .>= observed_count exactly.");

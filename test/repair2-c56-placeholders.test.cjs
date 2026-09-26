@@ -44,15 +44,12 @@ test("B9: C5 code-shape hints name counts and threshold as placeholders and map 
   for (const move of c5.MOVES) assert.doesNotMatch(c5.preEditorBridge(move).lead, /placeholder/);
 });
 
-test("B9: C6 code-shape hint maps table, lower_bound, target and upper_bound and says row_rule is the learner's own name", () => {
+test("B9: C6 code-shape hint maps table and target, and the note does not write out the answer", () => {
   const note = c6.COPY.shape_note;
   assert.ok(note, "C6 has a placeholder note for its code shape");
-  assert.match(note, /table, lower_bound, target and upper_bound are placeholders, not names in this case/);
-  assert.match(note, /table is candidate_models/);
-  assert.match(note, /lower_bound is candidate_models\.lower/);
+  assert.match(note, /table and target are placeholders, not names in this case/);
+  assert.match(note, /table is stories/);
   assert.match(note, /target is observed_count/);
-  assert.match(note, /upper_bound is candidate_models\.upper/);
-  assert.match(note, /row_rule is a name you make yourself/);
   assert.doesNotMatch(note, EM_DASH);
   assert.ok(!note.includes(c6.COPY.solution), "the note does not write out the answer");
 
@@ -63,8 +60,8 @@ test("B9: C6 code-shape hint maps table, lower_bound, target and upper_bound and
   assert.equal(lines[at + 1], note, "the note follows the code shape");
   // Later hints keep the note on screen, and the templates stay generic.
   assert.ok(c6.visibleHints(4).includes(note));
-  assert.doesNotMatch(c6.COPY.range_rule, /candidate_models|observed_count/);
-  assert.doesNotMatch(c6.COPY.selection, /candidate_models|observed_count/);
+  assert.doesNotMatch(c6.COPY.range_rule, /stories|observed_count/);
+  assert.doesNotMatch(c6.COPY.selection, /stories|observed_count/);
 
   for (let hint = 0; hint <= 6; hint += 1) {
     assert.ok(!c6.visibleHints(hint).some(line => line.includes(c6.COPY.solution)), `hint ${hint}: no full answer in the hint list`);

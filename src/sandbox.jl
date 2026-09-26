@@ -162,15 +162,26 @@ end
 # (`_ensure_ready!` is a no-op for them), so calling this repeatedly is cheap. A worker that fails
 # to become ready here is left for the ordinary `_take_worker!` recovery path — prewarm failure
 # must never itself break a worker or `warmup!`.
+#
+# Each unproven worker is taken OUT of the pool for its proof and handed back afterwards. A worker's
+# pipes carry one request at a time: left in the pool, it could be popped by a learner move or
+# proved by an overlapping warm-up (every `start_server` starts one; only the newest is tracked in
+# `_WARMUP_TASK`) at the same moment, the two requests interleave on its stdin, both round trips fail,
+# and a stray reply can be left for the next move to read first ("the sandbox worker replied before
+# acknowledging the request", CI 2026-09-25; test/test_prewarm_claim.jl).
 function _prewarm_pool!()
     workers = lock(_POOL_LOCK) do
-        copy(_POOL)
+        claimed = filter(w -> !w.ready, _POOL)
+        filter!(w -> w.ready, _POOL)
+        claimed
     end
     for w in workers
         try
             _ensure_ready!(w)
         catch e
             @warn "sandbox prewarm failed" worker=w.id exception=(e, catch_backtrace())
+        finally
+            _return_worker!(w)
         end
     end
     return nothing
@@ -205,25 +216,37 @@ points (the same cooperative pattern `_worker_round_trip` already relies on) eve
 second thread to run it on in parallel.
 
 The returned task is recorded in `_WARMUP_TASK` so `shutdown!()` can wait for it — see there for why.
-Never throws: a failing `warmup_fn` is caught and printed as a one-line warning, not a crash.
+If a previous call's warm-up is still running, this call joins it instead of starting a second one:
+every `start_server` call reaches this function, so several calls can overlap in one process (the
+test suite does this; a no-browser test starts two servers back to back), and starting a second
+background task would silently replace `_WARMUP_TASK[]`, leaving the first one untracked. An
+untracked warm-up can still call `_top_up!` after `shutdown!()` has returned and lowered
+`_SHUTTING_DOWN[]` again, spawning a worker process that nothing then owns or kills. Joining the
+existing task instead means `_WARMUP_TASK[]` always names the one warm-up actually in flight, so
+`shutdown!()`'s existing wait covers it. Never throws: a failing `warmup_fn` is caught and printed
+as a one-line warning, not a crash.
 """
 function _run_warmup_in_background!(warmup_fn::Function=warmup!)
-    body = function ()
-        try
-            warmup_fn()
-            println("Sandbox ready.")
-        catch e
-            println("Warning: sandbox warm-up failed — ", sprint(showerror, e))
-        finally
-            flush(stdout)
-        end
-        return nothing
-    end
-    task = Threads.nthreads() > 1 ? Threads.@spawn(body()) : @async(body())
     lock(_POOL_LOCK) do
+        existing = _WARMUP_TASK[]
+        if existing !== nothing && !istaskdone(existing)
+            return existing
+        end
+        body = function ()
+            try
+                warmup_fn()
+                println("Sandbox ready.")
+            catch e
+                println("Warning: sandbox warm-up failed — ", sprint(showerror, e))
+            finally
+                flush(stdout)
+            end
+            return nothing
+        end
+        task = Threads.nthreads() > 1 ? Threads.@spawn(body()) : @async(body())
         _WARMUP_TASK[] = task
+        return task
     end
-    return task
 end
 
 """

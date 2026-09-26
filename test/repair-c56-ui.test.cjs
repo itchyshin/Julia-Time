@@ -38,13 +38,13 @@ function c5Result(move, overrides) {
 }
 const C6_COLUMNS = ["model", "p", "lower", "upper"];
 const C6_ROWS = [
-  {model:"Candidate p = 0.1", p:0.1, lower:0, upper:2},
-  {model:"Candidate p = 0.5", p:0.5, lower:1, upper:5},
-  {model:"Candidate p = 0.8", p:0.8, lower:4, upper:6}
+  {model:"Vanishing", p:0.1, lower:0, upper:2},
+  {model:"Coin flip", p:0.5, lower:1, upper:5},
+  {model:"Thriving", p:0.8, lower:4, upper:6}
 ];
 function c6Pending(request_id) {
   let state = c6.beginInfo(c6.createState(), "c6-info");
-  state = c6.applyCaseInfo(state, {type:"case", contract_version:1, case_id:CASE_ID, chapter:"C6", move_id:"compatible-models", mode:"challenge", activity_id:null, simulation_id:null, request_id:"c6-info", observed_count:5, n_trials:6, inputs:[{id:"candidate_models", columns:C6_COLUMNS, rows:C6_ROWS}]});
+  state = c6.applyCaseInfo(state, {type:"case", contract_version:1, case_id:CASE_ID, chapter:"C6", move_id:"compatible-models", mode:"challenge", activity_id:null, simulation_id:null, request_id:"c6-info", observed_count:5, n_trials:6, inputs:[{id:"stories", columns:C6_COLUMNS, rows:C6_ROWS}]});
   assert.ok(state.metadata);
   return c6.beginRun(state, request_id);
 }
@@ -135,8 +135,8 @@ test("UI-11: the C5/C6 full-answer button never shares its label with a hint-lad
   const answerLabel = html => html.match(/id="answer"[^>]*>([^<]+)</)[1].trim();
   const a5 = answerLabel(web("chapter5.html"));
   const a6 = answerLabel(web("chapter6.html"));
-  assert.equal(a5, "Show the complete answer", "C5 matches the C1-C4 answer button");
-  assert.equal(a6, "Show the complete answer", "C6 matches the C1-C4 answer button");
+  assert.equal(a5, "Skip to the full answer", "C5's shortcut button stays distinct from the ladder's own full-answer stage button");
+  assert.equal(a6, "Skip to the full answer", "C6's shortcut button stays distinct from the ladder's own full-answer stage button");
   for (const move of c5.MOVES) {
     for (let index = 0; c5.helpStage(move, index); index++) assert.notEqual(c5.helpStage(move, index).button, a5, `${move} stage ${index}`);
   }
@@ -147,17 +147,17 @@ test("UI-11: the C5/C6 full-answer button never shares its label with a hint-lad
 test("UI-11: C5 and C6 keep earlier hints on screen when the next hint opens", () => {
   const mask = c5.COPY["event-mask"];
   assert.deepEqual(c5.visibleHints("event-mask", 0), ["Open a small hint when you need it."]);
-  // Round 2 (B9): the code shape is followed by its placeholder note, one more paragraph.
+  // The idea is followed by the code shape, its placeholder note, then the full-answer pointer.
   const three = c5.visibleHints("event-mask", 3);
   assert.equal(three.length, 4);
   assert.ok(three[0].includes(mask.concept));
   assert.ok(three[1].includes(mask.shape));
   assert.match(three[2], /placeholders/);
-  assert.match(three[3], /will not write/);
-  const all = c5.visibleHints("event-frequency", 5);
-  assert.equal(all.length, 6);
+  assert.match(three[3], /Complete runnable answer is shown/);
+  const all = c5.visibleHints("event-frequency", 3);
+  assert.equal(all.length, 4);
   assert.ok(all[0].includes(c5.COPY["event-frequency"].concept));
-  assert.match(all[5], /Complete runnable answer is shown/);
+  assert.match(all[3], /Complete runnable answer is shown/);
   assert.ok(!all.some(line => line.includes(c5.COPY["event-frequency"].solution)), "the full answer stays in its reference panel");
 
   assert.deepEqual(c6.visibleHints(0), ["Open a small hint only if you need it."]);
@@ -198,20 +198,22 @@ test("UI-12: C5 names a comparison without its dot from Julia's actual error, th
   assert.equal(failed.runFailure.original_error, PLAIN_COMPARISON_C5, "Julia's own error text stays verbatim");
 });
 
-test("UI-12: C5 keeps Julia's actual returned value and says when it is not the labelled pair", () => {
+test("UI-12: C5 keeps Julia's actual returned value; a plain number is a valid shape, not a shape complaint", () => {
   const shared = c5.challengeRecovery("event-frequency");
+  // A plain number is now the taught Move 2 answer, so it gets no shape complaint (repair rejects
+  // only on the case check itself, which is server-side; the client just carries the value along).
   const scalar = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {value_repr:"0.343"}));
   assert.equal(scalar.runFailure.status, "rejected");
   assert.equal(scalar.runFailure.value_repr, "0.343", "the actual returned value reaches the page");
-  assert.match(scalar.runFailure.feedback, /labelled pair/i);
-  assert.match(scalar.runFailure.feedback, /\(events=\.\.\., frequency=\.\.\.\)/);
-  assert.ok(scalar.runFailure.feedback.endsWith(shared));
+  assert.equal(scalar.runFailure.feedback, shared, "a plain number gets the shared step only, not a shape complaint");
   assert.doesNotMatch(scalar.runFailure.feedback, /sim_counts\s*\.>=|sum\(events\)\s*\/\s*length\(events\)/, "no answer leak");
   assert.doesNotMatch(scalar.runFailure.feedback, EM_DASH);
 
-  for (const repr of ["(frequency = 0.5, events = Bool[0, 0, 1])", "(Bool[0, 0, 1], 0.5)", "6-element BitVector:\n 0\n 0\n 1"]) {
+  // The older labelled pair also still passes, so a malformed near-miss (a lone Bool vector, or a
+  // pair with the fields swapped) is what should get the shape complaint now.
+  for (const repr of ["(Bool[0, 0, 1], 0.5)", "6-element BitVector:\n 0\n 0\n 1"]) {
     const other = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {value_repr:repr}));
-    assert.match(other.runFailure.feedback, /labelled pair/i, repr);
+    assert.match(other.runFailure.feedback, /one of the shapes this move needs/i, repr);
   }
   const pair = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {value_repr:"(events = Bool[0, 0, 1, 1, 1, 1], frequency = 0.5)"}));
   assert.equal(pair.runFailure.feedback, shared, "a labelled pair with other values gets the shared step only");
@@ -233,7 +235,7 @@ test("UI-12: C6 names && versus .& from Julia's actual error, then gives the sha
   assert.match(text, /&&/);
   assert.match(text, /\.&/);
   assert.ok(text.endsWith(shared));
-  assert.doesNotMatch(text, /candidate_models|observed_count/);
+  assert.doesNotMatch(text, /stories|observed_count/);
   assert.doesNotMatch(text, EM_DASH);
 
   let state = c6.applyCaseResult(c6Pending("c6-andand"), c6Reply("c6-andand", {message:SHORT_CIRCUIT_AND}));
@@ -249,7 +251,7 @@ test("UI-12: C6 names && versus .& from Julia's actual error, then gives the sha
   assert.match(amp, /\.&/);
   assert.ok(amp.endsWith(shared));
   for (const line of [plain, amp]) {
-    assert.doesNotMatch(line, /candidate_models|observed_count/);
+    assert.doesNotMatch(line, /stories|observed_count/);
     assert.doesNotMatch(line, EM_DASH);
   }
   assert.equal(c6.challengeRecovery({status:"error", message:"UndefVarError: `lower` not defined"}), shared);
@@ -264,24 +266,27 @@ test("UI-14: C5 learner copy carries no literal Markdown backticks", () => {
     }
   }
   assert.doesNotMatch(c5.COPY["event-frequency"].required, /`/);
-  assert.match(c5.COPY["event-frequency"].required, /\(events=\.\.\., frequency=\.\.\.\)/, "the required pair is still named");
+  assert.match(c5.COPY["event-frequency"].required, /rounds that matched, divided by all rounds/i, "the required result is the plain-number share");
 });
 
 // ---- UI-15 ----
+// Repair 7 (2026-09-26): caseClosure's "next" field was folded into its findings list (bible C6
+// rewrite, "Both claims checked"), so this now guards the recheck sentence directly: it lives only
+// in the closing's findings list, never repeated in the Case file section built from prior rows.
 test("UI-15: C6 shows the recheck sentence once, in the closing, not again in the Case file", () => {
   const source = web("chapter6.js");
   const start = source.indexOf("function buildCaseFileSection");
   const end = source.indexOf("\n    function drawVisual", start);
   assert.ok(start >= 0 && end > start);
-  assert.doesNotMatch(source.slice(start, end), /closure\.next/);
-  assert.equal((source.match(/\.textContent\s*=\s*closure\.next/g) || []).length, 1);
+  assert.doesNotMatch(source.slice(start, end), /Still open.*recheck/i);
+  assert.equal((source.match(/Still open: the recheck of three jars\./g) || []).length, 1);
 });
 
 // ---- UI-17 ----
 test("UI-17: the C5 scene offers the Case Board and its Case 5 of 6 location, like C6", () => {
   const html = web("chapter5.html");
   const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
-  assert.match(header, /<nav class="course-location" aria-label="Course location"><a id="case-board-scene" href="course\/index\.html">Case Board<\/a><p>Case 5 of 6 · A small probability model<\/p><\/nav>/);
+  assert.match(header, /<nav class="course-location" aria-label="Course location"><a id="case-board-scene" href="course\/index\.html">Case Board<\/a><p>Chapter 5 of 6 · Too good to be true\?<\/p><\/nav>/);
   assert.ok(html.indexOf('id="case-board-scene"') < html.indexOf('id="scene"'), "visible before and after the scene");
   const source = web("chapter5.js");
   assert.match(source, /sceneBoard:\$\("case-board-scene"\)/);

@@ -34,8 +34,8 @@ test("C3 (B1) applies a correct result that arrives after the client's own deadl
     type: "case_result", contract_version: 1, case_id: "missing-fleas-v1", chapter: "C3",
     move_id: "join-report-log", mode: "challenge", activity_id: null, simulation_id: null,
     request_id: "c3-run-now", status: "ok", pass: true, progress_eligible: true,
-    columns: ["tray_id", "reported_detected_n", "logged_detected_n", "log_status"],
-    rows: [{tray_id: "T-A", reported_detected_n: 1, logged_detected_n: 1, log_status: "ok"}],
+    columns: ["tray_id", "notebook_detected", "sheet_detected", "entry_status"],
+    rows: [{tray_id: "T-A", notebook_detected: 1, sheet_detected: 1, entry_status: "filled in"}],
   });
   assert.notEqual(late, expired);
   assert.equal(late.result.pass, true);

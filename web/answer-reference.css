@@ -4,6 +4,9 @@
   padding: .85rem 1rem;
   border-left: 5px solid var(--orange, #e66d35);
   background: #123746;
+  /* 2026-09-25: this box is always dark navy regardless of the surrounding card, so its own
+     text needs an explicit light colour rather than relying on a dark-editor ancestor. */
+  color: #fff8e9;
 }
 
 .answer-reference p {
@@ -20,4 +23,45 @@
   background: #050b0f;
   color: #fff8e9;
   white-space: pre-wrap;
+}
+
+/* "The same move in R and Python" — appears only after Julia accepts a move, directly after that
+   move's accepted result. web/course/bridges.js builds this card's contents. */
+.bridge-card {
+  margin: 1.25rem 0;
+  padding: .95rem 1.1rem;
+  border-left: 5px solid #4f8a8b;
+  background: #0d2530;
+  color: #fff8e9;
+}
+
+.bridge-card h2 {
+  margin: 0 0 .6rem;
+  color: #fff8e9;
+}
+
+.bridge-card h3 {
+  margin: .75rem 0 .3rem;
+  font-size: .95rem;
+  color: #fff8e9;
+}
+
+.bridge-card pre {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #3f6d6e;
+  background: #050b0f;
+  color: #fff8e9;
+  white-space: pre-wrap;
+}
+
+.bridge-card ul {
+  margin: .3rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.bridge-card li {
+  margin: .3rem 0;
 }

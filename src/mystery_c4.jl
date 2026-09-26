@@ -34,18 +34,18 @@ _mystery_c4_plan_rows(ids::AbstractVector) =
 
 function _mystery_c4_check_plan(value)
     value isa AbstractVector ||
-        return (false, "Return a vector of exactly three distinct eligible jar IDs.")
+        return (false, "Return a list of three jar IDs.")
     length(value) == MYSTERY_C4_PLAN_SIZE ||
-        return (false, "Plan exactly three jar IDs for the recheck.")
+        return (false, "Pick exactly three jars.")
     all(id -> id isa AbstractString && !isempty(strip(id)), value) ||
         return (false, "Each planned jar ID must be non-empty recorded text.")
     ids = String.(value)
     length(unique(ids)) == MYSTERY_C4_PLAN_SIZE ||
-        return (false, "A planned recheck cannot select the same jar twice.")
+        return (false, "The same jar was picked twice. Add replace=false so no jar is drawn twice.")
     eligible_ids = Set(String.(mystery_c4_expected_eligible().jar_id))
     all(id -> id in eligible_ids, ids) ||
-        return (false, "Each planned jar must be one of the supplied eligible IDs.")
-    return (true, "These are three different eligible jar IDs, so no jar is planned twice.")
+        return (false, "Every jar must come from Eddie's list.")
+    return (true, "Three different jars from the list.")
 end
 
 """Check C4's one meaningful move against a fresh, server-owned eligible list."""
@@ -58,18 +58,18 @@ end
 function _mystery_c4_moves()
     return [Dict{String, Any}(
         "id" => "plan-distinct-recheck",
-        "title" => "Plan three distinct rechecks",
-        "required_result" => "A vector containing exactly three different eligible jar IDs.",
-        "concept" => "The supplied table has already been screened under the planning rule. Extract its jar-ID list, then choose three IDs without replacement so one jar cannot be planned twice.",
+        "title" => "Your step · Pick three different jars by chance",
+        "required_result" => "A list of three different jar IDs from Eddie's list.",
+        "concept" => "Take the list of jar IDs and draw three at random, with no jar drawn twice.",
         "code_shape" => "sample(items, n; replace=false)",
         "syntax" => [
             Dict("token" => ".jar_id", "meaning" => "reads the jar-ID column as a one-dimensional list."),
-            Dict("token" => ";", "meaning" => "starts keyword settings after the ordinary inputs."),
-            Dict("token" => "replace=false", "meaning" => "means do not choose the same jar again."),
+            Dict("token" => ";", "meaning" => "splits what to use from how to do it: before it, the list and how many; after it, a named setting."),
+            Dict("token" => "replace=false", "meaning" => "means no jar drawn twice."),
         ],
         "hints" => [
-            Dict("stage" => "concept", "text" => "Choose three different IDs from the supplied eligible list."),
-            Dict("stage" => "shape", "text" => "Use sample(items, n; replace=false) with the list of jar IDs and the number 3."),
+            Dict("stage" => "concept", "text" => "Take the list of jar IDs and draw three at random, with no jar drawn twice."),
+            Dict("stage" => "shape", "text" => "sample(items, n; replace=false). items is the list, n is how many. The ; starts the named settings, and replace=false means no jar twice."),
             Dict("stage" => "solution", "text" => "sample(eligible.jar_id, 3; replace=false)"),
         ],
         "result_visual" => "planned-recheck-rack",
@@ -79,7 +79,7 @@ end
 function _mystery_c4_input()
     df = mystery_c4_expected_eligible()
     return Dict{String, Any}(
-        "id" => "eligible", "label" => "Eligible simulated recheck jars",
+        "id" => "eligible", "label" => "Eddie's recheck list: the four B09 jars that can still be rechecked, in one column, jar_id. sample is ready to use.",
         "data_label" => MYSTERY_DATA_LABEL, "columns" => _mystery_columns(df),
         "rows" => _mystery_c4_rows(df),
     )
@@ -91,13 +91,13 @@ function mystery_c4_case_info(; move_id::String="plan-distinct-recheck", request
         "type" => "case", "contract_version" => 1, "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_C4_CHAPTER, "move_id" => move_id, "request_id" => request_id,
         "mode" => "challenge", "activity_id" => nothing, "simulation_id" => nothing,
-        "title" => "Plan three distinct rechecks",
-        "question" => "Which three supplied eligible jar IDs will the plan recheck without replacement?",
-        "goal" => "Choose exactly three distinct eligible jar IDs for a simulated recheck plan. No new observations are shown or inferred.",
-        "key_note" => "The list is already eligible under the stated planning rule. A plan names what to inspect next; it does not say what a recheck would find.",
+        "title" => "Your step · Pick three different jars by chance",
+        "question" => "How do we choose three jars to recheck without picking favourites?",
+        "goal" => "Let Julia pick three IDs at random from eligible.jar_id, so every jar on the list has the same chance. Each run may pick a different three; any three different jars are right.",
+        "key_note" => "eligible: the four B09 jars that can still be rechecked, in one column, jar_id. sample is ready to use.",
         "scene" => Dict(
             "id" => "c4-recheck-plan", "speaker" => "Toto",
-            "line" => "The question is not which jar looks suspicious. Our stated rule already made the eligible list; now make a fair, random three-jar plan.",
+            "line" => "The question is not which jar looks suspicious. Let chance pick three from the list.",
             "image" => "assets/lab-cast.png",
             "alt" => "Itchy, Toto, Momo, and Eddie together in the Missing Fleas teaching lab.",
         ),
@@ -122,24 +122,27 @@ function mystery_c4_case_info(msg::AbstractDict)
     move_id == "plan-distinct-recheck" ||
         return _mystery_c4_error("C4's one move is plan-distinct-recheck.")
     get(msg, "mode", "challenge") == "challenge" ||
-        return _mystery_c4_error("C4 supports challenge mode only.")
+        return _mystery_c4_error("C4 could not start this step. Reload the page to try again.")
     get(msg, "activity_id", nothing) === nothing ||
         return _mystery_c4_error("C4 challenge case_info activity_id must be null or absent.")
     return mystery_c4_case_info(; move_id="plan-distinct-recheck", request_id=String(request_id))
 end
 
-function _mystery_c4_explanation(pass)
+function _mystery_c4_explanation(pass, ids=nothing)
     if pass === true
+        plan = ids === nothing ? "" : join(String.(ids), ", ")
         return Dict(
-            "julia" => "Your code returned three different IDs, and each one is on the supplied eligible.jar_id list.",
-            "case" => "These three IDs form the simulated planned recheck rack. No new observations have been made or inferred.",
-            "limit" => "The plan does not tell us what a recheck would find, establish a biological cause, or explain the recording difference.",
+            "julia" => "Your code picked three different IDs, all from Eddie's list.",
+            "case" => isempty(plan) ? "The recheck is planned: three different jars from Eddie's list." :
+                "The recheck is planned: $(plan), three different jars from Eddie's list.",
+            "limit" => "A plan finds nothing yet; the jars still have to be looked at.",
+            "reminder" => "Check that your line says replace=false. Without it, Julia can pick the same jar twice, and a run like this could pass by luck.",
         )
     end
     return Dict(
-        "julia" => "Return exactly three distinct IDs from the supplied eligible.jar_id list.",
-        "case" => "No recheck plan is established until the returned result matches the stated move.",
-        "limit" => "A failed run makes no new observation and establishes no biological cause.",
+        "julia" => "Return a list of three jar IDs.",
+        "case" => "Nothing found yet: the returned result must match this step first.",
+        "limit" => "A failed run finds nothing new and shows nothing about the cause.",
     )
 end
 
@@ -152,15 +155,16 @@ end
 function _mystery_c4_result_visual(rows, pass)
     pass === true || return nothing
     return Dict{String, Any}(
-        "type" => "planned-recheck-rack", "label" => "Planned recheck — no new observations.",
+        "type" => "planned-recheck-rack", "label" => "Recheck tray: planned, not looked at yet",
         "data" => Dict("rows" => rows),
     )
 end
 
 function _mystery_c4_result(; request_id::String="", status::String="error", pass=false,
                             message::String="", stdout::String="", rows=Any[], columns=String[],
-                            feedback::String="", value_repr::String="", result_data=nothing)
-    return Dict{String, Any}(
+                            feedback::String="", value_repr::String="", result_data=nothing,
+                            ids=nothing)
+    result = Dict{String, Any}(
         "type" => "case_result", "contract_version" => 1, "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_C4_CHAPTER, "move_id" => "plan-distinct-recheck",
         "mode" => "challenge", "activity_id" => nothing, "simulation_id" => nothing,
@@ -168,9 +172,17 @@ function _mystery_c4_result(; request_id::String="", status::String="error", pas
         "practice_pass" => nothing, "progress_eligible" => status == "ok" && pass === true,
         "message" => message, "stdout" => stdout, "value_repr" => value_repr,
         "columns" => columns, "rows" => rows, "result_data" => result_data,
-        "feedback" => feedback, "explanation" => _mystery_c4_explanation(pass),
+        "feedback" => feedback, "explanation" => _mystery_c4_explanation(pass, ids),
         "result_visual" => _mystery_c4_result_visual(rows, pass),
     )
+    if pass === true
+        result["evidence"] = Dict(
+            "id" => "c4-recheck-planned",
+            "title" => "Recheck tray: planned, not looked at yet",
+            "claim" => "Claim 1 is done: the 0 was a blank, and a fair recheck is planned.",
+        )
+    end
+    return result
 end
 
 function _mystery_c4_guarded_code(code::String)
@@ -212,7 +224,7 @@ function _mystery_c4_valid_run_envelope(msg::AbstractDict)
     get(msg, "move_id", nothing) == "plan-distinct-recheck" ||
         return (false, "C4's one move is plan-distinct-recheck.")
     get(msg, "mode", nothing) == "challenge" ||
-        return (false, "C4 supports challenge mode only.")
+        return (false, "C4 could not start this step. Reload the page to try again.")
     (!haskey(msg, "activity_id") || msg["activity_id"] === nothing) ||
         return (false, "C4 challenge activity_id must be null or absent.")
     (!haskey(msg, "simulation_id") || msg["simulation_id"] === nothing) ||
@@ -254,10 +266,11 @@ function mystery_c4_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     checked, feedback = sandbox_result.status == :ok ?
         _mystery_c4_check_plan(display) :
-        (false, "Julia did not complete this move. Keep the supplied eligible table unchanged, then try again.")
+        (false, "Julia stopped before the end. Check the names, then run again.")
     return _mystery_c4_result(
         request_id=request_id, status=String(sandbox_result.status), pass=checked,
         message=sandbox_result.message, stdout=sandbox_result.stdout, rows=rows, columns=columns,
         feedback=feedback, value_repr=value_repr, result_data=_mystery_c4_result_data(display),
+        ids=checked ? display : nothing,
     )
 end

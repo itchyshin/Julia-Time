@@ -42,16 +42,18 @@ function boardWith(saved, attempt = "") {
 test("the Case Board describes Chapter 5's saved true-or-false results, not records", () => {
   const {model} = boardWith(SAVED);
   const line = move => model.evidence.find(item => item.move_id === move).line;
-  assert.equal(line("event-mask"), "Simulation event named — 1000 yes-or-no results, one per simulation. This board does not re-check saved work.");
-  assert.equal(line("event-frequency"), "Simulation event frequency calculated — from 1000 yes-or-no results, one per simulation. This board does not re-check saved work.");
+  assert.equal(line("event-mask"), "Simulation event named: 1000 yes-or-no results, one per simulation.");
+  assert.equal(line("event-frequency"), "Simulation event frequency calculated: from 1000 yes-or-no results, one per simulation.");
   for (const move of ["event-mask", "event-frequency"]) assert.doesNotMatch(line(move), /record/i);
 });
 
 test("record-based evidence keeps its record count", () => {
+  // The stored title ("B09 report records recovered") is an older build's wording; the board shows
+  // today's title instead (adversary review item 5), looked up by chapter/move_id.
   const {model} = boardWith(SAVED);
-  assert.equal(model.evidence.find(item => item.chapter === "C1").line, "B09 report records recovered — 6 saved records. This board does not re-check saved work.");
+  assert.equal(model.evidence.find(item => item.chapter === "C1").line, "The B09 jars, found: 6 saved rows.");
   const one = boardWith([Object.assign({}, SAVED[0], {row_count:1})]).model;
-  assert.equal(one.evidence[0].line, "B09 report records recovered — 1 saved record. This board does not re-check saved work.");
+  assert.equal(one.evidence[0].line, "The B09 jars, found: 1 saved row.");
 });
 
 test("the stored Chapter 5 evidence is unchanged by the new wording", () => {
@@ -69,8 +71,8 @@ test("the board page shows the model's evidence line and composes no record coun
 test("the new Chapter 5 wording adds no em dash beyond the board's existing title separator", () => {
   const {model} = boardWith(SAVED);
   for (const item of model.evidence.filter(entry => entry.chapter === "C5")) {
-    const afterTitle = item.line.slice((item.title + " — ").length);
-    assert.ok(item.line.startsWith(item.title + " — "));
+    const afterTitle = item.line.slice((item.title + ": ").length);
+    assert.ok(item.line.startsWith(item.title + ": "));
     assert.doesNotMatch(afterTitle, /—/);
   }
 });

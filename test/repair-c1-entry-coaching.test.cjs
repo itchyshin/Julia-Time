@@ -10,7 +10,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const client = require("../web/mystery.js");
 
-const SHARED = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Need the full answer?” below if you need to place that rule in the table. Your draft is unchanged.";
+const SHARED = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Stuck? Hints” below if you need to place that rule in the table. Your draft is unchanged.";
 
 // jars[jars["batch_id"] == "B09"], jars[jars["batch_id"] .== "B09", :] and, after following
 // DataFrames' own advice, jars[jars[!, "batch_id"] == "B09"] all return this text.
@@ -38,11 +38,11 @@ test("pandas-style one-position indexing gets its own line about jars[rows, colu
   assert.doesNotMatch(line, /df\[!, column\]/, "DataFrames' own advice is not repeated as the headline");
 });
 
-test("round-bracket indexing gets a square-bracket line", () => {
+test("round-bracket indexing (an R-style filter(jars, cond) call) gets filter's real signature", () => {
   const line = firstLine(PARENS);
-  assert.match(line, /Round brackets/);
-  assert.match(line, /square brackets/);
-  assert.match(line, /jars\[rows, columns\]/);
+  assert.match(line, /filter takes the rule first/);
+  assert.match(line, /filter\(row -> \.\.\., jars\)/);
+  assert.match(line, /jars\[rule, :\]/);
 });
 
 test("a missing columns position gets a line about putting : there", () => {

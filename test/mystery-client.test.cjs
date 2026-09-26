@@ -16,13 +16,13 @@ test("C1 exposes one named Case Board route and a plain-language location", () =
   assert.equal(typeof client.caseBoardUrl, "function");
   assert.equal(client.caseBoardUrl("?attempt=c1-abc"), "course/index.html?attempt=c1-abc");
   assert.equal(client.caseBoardUrl("?attempt=../../bad"), "course/index.html");
-  assert.equal(client.caseLocation("intro"), "Case 1 of 6 · Meet the case");
-  assert.equal(client.caseLocation("notebook"), "Case 1 of 6 · Inspect the notebook");
-  assert.equal(client.caseLocation("code"), "Case 1 of 6 · Make your move");
-  assert.equal(client.caseLocation("result"), "Case 1 of 6 · Inspect your evidence");
+  assert.equal(client.caseLocation("intro"), "Chapter 1 of 6 · Meet the case");
+  assert.equal(client.caseLocation("notebook"), "Chapter 1 of 6 · Inspect the notebook");
+  assert.equal(client.caseLocation("code"), "Chapter 1 of 6 · Find the B09 jars");
+  assert.equal(client.caseLocation("result"), "Chapter 1 of 6 · Inspect your evidence");
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/index.html"),"utf8");
   assert.match(html, /id="case-board"/);
-  assert.match(html, /Case 1 of 6/);
+  assert.match(html, /Chapter 1 of 6/);
 });
 
 test("case discovery is computed from returned detections, not a scripted count", () => {
@@ -42,9 +42,12 @@ test("new attempts have isolated saves and invalid identifiers cannot select a n
 
 test("boolean practice output explains Julia's representation without inventing a result", () => {
   const message = {status:"ok", value_repr:"12-element BitVector:\n 1\n 0"};
-  assert.match(client.practiceFeedback('jars.batch_id .== "B08"', message), /1 means true/);
+  assert.match(client.practiceFeedback('jars.batch_id .== "B08"', message), /1 for true/);
   assert.match(client.practiceFeedback('jars.batch_id .== "B08"', message), /not the selected records/);
-  assert.doesNotMatch(client.practiceFeedback("42", {status:"ok", value_repr:"42"}), /1 means true/);
+  assert.doesNotMatch(client.practiceFeedback("42", {status:"ok", value_repr:"42"}), /1 for true/);
+  // Pat's playtest: the message packed three ideas (what it is, 1/0, and row order) into one
+  // paragraph. Row order is dropped, leaving a "what it is" clause and one "what to do" sentence.
+  assert.doesNotMatch(client.practiceFeedback('jars.batch_id .== "B08"', message), /row order/);
 });
 
 test("C1 names the practiced Boolean-row-selection path beside the independent editor without supplying the case expression", () => {
@@ -53,8 +56,8 @@ test("C1 names the practiced Boolean-row-selection path beside the independent e
   const bridge = html.indexOf('id="practice-to-case-bridge"');
   assert.ok(bridge > editor, "the transfer bridge should occur in the independent-editor panel");
   const bridgeCopy = html.slice(bridge, bridge + 700);
-  assert.match(bridgeCopy, /The practice used a true-or-false row rule\. Now use that same rule on the case table/);
-  assert.match(bridgeCopy, /rows position/i);
+  assert.match(bridgeCopy, /Your step:.*make one true or false for each jar/i);
+  assert.match(bridgeCopy, /rows place/i);
   assert.match(bridgeCopy, /all columns/i);
   assert.doesNotMatch(bridgeCopy, /jars\.batch_id\s*\.==\s*case_batch/);
   assert.doesNotMatch(bridgeCopy, /jars\[rows,\s*:\]/);
@@ -63,10 +66,10 @@ test("C1 names the practiced Boolean-row-selection path beside the independent e
 
 test("T3: the direct-entry bridge line names no practice screen the player never saw", () => {
   assert.match(client.bridgeText(true), /the practice/i);
-  assert.match(client.bridgeText(true), /rows position/i);
+  assert.match(client.bridgeText(true), /rows place/i);
   assert.match(client.bridgeText(true), /all columns/i);
   assert.doesNotMatch(client.bridgeText(false), /the practice/i);
-  assert.match(client.bridgeText(false), /rows position/i);
+  assert.match(client.bridgeText(false), /rows place/i);
   assert.match(client.bridgeText(false), /all columns/i);
 });
 
@@ -133,16 +136,16 @@ test("T4: the R-$ habit and the missing-broadcast-dot error get different first 
   assert.match(dollarError, /\$ does not exist in Julia/);
   assert.match(boolError, /not one per row/);
   // Both still end in the same shared next step, so the recovery reads as one continuous path.
-  const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Need the full answer?” below if you need to place that rule in the table. Your draft is unchanged.";
+  const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Stuck? Hints” below if you need to place that rule in the table. Your draft is unchanged.";
   assert.ok(dollarError.endsWith(shared));
   assert.ok(boolError.endsWith(shared));
 });
 
 test("C1 gives a plain accepted-or-not-accepted status after each case run", () => {
   assert.equal(typeof client.runOutcomeStatus, "function");
-  assert.equal(client.runOutcomeStatus({status:"ok", pass:true}), "✓ Accepted — evidence saved.");
-  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
-  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not accepted.*timed out/i);
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true}), "Julia checked it: that's right.");
+  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not yet\. Julia ran your code/i);
+  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not yet.*took too long/i);
 });
 
 test("source highlighting uses returned jar identifiers", () => {

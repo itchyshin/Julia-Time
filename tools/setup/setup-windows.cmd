@@ -17,6 +17,8 @@ echo Using Julia: "%JULIA_EXE%"
 "%JULIA_EXE%" --version
 
 pushd "%COURSE_ROOT%"
+rem This helper prints its own next step below, so check_setup.jl skips its docs/install.md line.
+set "JULIATIME_SETUP_FROM_HELPER=1"
 "%JULIA_EXE%" --startup-file=no --history-file=no --project=. check_setup.jl
 set "EXIT_CODE=%ERRORLEVEL%"
 popd

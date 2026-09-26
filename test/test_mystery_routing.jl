@@ -64,7 +64,7 @@ using Test, JuliaTime
             "move_id" => "join-report-log", "mode" => "demonstration",
             "activity_id" => "practice-join-v1", "simulation_id" => nothing,
             "request_id" => "routing-c3-practice",
-            "code" => "leftjoin(practice_report, practice_log, on=:key)",
+            "code" => "leftjoin(practice_counts, practice_sheet, on=:key)",
         ))
         @test c3_practice["mode"] == "demonstration"
         @test c3_practice["pass"] === nothing

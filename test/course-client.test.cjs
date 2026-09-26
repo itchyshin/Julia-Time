@@ -18,7 +18,7 @@ test("Case Board recognises and routes the one C4 recheck-planning move plus C5-
   }
   const model = client.dashboardModel(client.loadCourseState(storage, "field-7"));
   assert.deepEqual(model.cards.slice(3).map(card => card.playable), [true, true, true]);
-  assert.match(model.cards[5].status, /in this browser|playable/i);
+  assert.match(model.cards[5].status, /done|ready/i);
 });
 
 test("attempt identifiers create isolated additive course namespaces", () => {
@@ -79,7 +79,8 @@ test("an unchanged import preserves a course snapshot and all legacy bytes", () 
   });
   storage.setItem(courseState.courseKey(attempt), JSON.stringify(saved));
   courseState.writeEvidenceIfMissing(storage, attempt, {chapter:"C1", move_id:"select-records", title:"The B09 records", row_count:1, provenance:"historical-browser"});
-  courseState.writeChallengeDraft(storage, attempt, "C2", "group", "my unfinished draft");
+  // Chapter 2 keeps its drafts under its own key; the Case Board reads them there (2026-09-25).
+  storage.setItem(legacy.c2DraftKey(attempt, "group"), "my unfinished draft");
   courseState.writeNotes(storage, attempt, {case:"check the labels"});
   const imported = legacy.importLegacy(storage, attempt);
   courseState.writeImportRecord(storage, attempt, {schema_version:1, sources:Object.fromEntries(imported.sources.map(source => [source.source_key, {fingerprint:source.fingerprint, destinations:source.destinations}]))});
@@ -102,7 +103,8 @@ test("legacy import fills an absent move without replacing saved browser work", 
   });
   saved.accepted["C1/select-records"].code = "my selected rows";
   storage.setItem(courseState.courseKey(attempt), JSON.stringify(saved));
-  courseState.writeChallengeDraft(storage, attempt, "C2", "counts", "my unfinished calculation");
+  // Chapter 2 keeps its drafts under its own key; the Case Board reads them there (2026-09-25).
+  storage.setItem(legacy.c2DraftKey(attempt, "counts"), "my unfinished calculation");
   courseState.writeNotes(storage, attempt, {case:"check the labels"});
   const progress = JSON.stringify({step:"group", accepted:{group:"groupby(jars, :tray_id)"}});
   storage.setItem(legacy.c2ProgressKey(attempt), progress);
@@ -175,7 +177,7 @@ test("a saved cursor cannot turn Continue into a move bypass", () => {
   const model = client.dashboardModel(loaded);
   assert.deepEqual(loaded.cursor, {chapter:"C2", move_id:"rates", mode:"challenge"});
   assert.deepEqual(courseState.acceptedMoves(loaded), []);
-  assert.deepEqual(model.continue, {chapter:"C1", move:"select-records", label:"Start Chapter 1: select the disputed records"});
+  assert.deepEqual(model.continue, {chapter:"C1", move:"select-records", label:"Start Chapter 1: find the B09 jars"});
   assert.equal(storage.getItem(courseState.courseKey(attempt)), null);
 });
 
@@ -191,7 +193,7 @@ test("a reachable saved cursor labels the current Continue move", () => {
   courseState.writeCursor(storage, attempt, {chapter:"C2", move_id:"rates", mode:"challenge"});
 
   const model = client.dashboardModel(client.loadCourseState(storage, attempt));
-  assert.deepEqual(model.continue, {chapter:"C2", move:"rates", label:"Continue Chapter 2: compare tray rates"});
+  assert.deepEqual(model.continue, {chapter:"C2", move:"rates", label:"Continue Chapter 2: work out each tray's share"});
 });
 
 test("changed legacy data is reported and does not silently fill a destination", () => {
@@ -207,7 +209,7 @@ test("changed legacy data is reported and does not silently fill a destination",
   const loaded = client.loadCourseState(storage, attempt);
   assert.deepEqual(courseState.acceptedMoves(loaded), []);
   assert.deepEqual(loaded.historicalChanged, [legacy.c2ProgressKey(attempt)]);
-  assert.match(client.dashboardModel(loaded).historicalNotice, /^Earlier saved data in this browser changed\./);
+  assert.match(client.dashboardModel(loaded).historicalNotice, /^Earlier saved data on this computer changed\./);
   assert.equal(storage.writes.length, beforeWrites);
 });
 
@@ -217,7 +219,8 @@ test("a learner can explicitly add changed browser history without replacing sav
   const prior = courseState.makeCourseState({moves:[{key:"C2/group", provenance:"historical-browser"}]});
   prior.accepted["C2/group"].code = "my saved grouping";
   storage.setItem(courseState.courseKey(attempt), JSON.stringify(prior));
-  courseState.writeChallengeDraft(storage, attempt, "C2", "counts", "my unfinished count");
+  // Chapter 2 keeps its drafts under its own key; the Case Board reads them there (2026-09-25).
+  storage.setItem(legacy.c2DraftKey(attempt, "counts"), "my unfinished count");
   const original = JSON.stringify({step:"group", accepted:{group:"groupby(jars, :tray_id)"}});
   storage.setItem(legacy.c2ProgressKey(attempt), original);
   const originalSource = legacy.importLegacy(storage, attempt).sources[0];
@@ -226,7 +229,7 @@ test("a learner can explicitly add changed browser history without replacing sav
 
   const beforeChoice = client.loadCourseState(storage, attempt);
   assert.deepEqual(courseState.acceptedMoves(beforeChoice), [{key:"C2/group", provenance:"historical-browser"}]);
-  assert.equal(client.dashboardModel(beforeChoice).changedHistoryAction, "Add changed browser history");
+  assert.equal(client.dashboardModel(beforeChoice).changedHistoryAction, "Use the changed save");
 
   const afterChoice = client.loadCourseState(storage, attempt, {acceptChangedHistory:true});
   assert.deepEqual(courseState.acceptedMoves(afterChoice), [
@@ -241,25 +244,24 @@ test("a learner can explicitly add changed browser history without replacing sav
 
 test("the Case Board continues with the earliest playable missing move", () => {
   const first = client.dashboardModel(courseState.emptyCourseState());
-  assert.deepEqual(first.continue, {chapter:"C1", move:"select-records", label:"Start Chapter 1: select the disputed records"});
+  assert.deepEqual(first.continue, {chapter:"C1", move:"select-records", label:"Start Chapter 1: find the B09 jars"});
 
   const afterC1 = client.dashboardModel(courseState.makeCourseState({moves:[{key:"C1/select-records", provenance:"historical-browser"}]}));
-  assert.deepEqual(afterC1.continue, {chapter:"C2", move:"group", label:"Continue Chapter 2: group the tray records"});
+  assert.deepEqual(afterC1.continue, {chapter:"C2", move:"group", label:"Continue Chapter 2: group the jars by tray"});
 
   const afterGroup = client.dashboardModel(courseState.makeCourseState({moves:[
     {key:"C1/select-records", provenance:"historical-browser"},
     {key:"C2/group", provenance:"historical-browser"}
   ]}));
-  assert.deepEqual(afterGroup.continue, {chapter:"C2", move:"counts", label:"Continue Chapter 2: count recorded detections"});
+  assert.deepEqual(afterGroup.continue, {chapter:"C2", move:"counts", label:"Continue Chapter 2: count the jars with fleas"});
 });
 
 test("the Case Board keeps one modest mystery thread: question, fact, unknown, and why now", () => {
   const first = client.dashboardModel(courseState.emptyCourseState()).caseThread;
-  assert.match(first.question, /why.*report.*B09.*notebook/i);
-  assert.match(first.question, /B09.*group of jar records/i);
-  assert.match(first.established, /no case result.*checked/i);
-  assert.match(first.unknown, /why.*differ/i);
-  assert.match(first.whyNext, /identify.*B09 records.*group of jar records/i);
+  assert.match(first.question, /report.*B09.*notebook/i);
+  assert.match(first.established, /nothing checked yet/i);
+  assert.match(first.unknown, /notebook says about batch B09/i);
+  assert.match(first.whyNext, /report is about batch B09/i);
 
   const afterC3 = client.dashboardModel(courseState.makeCourseState({moves:[
     {key:"C1/select-records", provenance:"historical-browser"},
@@ -269,32 +271,30 @@ test("the Case Board keeps one modest mystery thread: question, fact, unknown, a
     {key:"C3/join-report-log", provenance:"historical-browser"},
     {key:"C3/filter-disagreement", provenance:"historical-browser"}
   ]})).caseThread;
-  assert.match(afterC3.established, /recording disagreement/i);
-  assert.match(afterC3.unknown, /does not tell us.*why/i);
+  assert.match(afterC3.established, /blank box on the tally sheet/i);
+  assert.match(afterC3.unknown, /second look at the jars/i);
   assert.match(afterC3.whyNext, /recheck/i);
 
   const afterC5 = client.dashboardModel(courseState.makeCourseState({moves:[
     ...["C1/select-records", "C2/group", "C2/counts", "C2/rates", "C3/join-report-log", "C3/filter-disagreement", "C4/plan-distinct-recheck", "C5/event-mask", "C5/event-frequency"].map(key => ({key, provenance:"historical-browser"}))
   ]})).caseThread;
-  assert.match(afterC5.established, /stated simulation model/i);
-  assert.match(afterC5.whyNext, /range models/i);
-  assert.doesNotMatch(JSON.stringify(afterC5), /culprit|prove/i);
+  assert.match(afterC5.established, /1 time in 9/i);
+  assert.match(afterC5.whyNext, /vanishing/i);
+  assert.doesNotMatch(JSON.stringify(afterC5), /culprit|prove|candidate/i);
 
   const afterC6 = client.dashboardModel(courseState.makeCourseState({moves:[
     ...["C1/select-records", "C2/group", "C2/counts", "C2/rates", "C3/join-report-log", "C3/filter-disagreement", "C4/plan-distinct-recheck", "C5/event-mask", "C5/event-frequency", "C6/compatible-models"].map(key => ({key, provenance:"historical-browser"}))
   ]})).caseThread;
-  assert.match(afterC6.established, /report and handling log disagree.*T-C/i);
-  assert.match(afterC6.established, /compatible candidate ranges/i);
-  assert.match(afterC6.unknown, /does not identify a cause/i);
-  assert.match(afterC6.whyNext, /case closed for today/i);
-  assert.match(afterC6.whyNext, /recheck.*new observation/i);
+  assert.match(afterC6.established, /never shown to be missing/i);
+  assert.match(afterC6.unknown, /recheck of three jars/i);
+  assert.match(afterC6.whyNext, /both claims are checked/i);
 
   const onlyC6 = client.dashboardModel(courseState.makeCourseState({moves:[
     {key:"C6/compatible-models", provenance:"historical-browser"}
   ]})).caseThread;
-  assert.match(onlyC6.established, /candidate ranges contain the observed count/i);
-  assert.doesNotMatch(onlyC6.whyNext, /case closed for today/i);
-  assert.match(onlyC6.whyNext, /identify.*B09 records/i);
+  assert.match(onlyC6.established, /blank box, not an empty tray/i);
+  assert.doesNotMatch(onlyC6.whyNext, /both claims are checked/i);
+  assert.match(onlyC6.whyNext, /report is about batch B09/i);
 });
 
 test("C3 becomes the next playable investigation only after its real route exists", () => {
@@ -314,11 +314,11 @@ test("C3 becomes the next playable investigation only after its real route exist
 
   const firstC3 = client.dashboardModel(beforeC3);
   const joinedC3 = client.dashboardModel(afterJoin);
-  assert.deepEqual(firstC3.continue, {chapter:"C3", move:"join-report-log", label:"Continue Chapter 3: join the report and handling log"});
-  assert.deepEqual(joinedC3.continue, {chapter:"C3", move:"filter-disagreement", label:"Continue Chapter 3: filter the recording disagreement"});
+  assert.deepEqual(firstC3.continue, {chapter:"C3", move:"join-report-log", label:"Continue Chapter 3: line up the notebook and the tally sheet"});
+  assert.deepEqual(joinedC3.continue, {chapter:"C3", move:"filter-disagreement", label:"Continue Chapter 3: find the tray that disagrees"});
   assert.equal(firstC3.cards[2].playable, true);
-  assert.match(firstC3.cards[2].status, /Playable now/i);
-  assert.match(joinedC3.cards[2].status, /Started in this browser/i);
+  assert.match(firstC3.cards[2].status, /Ready/i);
+  assert.match(joinedC3.cards[2].status, /Started/i);
   assert.equal(client.legacyDestination("C3", "field-7", "join-report-log"), "../chapter3.html?attempt=field-7&move=join-report-log");
   assert.equal(client.adapterDestination("C3", "field-7", "filter-disagreement"), "chapter.html?chapter=C3&attempt=field-7&move=filter-disagreement");
 });
@@ -329,7 +329,7 @@ test("six chapter cards expose all six playable mystery chapters without grading
   assert.equal(model.cards[2].playable, true);
   for (const card of model.cards.slice(3)) {
     assert.equal(card.playable, true);
-    assert.match(card.status, /Playable now/i);
+    assert.match(card.status, /Ready/i);
     assert.equal(card.href, card.chapter);
   }
   assert.doesNotMatch(JSON.stringify(model), /percent|accuracy|streak|rank|timer|grade|run count/i);
@@ -341,7 +341,7 @@ test("Case Board gives every playable chapter card its own labelled safe entry r
   assert.match(boardSource, /document\.createElement\("a"\)/);
   assert.match(boardSource, /chapterAction\.href = client\.adapterDestination\(card\.chapter, attempt\) \|\| "chapter\.html"/);
   assert.match(boardSource, /text\(chapterAction, "Open Chapter " \+ card\.chapter\.slice\(1\) \+ " →"\)/);
-  assert.match(boardSource, /article\.append\(label, title, status, chapterAction\)/);
+  assert.match(boardSource, /article\.append\(label, title, solved, status, chapterAction\)/);
 });
 
 test("the optional speed laboratory is outside the six chapters and preserves only valid attempt IDs", () => {
@@ -349,8 +349,8 @@ test("the optional speed laboratory is outside the six chapters and preserves on
   assert.equal(client.speedLabDestination("../../bad"), "speed-lab.html");
   const board = fs.readFileSync(path.join(__dirname, "../web/course/index.html"), "utf8");
   assert.match(board, /id="speed-lab-entry"/);
-  assert.match(board, /not a seventh chapter/i);
-  assert.match(board, /does not affect case progress/i);
+  assert.match(board, /not part of the case/i);
+  assert.match(board, /no score/i);
   assert.match(board, /same answers.*before.*timing/i);
   assert.match(board, /id="speed-lab-link"[^>]*href="speed-lab\.html"/);
   assert.match(board, /speedLabDestination\(attempt\)/);
@@ -412,7 +412,7 @@ test("legacy importer is read-only and the static adapters do not run code", () 
   assert.match(board, /id="continue-action"/);
   assert.match(board, /id="changed-history-action"/);
   assert.match(boardClient, /acceptChangedHistory:true/);
-  assert.match(boardClient, /Concepts will appear here after this browser has saved progress\./);
+  assert.match(boardClient, /The Julia you use will appear here as you solve steps\./);
   assert.doesNotMatch(boardClient, /after you make a checked move/);
   assert.match(board, /aria-live="polite"/);
   assert.match(board, /id="setup-readiness"/);
@@ -434,10 +434,10 @@ test("legacy chapters retain their Case Board context, data panels, and separate
   const c1Client = fs.readFileSync(path.join(__dirname, "../web/mystery.js"), "utf8");
   const c2Client = fs.readFileSync(path.join(__dirname, "../web/chapter2.js"), "utf8");
   assert.match(c1Html, /id="case-board"/);
-  assert.match(c1Html, /Case 1 of 6/);
+  assert.match(c1Html, /Chapter 1 of 6/);
   assert.match(c1Html, /id="case-table"/);
   assert.match(c2Html, /id="case-board"/);
-  assert.match(c2Html, /Case 2 of 6/);
+  assert.match(c2Html, /Chapter 2 of 6/);
   assert.match(c2Html, /class="source-notebook"/);
   assert.match(c2Html, /id="source-rows"/);
   assert.match(c1Client, /julia-time:missing-fleas:v1:/);
@@ -486,6 +486,19 @@ test("each investigation chapter uses its reviewed local scene asset", () => {
     "assets/course/scene-c2-tray-bench.png": "057f0b58146f6364e31ce6b45ac1b05fe204f32dab4e5e9d11255619cd58f56d",
     "assets/course/scene-c3-handling-desk.png": "c54b92a126dd9269ecad6850858d81ce7836fec74325e62f28ecf529805131ba"
   });
+});
+
+test("returning players see today's evidence title, not the one an older build saved", () => {
+  const state = Object.assign(courseState.emptyCourseState(), {evidence:[
+    {chapter:"C1", move_id:"select-records", title:"B09 report records recovered", row_count:6, provenance:"historical-browser"},
+    {chapter:"C6", move_id:"compatible-models", title:"Compatible candidate models retained", row_count:3, provenance:"historical-browser"}
+  ]});
+  const model = client.dashboardModel(state);
+  const titles = model.evidence.map(item => item.title);
+  assert.ok(titles.includes("The B09 jars, found"), "C1 evidence uses today's title");
+  assert.ok(titles.includes("Which stories still fit"), "C6 evidence uses today's title");
+  assert.ok(!titles.includes("B09 report records recovered"));
+  assert.ok(!titles.includes("Compatible candidate models retained"));
 });
 
 function validC1Evidence() {

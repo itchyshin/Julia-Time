@@ -11,46 +11,34 @@
   const INFO_DEADLINE_MS = 5000, RUN_DEADLINE_MS = 7000;
   const COPY = Object.freeze({
     "event-mask": {
-      step: "1 of 2 · Name the event", title: "Name the simulated event",
-      question: "Which of the 1,000 simulated counts are at least the observed B09 count?",
-      required: "Return one true-or-false value for every simulation: true exactly when count is at least observed_count.",
-      concept: "An event is a yes-or-no rule applied to every simulated count. Here: was the simulated count at least the observed count?",
+      step: "Step 1 · Mark the rounds with 5 or more teal cards", title: "Mark the rounds with 5 or more teal cards",
+      question: "Which of the 1,000 rounds had at least as many teal cards as the notebook's 5?",
+      required: "One true or false for every round: true when that round's count is 5 or more.",
+      concept: "Ask every round the same question: is its count at least observed_count. Coming from R? In R you'd compare the whole vector with >=; Julia does the same with a dot.",
       shape: "counts .>= threshold", solution: "sim_counts .>= observed_count",
-      syntax: "The dot in .>= means compare every count, producing one true-or-false result per simulation.",
-      r: "sim_counts >= observed_count", python: "import numpy as np\nnp.asarray(sim_counts) >= observed_count",
-      visual: "The event mask marks the simulations in the highlighted tail."
+      syntax: "The dot in .>= means compare every count, producing one true-or-false result per round.",
+      visual: "The event mask marks the rounds with 5 or 6 teal cards."
     },
     "event-frequency": {
-      step: "2 of 2 · Calculate a frequency", title: "Calculate the event frequency",
-      question: "Among all 1,000 simulations, what fraction meet that event?",
-      required: "Return both the exact event mask and frequency = matching events / all trials, as (events=..., frequency=...).",
-      concept: "A simulated frequency is a count of matching events divided by all simulations under this stated teaching model. In plain language: out of every 100 model runs, about how many meet the rule?",
-      shape: "events = counts .>= threshold; (events=events, frequency=sum(events)/length(events))",
-      solution: "events = sim_counts .>= observed_count; (events=events, frequency=sum(events)/length(events))",
-      syntax: "sum(events) counts true values; length(events) counts every simulation. The semicolon lets you make the event before returning the named result.",
-      r: "events <- sim_counts >= observed_count\nmean(events)", python: "import numpy as np\nevents = np.asarray(sim_counts) >= observed_count\nevents.mean()",
-      bridge_note: "These R and Python lines show only the frequency calculation. The Julia case result still needs two labelled pieces: events and frequency.",
-      visual: "The highlighted tail is the matching-event count divided by all trials."
+      step: "Step 2 · How often did 5 or more happen?", title: "How often did 5 or more happen?",
+      question: "Out of all 1,000 rounds, what share had 5 or more teal cards?",
+      required: "One number: the rounds that matched, divided by all rounds.",
+      concept: "How often = rounds that matched divided by all rounds. The trues are the rounds that matched. Coming from R? In R you'd reach for mean() on the true/false vector; here we write the division out.",
+      shape: "events = counts .>= threshold, then on the next line sum(events) / length(events)",
+      solution: "events = sim_counts .>= observed_count\nsum(events) / length(events)",
+      syntax: "sum(events) counts the trues; length(events) counts every round. Each run starts fresh, so make events again on the first line, then divide.",
+      visual: "The highlighted tail is the matching-round count divided by all rounds."
     }
   });
   function helpStages(move) {
     const copy = COPY[move];
     if (!copy) return [];
-    const beforeFull = {label:"Before the full answer", text:"This will show one complete expression. It will not write into your challenge editor or add case evidence.", button:"Show complete code now"};
     // B9 (simulated playtest, P21/P43): the shape was run as written. Name the placeholders and map them, as in C3.
     const shapeNote = "counts and threshold are placeholders, not names in this case. In this case, counts is sim_counts and threshold is observed_count.";
-    if (move === "event-frequency") return [
-      {label:"Concept", text:copy.concept, button:"Show the code shape"},
-      {label:"Code shape", text:copy.shape, note:shapeNote, button:"Explain the two returned pieces"},
-      {label:"Two labelled pieces", text:"events is the true-or-false vector: one result for every simulation. frequency is matching events divided by all trials. (events=events, frequency=...) is a Julia named tuple, one returned result with two labelled pieces. Each fresh sandbox run starts fresh, so your code must create events again before it returns both pieces.", button:"Show a full answer?"},
-      beforeFull,
-      {label:"Full answer", text:copy.solution, button:"All help shown"}
-    ];
     return [
-      {label:"Concept", text:copy.concept, button:"Show the code shape"},
-      {label:"Code shape", text:copy.shape, note:shapeNote, button:"Show a full answer?"},
-      beforeFull,
-      {label:"Full answer", text:copy.solution, button:"All help shown"}
+      {label:"Idea", text:copy.concept, button:"Show the code shape"},
+      {label:"Code shape", text:copy.shape, note:shapeNote, button:"Show the full answer"},
+      {label:"Full answer", text:copy.solution, button:"All shown"}
     ];
   }
   function helpStage(move, index) { return helpStages(move)[index] || null; }
@@ -66,15 +54,14 @@
     if (!copy) return {lead:"", shape:"", explanation:""};
     if (move !== "event-frequency") return {lead:copy.syntax, shape:"", explanation:""};
     return {
-      lead:"Build the yes-or-no event first, then return both labelled pieces, events and frequency, as one result.",
+      lead:"Each run starts fresh, so make events again on the first line. Then divide.",
       shape:copy.shape,
-      explanation:"events = gives the true-or-false vector a name. The semicolon starts the second expression. The parentheses return one Julia named tuple with labels events and frequency. Replace the generic names with the named case inputs above."
+      explanation:"events = gives the true-or-false vector a name on its own line. sum(events) counts the trues; length(events) counts every round. Replace the generic names with the named case inputs above."
     };
   }
   const FREQUENCY_COMPOSITION = Object.freeze([
     Object.freeze({id:"event", text:"events = counts .>= threshold"}),
-    Object.freeze({id:"frequency", text:"frequency = sum(events) / length(events)"}),
-    Object.freeze({id:"return", text:"(events=events, frequency=frequency)"})
+    Object.freeze({id:"frequency", text:"sum(events) / length(events)"})
   ]);
   function frequencyCompositionCards() { return FREQUENCY_COMPOSITION.map(card => ({id:card.id, text:card.text})); }
   function frequencyCompositionIsCorrect(order) { const cards=frequencyCompositionCards(); return Array.isArray(order) && order.length === cards.length && order.every((id,index) => id === cards[index].id); }
@@ -88,7 +75,8 @@
     } catch (_) { return []; }
   }
   function canOpenMove(courseState, storage, attempt, move) { return knownMove(move) && (move === "event-mask" || acceptedMoveKeys(courseState, storage, attempt).includes("C5/event-mask")); }
-  function initialMove(courseState, storage, attempt, search) { const move = requestedMove(search); return canOpenMove(courseState, storage, attempt, move) ? move : MOVES[0]; }
+  // No step in the address: resume at the first unsolved step, or the last when both are solved (2026-09-25).
+  function initialMove(courseState, storage, attempt, search) { const solved = acceptedMoveKeys(courseState, storage, attempt), resume = MOVES.find(item => !solved.includes(CHAPTER + "/" + item)) || MOVES[MOVES.length - 1], asked = new URLSearchParams(search || "").get("move"), move = knownMove(asked) ? asked : resume; return canOpenMove(courseState, storage, attempt, move) ? move : MOVES[0]; }
   function canOpenSocket(protocol) { return protocol !== "file:"; }
   function connectionMessageForProtocol(protocol) { return protocol === "file:" ? "This page was opened directly from a file. Start the game with run.jl, then open http://127.0.0.1:8000 in your browser." : ""; }
   function openingConnectionMessageForProtocol(protocol) { return connectionMessageForProtocol(protocol) || "Open Toto’s simulation table to load the lab data."; }
@@ -107,20 +95,31 @@
   function returnedStrictComparison(move, message, metadata) {
     const data = message && message.status === "ok" ? message.result_data : null;
     if (!data || !validMetadata(metadata)) return false;
-    const trueCount = move === "event-mask" && data.kind === "boolean-vector" ? data.true_count : move === "event-frequency" && data.kind === "event-frequency" ? data.matching : null;
+    const trueCount = move === "event-mask" && data.kind === "boolean-vector" ? data.true_count : move === "event-frequency" && (data.kind === "event-frequency" || data.kind === "frequency-number") ? data.matching : null;
     const counts = metadata.inputs[0].rows.map(row => row.count), observed = metadata.observed_count;
     if (data.length !== counts.length || !counts.includes(observed) || !Array.isArray(data.preview) || !data.preview.length) return false;
     return trueCount === counts.filter(count => count > observed).length && data.preview.every((value, index) => value === counts[index] > observed);
   }
   function recoveryLead(move, message, metadata) {
+    // Owner playtest (2026-09-26): a practice-only name typed into the case gets a plain pointer to the real inputs.
+    const practice = String(message && message.message || "").match(/UndefVarError: `(practice_target|practice_counts)` not defined/);
+    if (practice) return practice[1] + " is a name from the practice example, not this case. In the case, compare sim_counts with observed_count.";
+    // Repair 7 (orchestrator browser check, 2026-09-26): `events` is made in move 1 (event-mask)
+    // and does not carry over to move 2 (event-frequency), which runs fresh from sim_counts.
+    const carriedEvents = move === "event-frequency" && String(message && message.message || "").match(/UndefVarError: `events` not defined/);
+    if (carriedEvents) return "`events` was made in step 1. Each run starts fresh, so make it again here: events = sim_counts .>= observed_count.";
     if (!message) return "";
     if (message.status === "error" && /no method matching isless\([^)]*Vector/.test(safeText(message.message))) return "Julia cannot compare a whole vector with one number using a comparison without a dot, such as >= or >. Put a dot before the comparison, as in .>=, so Julia compares every count.";
     const returned = message.status === "ok" ? safeText(message.value_repr) : "";
-    if (move === "event-frequency" && returned && !/^\(events = [\s\S]*, frequency = /.test(returned)) return "Julia returned a result, but not the labelled pair this move needs: (events=..., frequency=...), with events first and frequency second.";
+    // A plain number (the taught answer) and the older labelled pair are both valid shapes; only
+    // something that is neither gets this shape hint.
+    const isPlainNumber = /^-?\d+(\.\d+)?$/.test(returned.trim());
+    const isNamedPair = /^\(events = [\s\S]*, frequency = /.test(returned);
+    if (move === "event-frequency" && returned && !isPlainNumber && !isNamedPair) return "Julia returned a result, but not one of the shapes this move needs: one number (rounds that matched divided by all rounds), or the older labelled pair (events=..., frequency=...).";
     // R1 (2026-09-24 re-test): a pair whose events field Julia printed as one number, one true or
     // false, or a vector of numbers ([0, 0, 1]). A true-or-false vector prints as Bool[...]; with
     // other values it still gets the shared step only, and the server's feedback is never passed on.
-    if (move === "event-frequency" && /^\(events = (?:-?\d|true,|false,|\[-?\d)/.test(returned)) return "Julia returned the labelled pair, but events is not a true-or-false vector. events must be the Move 1 result: one true or false for every simulation, not a count or a list of numbers. frequency is the separate number.";
+    if (move === "event-frequency" && isNamedPair && /^\(events = (?:-?\d|true,|false,|\[-?\d)/.test(returned)) return "Julia returned the labelled pair, but events is not a true-or-false vector. events must be the Step 1 result: one true or false for every simulation, not a count or a list of numbers. frequency is the separate number.";
     if (returnedStrictComparison(move, message, metadata)) return "Julia marked true only the counts greater than the observed count. The event is “at least the observed count”, so a count equal to the observed count must be true as well. In Julia, .>= means at least and .> means greater than.";
     return "";
   }
@@ -130,8 +129,8 @@
     // control, which the page really shows; no element is labelled as a "cue".
     // repair6-4 (2026-09-24 browser check): an error run returned no result, so it gets its own step.
     const shared = message && message.status === "error"
-      ? "Your draft is still here. Use the Original Julia error below to decide what to change, or open Help me start below, then run again."
-      : "That result did not meet the stated check. Your draft is still here. Compare it with the Required result line near the top of the page, or open Help me start below, then revise it and run again.";
+      ? "Your draft is still here. Use the Original Julia error below to decide what to change, or open Help me start in Stuck? Hints below, then run again."
+      : "That result did not meet the stated check. Your draft is still here. Compare it with the Required result line near the top of the page, or open Help me start in Stuck? Hints below, then revise it and run again.";
     const lead = recoveryLead(currentMove, message, metadata);
     return lead ? `${lead} ${shared}` : shared;
   }
@@ -156,27 +155,27 @@
     if (!validMetadata(metadata)) return null;
     const current = knownMove(move) ? move : metadata.move_id;
     return {
-      established:`Established in the case: the report and handling log disagree for tray T-C. The observed B09 count is ${metadata.observed_count} of ${metadata.n_jars} jars.`,
-      unknown:"Still unknown: this does not establish a biological cause, or tell us which record describes what happened in the jars.",
+      established:`So far: the notebook and the tally sheet disagree for tray T-C: the notebook has 1, the tally sheet's box was left blank. The observed B09 count is ${metadata.observed_count} of ${metadata.n_jars} jars.`,
+      unknown:"Still unknown: this does not show what really happened in the jars.",
       why_now:current === "event-frequency"
-        ? "Why this move now: Move 1 gave each simulated count a yes-or-no event. Now find how often that event happens across all the simulations, under this one stated teaching model."
-        : "Why this move now: Toto asks a smaller probability question under one stated teaching model. Before we estimate how often it happens, we need a yes-or-no event for each simulated count."
+        ? "Why this step: step 1 gave every card round a yes or a no. Now find how often the answer was yes, across all the rounds."
+        : "Why this step: Momo asked whether the notebook is too good to be true. First mark each card round yes or no: did it give at least as many fleas as the notebook?"
     };
   }
   // repair6-1 (2026-09-24 browser check): once Move 2 is accepted, the move line says it is done.
   function moveLockText(state) {
-    if (state && state.secondAccepted) return "Frequency saved; Move 2 is done, and Chapter 6 is next.";
-    return state && state.firstAccepted ? "Event saved; Move 2 is now open." : "Complete and run Move 1 to unlock Move 2.";
+    if (state && state.secondAccepted) return "Frequency saved; Step 2 is done, and Chapter 6 is next.";
+    return state && state.firstAccepted ? "Event saved; Step 2 is now open." : "Complete and run Step 1 to unlock Step 2.";
   }
   // repair6-2 (2026-09-24 browser check): the distribution and yes-or-no notes fit the active move.
   function evidenceNotes(metadata, move) {
     if (move === "event-frequency") return {
-      distribution:`Each bar is the number of supplied simulations with that count. The bars at least the observed count (${metadata.observed_count}) are the event you named in Move 1. Now find what fraction of all ${metadata.n_trials} simulations fall in those bars.`,
-      comparison:"In Move 1 you made this comparison for every supplied count. Your Move 2 code makes it again, then finds what fraction of all simulations meet the event. This is a preview, not a second dataset and not case evidence."
+      distribution:`Each bar is the number of supplied simulations with that count. The bars at least the observed count (${metadata.observed_count}) are the event you named in Step 1. Now find what fraction of all ${metadata.n_trials} simulations fall in those bars.`,
+      comparison:"In Step 1 you made this comparison for every supplied count. Your Step 2 code makes it again, then finds what fraction of all simulations meet the event. This is a preview, not a second dataset; it does not count for the case."
     };
     return {
       distribution:`Each bar is the number of supplied simulations with that count. Your next Julia move will name the bars at least the observed count (${metadata.observed_count}).`,
-      comparison:"Your Julia move will make this same comparison for every supplied count—so it returns one true-or-false answer per simulation. This is a preview of the intended result, not a second dataset and not case evidence."
+      comparison:"Your Julia move will make this same comparison for every supplied count, so it returns one true-or-false answer per simulation. This is a preview of the intended result, not a second dataset and does not count for the case."
     };
   }
   function simulationBins(metadata) {
@@ -222,12 +221,12 @@
     if (!message || message.type !== "status" || !state.pending || state.expired || message.request_id !== state.pending.request_id) return state;
     return Object.assign({}, state, {statusMessage: message.status === "restarting" ? (message.message || "Restarting Julia after the stopped run…") : ""});
   }
-  function runStatusText(state) {
-    return state && state.runFailure ? "Your code is ready to revise." : state && state.result ? runOutcomeStatus(state.result) : state && state.metadataFailure ? state.metadataFailure : state && isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state && state.connection === "connected" ? (validMetadata(state.metadata) ? "Lab file ready" : "Loading the simulation file…") : "Connect to the lab to run Julia";
+  function runStatusText(state, saved) {
+    return state && state.runFailure ? "Your code is ready to revise." : state && state.result ? runOutcomeStatus(state.result, saved) : state && state.metadataFailure ? state.metadataFailure : state && isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state && state.connection === "connected" ? (validMetadata(state.metadata) ? "Lab file ready" : "Loading the simulation file…") : "Connect to the lab to run Julia";
   }
   function draftNotice(hasCode, restored) {
-    if (!hasCode) return "This challenge editor starts empty. Write your own Julia result.";
-    return restored ? "Restored your saved draft — it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
+    if (!hasCode) return "This editor starts empty. Write your own Julia result.";
+    return restored ? "Restored your saved draft: it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
   }
   // UI-03 (2026-09-24 audit): after a run the caption says what Julia did with this code, as C3 and
   // C4 do. It says "unrun draft" again only once the learner edits the code.
@@ -238,13 +237,16 @@
     if (message.status === "ok") return "Julia ran this code, but the returned result does not yet meet the stated requirement.";
     return "This code was not accepted; your draft is still here to check and run again.";
   }
-  function runOutcomeStatus(message) {
+  const NOT_SAVED_STATUS = "Right answer, but this computer could not save it, so the Case Board will not show it. Run it once more; if this keeps happening, ask your helper.";
+  // Ask the saved record itself, never the write call: a write can fail silently (blocked storage, a damaged record).
+  function savedMove(courseState, storage, attempt, chapter, moveId) { try { return Boolean(storage && courseState && typeof courseState.hasSavedMove === "function" && courseState.hasSavedMove(storage, attempt, chapter, moveId)); } catch (_) { return false; } }
+  function runOutcomeStatus(message, saved) {
     if (!message) return "";
-    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "✓ Accepted — evidence saved.";
-    if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
+    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return saved === false ? NOT_SAVED_STATUS : "Julia checked it: that's right.";
+    if (message.status === "timeout") return "Not yet. Your code took too long, so the lab stopped it. Your code is still here.";
     // repair5-6: a rejected run keeps Julia's own status, so an error gets the same title as C1-C4.
-    if (message.status === "error" || message.run_status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
-    return "Not accepted — no evidence was saved.";
+    if (message.status === "error" || message.run_status === "error") return "Not yet. Julia could not run this code. Your code is still here.";
+    return "Not yet. Julia ran your code; the result below is not quite what we need.";
   }
   function sameInfoIdentity(message, expected) { return Boolean(message && expected && message.contract_version === 1 && message.case_id === expected.case_id && message.chapter === expected.chapter && message.move_id === expected.move_id && message.mode === expected.mode && message.activity_id === expected.activity_id && message.request_id === expected.request_id && typeof message.simulation_id === "string" && message.simulation_id.length > 0); }
   function applyCaseInfo(state, message) { if (!state.infoRequest || !message || message.type !== "case" || !sameInfoIdentity(message,state.infoRequest) || !validMetadata(message)) return state; return Object.assign({}, state, {infoRequest:null, metadata:message, activeMove:message.move_id}); }
@@ -253,7 +255,9 @@
   function expireInfo(state, requestId) { if (!state || !state.infoRequest || state.infoRequest.request_id !== requestId) return state; return Object.assign({}, state, {infoRequest:null, metadata:null, pending:null, expired:false, statusMessage:null, metadataFailure:"The case data took too long to arrive. Reconnect or restart Julia Time, then reload this page. Your draft is still here.", result:null}); }
   function expireRun(state, requestId) { if (!state || !state.pending || state.pending.request_id !== requestId) return state; return Object.assign({}, state, {expired:true, statusMessage:null, runFailure:{status:"timeout", request_id:requestId, feedback:"This check took too long. Your code is still here; check it, then run again."}, result:null}); }
   function histogramData(metadata, data) {
-    if (!validMetadata(metadata) || !data || data.kind !== "event-frequency" || !Number.isInteger(data.matching) || !Number.isInteger(data.trials) || data.trials !== metadata.n_trials || data.matching < 0 || data.matching > data.trials || typeof data.frequency !== "number" || !Number.isFinite(data.frequency) || Math.abs(data.frequency - data.matching / data.trials) >= 1e-12) return null;
+    // A plain number (the taught step 2 answer) and the older labelled pair both arrive with the
+    // same server-computed facts; only the kind tag differs by which shape the learner returned.
+    if (!validMetadata(metadata) || !data || (data.kind !== "event-frequency" && data.kind !== "frequency-number") || !Number.isInteger(data.matching) || !Number.isInteger(data.trials) || data.trials !== metadata.n_trials || data.matching < 0 || data.matching > data.trials || typeof data.frequency !== "number" || !Number.isFinite(data.frequency) || Math.abs(data.frequency - data.matching / data.trials) >= 1e-12) return null;
     const bins = simulationBins(metadata);
     return bins.reduce((total, bin) => total + (bin.tail ? bin.frequency : 0), 0) === data.matching ? bins : null;
   }
@@ -280,6 +284,36 @@
   function runMessage(state,code,id) { return Object.assign({type:"case_run",contract_version:1,code:code},identity(state.activeMove,id,state.metadata && state.metadata.simulation_id)); }
   function actionMessage(action,id) { return {type:"case_action",contract_version:1,case_id:CASE_ID,chapter:CHAPTER,move_id:"card-draw-demo",mode:"demonstration",activity_id:"card-round",simulation_id:null,request_id:id,action:action}; }
   function safeText(value) { return value == null ? "" : String(value); }
+  // Repair 7 (2026-09-26): learners read trial counts (1000, not 0.113) as a whole quantity, so give
+  // those a thousands separator; a frequency itself stays as Julia printed it.
+  function formatCount(n) { return typeof n === "number" && Number.isInteger(n) ? n.toLocaleString("en-US") : String(n); }
+  // AGENTS.md rule 3 (never invent output): "frequency-number" is the learner's own plain number,
+  // exactly as Julia returned it. "event-frequency" is the named tuple shape; only that shape shows
+  // the fabricated-looking (events = ..., frequency = ...) text.
+  // Repair 7 (2026-09-26): step 1's explanation has no limit line by design (bible C5: "No limit
+  // line, step 2 carries it"), so omit "Limit:" entirely rather than showing it with nothing after.
+  function explanationText(explanation) {
+    const parts = [`Julia: ${safeText(explanation.julia)}`, `Case: ${safeText(explanation.case)}`];
+    if (explanation.limit) parts.push(`Limit: ${safeText(explanation.limit)}`);
+    return parts.join(" ");
+  }
+  function juliaReturnedText(data) {
+    if (!data) return null;
+    const shown = Array.isArray(data.preview) ? data.preview.map(value => String(Boolean(value))).join(", ") : "";
+    const more = Array.isArray(data.preview) && data.length > data.preview.length ? ", …" : "";
+    if (data.kind === "boolean-vector") return `Bool[${shown}${more}]\n${formatCount(data.true_count)} true of ${formatCount(data.length)} supplied simulations`;
+    if (data.kind === "frequency-number") return `${data.frequency}\n${formatCount(data.matching)} matching rounds of ${formatCount(data.trials)} rounds`;
+    if (data.kind === "event-frequency") return `(events = Bool[${shown}${more}], frequency = ${data.frequency})\n${formatCount(data.matching)} matching rounds of ${formatCount(data.trials)} rounds`;
+    return null;
+  }
+  // Nit 15 (adversary review 2026-09-26): juliaReturnedText's second line ("113 matching rounds of
+  // 1,000 rounds") is the game's own count, not something Julia printed. Split it out so the page can
+  // label it as the game's note rather than showing it under "Julia returned" as if Julia said it.
+  function splitJuliaReturned(text) {
+    if (typeof text !== "string") return {returned: null, note: null};
+    const at = text.indexOf("\n");
+    return at === -1 ? {returned: text, note: null} : {returned: text.slice(0, at), note: text.slice(at + 1)};
+  }
   function table(parent, rows, limit) { const t=document.createElement("table"), head=document.createElement("thead"), body=document.createElement("tbody"), hr=document.createElement("tr"); ["simulation","count"].forEach(name=>{const th=document.createElement("th");th.textContent=name;hr.append(th);});head.append(hr);rows.slice(0,limit).forEach(row=>{const tr=document.createElement("tr");[row.simulation,row.count].forEach(value=>{const td=document.createElement("td");td.textContent=safeText(value);tr.append(td);});body.append(tr);});t.append(head,body);parent.append(t); }
   function eventDecisionTable(parent, rows) { const t=document.createElement("table"), head=document.createElement("thead"), body=document.createElement("tbody"), hr=document.createElement("tr"); ["simulation","count","at least the observed count?"].forEach(name=>{const th=document.createElement("th");th.textContent=name;hr.append(th);});head.append(hr);rows.forEach(row=>{const tr=document.createElement("tr");[row.simulation,row.count,row.meets_event ? "true" : "false"].forEach(value=>{const td=document.createElement("td");td.textContent=safeText(value);tr.append(td);});body.append(tr);});t.append(head,body);parent.append(t); }
   function renderDistribution(parent, bins, title, text, accepted) {
@@ -287,17 +321,17 @@
     const section=document.createElement("section"), heading=document.createElement("h3"), note=document.createElement("p"), list=document.createElement("ol");
     section.className="distribution"; heading.textContent=title; note.textContent=text; list.className="distribution-bars";
     const largest=Math.max(1,...bins.map(bin=>bin.frequency));
-    bins.forEach(bin=>{const item=document.createElement("li"), bar=document.createElement("span"), label=document.createElement("span"); item.className=bin.tail ? "tail" : ""; if(accepted && bin.tail)item.classList.add("accepted"); bar.className="distribution-bar";bar.style.height=`${Math.max(8,Math.round(160*bin.frequency/largest))}px`;label.textContent=`${bin.count}: ${bin.frequency}${bin.tail ? " — at least the observed count" : ""}`;item.append(bar,label);list.append(item);});
+    bins.forEach(bin=>{const item=document.createElement("li"), bar=document.createElement("span"), label=document.createElement("span"); item.className=bin.tail ? "tail" : ""; if(accepted && bin.tail)item.classList.add("accepted"); bar.className="distribution-bar";bar.style.height=`${Math.max(8,Math.round(160*bin.frequency/largest))}px`;label.textContent=`${bin.count}: ${bin.frequency}${bin.tail ? ": at least the observed count" : ""}`;item.append(bar,label);list.append(item);});
     section.append(heading,note,list);parent.append(section);
   }
   function init() {
-    const $ = id => document.getElementById(id); const el={scene:$("scene"),work:$("work"),start:$("start"),back:$("back"),board:$("case-board"),sceneBoard:$("case-board-scene"),sceneTitle:$("scene-title"),connection:$("connection"),reconnect:$("reconnect"),moves:document.querySelectorAll("[data-move]"),moveLock:$("move-lock"),step:$("move-step"),title:$("move-title"),question:$("move-question"),required:$("required-result"),context:$("case-context"),data:$("simulation-data"),caseStatus:$("case-status"),answerReference:$("answer-before-editor"),code:$("code"),draftNote:$("draft-note"),run:$("run"),status:$("run-status"),syntax:$("syntax"),result:$("result"),visual:$("visual"),next:$("next"),hint:$("hint"),nextHint:$("next-hint"),answer:$("answer"),bridges:$("bridges"),actionButtons:document.querySelectorAll("[data-action]"),prediction:$("card-prediction"),demo:$("demo"),cardEvent:$("card-event"),frequencyComposition:$("frequency-composition"),frequencyCompositionCards:$("frequency-composition-cards"),frequencyCompositionFeedback:$("frequency-composition-feedback"),checkFrequencyComposition:$("check-frequency-composition"),resetFrequencyComposition:$("reset-frequency-composition")};
-    if (!el.work) return; let storage=null; try {storage=localStorage;} catch (_) {} const course=window.JuliaTimeCourseState; const attempt=new URLSearchParams(location.search).get("attempt") || ""; let state=createState(), socket=null, timer=null, infoTimer=null, runTimer=null, actionTimer=null, stopped=false, hint=0, drafts=Object.create(null), restoredDrafts=Object.create(null), frequencyOrder=[]; state.activeMove=initialMove(course,storage,attempt,location.search); state.firstAccepted=canOpenMove(course,storage,attempt,"event-frequency"); state.secondAccepted=acceptedMoveKeys(course,storage,attempt).includes("C5/event-frequency"); if (location.protocol === "file:") state.connection="offline"; if (el.connection) el.connection.textContent=openingConnectionMessageForProtocol(location.protocol); if (el.board) el.board.href=caseBoardUrl(location.search); if (el.sceneBoard) el.sceneBoard.href=caseBoardUrl(location.search);
+    const $ = id => document.getElementById(id); const el={scene:$("scene"),work:$("work"),start:$("start"),back:$("back"),board:$("case-board"),sceneBoard:$("case-board-scene"),sceneTitle:$("scene-title"),connection:$("connection"),reconnect:$("reconnect"),moves:document.querySelectorAll("[data-move]"),moveLock:$("move-lock"),step:$("move-step"),title:$("move-title"),question:$("move-question"),required:$("required-result"),context:$("case-context"),data:$("simulation-data"),caseStatus:$("case-status"),answerReference:$("answer-before-editor"),showFullAnswer:$("show-full-answer"),namesFrequency:$("names-frequency"),code:$("code"),draftNote:$("draft-note"),run:$("run"),status:$("run-status"),syntax:$("syntax"),result:$("result"),visual:$("visual"),next:$("next"),hint:$("hint"),nextHint:$("next-hint"),answer:$("answer"),bridgeCard:$("bridge-card"),actionButtons:document.querySelectorAll("[data-action]"),prediction:$("card-prediction"),demo:$("demo"),cardEvent:$("card-event"),frequencyComposition:$("frequency-composition"),frequencyCompositionCards:$("frequency-composition-cards"),frequencyCompositionFeedback:$("frequency-composition-feedback"),checkFrequencyComposition:$("check-frequency-composition"),resetFrequencyComposition:$("reset-frequency-composition")};
+    if (!el.work) return; let storage=null; try {storage=localStorage;} catch (_) {} const course=window.JuliaTimeCourseState; const bridges=typeof window !== "undefined" ? window.JuliaTimeBridges : null; const attempt=new URLSearchParams(location.search).get("attempt") || ""; let state=createState(), socket=null, timer=null, infoTimer=null, runTimer=null, actionTimer=null, stopped=false, hint=0, drafts=Object.create(null), restoredDrafts=Object.create(null), submittedCode=Object.create(null), acceptedCode=Object.create(null), frequencyOrder=[], saveOk=true; state.activeMove=initialMove(course,storage,attempt,location.search); state.firstAccepted=canOpenMove(course,storage,attempt,"event-frequency"); state.secondAccepted=acceptedMoveKeys(course,storage,attempt).includes("C5/event-frequency"); if (location.protocol === "file:") state.connection="offline"; if (el.connection) el.connection.textContent=openingConnectionMessageForProtocol(location.protocol); if (el.board) el.board.href=caseBoardUrl(location.search); if (el.sceneBoard) el.sceneBoard.href=caseBoardUrl(location.search);
     const obsoleteDrafts=Object.create(null);
     let lastRun=null; // UI-03: the run Julia last checked for this editor text; cleared by any edit.
     try {const saved=course && course.readChallengeDrafts ? course.readChallengeDrafts(storage,attempt) : {}; Object.keys(saved || {}).forEach(key=>{if(key.startsWith("C5/") && typeof saved[key] === "string") { const move=key.slice(3), value=saved[key]; if(isObsoleteDraft(move,value)) { drafts[move]=""; restoredDrafts[move]=false; obsoleteDrafts[move]=true; if(course && course.writeChallengeDraft) course.writeChallengeDraft(storage,attempt,CHAPTER,move,""); } else { drafts[move]=value; restoredDrafts[move]=value.length > 0; } }});} catch (_) {}
     function moveCopy() { return COPY[state.activeMove]; }
-    function draftCaption() { return lastRun ? draftStatus(lastRun) : obsoleteDrafts[state.activeMove] ? "An obsolete incomplete draft was cleared. Your valid drafts are safe; open Help me start below for the steps, or start your own." : draftNotice(Boolean(el.code.value),Boolean(restoredDrafts[state.activeMove])); }
+    function draftCaption() { return lastRun ? draftStatus(lastRun) : obsoleteDrafts[state.activeMove] ? "An obsolete incomplete draft was cleared. Your valid drafts are safe; open Help me start in Stuck? Hints below for the steps, or start your own." : draftNotice(Boolean(el.code.value),Boolean(restoredDrafts[state.activeMove])); }
     function renderHints(lines) { const shown=Array.from(el.hint.children,item=>item.textContent), grows=shown.length <= lines.length && shown.every((text,index)=>text===lines[index]); if(!grows) el.hint.replaceChildren(); lines.slice(grows ? shown.length : 0).forEach(line=>{const p=document.createElement("p");p.textContent=line;el.hint.append(p);}); }
     function clearResult() { el.result.replaceChildren(); el.visual.replaceChildren(); el.next.hidden=true; el.next.dataset.destination=""; }
     function clearInfoTimer() { if(infoTimer) { clearTimeout(infoTimer); infoTimer=null; } }
@@ -318,14 +352,14 @@
       const rows = state.metadata.inputs[0].rows;
       const label = document.createElement("p");
       label.className = "data-label";
-      label.textContent = "Simulated teaching data — fixed seeded model, not a new flea observation.";
+      label.textContent = "Simulated data made for this game: Toto's what-if rounds, not new jars.";
       const model = document.createElement("p");
       model.textContent = `Model inputs: ${state.metadata.n_jars} trials per simulation; reference probability ${state.metadata.p_ref}.`;
       const lead = document.createElement("p");
       lead.textContent = `Observed B09 count: ${state.metadata.observed_count}. Supplied simulations: ${state.metadata.n_trials}.`;
       const binding = document.createElement("p");
       binding.className = "practice-bridge";
-      binding.textContent = `Julia inputs: sim_counts — a vector of all ${state.metadata.n_trials} simulated counts; observed_count — the supplied B09 count (${state.metadata.observed_count}) used as the comparison threshold.`;
+      binding.textContent = `Julia inputs: sim_counts: a vector of all ${state.metadata.n_trials} simulated counts; observed_count: the supplied B09 count (${state.metadata.observed_count}) used as the comparison threshold.`;
       const previewHeading = document.createElement("h3");
       previewHeading.textContent = "First 12 supplied counts";
       const previewNote = document.createElement("p");
@@ -337,10 +371,16 @@
       const moreDetails = document.createElement("details"), moreSummary = document.createElement("summary"), moreTable = document.createElement("div");
       moreSummary.textContent = "Show 18 more supplied counts";
       moreDetails.append(moreSummary, moreTable);
-      el.data.append(label, model, lead, binding, previewHeading, previewNote);
-      table(el.data,state.metadata.inputs[0].rows,12);
+      // 2026-09-25 layout pass: the first counts read as one line; the table views sit in one closed section.
+      const strip = document.createElement("p"); strip.className = "count-strip";
+      strip.textContent = "sim_counts begins: " + rows.slice(0, 12).map(row => row.count).join(", ") + ", …";
+      const tableDetails = document.createElement("details"), tableSummary = document.createElement("summary"), tableBox = document.createElement("div");
+      tableSummary.textContent = "See the first 30 counts as a table";
+      tableDetails.append(tableSummary, previewHeading, tableBox);
+      el.data.append(label, model, lead, binding, previewNote, strip, tableDetails);
+      table(tableBox,state.metadata.inputs[0].rows,12);
       table(moreTable, rows.slice(12,30), 18);
-      el.data.append(moreDetails, columnDetails);
+      tableDetails.append(moreDetails, columnDetails);
       const bins = simulationBins(state.metadata);
       const notes = evidenceNotes(state.metadata, state.activeMove);
       if (bins) renderDistribution(el.data, bins, "Before you write: see the full simulated distribution", notes.distribution, false);
@@ -354,11 +394,13 @@
         bridge.append(heading, lead);
         eventDecisionTable(bridge, bridgeRows);
         bridge.append(explanation);
-        el.data.append(bridge);
+        // A worked walkthrough, not what to type: it lives in the help panel (2026-09-25 layout pass).
+        const helpSlot = document.getElementById("event-bridge-help");
+        if (helpSlot) helpSlot.replaceChildren(bridge); else el.data.append(bridge);
       }
     }
-    function renderVisual() { el.visual.replaceChildren(); if(!state.result || !state.evidence || state.result.result_data !== state.evidence.result_data) return; const data=state.evidence.result_data, panel=document.createElement("section"), heading=document.createElement("h2"); heading.textContent=state.activeMove === "event-mask" ? "Your event mask" : "Your simulated tail frequency"; const p=document.createElement("p"); p.textContent=state.activeMove === "event-mask" ? `${data.true_count} of ${data.length} supplied simulations meet your event.` : `${data.matching} of ${data.trials} supplied simulations meet your event: ${(100*data.frequency).toFixed(1)}%.`; const bars=document.createElement("div");bars.className="tail-bar"; const fill=document.createElement("span");fill.style.width=`${100*(state.activeMove === "event-mask" ? data.true_count/data.length : data.frequency)}%`;bars.append(fill);const limit=document.createElement("p");limit.className="limit";limit.textContent="This is a frequency under the displayed teaching model. It does not identify a cause or show that the model is true.";panel.append(heading,p,bars,limit);const bins=state.activeMove === "event-frequency" ? histogramData(state.metadata,data) : simulationBins(state.metadata);if(bins && (state.activeMove === "event-frequency" || bins.filter(bin=>bin.tail).reduce((total,bin)=>total+bin.frequency,0) === data.true_count)) renderDistribution(panel,bins,"Your Julia rule marks this tail",`Counts at least ${state.metadata.observed_count} are the bars your returned Boolean result marks true.`,true);el.visual.append(panel); }
-    function renderDemo() { el.demo.replaceChildren();el.cardEvent.replaceChildren(); if(!validMetadata(state.metadata)) return; if(state.actionFailure) {const recovery=document.createElement("p");recovery.className="recovery";recovery.textContent=state.actionFailure.message;el.demo.append(recovery);} if(!state.demo) return; const data=state.demo.result_data, p=document.createElement("p"); p.className="demo-result"; if(data.kind === "card-draws") {p.textContent="Toto’s recorded six-card draw: ";data.draws.forEach(value=>{const card=document.createElement("span");card.className=value === "teal" ? "teal-card":"orange-card";card.textContent=value;p.append(card);});p.append(". That count is one model outcome; the case task applies the same yes-or-no idea to sim_counts.");el.demo.append(p);const answer=cardEventFeedback(data.draws,state.metadata.observed_count,state.cardChoice);const question=document.createElement("p");question.className="card-question";question.textContent=`There are ${data.draws.filter(value=>value === "teal").length} teal cards. Is that at least the observed B09 count (${state.metadata.observed_count})?`;const choices=document.createElement("div");choices.className="controls";[["yes","Yes — it meets the event"],["no","No — it does not meet the event"]].forEach(([choice,label])=>{const button=document.createElement("button");button.type="button";button.dataset.cardChoice=choice;button.textContent=label;button.disabled=Boolean(answer && answer.correct);button.addEventListener("click",()=>{state=answerCardEvent(state,choice);render();});choices.append(button);});el.cardEvent.append(question,choices);if(answer){const feedback=document.createElement("p");feedback.className=answer.correct ? "demo-result" : "recovery";feedback.textContent=answer.correct ? `${answer.feedback} That was practice data. Now apply the same at-least comparison to the named sim_counts below.` : answer.feedback;el.cardEvent.append(feedback);}} else {const atLeast=data.counts.filter(value=>value >= state.metadata.observed_count).length;p.textContent=`Recorded non-credit replay: ${atLeast} of ${data.n_trials} model counts were at least the observed count. It does not change case evidence.`;el.demo.append(p);if(typeof state.demo.generated_code === "string" && state.demo.generated_code.trim()) {const note=document.createElement("p"), code=document.createElement("pre");note.className="limit";note.textContent="Server-supplied demonstration code (shown as text only; it is not your code and earns no case credit).";code.textContent=state.demo.generated_code;el.demo.append(note,code);}} }
+    function renderVisual() { el.visual.replaceChildren(); if(!state.result || !state.evidence || state.result.result_data !== state.evidence.result_data) return; const data=state.evidence.result_data, panel=document.createElement("section"), heading=document.createElement("h2"); heading.textContent=state.activeMove === "event-mask" ? "Your event mask" : "Your simulated tail frequency"; const p=document.createElement("p"); p.textContent=state.activeMove === "event-mask" ? `${data.true_count} of ${data.length} supplied simulations meet your event.` : `${data.matching} of ${data.trials} supplied simulations meet your event: ${(100*data.frequency).toFixed(1)}%.`; const bars=document.createElement("div");bars.className="tail-bar"; const fill=document.createElement("span");fill.style.width=`${100*(state.activeMove === "event-mask" ? data.true_count/data.length : data.frequency)}%`;bars.append(fill);const limit=document.createElement("p");limit.className="limit";limit.textContent="This is a frequency from Toto's coin-flip cards. It does not identify a cause or show that a coin flip is what really happens.";panel.append(heading,p,bars,limit);const bins=state.activeMove === "event-frequency" ? histogramData(state.metadata,data) : simulationBins(state.metadata);if(bins && (state.activeMove === "event-frequency" || bins.filter(bin=>bin.tail).reduce((total,bin)=>total+bin.frequency,0) === data.true_count)) renderDistribution(panel,bins,"Your Julia rule marks this tail",`Counts at least ${state.metadata.observed_count} are the bars your returned Boolean result marks true.`,true);el.visual.append(panel); }
+    function renderDemo() { el.demo.replaceChildren();el.cardEvent.replaceChildren(); if(!validMetadata(state.metadata)) return; if(state.actionFailure) {const recovery=document.createElement("p");recovery.className="recovery";recovery.textContent=state.actionFailure.message;el.demo.append(recovery);} if(!state.demo) return; const data=state.demo.result_data, p=document.createElement("p"); p.className="demo-result"; if(data.kind === "card-draws") {p.textContent="Toto’s recorded six-card draw: ";data.draws.forEach(value=>{const card=document.createElement("span");card.className=value === "teal" ? "teal-card":"orange-card";card.textContent=value;p.append(card);});p.append(". That count is one model outcome; the case task applies the same yes-or-no idea to sim_counts.");el.demo.append(p);const answer=cardEventFeedback(data.draws,state.metadata.observed_count,state.cardChoice);const question=document.createElement("p");question.className="card-question";question.textContent=`There are ${data.draws.filter(value=>value === "teal").length} teal cards. Is that at least the observed B09 count (${state.metadata.observed_count})?`;const choices=document.createElement("div");choices.className="controls";[["yes","Yes: it meets the event"],["no","No: it does not meet the event"]].forEach(([choice,label])=>{const button=document.createElement("button");button.type="button";button.dataset.cardChoice=choice;button.textContent=label;button.disabled=Boolean(answer && answer.correct);button.addEventListener("click",()=>{state=answerCardEvent(state,choice);render();});choices.append(button);});el.cardEvent.append(question,choices);if(answer){const feedback=document.createElement("p");feedback.className=answer.correct ? "demo-result" : "recovery";feedback.textContent=answer.correct ? `${answer.feedback} That was practice data. Now apply the same at-least comparison to the named sim_counts below.` : answer.feedback;el.cardEvent.append(feedback);}} else {const atLeast=data.counts.filter(value=>value >= state.metadata.observed_count).length;p.textContent=`Recorded non-credit replay: ${atLeast} of ${data.n_trials} model counts were at least the observed count. It does not change case evidence.`;el.demo.append(p);if(typeof state.demo.generated_code === "string" && state.demo.generated_code.trim()) {const note=document.createElement("p"), code=document.createElement("pre");note.className="limit";note.textContent="Server-supplied demonstration code (shown as text only; it is not your code and earns no case credit).";code.textContent=state.demo.generated_code;el.demo.append(note,code);}} }
     function renderFrequencyComposition() {
       const active=state.activeMove === "event-frequency";
       el.frequencyComposition.hidden=!active;
@@ -381,38 +423,38 @@
       if (!el.answerReference) return;
       if (!stage || stage.label !== "Full answer") { el.answerReference.replaceChildren(); el.answerReference.hidden = true; return; }
       const label=document.createElement("p"), code=document.createElement("pre");
-      label.textContent="Reference code answer — runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or add evidence.";
+      label.textContent="Reference code answer: runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or count as a saved answer.";
       code.className="complete-answer-code";
       code.textContent=copy.solution;
       el.answerReference.replaceChildren(label,code);
       el.answerReference.hidden=false;
     }
-    function render() { const c=moveCopy(), stages=helpStages(state.activeMove), stage=hint > 0 ? stages[hint - 1] : null, bridge=preEditorBridge(state.activeMove); el.step.textContent=c.step;el.title.textContent=c.title;el.question.textContent=c.question;el.required.textContent=c.required;el.syntax.replaceChildren(document.createTextNode(bridge.lead));if(el.draftNote)el.draftNote.textContent=draftCaption();el.run.disabled=!challengeReady(state);el.status.textContent=runStatusText(state);el.reconnect.hidden=(state.connection === "connected" && !state.metadataFailure) || state.connection === "connecting";el.moves.forEach(button=>{const current=button.dataset.move === state.activeMove;button.setAttribute("aria-current",String(current));button.disabled=button.dataset.move === "event-frequency" && !state.firstAccepted;});if(el.moveLock) el.moveLock.textContent=moveLockText(state);el.actionButtons.forEach(button=>{button.disabled=state.connection !== "connected" || !validMetadata(state.metadata)||Boolean(state.actionPending);});renderAnswerReference(stage,c);renderHints(visibleHints(state.activeMove,hint));el.nextHint.textContent=hint >= stages.length ? "All help shown" : hint === 0 ? "Show the concept" : stages[hint - 1].button;el.nextHint.disabled=hint >= stages.length;el.bridges.textContent=`${c.bridge_note ? `${c.bridge_note}\n\n` : ""}R\n${c.r}\n\nPython\n${c.python}`;renderFrequencyComposition();renderData();renderCaseStatus();renderVisual();renderDemo();}
+    function render() { if (el.namesFrequency) el.namesFrequency.hidden = state.activeMove !== "event-frequency"; const c=moveCopy(), stages=helpStages(state.activeMove), stage=hint > 0 ? stages[hint - 1] : null, bridge=preEditorBridge(state.activeMove); el.step.textContent=c.step;el.title.textContent=c.title;el.question.textContent=c.question;el.required.textContent=c.required;el.syntax.replaceChildren(document.createTextNode(bridge.lead));if(el.draftNote)el.draftNote.textContent=draftCaption();el.run.disabled=!challengeReady(state);el.status.textContent=runStatusText(state, saveOk);el.reconnect.hidden=(state.connection === "connected" && !state.metadataFailure) || state.connection === "connecting";el.moves.forEach(button=>{const current=button.dataset.move === state.activeMove;button.setAttribute("aria-current",String(current));button.disabled=button.dataset.move === "event-frequency" && !state.firstAccepted;});if(el.moveLock) el.moveLock.textContent=moveLockText(state);el.actionButtons.forEach(button=>{button.disabled=state.connection !== "connected" || !validMetadata(state.metadata)||Boolean(state.actionPending);});renderAnswerReference(stage,c);renderHints(visibleHints(state.activeMove,hint));el.nextHint.textContent=hint >= stages.length ? "All shown" : hint === 0 ? "Show the idea" : stages[hint - 1].button;el.nextHint.disabled=hint >= stages.length;if(bridges)bridges.renderCard(el.bridgeCard,"C5/"+state.activeMove,acceptedCode[state.activeMove] || "");renderFrequencyComposition();renderData();renderCaseStatus();renderVisual();renderDemo();}
     function persistDraft() { drafts[state.activeMove]=el.code.value;restoredDrafts[state.activeMove]=false;try{if(course && course.writeChallengeDraft) course.writeChallengeDraft(storage,attempt,CHAPTER,state.activeMove,el.code.value);}catch(_){} }
     function selectMove(move) { if(!knownMove(move) || (move === "event-frequency" && !state.firstAccepted)) return; clearInfoTimer();clearRunTimer();lastRun=null;drafts[state.activeMove]=el.code.value;state=beginInfo(state,requestId("c5-info"),move);hint=0;frequencyOrder=[];el.code.value=drafts[move] || initialEditorText();clearResult();send(infoMessage(move,state.infoRequest.request_id));const id=state.infoRequest.request_id;infoTimer=setTimeout(()=>{const before=state;state=expireInfo(state,id);if(state!==before)render();},INFO_DEADLINE_MS);render(); }
     function persistAccepted(result) { if(!course || !result || !state.evidence) return;try{course.recordHistoricalMoveIfMissing(storage,attempt,CHAPTER,result.move_id);course.writeEvidenceIfMissing(storage,attempt,{chapter:CHAPTER,move_id:result.move_id,title:result.move_id === "event-mask" ? "Simulation event named" : "Simulation event frequency calculated",row_count:result.result_data.trials || result.result_data.length,provenance:"historical-browser"});course.writeCursor(storage,attempt,{chapter:CHAPTER,move_id:result.move_id === "event-mask" ? "event-frequency" : "event-frequency",mode:"challenge"});}catch(_){}}
     function resultMessage(message) {
       el.result.replaceChildren();
-      const outcome=document.createElement("p");outcome.className="run-outcome";outcome.textContent=runOutcomeStatus(message);el.result.append(outcome);
+      const outcome=document.createElement("p");outcome.className="run-outcome";outcome.textContent=runOutcomeStatus(message, saveOk);el.result.append(outcome);
       const p=document.createElement("p");p.textContent=safeText(message.message || message.feedback || "Julia returned a result.");el.result.append(p);
       if(message.original_error){const details=document.createElement("details"),summary=document.createElement("summary"),original=document.createElement("pre");summary.textContent="Original Julia error";original.textContent=safeText(message.original_error);details.append(summary,original);el.result.append(details);}
       if(message.status === "rejected" && message.value_repr){const details=document.createElement("details"),summary=document.createElement("summary"),returned=document.createElement("pre");summary.textContent="Actual Julia output";returned.textContent=safeText(message.value_repr);details.append(summary,returned);el.result.append(details);}
-      if(message.explanation){const e=document.createElement("p");e.textContent=`Julia: ${safeText(message.explanation.julia)} Case: ${safeText(message.explanation.case)} Limit: ${safeText(message.explanation.limit)}`;el.result.append(e);}
+      if(message.explanation){const e=document.createElement("p");e.textContent=explanationText(message.explanation);el.result.append(e);}
       const data=message && message.status === "ok" ? message.result_data : null;
-      if (!data || !Array.isArray(data.preview)) return;
-      const heading=document.createElement("h3"), output=document.createElement("pre"), shown=data.preview.map(value=>String(Boolean(value))).join(", ");
+      if (!data || (data.kind !== "frequency-number" && !Array.isArray(data.preview))) return;
+      const text=juliaReturnedText(data);
+      if (text === null) return;
+      const {returned, note:noteLine}=splitJuliaReturned(text);
+      const heading=document.createElement("h3"), output=document.createElement("pre");
       heading.textContent="Julia returned";
-      if (data.kind === "boolean-vector") {
-        output.textContent=`Bool[${shown}${data.length > data.preview.length ? ", …" : ""}]\n${data.true_count} true of ${data.length} supplied simulations`;
-      } else if (data.kind === "event-frequency") {
-        output.textContent=`(events = Bool[${shown}${data.length > data.preview.length ? ", …" : ""}], frequency = ${data.frequency})\n${data.matching} matching events of ${data.trials} simulations`;
-      } else return;
+      output.textContent=returned;
       output.className="julia-output";
       el.result.append(heading,output);
+      if (noteLine) { const note=document.createElement("p"); note.className="game-note"; note.textContent="The game's note: "+noteLine; el.result.append(note); }
     }
     function focusResult() { if (el.result) el.result.focus(); }
     function send(message) { if(socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
-    function connect() { if(stopped) return; clearTimeout(timer); timer=null;clearInfoTimer();clearRunTimer(); if(!canOpenSocket(location.protocol)){const old=socket;socket=null;if(old)try{old.close();}catch(_){}state=disconnect(state);if(el.connection)el.connection.textContent=connectionMessageForProtocol(location.protocol);render();return;} const old=socket;socket=null;if(old)try{old.close();}catch(_){}state.connection="connecting";if(el.connection)el.connection.textContent="● Connecting to the lab…";render();try{socket=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws");}catch(_){return retry();}const ws=socket;ws.onopen=()=>{if(socket!==ws)return;state.connection="connected";if(el.connection)el.connection.textContent="● Lab link ready";selectMove(state.activeMove);};ws.onmessage=event=>{if(socket!==ws)return;let message;try{message=JSON.parse(event.data);}catch(_){return;} const before=state;state=applyCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;} if(message && message.type === "status"){state=applyRunStatus(state,message);if(state!==before){armRunDeadline(state.pending.request_id);render();}return;} if(message && message.type === "error"){state=failCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;}}state=applyCaseResult(state,message);if(state!==before){clearRunTimer();lastRun=state.result === message ? message : {status:message.status, pass:false};resultMessage(state.runFailure || message);const destination=nextDestination(message.move_id,isNewAcceptedResult(before,state,message));if(destination){persistAccepted(message);el.next.hidden=false;el.next.dataset.destination=destination;el.next.textContent=destination==="chapter6"?"Next: compare explanations →":"Next: calculate the event frequency →";}render();if(state.runFailure) el.code.focus(); else focusResult();return;}state=applyActionResult(state,message);if(state!==before)renderDemo();render();};ws.onclose=()=>{if(socket!==ws)return;clearInfoTimer();clearRunTimer();state=disconnect(state);render();retry();};ws.onerror=()=>{};}
+    function connect() { if(stopped) return; clearTimeout(timer); timer=null;clearInfoTimer();clearRunTimer(); if(!canOpenSocket(location.protocol)){const old=socket;socket=null;if(old)try{old.close();}catch(_){}state=disconnect(state);if(el.connection)el.connection.textContent=connectionMessageForProtocol(location.protocol);render();return;} const old=socket;socket=null;if(old)try{old.close();}catch(_){}state.connection="connecting";if(el.connection)el.connection.textContent="● Connecting to the lab…";render();try{socket=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws");}catch(_){return retry();}const ws=socket;ws.onopen=()=>{if(socket!==ws)return;state.connection="connected";if(el.connection)el.connection.textContent="● Lab link ready";selectMove(state.activeMove);};ws.onmessage=event=>{if(socket!==ws)return;let message;try{message=JSON.parse(event.data);}catch(_){return;} const before=state;state=applyCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;} if(message && message.type === "status"){state=applyRunStatus(state,message);if(state!==before){armRunDeadline(state.pending.request_id);render();}return;} if(message && message.type === "error"){state=failCaseInfo(state,message);if(state!==before){clearInfoTimer();render();return;}}state=applyCaseResult(state,message);if(state!==before){clearRunTimer();lastRun=state.result === message ? message : {status:message.status, pass:false};const destination=nextDestination(message.move_id,isNewAcceptedResult(before,state,message));if(destination){persistAccepted(message);saveOk=savedMove(course,storage,attempt,CHAPTER,message.move_id);acceptedCode[message.move_id]=submittedCode[message.move_id] || "";}resultMessage(state.runFailure || message);if(destination){el.next.hidden=false;el.next.dataset.destination=destination;el.next.textContent=destination==="chapter6"?"Next: compare explanations →":"Next: calculate the event frequency →";}render();if(state.runFailure) el.code.focus(); else focusResult();return;}state=applyActionResult(state,message);if(state!==before)renderDemo();render();};ws.onclose=()=>{if(socket!==ws)return;clearInfoTimer();clearRunTimer();state=disconnect(state);render();retry();};ws.onerror=()=>{};}
     function retry() { if(stopped || !canOpenSocket(location.protocol) || timer) return; timer=setTimeout(()=>{timer=null;connect();},1500); }
     el.checkFrequencyComposition.addEventListener("click",()=>{
       const cards=frequencyCompositionCards();
@@ -421,7 +463,11 @@
     });
     el.resetFrequencyComposition.addEventListener("click",()=>{frequencyOrder=[];renderFrequencyComposition();});
     function focusElement(element) { if (element) element.focus(); }
-    el.start.addEventListener("click",()=>{el.scene.hidden=true;el.work.hidden=false;connect();focusElement(el.title);});el.back.addEventListener("click",()=>{el.work.hidden=true;el.scene.hidden=false;focusElement(el.sceneTitle);});el.reconnect.addEventListener("click",connect);el.moves.forEach(button=>button.addEventListener("click",()=>selectMove(button.dataset.move)));el.code.addEventListener("input",()=>{clearRunTimer();lastRun=null;persistDraft();if(el.draftNote)el.draftNote.textContent=draftCaption();});el.run.addEventListener("click",()=>{persistDraft();state=beginRun(state,requestId("c5-run"));if(state.pending){clearResult();send(runMessage(state,el.code.value,state.pending.request_id));armRunDeadline(state.pending.request_id);render();}});el.code.addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key==="Enter"){event.preventDefault();el.run.click();}});el.next.addEventListener("click",()=>{const destination=el.next.dataset.destination;if(destination==="chapter6"){window.location.assign(nextChapterUrl(location.search));return;}if(destination==="event-frequency")selectMove(destination);});el.nextHint.addEventListener("click",()=>{hint=Math.min(helpStages(state.activeMove).length,hint+1);render();});el.answer.addEventListener("click",()=>{hint=helpStages(state.activeMove).length;render();});el.actionButtons.forEach(button=>button.addEventListener("click",()=>{const action=button.dataset.action;if(!action || !validMetadata(state.metadata))return;state=beginAction(state,requestId("c5-card"),action);if(state.actionPending)send(actionMessage(action,state.actionPending.request_id));render();}));window.addEventListener("pagehide",()=>{stopped=true;clearTimeout(timer);clearInfoTimer();clearRunTimer();timer=null;const old=socket;socket=null;if(old)try{old.close();}catch(_){}});render();
+    el.start.addEventListener("click",()=>{el.scene.hidden=true;el.work.hidden=false;connect();focusElement(el.title);});el.back.addEventListener("click",()=>{el.work.hidden=true;el.scene.hidden=false;focusElement(el.sceneTitle);});el.reconnect.addEventListener("click",connect);el.moves.forEach(button=>button.addEventListener("click",()=>selectMove(button.dataset.move)));el.code.addEventListener("input",()=>{clearRunTimer();lastRun=null;persistDraft();if(el.draftNote)el.draftNote.textContent=draftCaption();});el.run.addEventListener("click",()=>{persistDraft();submittedCode[state.activeMove]=el.code.value;state=beginRun(state,requestId("c5-run"));if(state.pending){clearResult();send(runMessage(state,el.code.value,state.pending.request_id));armRunDeadline(state.pending.request_id);render();}});el.code.addEventListener("keydown",event=>{if((event.metaKey||event.ctrlKey)&&event.key==="Enter"){event.preventDefault();el.run.click();}});el.next.addEventListener("click",()=>{const destination=el.next.dataset.destination;if(destination==="chapter6"){window.location.assign(nextChapterUrl(location.search));return;}if(destination==="event-frequency")selectMove(destination);});el.nextHint.addEventListener("click",()=>{hint=Math.min(helpStages(state.activeMove).length,hint+1);render();});
+    // Owner playtest (2026-09-26): the full answer is one visible click away, as in Chapters 2-4; it reuses the
+    // hint ladder's own reference display and never enters the editor.
+    if (el.showFullAnswer) el.showFullAnswer.addEventListener("click", () => { hint = helpStages(state.activeMove).length; render(); if (el.answerReference) el.answerReference.scrollIntoView({block:"nearest"}); });
+    el.answer.addEventListener("click",()=>{hint=helpStages(state.activeMove).length;render();});el.actionButtons.forEach(button=>button.addEventListener("click",()=>{const action=button.dataset.action;if(!action || !validMetadata(state.metadata))return;state=beginAction(state,requestId("c5-card"),action);if(state.actionPending)send(actionMessage(action,state.actionPending.request_id));render();}));window.addEventListener("pagehide",()=>{stopped=true;clearTimeout(timer);clearInfoTimer();clearRunTimer();timer=null;const old=socket;socket=null;if(old)try{old.close();}catch(_){}});render();
     el.actionButtons.forEach(button => button.addEventListener("click", () => {
       if (state.connection !== "connected" || !state.actionPending) return;
       const id = state.actionPending.request_id;
@@ -432,5 +478,5 @@
       }, RUN_DEADLINE_MS);
     }));
   }
-  return {CASE_ID,CHAPTER,MOVES,INFO_DEADLINE_MS,RUN_DEADLINE_MS,COPY,helpStage,visibleHints,preEditorBridge,frequencyCompositionCards,frequencyCompositionIsCorrect,challengeRecovery,requestedMove,acceptedMoveKeys,canOpenMove,initialMove,canOpenSocket,connectionMessageForProtocol,openingConnectionMessageForProtocol,createState,initialEditorText,isObsoleteDraft,beginInfo,beginRun,applyCaseInfo,failCaseInfo,expireInfo,expireRun,isRunPending,applyRunStatus,applyCaseResult,isNewAcceptedResult,beginAction,expireAction,applyActionResult,simulationBins,eventDecisionRows,cardEventFeedback,answerCardEvent,hasAnsweredCard,challengeReady,runStatusText,runOutcomeStatus,draftNotice,draftStatus,histogramData,validMetadata,caseStatus,moveLockText,evidenceNotes,disconnect,infoMessage,runMessage,actionMessage,caseBoardUrl,nextChapterUrl,nextDestination,requestId,init};
+  return {CASE_ID,CHAPTER,MOVES,INFO_DEADLINE_MS,RUN_DEADLINE_MS,COPY,helpStage,visibleHints,preEditorBridge,frequencyCompositionCards,frequencyCompositionIsCorrect,challengeRecovery,requestedMove,acceptedMoveKeys,canOpenMove,initialMove,canOpenSocket,connectionMessageForProtocol,openingConnectionMessageForProtocol,createState,initialEditorText,isObsoleteDraft,beginInfo,beginRun,applyCaseInfo,failCaseInfo,expireInfo,expireRun,isRunPending,applyRunStatus,applyCaseResult,isNewAcceptedResult,beginAction,expireAction,applyActionResult,simulationBins,eventDecisionRows,cardEventFeedback,answerCardEvent,hasAnsweredCard,challengeReady,runStatusText,runOutcomeStatus,draftNotice,draftStatus,histogramData,validMetadata,caseStatus,moveLockText,evidenceNotes,disconnect,infoMessage,runMessage,actionMessage,caseBoardUrl,nextChapterUrl,nextDestination,requestId,formatCount,juliaReturnedText,splitJuliaReturned,explanationText,recoveryLead,init};
 });

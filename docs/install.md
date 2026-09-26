@@ -123,16 +123,17 @@ also keep its normal local download and compile cache outside the extracted
 folder. It can take several minutes on the first run; the time depends on your
 connection and computer. Do not close the terminal while it runs.
 
-Success ends with:
+When you type the command yourself, success ends with:
 
 ```text
 OK — Julia Time is ready
 Next: open the Case Board with the matching command in docs/install.md.
 ```
 
-The Windows helper `tools/setup/setup-windows.cmd` then adds `SETUP_COMPLETE - Julia Time is ready.`
+The Play files and the helper scripts print only the `OK` line and then say what happens next
+themselves. The Windows helper `tools/setup/setup-windows.cmd` adds `SETUP_COMPLETE - Julia Time is ready.`
 If you started from `Play-Julia-Time-Windows` or `Play-Julia-Time-Mac.command`, the Case Board opens by
-itself after this line; there is nothing more to type.
+itself after the `OK` line; there is nothing more to type.
 
 If it does not say `OK`, read the short `Next:` line first. If it still does
 not work, send the final 10 terminal lines to the facilitator.
@@ -179,7 +180,9 @@ $env:OPENBLAS_NUM_THREADS = "1"
 julia --startup-file=no --history-file=no --project=. run.jl
 ```
 
-The game opens only on this computer at `http://127.0.0.1:8000/course/index.html`.
+The game opens only on this computer, usually at `http://127.0.0.1:8000/course/index.html`.
+If another program already uses port 8000, the launcher tries 8001 to 8009 and prints the address it chose;
+if Julia Time is already running in an earlier window, starting it again just reopens that game.
 That is the Case Board, where the Julia readiness check and personal investigation dashboard live.
 Keep that terminal open while you play. Press Enter or Ctrl-C there when you are done.
 

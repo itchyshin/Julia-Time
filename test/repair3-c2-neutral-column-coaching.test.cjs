@@ -10,7 +10,7 @@ for (const name of ["detected_n", "n"]) {
   test(`rates coaching for an unknown ${name} names the dotted form without blaming R's $`, () => {
     const message = { status: "error", step: "rates", message: `Something went wrong running this line.\n\nUndefVarError: \`${name}\` not defined` };
     const line = c2.c2ErrorNextStep(message);
-    assert.match(line, new RegExp(`summary\\.${name}\\b`), "names the dotted column form");
+    assert.match(line, new RegExp(`counts\\.${name}\\b`), "names the dotted column form");
     assert.doesNotMatch(line, /\$/, "the error text cannot show that $ was typed, so the line must not mention it");
   });
 }

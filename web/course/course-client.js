@@ -9,18 +9,30 @@
   "use strict";
 
   const MOVE_COPY = Object.freeze({
-    "C1/select-records":{chapter:"C1", move:"select-records", label:"select the disputed records", concepts:["Boolean row selection", "table columns", "filtering a table"]},
-    "C2/group":{chapter:"C2", move:"group", label:"group the tray records", concepts:["grouping records by a label"]},
-    "C2/counts":{chapter:"C2", move:"counts", label:"count recorded detections", concepts:["summarising groups", "naming results with = and =>"]},
-    "C2/rates":{chapter:"C2", move:"rates", label:"compare tray rates", concepts:["proportions", "elementwise division with ./"]},
-    "C3/join-report-log":{chapter:"C3", move:"join-report-log", label:"join the report and handling log", concepts:["matching records by a shared key", "one-to-one table joins"]},
-    "C3/filter-disagreement":{chapter:"C3", move:"filter-disagreement", label:"filter the recording disagreement", concepts:["elementwise not-equal comparison with .!=", "filtering returned rows"]},
-    "C4/plan-distinct-recheck":{chapter:"C4", move:"plan-distinct-recheck", label:"plan three distinct rechecks", concepts:["sampling without replacement", "no invented observations"]},
-    "C5/event-mask":{chapter:"C5", move:"event-mask", label:"name a simulation event", concepts:["elementwise comparisons", "Boolean event masks"]},
-    "C5/event-frequency":{chapter:"C5", move:"event-frequency", label:"calculate an event frequency", concepts:["simulation frequencies", "matching events divided by trials"]},
-    "C6/compatible-models":{chapter:"C6", move:"compatible-models", label:"retain compatible model rows", concepts:["inclusive ranges", "compatibility is not proof"]}
+    "C1/select-records":{chapter:"C1", move:"select-records", label:"find the B09 jars", concepts:["picking rows with a true/false rule", "table columns"]},
+    "C2/group":{chapter:"C2", move:"group", label:"group the jars by tray", concepts:["grouping rows by a label"]},
+    "C2/counts":{chapter:"C2", move:"counts", label:"count the jars with fleas", concepts:["one summary row per group", "naming results with = and =>"]},
+    "C2/rates":{chapter:"C2", move:"rates", label:"work out each tray's share", concepts:["shares", "dividing column by column with ./"]},
+    "C3/join-report-log":{chapter:"C3", move:"join-report-log", label:"line up the notebook and the tally sheet", concepts:["matching rows by a shared label"]},
+    "C3/filter-disagreement":{chapter:"C3", move:"filter-disagreement", label:"find the tray that disagrees", concepts:["not-equal, row by row, with .!="]},
+    "C4/plan-distinct-recheck":{chapter:"C4", move:"plan-distinct-recheck", label:"pick three jars by chance", concepts:["random picks with no repeats"]},
+    "C5/event-mask":{chapter:"C5", move:"event-mask", label:"mark the rounds with 5 or more", concepts:["comparing every value with .>="]},
+    "C5/event-frequency":{chapter:"C5", move:"event-frequency", label:"work out how often", concepts:["how often = matches ÷ all rounds"]},
+    "C6/compatible-models":{chapter:"C6", move:"compatible-models", label:"keep the stories that fit", concepts:["a range, both ends included", "fitting is not proof"]}
   });
   const ORDERED_KEYS = Object.keys(MOVE_COPY);
+  // A returning player's saved evidence carries the title an older build wrote at save time
+  // (e.g. "Compatible candidate models retained", "Recording disagreement"). The Case Board must
+  // show today's wording, so it looks the title up by chapter/move_id here rather than trusting
+  // what was saved (adversary review item 5).
+  const EVIDENCE_TITLES = Object.freeze({
+    "C1/select-records":"The B09 jars, found",
+    "C2/rates":"Fleas in every tray",
+    "C3/filter-disagreement":"The 0 was a blank box",
+    "C4/plan-distinct-recheck":"Recheck tray: planned, not looked at yet",
+    "C6/compatible-models":"Which stories still fit"
+  });
+  function evidenceTitle(item) { return EVIDENCE_TITLES[item.chapter + "/" + item.move_id] || item.title; }
 
   function importedSource(source) {
     if (!source || typeof source.source_key !== "string" || !source.source_key || typeof source.fingerprint !== "string" || !Array.isArray(source.destinations)) return null;
@@ -47,10 +59,18 @@
     return courseState.writeImportRecord(storage, attempt, next) ? {record:next, saved:true} : {record, saved:false};
   }
 
+  // Only drafts a chapter page will really put back in its editor: Chapters 3-6 read the shared record,
+  // Chapters 1 and 2 their own keys (2026-09-25: the board promised a Chapter 2 draft that never appeared).
+  function restorableDrafts(storage, attempt) {
+    const drafts = {};
+    const shared = courseState.readChallengeDrafts(storage, attempt) || {};
+    for (const [key, value] of Object.entries(shared)) if (!/^C[12]\//.test(key) && typeof value === "string" && value.trim()) drafts[key] = value;
+    return Object.assign(drafts, legacyImport && typeof legacyImport.chapterDrafts === "function" ? legacyImport.chapterDrafts(storage, attempt) : {});
+  }
   function courseView(progress, storage, attempt, historicalChanged) {
     return Object.assign({}, progress, {
       evidence:courseState.readEvidence(storage, attempt),
-      drafts:courseState.readChallengeDrafts(storage, attempt),
+      drafts:restorableDrafts(storage, attempt),
       notes:courseState.readNotes(storage, attempt),
       cursor:courseState.readCursor(storage, attempt),
       historicalChanged
@@ -141,11 +161,14 @@
   function speedLabDestination(attempt) {
     return "speed-lab.html" + (courseState.attemptId(attempt) ? "?attempt=" + encodeURIComponent(attempt) : "");
   }
+  function endingDestination(attempt) {
+    return "ending.html" + (courseState.attemptId(attempt) ? "?attempt=" + encodeURIComponent(attempt) : "");
+  }
   function chapterStatus(keys, entries, fallback) {
     const complete = entries.every(key => keys.has(key));
     const started = entries.some(key => keys.has(key));
-    if (complete) return "Completed in this browser. Run the chapter again for a fresh check.";
-    if (started) return "Started in this browser. Continue the next move.";
+    if (complete) return "Done. Open it to run it again.";
+    if (started) return "Started. Carry on with the next step.";
     return fallback;
   }
   function conceptsFor(keys) {
@@ -163,51 +186,51 @@
     return candidate && candidate.chapter === fallback.chapter && candidate.move === fallback.move ? candidate : null;
   }
   function caseThread(keys, next) {
-    const question = "Why does the report for batch B09—the report’s label for this group of jar records—say fleas vanished while the lab notebook records detections?";
-    let established = "No case result has been checked in this browser yet.";
-    let unknown = "We do not yet know which records the report means, why records differ, or whether either record is biologically right.";
+    const question = "Toto's report says the fleas in batch B09 are vanishing, and tray T-C has 0. The notebook records fleas. Which is right?";
+    let established = "Nothing checked yet. Start with Chapter 1.";
+    let unknown = "What the notebook says about batch B09.";
     const complete = ORDERED_KEYS.every(key => keys.has(key));
     if (complete) {
-      established = "The report and handling log disagree for tray T-C, and compatible candidate ranges remain under the stated range check.";
-      unknown = "The range result does not identify a cause, decide which model is correct, or explain why the records differ.";
+      established = "Case closed: the fleas were never shown to be missing. The report's 0 was a blank box, and a vanishing rate almost never gives 5 of 6.";
+      unknown = "What the recheck of three jars will show.";
     } else if (keys.has("C6/compatible-models")) {
-      established = "Some displayed candidate ranges contain the observed count under the stated compatibility rule.";
-      unknown = "A compatible range does not decide which model is correct or explain why the records differ.";
+      established = "The 0 for T-C was a blank box, not an empty tray. And a vanishing rate almost never gives the 5 of 6 jars we saw.";
+      unknown = "What the recheck of three jars will show.";
     } else if (keys.has("C5/event-frequency")) {
-      established = "The event frequency describes how often the stated simulation model produces an event like the observed count.";
-      unknown = "That simulation result does not explain why the report and log differ.";
+      established = "The 0 was a blank box. And 5 of 6 is not suspicious: coin-flip jars give 5 or more about 1 time in 9.";
+      unknown = "Whether the fleas are really vanishing.";
     } else if (keys.has("C4/plan-distinct-recheck")) {
-      established = "A three-jar recheck can be planned without replacement from the eligible records.";
-      unknown = "A plan is not a new observation, and it does not explain the recording disagreement.";
+      established = "The 0 was a blank box. A fair recheck of three jars is planned.";
+      unknown = "Whether 5 of 6 jars with fleas is suspiciously high, and whether the fleas are vanishing.";
     } else if (keys.has("C3/filter-disagreement")) {
-      established = "The joined records contain a recording disagreement.";
-      unknown = "A recording disagreement does not tell us why the entries differ or which record is biologically right.";
+      established = "The report's 0 for tray T-C was a blank box on the tally sheet, not an empty tray.";
+      unknown = "Whether a second look at the jars agrees with the notebook.";
     } else if (keys.has("C3/join-report-log")) {
-      established = "The report and handling log can be placed side by side using their shared tray label.";
-      unknown = "We still need to inspect whether any matched records differ, and a difference would not identify its cause.";
+      established = "Each tray's notebook count and tally-sheet box are side by side.";
+      unknown = "Whether any tray disagrees.";
     } else if (keys.has("C2/rates")) {
-      established = "The supplied B09 records can be compared by tray as recorded counts and proportions.";
-      unknown = "A pattern in recorded detections does not explain a biological cause or the reported absence.";
+      established = "Every B09 tray has fleas in the notebook: T-A 2, T-B 2, T-C 1.";
+      unknown = "Where the report's 0 for tray T-C came from.";
     } else if (keys.has("C1/select-records")) {
-      established = "The disputed B09 records have been identified in the supplied case table.";
-      unknown = "We do not yet know whether recorded detections differ by tray or why the report and notebook differ.";
+      established = "The notebook shows fleas in 5 of the 6 B09 jars.";
+      unknown = "What each tray shows, and where the report's 0 for T-C came from.";
     }
     const why = {
-      "C1/select-records":"First identify the exact B09 records: the group of jar records carrying the batch label named by the report.",
-      "C2/group":"Put those records into tray groups so the same kind of jar can be compared together.",
-      "C2/counts":"Turn each tray group into clear record and detection counts.",
-      "C2/rates":"Compare proportions as well as counts, so tray sizes cannot mislead the comparison.",
-      "C3/join-report-log":"Place report and handling records side by side before interpreting a possible difference.",
-      "C3/filter-disagreement":"Inspect only the matched rows whose recorded counts disagree.",
-      "C4/plan-distinct-recheck":"Choose distinct planned rechecks without pretending their outcomes already exist.",
-      "C5/event-mask":"State precisely which simulated counts count as an event like the observation.",
-      "C5/event-frequency":"Count how often that stated event occurs in the supplied simulations.",
-      "C6/compatible-models":"Check which displayed range models can still accommodate the observation."
+      "C1/select-records":"The report is about batch B09. Find its jars in the notebook.",
+      "C2/group":"The report blames tray T-C. Put each tray's jars together.",
+      "C2/counts":"Count the jars, and the jars with fleas, on each tray.",
+      "C2/rates":"Work out each tray's share, so trays of any size compare fairly.",
+      "C3/join-report-log":"The report was typed from the tally sheet. Line it up with the notebook.",
+      "C3/filter-disagreement":"Keep the tray where the two counts disagree.",
+      "C4/plan-distinct-recheck":"Plan a recheck, choosing the jars by chance.",
+      "C5/event-mask":"Is 5 of 6 too good to be true? Mark Toto's rounds with 5 or more.",
+      "C5/event-frequency":"Work out how often 5 or more happened.",
+      "C6/compatible-models":"The report says vanishing. See which stories could give 5 of 6."
     };
     const key = next.chapter + "/" + next.move;
     const whyNext = complete
-      ? "Case closed for today: review the checked facts, then use the planned recheck to collect a new observation rather than assume one."
-      : why[key] || "Review what the case established and what remains unknown.";
+      ? "Both claims are checked. The recheck of three jars is still to come."
+      : why[key] || "See what the case has shown so far, and what is still to find out.";
     return {question, established, unknown, whyNext, hasEstablishedFact: keys.size > 0};
   }
 
@@ -228,7 +251,7 @@
       const reached = accepted.has(key);
       if (reached) progressive.add(key);
       const thread = reached ? caseThread(progressive, move) : beforeThread;
-      const label = reached ? "ESTABLISHED" : "STILL UNKNOWN";
+      const label = reached ? "What we know so far" : "Still to find out";
       const fact = reached ? thread.established : thread.unknown;
       return {chapter, label, fact, line: label + ": " + fact};
     });
@@ -240,8 +263,33 @@
     const results = n + " yes-or-no result" + (n === 1 ? "" : "s") + ", one per simulation";
     const saved = item.chapter === "C5" && item.move_id === "event-mask" ? results
       : item.chapter === "C5" && item.move_id === "event-frequency" ? "from " + results
-      : n + " saved record" + (n === 1 ? "" : "s");
-    return item.title + " — " + saved + ". This board does not re-check saved work.";
+      : n + " saved row" + (n === 1 ? "" : "s");
+    return evidenceTitle(item) + ": " + saved + ".";
+  }
+  const CHAPTER_STEPS = Object.freeze({
+    C1:["C1/select-records"], C2:["C2/group", "C2/counts", "C2/rates"], C3:["C3/join-report-log", "C3/filter-disagreement"],
+    C4:["C4/plan-distinct-recheck"], C5:["C5/event-mask", "C5/event-frequency"], C6:["C6/compatible-models"]
+  });
+  const CASE_SOLVED = "Case closed: all 6 chapters complete.";
+  // "Chapter 2", "Chapters 2 and 5", "Chapters 2, 3 and 5"
+  function chapterList(chapters) {
+    const numbers = chapters.map(chapter => chapter.slice(1));
+    if (numbers.length === 1) return "Chapter " + numbers[0];
+    return "Chapters " + numbers.slice(0, -1).join(", ") + " and " + numbers[numbers.length - 1];
+  }
+  // A chapter solved by an earlier build may have no saved result; say so rather than a bare "Solved"
+  // above an empty editor (round-3 bot, 2026-09-25).
+  function solvedLabel(keys, chapter, evidenceChapters) {
+    const steps = CHAPTER_STEPS[chapter], saved = steps.filter(key => keys.has(key)).length;
+    if (saved === steps.length) return evidenceChapters && !evidenceChapters.has(chapter) ? "✓ Done on an earlier visit" : "✓ Solved";
+    return saved ? "Not solved yet: " + saved + " of " + steps.length + " steps saved" : "Not solved yet";
+  }
+  // What the Case Board says about the whole case: a chapter is solved only when every step is saved.
+  function completion(keys) {
+    const open = Object.keys(CHAPTER_STEPS).filter(chapter => !CHAPTER_STEPS[chapter].every(key => keys.has(key)));
+    const solved = 6 - open.length;
+    return {solved, complete:open.length === 0, open, headline:open.length ? "" : CASE_SOLVED,
+      line:open.length ? solved + " of 6 chapters solved. Still open: " + chapterList(open) + "." : "Every step of all six chapters is saved on this computer."};
   }
   function dashboardModel(state) {
     const keys = acceptedKeys(state);
@@ -249,14 +297,24 @@
     const resumed = moveFromCursor(state && state.cursor, fallback);
     const next = resumed || fallback;
     const cards = [
-      {chapter:"C1", title:"The disputed batch", playable:true, href:"C1", status:chapterStatus(keys, ["C1/select-records"], "Playable now — select the disputed records")},
-      {chapter:"C2", title:"Locate the pattern", playable:true, href:"C2", status:chapterStatus(keys, ["C2/group", "C2/counts", "C2/rates"], "Playable now — group the tray records")},
-      {chapter:"C3", title:"Check the report", playable:true, href:"C3", status:chapterStatus(keys, ["C3/join-report-log", "C3/filter-disagreement"], "Playable now — join the report to the handling log")},
-      {chapter:"C4", title:"Plan a recheck", playable:true, href:"C4", status:chapterStatus(keys, ["C4/plan-distinct-recheck"], "Playable now — choose three distinct eligible jars for a recheck plan")},
-      {chapter:"C5", title:"Test a suspicion", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Playable now — name a simulated event and its frequency")},
-      {chapter:"C6", title:"Compare explanations", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Playable now — retain compatible candidate ranges")}
+      {chapter:"C1", title:"1 · The report and the notebook", playable:true, href:"C1", status:chapterStatus(keys, ["C1/select-records"], "Ready: find the B09 jars")},
+      {chapter:"C2", title:"2 · Count by tray", playable:true, href:"C2", status:chapterStatus(keys, ["C2/group", "C2/counts", "C2/rates"], "Ready: count the fleas in each tray")},
+      {chapter:"C3", title:"3 · Where did the 0 come from?", playable:true, href:"C3", status:chapterStatus(keys, ["C3/join-report-log", "C3/filter-disagreement"], "Ready: line up the notebook and the tally sheet")},
+      {chapter:"C4", title:"4 · Plan a fair recheck", playable:true, href:"C4", status:chapterStatus(keys, ["C4/plan-distinct-recheck"], "Ready: pick three jars to look at again")},
+      {chapter:"C5", title:"5 · Too good to be true?", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Ready: play Toto's card game")},
+      {chapter:"C6", title:"6 · Are the fleas vanishing?", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Ready: test three stories about the fleas")}
     ];
-    const evidence = Array.isArray(state && state.evidence) ? state.evidence.map(item => ({title:item.title, chapter:item.chapter, move_id:item.move_id, row_count:item.row_count, provenance:item.provenance, line:evidenceLine(item)})) : [];
+    const evidenceChapters = new Set(Array.isArray(state && state.evidence) ? state.evidence.map(item => item.chapter) : []);
+    for (const card of cards) card.solvedLabel = solvedLabel(keys, card.chapter, evidenceChapters);
+    const evidence = Array.isArray(state && state.evidence) ? state.evidence.map(item => ({title:evidenceTitle(item), chapter:item.chapter, move_id:item.move_id, row_count:item.row_count, provenance:item.provenance, line:evidenceLine(item)})) : [];
+    // A chapter solved by an earlier build may have no saved result table; say so rather than skip it (2026-09-25).
+    for (const chapter of Object.keys(CHAPTER_STEPS)) {
+      const solved = CHAPTER_STEPS[chapter].every(key => keys.has(key));
+      if (solved && !evidence.some(item => item.chapter === chapter)) {
+        const number = chapter.slice(1);
+        evidence.push({title:"", chapter, move_id:"", row_count:0, provenance:"no-table", line:"Chapter " + number + ": solved on this computer, but its result table was not saved here. Run Chapter " + number + " again to see its evidence."});
+      }
+    }
     const draftKeys = state && state.drafts && typeof state.drafts === "object" ? ORDERED_KEYS.filter(key => Object.prototype.hasOwnProperty.call(state.drafts, key) && !keys.has(key)) : [];
     const draftNames = draftKeys.map(key => "Chapter " + MOVE_COPY[key].chapter.slice(1) + ": " + MOVE_COPY[key].label);
     const complete = ORDERED_KEYS.every(key => keys.has(key));
@@ -264,14 +322,16 @@
     return {
       continue:{chapter:next.chapter, move:next.move, label:(complete ? "Review" : resumed || keys.size > 0 ? "Continue" : "Start") + " Chapter " + next.chapter.slice(1) + ": " + next.label},
       cards,
+      completion:completion(keys),
       caseThread:caseThread(keys, next),
       evidence,
       concepts:conceptsFor(keys),
-      draftNotice:draftNames.length ? "Saved browser draft" + (draftNames.length === 1 ? "" : "s") + " available for " + draftNames.join("; ") + "." : "",
-      changedHistoryAction:changedHistory ? "Add changed browser history" : "",
+      evidenceEmpty:keys.size ? "Your solved steps are saved, but this computer has no saved result tables for them. Run a chapter again to see its evidence here." : "No findings saved on this computer yet.",
+      draftNotice:draftNames.length ? "Saved draft" + (draftNames.length === 1 ? "" : "s") + " available for " + draftNames.join("; ") + "." : "",
+      changedHistoryAction:changedHistory ? "Use the changed save" : "",
       historicalNotice:changedHistory
-        ? "Earlier saved data in this browser changed. Your saved work was left unchanged; this board will not import the change automatically."
-        : keys.size ? "Your earlier answers are saved in this browser; run a chapter again for a fresh check today." : "No progress is saved in this browser yet."
+        ? "Earlier saved data on this computer changed. Your saved work was left unchanged; this board will not import the change automatically."
+        : keys.size ? "Your earlier answers are saved on this computer; run a chapter again for a fresh check today." : "Nothing saved on this computer yet."
     };
   }
 
@@ -281,5 +341,5 @@
     return Boolean(pending && reply && pending.case_id === courseState.CASE_ID && pending.mode === "challenge" && knownMove && reply.type === "case_result" && keys.every(key => typeof pending[key] === "string" && pending[key] && reply[key] === pending[key]));
   }
 
-  return {loadCourseState, legacyDestination, adapterDestination, speedLabDestination, caseThread, caseFile, dashboardModel, acceptReply};
+  return {CHAPTER_STEPS, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
 });

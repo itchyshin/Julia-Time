@@ -35,7 +35,7 @@
   <section class="guide-section" aria-labelledby="terminal-heading">
     <p class="eyebrow">The one computer step</p>
     <h2 id="terminal-heading">Open a terminal in the Julia Time folder</h2>
-    <p>A <strong>terminal</strong> is simply the small text window that can run a command in a folder. The commands below only work when that window is in the extracted Julia Time folder—not in Downloads generally, and not in a different project.</p>
+    <p>A <strong>terminal</strong> is simply the small text window that can run a command in a folder. The commands below only work when that window is in the extracted Julia Time folder, not in Downloads generally, and not in a different project.</p>
     <div class="guide-grid">
       <article class="panel"><h3>Mac</h3><p>In Finder, open the extracted Julia Time folder. Control-click its background and choose <strong>New Terminal at Folder</strong> (or open Terminal and drag the folder onto it after typing <code>cd </code>).</p></article>
       <article class="panel"><h3>Windows</h3><p>In File Explorer, open the extracted Julia Time folder, then right-click its background and choose <strong>Open in Terminal</strong>.</p></article>
@@ -97,7 +97,7 @@ julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
 $env:OPENBLAS_NUM_THREADS = "1"
 julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
     </details>
-    <p>The browser should open the Case Board. If it does not, enter this exact local address in your browser:</p>
+    <p>The browser should open the Case Board. If it does not, enter the address the terminal printed after "Julia Time is running at"; it is usually:</p>
     <pre><code>http://127.0.0.1:8000/course/index.html</code></pre>
     <p>When you finish, return to the terminal and press Enter or Ctrl-C to stop the local game.</p>
   </section>
@@ -109,7 +109,7 @@ julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
       <li><strong>Read the brief.</strong> Each chapter puts the question, the relevant data, and the required result in view before you write.</li>
       <li><strong>Inspect the evidence.</strong> Look at the visible table, its column names, and the records you need to reason about.</li>
       <li><strong>Write a small Julia move.</strong> The editor starts empty (or restores your own earlier typing). You are not expected to invent a whole answer from nothing.</li>
-      <li><strong>Run it and read what happened.</strong> Julia returns the actual result. A successful move explains both what the code did and what it does—and does not—establish about the case.</li>
+      <li><strong>Run it and read what happened.</strong> Julia returns the actual result. A successful move explains both what the code did and what it does, and does not, establish about the case.</li>
       <li><strong>Use help when you want it.</strong> <em>Help me start</em> gives a small nudge first. Depending on the chapter, it can also offer a code shape, an optional full solution, or a different-data practice example. It is help, not a test.</li>
       <li><strong>Return to the Case Board.</strong> When browser storage is available, it saves your evidence and points to the next available move. It is not a grade or leaderboard.</li>
     </ol>
@@ -123,7 +123,7 @@ julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
       <dl class="guide-recovery">
         <div><dt><code>julia</code> is not found, or the version is wrong</dt><dd>On Windows, first try the supplied double-click setup helper: it also checks the usual Julia 1.10 installation folder. Otherwise install or select Julia 1.10.x, open a new terminal, and run the one-time check again. On a Mac, if Julia is installed but the terminal cannot find it, use <code>/Applications/Julia-1.10.app/Contents/Resources/julia/bin/julia</code> in place of <code>julia</code>.</dd></div>
         <div><dt><code>JULIA_TIME_NOT_READY</code></dt><dd>Run the one-time <code>check_setup.jl</code> command first.</dd></div>
-        <div><dt><code>SERVER_START_FAILED</code></dt><dd>Close an earlier Julia Time terminal, then try again—or ask the facilitator for help. Do not kill unrelated programs.</dd></div>
+        <div><dt><code>SERVER_START_FAILED</code></dt><dd>Close an earlier Julia Time terminal, then try again, or ask the facilitator for help. Do not kill unrelated programs.</dd></div>
         <div><dt>The browser cannot connect</dt><dd>Keep the Julia Time terminal open and visit the exact local address above. On the Case Board, choose <em>Reconnect to Julia</em> if it appears.</dd></div>
         <div><dt>Still stuck</dt><dd>Send the facilitator your operating system and the final 10 terminal lines. Your browser-saved drafts should remain in this browser.</dd></div>
       </dl>

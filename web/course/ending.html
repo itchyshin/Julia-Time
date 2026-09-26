@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The ending of Julia Time: The Missing Fleas.">
+  <title>Julia Time · Case closed</title>
+  <link rel="stylesheet" href="course.css"><link rel="stylesheet" href="ending.css">
+</head>
+<body>
+<a class="skip" href="#ending">Skip to the movie</a>
+<header class="shell topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><a class="quiet-link" data-board-link href="index.html">Return to Case Board</a></header>
+<main id="ending" class="shell ending-main">
+  <h1 class="sr-only">The Missing Fleas: case closed</h1>
+  <p id="ending-status" class="board-status" aria-live="polite">Opening the case file…</p>
+  <p id="ending-data-label" class="ending-data-label" hidden></p>
+  <section id="ending-locked" class="panel" hidden aria-labelledby="ending-locked-title">
+    <h2 id="ending-locked-title">The ending is waiting for you</h2>
+    <p id="ending-open"></p>
+    <a class="primary-action" data-board-link href="index.html">Go to the Case Board →</a>
+  </section>
+  <section id="ending-movie" hidden aria-labelledby="ending-movie-title">
+    <h2 id="ending-movie-title" class="sr-only">How the case unfolded</h2>
+    <div class="ending-controls">
+      <button id="ending-back" class="secondary-action" type="button">← Back</button>
+      <button id="ending-toggle" class="secondary-action" type="button">Pause</button>
+      <button id="ending-next" class="secondary-action" type="button">Next →</button>
+      <button id="ending-skip" class="secondary-action" type="button">Skip to the end</button>
+      <p id="ending-progress" class="ending-progress" aria-live="polite"></p>
+    </div>
+    <div id="ending-stage"></div>
+  </section>
+  <section id="ending-all" hidden aria-labelledby="ending-all-title">
+    <h2 id="ending-all-title">Your investigation, in six scenes</h2>
+    <div id="ending-all-list"></div>
+  </section>
+  <section id="ending-finale" class="ending-finale" hidden aria-labelledby="ending-headline">
+    <p id="ending-stamp" class="stamp"></p>
+    <h2 id="ending-headline" class="ending-headline" tabindex="-1"></h2>
+    <p id="ending-reveal" class="ending-reveal"></p>
+    <blockquote id="ending-final-line" class="ending-line"></blockquote>
+    <p id="ending-pun" class="ending-pun"></p>
+    <p id="ending-still-open" class="ending-still-open"></p>
+    <p id="ending-well-done" class="ending-well-done"></p>
+    <img id="ending-final-image" class="ending-final-image" src="../assets/lab-cast.png" alt="">
+    <section id="ending-credits" class="credits" aria-labelledby="credits-title">
+      <h2 id="credits-title" style="--i:0">Credits</h2>
+      <p class="credits-label" style="--i:1">Investigators</p>
+      <p id="credits-investigators" style="--i:2"></p>
+      <p id="credits-featuring-label" class="credits-label" style="--i:3">Featuring the Julia you typed</p>
+      <ul id="credits-featuring" style="--i:4"></ul>
+      <p class="credits-label" style="--i:5">Ideas you used</p>
+      <ul id="credits-concepts" style="--i:6"></ul>
+      <p id="credits-data" class="credits-data" style="--i:7"></p>
+    </section>
+    <div class="ending-actions">
+      <button id="ending-print" class="primary-action" type="button">Save your case report</button>
+      <button id="ending-replay" class="secondary-action" type="button">Replay the movie</button>
+      <a class="secondary-action" data-board-link href="index.html">Return to the Case Board</a>
+      <a id="ending-speed-lab" class="quiet-link" href="speed-lab.html">Optional: the speed laboratory →</a>
+    </div>
+  </section>
+</main>
+<script src="course-state.js"></script><script src="legacy-import.js"></script><script src="course-client.js"></script><script src="ending-script.js"></script><script src="ending.js"></script>
+</body>
+</html>

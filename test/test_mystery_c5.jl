@@ -77,8 +77,8 @@ end
         @test info["observed_count"] == JuliaTime.mystery_c5_observed_count()
         @test info["n_trials"] == 1000
         @test !occursin("events", join(string.(keys(info["inputs"][1])), " "))
-        @test occursin("events = sim_counts .>= observed_count", info["moves"][1]["code_shape"])
-        @test occursin("(events=events, frequency=sum(events)/length(events))", info["moves"][2]["required_result"])
+        @test occursin("sim_counts .>= observed_count", info["moves"][1]["code_shape"])
+        @test occursin("the rounds that matched, divided by all rounds", info["moves"][2]["required_result"])
         @test haskey(info, "actions")
     end
 
@@ -91,6 +91,8 @@ end
         @test JuliaTime.check_mystery_c5(events, "event-mask")[1]
         @test JuliaTime.check_mystery_c5((events=events, frequency=sum(events) / length(events)),
                                          "event-frequency")[1]
+        # The newly taught step 2 answer is a plain number (bible C5): sum(events) / length(events).
+        @test JuliaTime.check_mystery_c5(sum(events) / length(events), "event-frequency")[1]
         @test !JuliaTime.check_mystery_c5(counts .> observed, "event-mask")[1]
         @test !JuliaTime.check_mystery_c5(events[1:end-1], "event-mask")[1]
         @test !JuliaTime.check_mystery_c5((events=events, frequency=sum(events) / 999),
@@ -98,6 +100,8 @@ end
         @test !JuliaTime.check_mystery_c5((events=events, frequency=NaN), "event-frequency")[1]
         @test !JuliaTime.check_mystery_c5((frequency=sum(events) / length(events), events=events),
                                           "event-frequency")[1]
+        @test !JuliaTime.check_mystery_c5(sum(events) / 999, "event-frequency")[1]
+        @test !JuliaTime.check_mystery_c5(NaN, "event-frequency")[1]
 
         JuliaTime.warmup!()
         try
@@ -120,12 +124,26 @@ end
             @test frequency_reply["result_data"]["frequency"] == sum(events) / 1000
             @test frequency_reply["result_data"]["trials"] == 1000
 
+            # The newly taught step 2 shape (bible C5): a plain number, no named tuple.
+            plain_frequency_reply = JuliaTime.mystery_c5_case_run(c5_run_request(
+                "event-frequency", "events = sim_counts .>= observed_count\nsum(events) / length(events)",
+                simulation_id; request_id="c5-plain-frequency"))
+            @test plain_frequency_reply["status"] == "ok"
+            @test plain_frequency_reply["pass"] == true
+            @test plain_frequency_reply["progress_eligible"] == true
+            @test plain_frequency_reply["result_data"]["frequency"] == sum(events) / 1000
+            @test plain_frequency_reply["result_data"]["trials"] == 1000
+            # AGENTS.md rule 3 (never invent output): the learner returned a plain number, so the
+            # display must not fabricate a named tuple. "kind" distinguishes the two shapes.
+            @test plain_frequency_reply["result_data"]["kind"] == "frequency-number"
+            @test frequency_reply["result_data"]["kind"] == "event-frequency"
+
             for (label, move_id, code) in [
                 ("mutation", "event-mask", "answer = sim_counts .>= observed_count; sim_counts[1] = 0; answer"),
                 ("rebinding", "event-mask", "sim_counts = copy(sim_counts); sim_counts .>= observed_count"),
                 ("wrong-event", "event-mask", "sim_counts .> observed_count"),
                 ("wrong-frequency", "event-frequency", "events = sim_counts .>= observed_count; (events=events, frequency=sum(events)/999)"),
-                ("wrong-shape", "event-frequency", "events = sim_counts .>= observed_count; sum(events)/length(events)"),
+                ("wrong-plain-frequency", "event-frequency", "events = sim_counts .>= observed_count; sum(events)/999"),
             ]
                 reply = JuliaTime.mystery_c5_case_run(c5_run_request(move_id, code, simulation_id;
                     request_id="c5-" * label))
@@ -289,12 +307,14 @@ end
             @test !occursin('`', move["required_result"])
         end
         events = JuliaTime.mystery_c5_sim_counts() .>= JuliaTime.mystery_c5_observed_count()
-        for (value, move) in [(sum(events) / length(events), "event-frequency"),
+        for (value, move) in [(sum(events) / 999, "event-frequency"),
                               ((events=.!events, frequency=sum(events) / length(events)), "event-frequency")]
             passed, feedback = JuliaTime.check_mystery_c5(value, move)
             @test !passed
             @test !occursin('`', feedback)
         end
+        # The correct plain-number answer passes cleanly (bible C5 taught shape).
+        @test JuliaTime.check_mystery_c5(sum(events) / length(events), "event-frequency")[1]
     end
     # 2026-09-24 walk-through: learner prose names no internal chapter id.
     @testset "a failed run's case line names no internal chapter id" begin
@@ -302,7 +322,7 @@ end
             "chapter" => "C5", "move_id" => "event-mask", "mode" => "challenge", "activity_id" => nothing,
             "simulation_id" => "c5-simulated-counts-v1", "code" => "1", "request_id" => "no-id-check"))
         @test !occursin("C5", failed["explanation"]["case"])
-        @test startswith(failed["explanation"]["case"], "No case finding from this chapter")
+        @test startswith(failed["explanation"]["case"], "Nothing found yet")
     end
 end
 

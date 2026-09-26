@@ -148,7 +148,7 @@ using Statistics
             @test !haskey(source_mutated_after_summary, "evidence")
             # Repair 5 (2026-09-24 browser walk-through): this failed-run line is shown to the
             # learner, so it names the move in plain words, not the internal chapter id.
-            @test source_mutated_after_summary["feedback"] == "Julia did not produce the requested result for this move."
+            @test source_mutated_after_summary["feedback"] == "Julia stopped before the end. Check the names, then run again."
             @test !occursin(r"\bC[1-6]\b", source_mutated_after_summary["feedback"])
 
             # Repair C2 (2026-09-24): web/chapter2.js coaches these common mistakes by matching

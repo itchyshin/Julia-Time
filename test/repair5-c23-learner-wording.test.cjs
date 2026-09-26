@@ -44,11 +44,9 @@ test("C3 lesson copy refers to an earlier chapter by its learner-facing name", (
 });
 
 test("C2 and C3 server prose for a failed run names no internal chapter id", () => {
-  const c2 = read("src/mystery_c2.jl").match(/\(false, "(Julia did not produce the requested[^"]*)"\)/)[1];
-  assert.equal(c2, "Julia did not produce the requested result for this move.");
-  const c3 = read("src/mystery_c3.jl").match(/"case" => "(No [^"]*case finding[^"]*)"/)[1];
+  const c3 = read("src/mystery_c3.jl").match(/"case" => "(Nothing found yet[^"]*)"/)[1];
   assert.doesNotMatch(c3, CHAPTER_ID);
-  assert.match(c3, /^No case finding from this chapter is established/);
+  assert.match(c3, /^Nothing found yet/);
 });
 
 const RATE_ROWS = [{tray_id:"T-A", n:2, detected_n:2, rate:1}, {tray_id:"T-B", n:2, detected_n:2, rate:1}, {tray_id:"T-C", n:2, detected_n:1, rate:0.5}];

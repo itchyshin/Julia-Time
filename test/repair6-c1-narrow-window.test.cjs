@@ -205,14 +205,10 @@ for (const width of [509, 375, 1280]) {
   });
 }
 
-test("the evidence board summary reads as two punctuated sentences", () => {
-  const six = Array.from({ length: 6 }, (_, k) => ({ jar_id: "J-08" + k, batch_id: "B09" }));
-  const title = { id: "c1-b09-records", title: "B09 report records recovered" };
+test("the evidence board summary reports how many B09 jars have fleas", () => {
+  const five = Array.from({ length: 6 }, (_, k) => ({ jar_id: "J-08" + k, batch_id: "B09", detected: k < 5 }));
   assert.equal(typeof client.evidenceSummary, "function");
-  assert.equal(client.evidenceSummary(title, six), "6 retained records from disputed batch B09. B09 report records recovered.");
-  assert.equal(client.evidenceSummary(title, six.slice(0, 1)), "1 retained record from disputed batch B09. B09 report records recovered.");
-  assert.equal(client.evidenceSummary(title, []), "Saved evidence: B09 report records recovered.");
-  // A saved title that already ends a sentence is not given a second full stop.
-  assert.equal(client.evidenceSummary({ title: "Saved B09 records." }, six), "6 retained records from disputed batch B09. Saved B09 records.");
+  assert.equal(client.evidenceSummary({}, five), "5 of 6 B09 jars have fleas. Next: which trays are they on?");
+  assert.equal(client.evidenceSummary({}, []), "0 of 0 B09 jars have fleas. Next: which trays are they on?");
   assert.match(source, /el\["evidence-summary"\]\.textContent = evidenceSummary\(evidence, rows\)/, "the board renders this summary");
 });

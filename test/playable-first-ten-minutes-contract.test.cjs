@@ -31,7 +31,7 @@ test("every chapter puts a result directly after Run and before optional help", 
 test("runnable answers are dark references above editors, while templates say not to run", () => {
   const c1 = read("index.html");
   assert.ok(c1.indexOf('id="answer-before-editor"') < c1.indexOf('id="code"'));
-  assert.match(read("mystery.js"), /Reference code answer — runnable Julia/);
+  assert.match(read("mystery.js"), /Reference code answer(:| —) runnable Julia/);
   assert.match(read("mystery.js"), /complete-answer-code/);
 
   const c2 = read("chapter2.html");
@@ -46,13 +46,13 @@ test("runnable answers are dark references above editors, while templates say no
     const html = read(`chapter${chapter}.html`);
     const source = read(`chapter${chapter}.js`);
     assert.ok(html.indexOf('id="answer-before-editor"') < html.indexOf('id="code"'), `C${chapter} answer reference precedes its editor`);
-    assert.match(source, /(Complete runnable answer|Reference code answer — runnable Julia)/);
+    assert.match(source, /(Complete runnable answer|Reference code answer(:| —) runnable Julia)/);
   }
   // T2 (2026-09-12 playtest): C5's Move 2 code shape used to leak into the always-visible
   // pre-editor bridge on every render, duplicating its own gated "Code shape" hint stage. It now
   // lives only in that staged hint (see chapter5-client.test.cjs).
-  assert.doesNotMatch(read("chapter5.js"), /Template — replace these placeholders; do not run this/);
-  assert.match(read("chapter6.js"), /Template — replace these placeholders; do not run this/);
+  assert.doesNotMatch(read("chapter5.js"), /Template[:—] replace these placeholders; do not run this/);
+  assert.match(read("chapter6.js"), /Template[:—] replace these placeholders; do not run this/);
 });
 
 test("Chapter 5 assigns visible pixel heights to its fixed-area distribution bars", () => {

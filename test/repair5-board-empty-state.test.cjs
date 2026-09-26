@@ -30,21 +30,22 @@ function learnerStrings(source) {
 test("a fresh board says plainly that no progress is saved in this browser", () => {
   for (const attempt of ["", "field-7"]) {
     const fresh = client.dashboardModel(client.loadCourseState(memoryStorage(), attempt));
-    assert.equal(fresh.historicalNotice, "No progress is saved in this browser yet.");
+    assert.equal(fresh.historicalNotice, "Nothing saved on this computer yet.");
   }
-  assert.equal(client.dashboardModel(courseState.emptyCourseState()).historicalNotice, "No progress is saved in this browser yet.");
+  assert.equal(client.dashboardModel(courseState.emptyCourseState()).historicalNotice, "Nothing saved on this computer yet.");
 });
 
 test("a fresh board's evidence panel says plainly that no evidence is saved in this browser", () => {
   const board = read("course-board.js");
-  assert.match(board, /"No evidence is saved in this browser yet\."/);
+  assert.equal(client.dashboardModel(client.loadCourseState(memoryStorage(), "")).evidenceEmpty, "No findings saved on this computer yet.");
+  assert.match(board, /text\(evidence, model\.evidenceEmpty\)/);
   assert.doesNotMatch(board, /No historical browser evidence/);
 });
 
 test("the changed-data notice does not call saved work historical", () => {
   const notice = client.dashboardModel(Object.assign(courseState.emptyCourseState(), {historicalChanged: ["legacy-key"]})).historicalNotice;
   assert.doesNotMatch(notice, /historical/i);
-  assert.match(notice, /in this browser changed\./);
+  assert.match(notice, /on this computer changed\./);
   assert.match(notice, /Your saved work was left unchanged/);
 });
 
@@ -59,8 +60,7 @@ test("no learner-visible Case Board text says historical; only the provenance ta
 test("the new empty-state lines use no em dash", () => {
   const fresh = client.dashboardModel(courseState.emptyCourseState());
   assert.doesNotMatch(fresh.historicalNotice, /—/);
-  const board = read("course-board.js");
-  const emptyEvidence = learnerStrings(board).find(text => /^No evidence/.test(text));
+  const emptyEvidence = learnerStrings(read("course-client.js")).find(text => /^No findings/.test(text));
   assert.ok(emptyEvidence);
   assert.doesNotMatch(emptyEvidence, /—/);
 });

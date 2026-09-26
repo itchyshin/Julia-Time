@@ -68,58 +68,67 @@ function check_mystery_c5(value, move_id)
             return (false, "Return one true-or-false event value for each of the 1,000 simulated counts.")
         actual_events == expected_events ||
             return (false, "Check the direction: an event is a simulated count at least the observed count.")
-        return (true, "The event mask marks exactly the simulated counts at least the observed count.")
+        return (true, "Every round now has a yes or no: did it show 5 or more teal cards, at least the notebook's count?")
     end
 
-    value isa NamedTuple && keys(value) == (:events, :frequency) ||
-        return (false, "Return (events=events, frequency=sum(events)/length(events)) with both named fields.")
-    actual_events = _mystery_c5_exact_events(value.events)
-    actual_events === nothing &&
-        return (false, "The events field needs one Boolean value for every simulated trial.")
-    actual_events == expected_events ||
-        return (false, "The events field must use sim_counts .>= observed_count exactly.")
-    frequency = _mystery_c5_frequency(value.frequency)
-    frequency === nothing &&
-        return (false, "The frequency must be one finite numeric value.")
     expected_frequency = sum(expected_events) / length(expected_events)
+
+    # The taught step 2 answer is now a single number: sum(events) / length(events). The older
+    # named tuple (events=events, frequency=...) still passes; it is no longer taught (bible C5).
+    if value isa NamedTuple && keys(value) == (:events, :frequency)
+        actual_events = _mystery_c5_exact_events(value.events)
+        actual_events === nothing &&
+            return (false, "The events field needs one Boolean value for every simulated trial.")
+        actual_events == expected_events ||
+            return (false, "The events field must use sim_counts .>= observed_count exactly.")
+        frequency = _mystery_c5_frequency(value.frequency)
+        frequency === nothing &&
+            return (false, "The frequency must be one finite numeric value.")
+        frequency == expected_frequency ||
+            return (false, "Divide the matching event count by all 1,000 trials.")
+        return (true, "The named event mask and matching-events / all-trials frequency agree.")
+    end
+
+    frequency = _mystery_c5_frequency(value)
+    frequency === nothing &&
+        return (false, "Return one number: the rounds that matched, divided by all rounds.")
     frequency == expected_frequency ||
         return (false, "Divide the matching event count by all 1,000 trials.")
-    return (true, "The named event mask and matching-events / all-trials frequency agree.")
+    return (true, "The returned frequency is the matching rounds divided by all rounds.")
 end
 
 function _mystery_c5_moves()
     return [
         Dict{String, Any}(
             "id" => "event-mask",
-            "title" => "Name the simulated event",
-            "required_result" => "A Boolean vector with one value per simulated count: true exactly when the count is at least observed_count.",
-            "concept" => "Compare every simulated count to the observed count, not just one count.",
-            "code_shape" => "events = sim_counts .>= observed_count",
+            "title" => "Mark the rounds with 5 or more teal cards",
+            "required_result" => "One true or false for every round: true when that round's count is 5 or more.",
+            "concept" => "Ask every round the same question: is its count at least observed_count?",
+            "code_shape" => "sim_counts .>= observed_count",
             "syntax" => [
-                Dict("token" => ".>=", "meaning" => "compares every count and makes one true-or-false event value per simulation."),
-                Dict("token" => "=", "meaning" => "stores the event vector under the name events for the next move."),
+                Dict("token" => ".>=", "meaning" => "compares every count and makes one true-or-false value per round."),
             ],
             "hints" => [
-                Dict("stage" => "concept", "text" => "Mark a simulation true when its count is at least the observed count."),
-                Dict("stage" => "shape", "text" => "Use a dotted comparison so every simulated count is compared."),
+                Dict("stage" => "concept", "text" => "Ask every round the same question: is its count at least observed_count?"),
+                Dict("stage" => "shape", "text" => "counts .>= threshold. Here counts is sim_counts and threshold is observed_count."),
                 Dict("stage" => "solution", "text" => "sim_counts .>= observed_count"),
             ],
             "result_visual" => "simulation-event-mask",
         ),
         Dict{String, Any}(
             "id" => "event-frequency",
-            "title" => "Calculate the event frequency",
-            "required_result" => "Return (events=events, frequency=sum(events)/length(events)) so both the event vector and matching-events / all-trials frequency can be checked.",
-            "concept" => "The frequency is matching events divided by all simulations under this stated teaching model.",
-            "code_shape" => "events = sim_counts .>= observed_count; (events=events, frequency=sum(events)/length(events))",
+            "title" => "How often did 5 or more happen?",
+            "required_result" => "One number: the rounds that matched, divided by all rounds.",
+            "concept" => "How often = rounds that matched divided by all rounds. The trues are the rounds that matched.",
+            "code_shape" => "events = sim_counts .>= observed_count; sum(events) / length(events)",
             "syntax" => [
                 Dict("token" => "sum(events)", "meaning" => "counts true event values."),
                 Dict("token" => "length(events)", "meaning" => "counts all simulated trials, including non-events."),
             ],
             "hints" => [
-                Dict("stage" => "concept", "text" => "First make the same event mask, then divide its true count by all trials."),
-                Dict("stage" => "shape", "text" => "Return both named fields so the event and frequency stay connected."),
-                Dict("stage" => "solution", "text" => "events = sim_counts .>= observed_count; (events=events, frequency=sum(events)/length(events))"),
+                Dict("stage" => "concept", "text" => "How often = rounds that matched divided by all rounds. The trues are the rounds that matched."),
+                Dict("stage" => "shape", "text" => "events = counts .>= threshold, then on the next line sum(events) / length(events). sum counts the trues; length counts every round."),
+                Dict("stage" => "solution", "text" => "events = sim_counts .>= observed_count\nsum(events) / length(events)"),
             ],
             "result_visual" => "simulation-tail-frequency",
         ),
@@ -129,11 +138,11 @@ end
 function _mystery_c5_actions()
     return [
         Dict("id" => "draw-six", "label" => "Draw six cards", "activity_id" => MYSTERY_C5_ACTION_ACTIVITY,
-             "note" => "A fixed non-credit demonstration: draw, record, replace, and shuffle after every card."),
-        Dict("id" => "replay-100", "label" => "Replay 100 simulations", "activity_id" => MYSTERY_C5_ACTION_ACTIVITY,
-             "note" => "A fixed non-credit replay; its result can vary from the 1,000-trial case simulation."),
-        Dict("id" => "replay-1000", "label" => "Replay 1,000 simulations", "activity_id" => MYSTERY_C5_ACTION_ACTIVITY,
-             "note" => "A fixed non-credit replay; it demonstrates Monte Carlo variation without changing case progress."),
+             "note" => "Draws six cards. Teal means fleas. Practice: does not count for the case."),
+        Dict("id" => "replay-100", "label" => "Show 100 rounds", "activity_id" => MYSTERY_C5_ACTION_ACTIVITY,
+             "note" => "Practice rounds: they can come out a little differently from Toto's 1,000."),
+        Dict("id" => "replay-1000", "label" => "Show 1,000 rounds", "activity_id" => MYSTERY_C5_ACTION_ACTIVITY,
+             "note" => "Practice rounds: they can come out a little differently from Toto's 1,000."),
     ]
 end
 
@@ -146,15 +155,15 @@ function mystery_c5_case_info(; move_id::String="event-mask", request_id::String
         "chapter" => MYSTERY_C5_CHAPTER, "move_id" => move_id, "mode" => "challenge",
         "activity_id" => nothing, "simulation_id" => MYSTERY_C5_SIMULATION_ID,
         "request_id" => request_id,
-        "title" => move_id == "event-mask" ? "Which simulations meet the event?" : "How often does that event occur?",
-        "question" => "Under the stated six-trial, p = 0.5 teaching model, how often is the simulated count at least the observed count?",
-        "goal" => "Use the supplied simulated counts to identify the event, then calculate its frequency. This is frequency under a stated model, not proof that the model is true.",
-        "key_note" => "Six independent binary trials, replacement after every draw, and equal colour probability are teaching-model assumptions, not facts about fleas.",
+        "title" => move_id == "event-mask" ? "Mark the rounds with 5 or more teal cards" : "How often did 5 or more happen?",
+        "question" => "If each jar were a coin flip, how often would 5 or more of 6 show fleas?",
+        "goal" => "Mark Toto's rounds with 5 or more teal cards, then work out how often that happens.",
+        "key_note" => "One round: Toto draws six cards, one for each jar. Teal means fleas, orange means none, half and half. He writes down how many are teal, puts the cards back and shuffles. He played 1,000 rounds. This is a what-if, not new jars.",
         "n_jars" => MYSTERY_C5_N_JARS, "p_ref" => MYSTERY_C5_P_REF,
         "observed_count" => observed_count, "n_trials" => MYSTERY_C5_N_TRIALS,
         "inputs" => [Dict{String, Any}(
             "id" => "sim_counts", "label" => "Simulated six-trial detection counts",
-            "data_label" => "Simulated teaching data — fixed seeded model, not a new flea observation.",
+            "data_label" => "Simulated data made for this game: Toto's what-if rounds, not new jars.",
             "values" => counts,
             "columns" => ["simulation", "count"],
             "rows" => [Dict("simulation" => index, "count" => count) for (index, count) in enumerate(counts)],
@@ -175,7 +184,7 @@ function mystery_c5_case_info(msg::AbstractDict)
     get(msg, "chapter", nothing) == MYSTERY_C5_CHAPTER || return _mystery_c5_error("C5 case_info requires chapter C5.")
     move_id = get(msg, "move_id", nothing)
     move_id isa AbstractString && String(move_id) in MYSTERY_C5_MOVES || return _mystery_c5_error("C5 move_id must be event-mask or event-frequency.")
-    get(msg, "mode", nothing) == "challenge" || return _mystery_c5_error("C5 case_info supports challenge mode only.")
+    get(msg, "mode", nothing) == "challenge" || return _mystery_c5_error("C5 could not start this step. Reload the page to try again.")
     get(msg, "activity_id", nothing) === nothing || return _mystery_c5_error("C5 challenge activity_id must be null.")
     get(msg, "simulation_id", nothing) === nothing || return _mystery_c5_error("C5 case_info simulation_id must be null.")
     request_id = get(msg, "request_id", nothing)
@@ -185,19 +194,23 @@ end
 
 function _mystery_c5_explanation(move_id::String, pass)
     if pass === true && move_id == "event-mask"
-        return Dict("julia" => "The dotted comparison .>= checked every simulated count against the observed count and returned one Boolean event value per trial.",
-                    "case" => "The event mask describes this fixed simulation under the stated teaching model.",
-                    "limit" => "It is not a probability that the model is true and is not a new flea observation.")
+        return Dict("julia" => ".>= asked every round the same question and gave one true or false each.",
+                    "case" => "The highlighted bars are the rounds with 5 or 6 teal cards.",
+                    "limit" => "")
     elseif pass === true
-        return Dict("julia" => "sum(events) / length(events) divides matching simulated events by all simulated trials.",
-                    "case" => "This is a frequency under the stated teaching model.",
-                    "limit" => "The frequency does not prove the model, explain the recording disagreement, or establish a biological cause.")
+        expected_events = mystery_c5_expected_events()
+        matching = count(expected_events)
+        n_trials = length(expected_events)
+        frequency = matching / n_trials
+        return Dict("julia" => "The returned frequency passed the check: $(matching) matching rounds divided by $(n_trials) rounds is $(frequency). The taught way is sum(events) / length(events).",
+                    "case" => "Even with coin-flip jars, 5 or more of 6 happened $(matching) times in $(n_trials), about 1 in 9. Not strange enough to doubt the notebook.",
+                    "limit" => "This shows 5 of 6 is not strange; it does not prove the notebook right.")
     end
     return Dict("julia" => move_id == "event-mask" ?
-                    "Return the Boolean comparison sim_counts .>= observed_count." :
-                    "Return both the exact event vector and its matching-events / all-trials frequency.",
-                "case" => "No case finding from this chapter is established until the actual returned result matches the move.",
-                "limit" => "A failed run says nothing about causes, people, or whether the teaching model is true.")
+                    "Return one true or false for every round: true when that round's count is 5 or more." :
+                    "Return one number: the rounds that matched, divided by all rounds.",
+                "case" => "Nothing found yet: the returned result must match this step first.",
+                "limit" => "A failed run says nothing about causes, people, or whether the fleas are vanishing.")
 end
 
 function _mystery_c5_result_data(value)
@@ -206,13 +219,30 @@ function _mystery_c5_result_data(value)
         "kind" => "boolean-vector", "length" => length(events), "true_count" => sum(events),
         "preview" => events[1:min(end, 20)],
     )
-    value isa NamedTuple && keys(value) == (:events, :frequency) || return nothing
-    events = _mystery_c5_exact_events(value.events)
-    frequency = _mystery_c5_frequency(value.frequency)
-    (events === nothing || frequency === nothing) && return nothing
+    if value isa NamedTuple && keys(value) == (:events, :frequency)
+        events = _mystery_c5_exact_events(value.events)
+        frequency = _mystery_c5_frequency(value.frequency)
+        (events === nothing || frequency === nothing) && return nothing
+        return Dict{String, Any}(
+            "kind" => "event-frequency", "length" => length(events), "matching" => sum(events),
+            "trials" => length(events), "frequency" => frequency, "preview" => events[1:min(end, 20)],
+        )
+    end
+
+    # The newly taught step 2 answer is a plain number (bible C5). Only when it matches the
+    # server's own fixed-simulation truth exactly do we show the breakdown behind it; a wrong
+    # number never fabricates a preview (AGENTS.md rule 3).
+    frequency = _mystery_c5_frequency(value)
+    frequency === nothing && return nothing
+    expected_events = mystery_c5_expected_events()
+    frequency == sum(expected_events) / length(expected_events) || return nothing
+    # AGENTS.md rule 3 (never invent output): the learner's code returned a plain number, not a
+    # named tuple, so "kind" must say so. web/chapter5.js renders "frequency-number" as the bare
+    # number the learner actually got back, never the fabricated (events=..., frequency=...) shape.
     return Dict{String, Any}(
-        "kind" => "event-frequency", "length" => length(events), "matching" => sum(events),
-        "trials" => length(events), "frequency" => frequency, "preview" => events[1:min(end, 20)],
+        "kind" => "frequency-number", "length" => length(expected_events), "matching" => sum(expected_events),
+        "trials" => length(expected_events), "frequency" => frequency,
+        "preview" => expected_events[1:min(end, 20)],
     )
 end
 
@@ -276,7 +306,7 @@ function _mystery_c5_valid_run_envelope(msg::AbstractDict)
     get(msg, "chapter", nothing) == MYSTERY_C5_CHAPTER || return (false, "C5 case_run requires chapter C5.")
     move_id = get(msg, "move_id", nothing)
     move_id isa AbstractString && String(move_id) in MYSTERY_C5_MOVES || return (false, "C5 move_id must be event-mask or event-frequency.")
-    get(msg, "mode", nothing) == "challenge" || return (false, "C5 supports challenge mode only.")
+    get(msg, "mode", nothing) == "challenge" || return (false, "C5 could not start this step. Reload the page to try again.")
     get(msg, "activity_id", nothing) === nothing || return (false, "C5 challenge activity_id must be null.")
     get(msg, "simulation_id", nothing) == MYSTERY_C5_SIMULATION_ID || return (false, "C5 case_run requires the current simulation_id.")
     request_id = get(msg, "request_id", nothing)
@@ -308,7 +338,7 @@ function mystery_c5_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     value_repr = sandbox_result.value === nothing ? "" : _mystery_safe_repr(sandbox_result.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     checked, feedback = sandbox_result.status == :ok ? check_mystery_c5(sandbox_result.value, move_id) :
-        (false, "Julia did not complete this move. Keep the supplied inputs unchanged, then try again.")
+        (false, "Julia stopped before the end. Check the names, then run again.")
     result = _mystery_c5_result(request_id=request_id, move_id=move_id, status=String(sandbox_result.status),
                                 pass=checked, message=sandbox_result.message, stdout=sandbox_result.stdout,
                                 value_repr=value_repr, result_data=_mystery_c5_result_data(sandbox_result.value))
@@ -357,7 +387,7 @@ function mystery_c5_case_action(msg::AbstractDict)
     seed = action == "replay-100" ? 5106 : 5108
     counts = mystery_c5_sim_counts(; n_trials=n_trials, seed=seed)
     return _mystery_c5_action_result(request_id=String(request_id), action=action, status="ok",
-        message="Fixed non-credit replay: a new bounded simulation can differ through Monte Carlo variation.",
+        message="Practice rounds: they can come out a little differently from Toto's 1,000.",
         generated_code="rng = MersenneTwister($(seed)); counts = [sum(rand(rng, Bool, 6)) for _ in 1:$(n_trials)]",
         result_data=Dict("kind" => "simulation-counts", "counts" => counts, "n_trials" => n_trials,
                          "n_jars" => MYSTERY_C5_N_JARS, "p_ref" => MYSTERY_C5_P_REF),

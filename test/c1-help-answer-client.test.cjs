@@ -11,7 +11,7 @@ test("C1 gives a learner a visible optional complete-answer route without insert
   assert.deepEqual(client.hintIndicesThrough(1, 3, false), {indices:[1], shown:2});
 
   const html = fs.readFileSync(path.join(__dirname, "../web/index.html"), "utf8");
-  assert.match(html, /Need the full answer\?/);
-  assert.match(html, /id="show-answer"[^>]*>Show the complete answer/);
-  assert.match(html, /your editor stays empty/i);
+  assert.match(html, /Stuck\? Hints/);
+  assert.match(html, /id="show-answer"[^>]*>Show the full answer/);
+  assert.match(html, /your editor stays as you left it/i);
 });

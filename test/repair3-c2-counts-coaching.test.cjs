@@ -35,7 +35,7 @@ const UNGROUPED_RATES = {type:"case_result", chapter:"C2", step:"rates", status:
   row_text:[{n:"6", detected_n:"5", rate:"0.8333333333333334"}],
   value_repr:"1×3 DataFrame\n Row │ n      detected_n  rate\n     │ Int64  Int64       Float64\n─────┼─────────────────────────────\n   1 │     6           5  0.833333"};
 
-const ANSWER_LINES = ["groupby(jars, :tray_id)", "combine(groups, nrow => :n, :detected => sum => :detected_n)", "summary.rate = summary.detected_n ./ summary.n"];
+const ANSWER_LINES = ["groupby(jars, :tray_id)", "combine(groups, nrow => :n, :detected => sum => :detected_n)", "counts.rate = counts.detected_n ./ counts.n"];
 const assertNoAnswerLine = text => { for (const line of ANSWER_LINES) assert.ok(!text.includes(line), "coaching must not print the reference line " + line); };
 
 test("R5a: in counts, a new column name without its colon is coached toward :n and :detected_n", () => {
@@ -43,14 +43,14 @@ test("R5a: in counts, a new column name without its colon is coached toward :n a
   assert.match(n, /new column/i);
   assert.match(n, /colon/i);
   assert.match(n, /nrow => :n\b/);
-  assert.doesNotMatch(n, /summary\.n/, "counts has no summary table to read from yet");
+  assert.doesNotMatch(n, /counts\.n/, "counts has no counts table to read from yet");
   assertNoAnswerLine(n);
   const detected = client.c2ErrorNextStep(errorResult("counts", BARE_DETECTED_N));
   assert.match(detected, /colon/i);
   assert.match(detected, /:detected => sum => :detected_n/);
   assertNoAnswerLine(detected);
   // The rates wording from 5cef86f stays as it was.
-  assert.match(client.c2ErrorNextStep(errorResult("rates", BARE_N)), /summary\.n\b/);
+  assert.match(client.c2ErrorNextStep(errorResult("rates", BARE_N)), /counts\.n\b/);
 });
 
 test("R5b: a reversed pair (:n => nrow) is coached: the source goes first and the new name last", () => {

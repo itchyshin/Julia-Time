@@ -7,7 +7,7 @@ const MYSTERY_CHAPTER = "C1"
 const MYSTERY_CASE_BATCH = "B09"
 const MYSTERY_COLUMNS = ["jar_id", "batch_id", "tray_id", "detected"]
 const MYSTERY_FIXTURE_SEED = 20260907
-const MYSTERY_DATA_LABEL = "Simulated teaching case — seeded fixture; no real experiment."
+const MYSTERY_DATA_LABEL = "Simulated data made for this game: no real jars, no real fleas."
 
 """
     mystery_jars() -> DataFrame
@@ -65,22 +65,22 @@ function mystery_case_info(; request_id::String="")
         "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_CHAPTER,
         "request_id" => request_id,
-        "title" => "Which records belong in this report?",
-        "goal" => "Recover the records labelled B09. This establishes which rows are in the report, not why detections differ.",
-        "return_spec" => "Return a DataFrame with exactly the six B09 records and these four columns: jar_id, batch_id, tray_id, detected. Row order does not matter.",
+        "title" => "The report says the fleas are vanishing. What does the notebook say?",
+        "goal" => "Find the six B09 jars in the notebook. This finds which jars are in the notebook; it does not say why any jar was or was not recorded as having fleas.",
+        "return_spec" => "Return the six B09 jars, with all four columns: jar_id, batch_id, tray_id, detected. Any row order is fine.",
         "data_label" => MYSTERY_DATA_LABEL,
         "case_batch" => MYSTERY_CASE_BATCH,
         "columns" => copy(MYSTERY_COLUMNS),
         "rows" => mystery_rows(all_jars),
         "hints" => [
-            Dict("stage" => "concept", "text" => "Index a table as jars[rows, columns]. Use : for all rows or all columns."),
-            Dict("stage" => "shape", "text" => "Look first with jars[1:3, :], then make rows with jars.batch_id .== ..."),
+            Dict("stage" => "concept", "text" => "Keep a row when its batch is B09. A Julia table is picked as jars[rows, columns]."),
+            Dict("stage" => "shape", "text" => "table[table.column .== value, :]. Look first with jars[1:3, :]."),
             Dict("stage" => "solution", "text" => "jars[jars.batch_id .== case_batch, :]"),
         ],
         "worked_example" => Dict(
             "batch_id" => "B08",
             "code" => "jars[jars.batch_id .== \"B08\", :]",
-            "note" => "Optional worked example — a different batch: this returns B08, not the disputed B09 report. jars.batch_id takes the batch column; .== compares every jar to \"B08\"; those true/false values choose rows; : keeps every column. The original jars table is unchanged.",
+            "note" => "Worked example on the other batch, B08, so it is not the answer. jars.batch_id takes the batch column; .== compares every jar with \"B08\"; those true/false values pick the rows; : keeps every column. The jars table itself does not change.",
         ),
         "glossary" => [
             Dict("term" => "row", "definition" => "One jar record."),
@@ -129,7 +129,7 @@ different row order remains a valid solution.
 """
 function check_mystery_c1(value)
     value isa DataFrames.DataFrame ||
-        return (false, "Return a DataFrame of jar records; the case board cannot check a scalar or vector.")
+        return (false, "Return a table of jars (a DataFrame), not a single value or a list.")
 
     actual_columns = _mystery_columns(value)
     length(actual_columns) == length(MYSTERY_COLUMNS) &&
@@ -138,7 +138,7 @@ function check_mystery_c1(value)
 
     expected = filter(:batch_id => ==(MYSTERY_CASE_BATCH), mystery_jars())
     DataFrames.nrow(value) == DataFrames.nrow(expected) ||
-        return (false, "The report needs all $(DataFrames.nrow(expected)) B09 records exactly once; got $(DataFrames.nrow(value)) rows.")
+        return (false, "We need all $(DataFrames.nrow(expected)) B09 jars, each once; you returned $(DataFrames.nrow(value)) rows.")
 
     matched = falses(DataFrames.nrow(expected))
     for actual_row in 1:DataFrames.nrow(value)
@@ -147,23 +147,23 @@ function check_mystery_c1(value)
                 value[actual_row, column], expected[candidate, column]), MYSTERY_COLUMNS)
         end
         expected_row === nothing &&
-            return (false, "At least one returned record has the wrong value, type, or duplicate multiplicity.")
+            return (false, "Pick the rows by their batch label, not by where they sit: keep each row whose batch_id matches case_batch.")
         matched[expected_row] = true
     end
-    all(matched) || return (false, "At least one B09 record is missing.")
-    return (true, "All six B09 records are present exactly once.")
+    all(matched) || return (false, "At least one B09 jar is missing.")
+    return (true, "All six B09 jars are present exactly once.")
 end
 
 function _mystery_explanation(pass::Bool)
     if pass
         return Dict(
-            "julia" => "The taught indexing path is jars[rows, columns]. Here jars.batch_id .== case_batch makes one true-or-false value per jar, and jars[that_result, :] keeps the matching rows and every column.",
-            "case" => "The returned table contains Toto's B09 report records. The records alone do not establish why any detection was or was not recorded.",
+            "julia" => "The returned table passed the check. The taught way to build it is jars[jars.batch_id .== case_batch, :]: jars.batch_id .== case_batch makes one true or false per jar, and jars[that, :] keeps the true rows and every column.",
+            "case" => "This is what the notebook says; the notebook could still be wrong.",
         )
     end
     return Dict(
-        "julia" => "The returned value must be a DataFrame with the requested records and columns.",
-        "case" => "No case finding is established until the complete B09 record set is returned.",
+        "julia" => "Return a table of jars (a DataFrame), not a single value or a list.",
+        "case" => "Nothing found yet: return the complete set of B09 jars first.",
     )
 end
 
@@ -211,15 +211,15 @@ function mystery_case_run(msg::AbstractDict; on_status::Function=((_, __) -> not
     value_repr = r.value === nothing ? "" : _mystery_safe_repr(r.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     pass, feedback = r.status == :ok ? check_mystery_c1(r.value) :
-        (false, "Julia did not produce a table to check.")
+        (false, "Julia stopped before the end. Check the names, then run again.")
     result = _mystery_result(request_id=String(request_id), status=String(r.status), pass=pass,
         message=r.message, stdout=r.stdout, rows=rows, columns=columns, feedback=feedback,
         value_repr=value_repr)
     if pass
         result["evidence"] = Dict(
             "id" => "c1-b09-records",
-            "title" => "B09 report records recovered",
-            "text" => "The returned table contains the six recorded B09 jars exactly once. It does not identify a cause for the recorded detections.",
+            "title" => "The B09 jars, found",
+            "text" => "5 of the 6 B09 jars have fleas in the notebook. Next: which trays are they on?",
         )
     end
     return result

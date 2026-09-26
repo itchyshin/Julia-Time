@@ -34,7 +34,7 @@ function leadOf(move, message) {
 }
 
 test("R2: a name from an earlier move or chapter in move 2 says each run starts fresh with only joined", () => {
-  for (const name of ["report", "handling_log", "jars"]) {
+  for (const name of ["tray_counts", "tally_sheet", "jars"]) {
     const lead = leadOf("filter-disagreement", undefinedName(name));
     assert.ok(lead.startsWith(name + " "), "names the missing name first: " + lead);
     assert.match(lead, /starts fresh/);
@@ -42,18 +42,18 @@ test("R2: a name from an earlier move or chapter in move 2 says each run starts 
     assert.doesNotMatch(lead, /\.!=|comma/, "does not name a mistake the learner did not make");
   }
   // Julia 1.11+ adds "in `Main`" to the same error.
-  assert.match(client.errorRecovery("filter-disagreement", {status:"error", message:"UndefVarError: `report` not defined in `Main`"}), /^report .*starts fresh/);
+  assert.match(client.errorRecovery("filter-disagreement", {status:"error", message:"UndefVarError: `tray_counts` not defined in `Main`"}), /^tray_counts .*starts fresh/);
 });
 
 test("R2: the fresh-start line is keyed on names that are not active inputs of the current move", () => {
-  // report and handling_log are the join move's own inputs, so no fresh-start line there.
-  assert.equal(client.errorRecovery("join-report-log", undefinedName("report")), client.recoveryCopy("join-report-log"));
+  // tray_counts and tally_sheet are the join move's own inputs, so no fresh-start line there.
+  assert.equal(client.errorRecovery("join-report-log", undefinedName("tray_counts")), client.recoveryCopy("join-report-log"));
   const lead = leadOf("join-report-log", undefinedName("jars"));
   assert.match(lead, /starts fresh/);
-  assert.match(lead, /supplies only report and handling_log/);
+  assert.match(lead, /supplies only tray_counts and tally_sheet/);
   // Other errors, and non-error results, keep their existing copy.
   assert.equal(client.errorRecovery("filter-disagreement", {status:"error", message:""}), client.recoveryCopy("filter-disagreement"));
-  assert.equal(client.errorRecovery("filter-disagreement", {status:"ok", message:"UndefVarError: `report` not defined"}), client.recoveryCopy("filter-disagreement"));
+  assert.equal(client.errorRecovery("filter-disagreement", {status:"ok", message:"UndefVarError: `tray_counts` not defined"}), client.recoveryCopy("filter-disagreement"));
   // The missing-dot line still wins for its own error.
   assert.match(client.errorRecovery("filter-disagreement", NO_DOT_INDEX), /one true or false/i);
 });
@@ -62,8 +62,8 @@ test("R6: the join shape's placeholders typed as written are named as placeholde
   for (const [name, message] of [["left_table", undefinedName("left_table")], ["right_table", undefinedName("right_table")], ["shared_column", undefinedName("shared_column")], ["shared_column", SHARED_COLUMN_NOT_FOUND]]) {
     const lead = leadOf("join-report-log", message);
     assert.ok(lead.startsWith(name + " is a placeholder"), lead);
-    assert.match(lead, /\breport\b/);
-    assert.match(lead, /\bhandling_log\b/);
+    assert.match(lead, /\btray_counts\b/);
+    assert.match(lead, /\btally_sheet\b/);
     assert.match(lead, /:tray_id/);
     assert.doesNotMatch(lead, /starts fresh|comma/, "the placeholder line is the one shown, not the fresh-start line");
   }
@@ -72,9 +72,9 @@ test("R6: the join shape's placeholders typed as written are named as placeholde
 });
 
 test("R6: the practice editor never gets the case-table mapping", () => {
-  // renderDemoResult uses joinErrorCoaching; practice tables are practice_report and practice_log.
+  // renderDemoResult uses joinErrorCoaching; practice tables are practice_counts and practice_sheet.
   for (const message of [undefinedName("left_table"), SHARED_COLUMN_NOT_FOUND]) {
-    assert.doesNotMatch(client.joinErrorCoaching(message), /handling_log|:tray_id/);
+    assert.doesNotMatch(client.joinErrorCoaching(message), /tally_sheet|:tray_id/);
   }
 });
 

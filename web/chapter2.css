@@ -49,6 +49,15 @@ h2 { font-size:1.85rem; }
 pre,textarea { border-radius:0; background:var(--navy); color:var(--paper); font-family:"SFMono-Regular",Consolas,monospace; }
 .run,#show-hint,.attempt button { border-radius:0; background:var(--gold); color:var(--navy); }
 .help,.words,.comparisons { border-top:1px solid var(--line); padding-top:.8rem; }
+.jt-help > details, .jt-help > section { margin-top:1rem; }
+.jt-help > *:first-of-type { margin-top:1rem; }
+/* Shared jt-help look (2026-09-25): one consistent optional-help panel across all six chapters. */
+.jt-help{border:1px solid #d9c9aa;background:#fffaf0;box-shadow:3px 3px 0 #dfd0b4;padding:1rem 1.5rem;margin-top:1.2rem}
+.jt-help>summary{list-style:none;cursor:pointer;position:relative;padding-left:1.3rem;font-weight:800;font-size:1em;color:#176b6c}
+.jt-help>summary::-webkit-details-marker{display:none}
+.jt-help>summary::before{content:"▸";position:absolute;left:0;color:#e66d35}
+.jt-help[open]>summary::before{content:"▾"}
+.jt-help>summary span{display:block;font-weight:400;font-size:.85em;color:#5d6b69;margin-top:.15rem}
 .answer-reference { margin:1rem 0; padding:.85rem 1rem; border-left:5px solid var(--gold); background:#eaf1eb; }
 .complete-answer-label { font-weight:800; }
 .complete-answer-code { margin:.6rem 0; border:2px solid #d99a69; background:#050b0f; color:#fff8e9; }

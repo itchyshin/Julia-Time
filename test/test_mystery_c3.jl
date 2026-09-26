@@ -42,24 +42,24 @@ end
 
 @testset "Missing Fleas C3 mystery API" begin
     @testset "fresh independent C3 fixtures and active-move metadata" begin
-        report = JuliaTime.mystery_c3_report()
-        handling_log = JuliaTime.mystery_c3_handling_log()
-        @test names(report) == ["tray_id", "reported_detected_n"]
-        @test names(handling_log) == ["tray_id", "logged_detected_n", "log_status"]
-        @test length(unique(report.tray_id)) == nrow(report)
-        @test length(unique(handling_log.tray_id)) == nrow(handling_log)
-        @test handling_log.logged_detected_n[findfirst(==("T-C"), handling_log.tray_id)] == 0
-        @test handling_log.log_status[findfirst(==("T-C"), handling_log.tray_id)] == "not entered"
+        tray_counts = JuliaTime.mystery_c3_tray_counts()
+        tally_sheet = JuliaTime.mystery_c3_tally_sheet()
+        @test names(tray_counts) == ["tray_id", "notebook_detected"]
+        @test names(tally_sheet) == ["tray_id", "sheet_detected", "entry_status"]
+        @test length(unique(tray_counts.tray_id)) == nrow(tray_counts)
+        @test length(unique(tally_sheet.tray_id)) == nrow(tally_sheet)
+        @test tally_sheet.sheet_detected[findfirst(==("T-C"), tally_sheet.tray_id)] == 0
+        @test tally_sheet.entry_status[findfirst(==("T-C"), tally_sheet.tray_id)] == "left blank"
 
         # Mutating a learner-visible construction cannot poison the next constructor or either
         # independently built checker fixture.
-        report.reported_detected_n .= 99
-        handling_log.logged_detected_n .= 99
-        @test JuliaTime.mystery_c3_report().reported_detected_n == [2, 2, 1]
-        @test JuliaTime.mystery_c3_handling_log().logged_detected_n == [2, 2, 0]
+        tray_counts.notebook_detected .= 99
+        tally_sheet.sheet_detected .= 99
+        @test JuliaTime.mystery_c3_tray_counts().notebook_detected == [2, 2, 1]
+        @test JuliaTime.mystery_c3_tally_sheet().sheet_detected == [2, 2, 0]
         expected_join = JuliaTime.mystery_c3_expected_join()
-        expected_join.logged_detected_n .= 99
-        @test JuliaTime.mystery_c3_expected_join().logged_detected_n == [2, 2, 0]
+        expected_join.sheet_detected .= 99
+        @test JuliaTime.mystery_c3_expected_join().sheet_detected == [2, 2, 0]
         expected_discrepancy = JuliaTime.mystery_c3_expected_discrepancy()
         @test nrow(expected_discrepancy) == 1
         @test expected_discrepancy.tray_id == ["T-C"]
@@ -76,13 +76,13 @@ end
         @test first_info["mode"] == "challenge"
         @test first_info["activity_id"] === nothing
         @test first_info["simulation_id"] === nothing
-        @test first_info["title"] == "Match the tray records"
-        @test first_info["question"] == "Can each report tray be matched to one handling-log row?"
-        @test [input["id"] for input in first_info["inputs"]] == ["report", "handling_log"]
+        @test first_info["title"] == "Put each tray's two records side by side"
+        @test first_info["question"] == "How do we put each tray's notebook count next to its tally-sheet box?"
+        @test [input["id"] for input in first_info["inputs"]] == ["tray_counts", "tally_sheet"]
         @test !any(input -> input["id"] == "joined", first_info["inputs"])
-        @test input_by_id(first_info, "report")["columns"] == ["tray_id", "reported_detected_n"]
-        @test input_by_id(first_info, "handling_log")["columns"] ==
-              ["tray_id", "logged_detected_n", "log_status"]
+        @test input_by_id(first_info, "tray_counts")["columns"] == ["tray_id", "notebook_detected"]
+        @test input_by_id(first_info, "tally_sheet")["columns"] ==
+              ["tray_id", "sheet_detected", "entry_status"]
         @test occursin("every tray ID occurs once", first_info["key_note"])
         @test first_info["scene"]["image"] == "assets/lab-cast.png"
         @test [move["id"] for move in first_info["moves"]] ==
@@ -92,9 +92,9 @@ end
         @test join_move["code_shape"] ==
               "leftjoin(left_table, right_table, on=:shared_column)"
         @test only(hint["text"] for hint in join_move["hints"] if hint["stage"] == "shape") ==
-              "Use leftjoin(left_table, right_table, on=:shared_column)."
+              "Use leftjoin(left_table, right_table, on=:shared_column). The three words are placeholders: use the table names above and :tray_id."
         @test only(hint["text"] for hint in join_move["hints"] if hint["stage"] == "solution") ==
-              "leftjoin(report, handling_log, on=:tray_id)"
+              "leftjoin(tray_counts, tally_sheet, on=:tray_id)"
         @test disagreement_move["code_shape"] ==
               "table[table.left_count .!= table.right_count, :]"
         # B9 (simulated playtest): the shape hint names its placeholders and maps them to the case.
@@ -104,12 +104,12 @@ end
               "Use table[table.left_count .!= table.right_count, :] to keep rows where two columns differ.")
         @test occursin("placeholders", disagreement_shape)
         @test occursin("table is joined", disagreement_shape)
-        @test occursin("left_count is reported_detected_n", disagreement_shape)
-        @test occursin("right_count is logged_detected_n", disagreement_shape)
-        @test !occursin("joined[joined.reported_detected_n .!= joined.logged_detected_n, :]",
+        @test occursin("left_count is notebook_detected", disagreement_shape)
+        @test occursin("right_count is sheet_detected", disagreement_shape)
+        @test !occursin("joined[joined.notebook_detected .!= joined.sheet_detected, :]",
                         disagreement_shape)
         @test only(hint["text"] for hint in disagreement_move["hints"] if hint["stage"] == "solution") ==
-              "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]"
+              "joined[joined.notebook_detected .!= joined.sheet_detected, :]"
         @test !haskey(first_info, "extension")
 
         @test second_info["request_id"] == "c3-info-second"
@@ -117,12 +117,12 @@ end
         @test second_info["mode"] == "challenge"
         @test second_info["activity_id"] === nothing
         @test second_info["simulation_id"] === nothing
-        @test second_info["title"] == "Find the recording disagreement"
-        @test second_info["question"] == "Which joined tray row has different recorded counts?"
+        @test second_info["title"] == "Keep the tray where the notebook and the sheet disagree"
+        @test second_info["question"] == "On which tray do the two counts differ?"
         @test [input["id"] for input in second_info["inputs"]] == ["joined"]
-        @test !any(input -> input["id"] in ("report", "handling_log"), second_info["inputs"])
+        @test !any(input -> input["id"] in ("tray_counts", "tally_sheet"), second_info["inputs"])
         @test input_by_id(second_info, "joined")["columns"] ==
-              ["tray_id", "reported_detected_n", "logged_detected_n", "log_status"]
+              ["tray_id", "notebook_detected", "sheet_detected", "entry_status"]
 
         demo_info = JuliaTime.handle_message(c3_info_request(
             move_id="join-report-log", request_id="c3-info-demo", mode="demonstration",
@@ -133,11 +133,11 @@ end
         @test demo_info["activity_id"] == "practice-join-v1"
         @test demo_info["simulation_id"] === nothing
         @test [input["id"] for input in demo_info["inputs"]] ==
-              ["practice_report", "practice_log"]
+              ["practice_counts", "practice_sheet"]
         @test all(input -> input["data_label"] ==
-                  "Simulated practice data — separate from the Missing Fleas case.",
+                  "Simulated data made for this game: practice tables, separate from the Missing Fleas case.",
                   demo_info["inputs"])
-        @test !any(input -> input["id"] in ("report", "handling_log", "joined"),
+        @test !any(input -> input["id"] in ("tray_counts", "tally_sheet", "joined"),
                   demo_info["inputs"])
 
         # A C3 metadata request may carry JSON null for a C3-unspecified simulation id;
@@ -165,29 +165,29 @@ end
     end
 
     @testset "checker accepts equivalent joins and only the independently derived disagreement" begin
-        joined = leftjoin(JuliaTime.mystery_c3_report(), JuliaTime.mystery_c3_handling_log(),
+        joined = leftjoin(JuliaTime.mystery_c3_tray_counts(), JuliaTime.mystery_c3_tally_sheet(),
                           on=:tray_id)
-        discrepancy = joined[joined.reported_detected_n .!= joined.logged_detected_n, :]
+        discrepancy = joined[joined.notebook_detected .!= joined.sheet_detected, :]
         @test JuliaTime.check_mystery_c3(joined, "join-report-log")[1]
-        @test JuliaTime.check_mystery_c3(select(reverse(joined), :log_status, :tray_id,
-                                              :logged_detected_n, :reported_detected_n),
+        @test JuliaTime.check_mystery_c3(select(reverse(joined), :entry_status, :tray_id,
+                                              :sheet_detected, :notebook_detected),
                                          "join-report-log")[1]
         @test JuliaTime.check_mystery_c3(discrepancy, "filter-disagreement")[1]
-        @test JuliaTime.check_mystery_c3(select(discrepancy, :log_status, :tray_id,
-                                              :logged_detected_n, :reported_detected_n),
+        @test JuliaTime.check_mystery_c3(select(discrepancy, :entry_status, :tray_id,
+                                              :sheet_detected, :notebook_detected),
                                          "filter-disagreement")[1]
 
         wrong_join = copy(joined)
-        wrong_join.logged_detected_n .= 0
+        wrong_join.sheet_detected .= 0
         @test !JuliaTime.check_mystery_c3(wrong_join, "join-report-log")[1]
         @test !JuliaTime.check_mystery_c3(vcat(joined, joined[1:1, :]), "join-report-log")[1]
         @test !JuliaTime.check_mystery_c3(joined[1:2, :], "join-report-log")[1]
-        unexpected = vcat(joined, DataFrame(tray_id=["T-X"], reported_detected_n=[1],
-                                             logged_detected_n=[1], log_status=["entered"]))
+        unexpected = vcat(joined, DataFrame(tray_id=["T-X"], notebook_detected=[1],
+                                             sheet_detected=[1], entry_status=["filled in"]))
         @test !JuliaTime.check_mystery_c3(unexpected, "join-report-log")[1]
         @test !JuliaTime.check_mystery_c3(joined, "filter-disagreement")[1]
         @test !JuliaTime.check_mystery_c3(vcat(discrepancy, discrepancy), "filter-disagreement")[1]
-        @test !JuliaTime.check_mystery_c3(select(discrepancy, Not(:log_status)),
+        @test !JuliaTime.check_mystery_c3(select(discrepancy, Not(:entry_status)),
                                            "filter-disagreement")[1]
         @test !JuliaTime.check_mystery_c3(discrepancy, "not-a-move")[1]
     end
@@ -226,7 +226,7 @@ end
             @test !occursin(r"\bC[1-6]\b", text)
         end
         failed = JuliaTime._mystery_c3_explanation("join-report-log", false)
-        @test startswith(failed["case"], "No case finding from this chapter is established")
+        @test startswith(failed["case"], "Nothing found yet")
     end
 
     # B10 (simulated playtest P03/P27, verified 2026-09-24): the checkers compare values only, so a
@@ -241,6 +241,10 @@ end
         @test startswith(join_text["julia"], "The returned table")
         @test startswith(filter_text["julia"], "The returned row")
         @test occursin("leftjoin", join_text["julia"]) && occursin("on=", join_text["julia"])
+        # Ravi's playtest: leftjoin passed but the checker only explained leftjoin's syntax, with
+        # no reason to prefer it over innerjoin. Add the one-line reason it keeps every tray, even
+        # one the tally sheet lacked.
+        @test occursin("keeps every tray", join_text["julia"])
         @test occursin(".!=", filter_text["julia"])
         claims = r"matched each report row|checked the two count columns|kept the returned record|matched the separate practice rows|now matched safely"
         for text in (join_text["julia"], filter_text["julia"], practice_text["julia"])
@@ -250,17 +254,18 @@ end
         end
         @test !occursin(claims, join_text["case"])
         @test !occursin('—', join_text["case"])
-        # The does-not-establish limit lines stay.
-        @test occursin("does not tell us why recorded counts differ", join_text["limit"])
-        @test occursin("does not tell us which record is biologically true", filter_text["limit"])
-        @test occursin("does not establish", practice_text["limit"])
+        # No limit line for a successful join (bible section 5, C3 step 1 "What this shows").
+        @test join_text["limit"] == ""
+        # The does-not-establish limit lines stay for step 2 and practice.
+        @test occursin("recheck of the jars will tell us more", filter_text["limit"])
+        @test occursin("does not show whether the notebook and the sheet disagree", practice_text["limit"])
     end
 
     @testset "C3 challenge runs protect each active input and echo exact identities" begin
         JuliaTime.warmup!()
         try
             joined = JuliaTime.handle_message(c3_run_request(
-                "join-report-log", "leftjoin(report, handling_log, on=:tray_id)";
+                "join-report-log", "leftjoin(tray_counts, tally_sheet, on=:tray_id)";
                 request_id="c3-join",
             ))
             @test joined["type"] == "case_result"
@@ -276,16 +281,16 @@ end
             @test joined["pass"] == true
             @test joined["practice_pass"] === nothing
             @test joined["progress_eligible"] == true
-            @test joined["columns"] == ["tray_id", "reported_detected_n", "logged_detected_n", "log_status"]
+            @test joined["columns"] == ["tray_id", "notebook_detected", "sheet_detected", "entry_status"]
             @test length(joined["rows"]) == 3
             @test joined["result_data"]["kind"] == "table"
             @test !haskey(joined, "evidence")
-            @test occursin("matched", lowercase(joined["explanation"]["case"]))
+            @test occursin("notebook count and its sheet box", lowercase(joined["explanation"]["case"]))
             @test !occursin("t-c", lowercase(joined["explanation"]["case"]))
 
             discrepancy = JuliaTime.handle_message(c3_run_request(
                 "filter-disagreement",
-                "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]";
+                "joined[joined.notebook_detected .!= joined.sheet_detected, :]";
                 request_id="c3-disagreement",
             ))
             @test discrepancy["status"] == "ok"
@@ -296,12 +301,13 @@ end
             @test length(discrepancy["rows"]) == 1
             @test discrepancy["rows"][1]["tray_id"] == "T-C"
             @test haskey(discrepancy, "evidence")
-            @test occursin("recording disagreement", lowercase(discrepancy["evidence"]["text"]))
-            @test occursin("does not tell us", lowercase(discrepancy["explanation"]["limit"]))
+            @test occursin("blank box", lowercase(discrepancy["evidence"]["title"]))
+            @test occursin("claim 1", lowercase(discrepancy["evidence"]["claim"]))
+            @test occursin("recheck of the jars will tell us more", discrepancy["explanation"]["limit"])
 
             # B10: other routes to the same values are accepted; the explanation must not claim
             # that the taught leftjoin or .!= ran.
-            for (move_id, code) in [("join-report-log", "leftjoin(handling_log, report, on=:tray_id)"),
+            for (move_id, code) in [("join-report-log", "leftjoin(tally_sheet, tray_counts, on=:tray_id)"),
                                     ("filter-disagreement", "joined[3:3, :]")]
                 other = JuliaTime.handle_message(c3_run_request(move_id, code;
                     request_id="c3-b10-" * move_id))
@@ -312,12 +318,12 @@ end
             end
 
             for (name, move_id, code) in [
-                ("report mutation", "join-report-log", "answer = leftjoin(report, handling_log, on=:tray_id); report.reported_detected_n[1] = 99; answer"),
-                ("report rebinding", "join-report-log", "report = copy(report); leftjoin(report, handling_log, on=:tray_id)"),
-                ("log mutation", "join-report-log", "answer = leftjoin(report, handling_log, on=:tray_id); handling_log.logged_detected_n[1] = 99; answer"),
-                ("log rebinding", "join-report-log", "handling_log = copy(handling_log); leftjoin(report, handling_log, on=:tray_id)"),
-                ("joined mutation", "filter-disagreement", "answer = joined[joined.reported_detected_n .!= joined.logged_detected_n, :]; joined.logged_detected_n[1] = 99; answer"),
-                ("joined rebinding", "filter-disagreement", "joined = copy(joined); joined[joined.reported_detected_n .!= joined.logged_detected_n, :]"),
+                ("tray_counts mutation", "join-report-log", "answer = leftjoin(tray_counts, tally_sheet, on=:tray_id); tray_counts.notebook_detected[1] = 99; answer"),
+                ("tray_counts rebinding", "join-report-log", "tray_counts = copy(tray_counts); leftjoin(tray_counts, tally_sheet, on=:tray_id)"),
+                ("tally_sheet mutation", "join-report-log", "answer = leftjoin(tray_counts, tally_sheet, on=:tray_id); tally_sheet.sheet_detected[1] = 99; answer"),
+                ("tally_sheet rebinding", "join-report-log", "tally_sheet = copy(tally_sheet); leftjoin(tray_counts, tally_sheet, on=:tray_id)"),
+                ("joined mutation", "filter-disagreement", "answer = joined[joined.notebook_detected .!= joined.sheet_detected, :]; joined.sheet_detected[1] = 99; answer"),
+                ("joined rebinding", "filter-disagreement", "joined = copy(joined); joined[joined.notebook_detected .!= joined.sheet_detected, :]"),
             ]
                 reply = JuliaTime.handle_message(c3_run_request(move_id, code;
                     request_id="c3-" * replace(name, " " => "-")))
@@ -327,7 +333,7 @@ end
                 @test !haskey(reply, "evidence")
             end
 
-            wrong = JuliaTime.handle_message(c3_run_request("join-report-log", "report";
+            wrong = JuliaTime.handle_message(c3_run_request("join-report-log", "tray_counts";
                 request_id="c3-wrong"))
             @test wrong["status"] == "ok"
             @test wrong["pass"] == false
@@ -346,11 +352,11 @@ end
         JuliaTime.warmup!()
         try
             for (move_id, mode, code, location) in [
-                ("filter-disagreement", "challenge", "joined[joined.reported_detected_n <> joined.logged_detected_n, :]", "none:1:36"),
-                ("filter-disagreement", "challenge", "row_rule = joined.reported_detected_n .!= joined.logged_detected_n\njoined[row_rule <> 1, :]", "none:2:18"),
-                ("filter-disagreement", "challenge", "joined[joined.reported_detected_n .!= joined.logged_detected_n, :", "none:1:66"),
-                ("join-report-log", "challenge", "leftjoin(report handling_log, on=:tray_id)", "none:1:17"),
-                ("join-report-log", "demonstration", "leftjoin(practice_report practice_log, on=:key)", "none:1:26"),
+                ("filter-disagreement", "challenge", "joined[joined.notebook_detected <> joined.sheet_detected, :]", "none:1:34"),
+                ("filter-disagreement", "challenge", "row_rule = joined.notebook_detected .!= joined.sheet_detected\njoined[row_rule <> 1, :]", "none:2:18"),
+                ("filter-disagreement", "challenge", "joined[joined.notebook_detected .!= joined.sheet_detected, :", "none:1:61"),
+                ("join-report-log", "challenge", "leftjoin(tray_counts tally_sheet, on=:tray_id)", "none:1:22"),
+                ("join-report-log", "demonstration", "leftjoin(practice_counts practice_sheet, on=:key)", "none:1:26"),
             ]
                 request = c3_run_request(move_id, code; request_id="c3-parse", mode=mode,
                     activity_id=mode == "demonstration" ? "practice-join-v1" : nothing)
@@ -371,15 +377,15 @@ end
 
             # R2 and R6: the exact error texts web/chapter3.js keys its leads on.
             for (move_id, code, text) in [
-                ("filter-disagreement", "joined = leftjoin(report, handling_log, on=:tray_id)\nrow_rule = joined.reported_detected_n .!= joined.logged_detected_n\njoined[row_rule, :]", "UndefVarError: `report` not defined"),
-                ("filter-disagreement", "jars[jars.reported_detected_n .!= jars.logged_detected_n, :]", "UndefVarError: `jars` not defined"),
+                ("filter-disagreement", "joined = leftjoin(tray_counts, tally_sheet, on=:tray_id)\nrow_rule = joined.notebook_detected .!= joined.sheet_detected\njoined[row_rule, :]", "UndefVarError: `tray_counts` not defined"),
+                ("filter-disagreement", "jars[jars.notebook_detected .!= jars.sheet_detected, :]", "UndefVarError: `jars` not defined"),
                 ("join-report-log", "leftjoin(left_table, right_table, on=:shared_column)", "UndefVarError: `left_table` not defined"),
-                ("join-report-log", "leftjoin(report, handling_log, on=:shared_column)", "column :shared_column not found in the left data frame"),
+                ("join-report-log", "leftjoin(tray_counts, tally_sheet, on=:shared_column)", "column :shared_column not found in the left data frame"),
                 # Repair 4: a bare column name, R's $, and move 2's own placeholders.
-                ("join-report-log", "leftjoin(report, handling_log, on=tray_id)", "UndefVarError: `tray_id` not defined"),
-                ("join-report-log", "leftjoin(report, handling_log, on=report\$tray_id)", "UndefVarError: `\$` not defined"),
-                ("filter-disagreement", "joined[reported_detected_n .!= logged_detected_n, :]", "UndefVarError: `reported_detected_n` not defined"),
-                ("filter-disagreement", "joined[joined\$reported_detected_n .!= joined\$logged_detected_n, :]", "UndefVarError: `\$` not defined"),
+                ("join-report-log", "leftjoin(tray_counts, tally_sheet, on=tray_id)", "UndefVarError: `tray_id` not defined"),
+                ("join-report-log", "leftjoin(tray_counts, tally_sheet, on=tray_counts\$tray_id)", "UndefVarError: `\$` not defined"),
+                ("filter-disagreement", "joined[notebook_detected .!= sheet_detected, :]", "UndefVarError: `notebook_detected` not defined"),
+                ("filter-disagreement", "joined[joined\$notebook_detected .!= joined\$sheet_detected, :]", "UndefVarError: `\$` not defined"),
                 ("filter-disagreement", "table[table.left_count .!= table.right_count, :]", "UndefVarError: `table` not defined"),
                 ("filter-disagreement", "joined[joined.left_count .!= joined.right_count, :]", "column name :left_count not found in the data frame"),
             ]
@@ -397,7 +403,7 @@ end
     # or the code is longer than 20000 characters, the helper returns nothing, so the guarded
     # worker run, which is time-limited, handles the code. A stub parser stands in for the throw.
     @testset "the pre-parse falls back to the guarded run when the parser throws or the code is long" begin
-        broken = "joined[joined.reported_detected_n <> joined.logged_detected_n, :]"
+        broken = "joined[joined.notebook_detected <> joined.sheet_detected, :]"
         @test JuliaTime._mystery_c3_parse_error(broken) isa Meta.ParseError
         @test JuliaTime._mystery_c3_parse_error(broken; parser=(code; kwargs...) -> throw(StackOverflowError())) === nothing
         @test JuliaTime._mystery_c3_parse_error(broken; parser=(code; kwargs...) -> error("parser failed")) === nothing
@@ -416,7 +422,7 @@ end
         JuliaTime.warmup!()
         try
             demo = JuliaTime.handle_message(c3_run_request(
-                "join-report-log", "leftjoin(practice_report, practice_log, on=:key)";
+                "join-report-log", "leftjoin(practice_counts, practice_sheet, on=:key)";
                 request_id="c3-demo-join", mode="demonstration", activity_id="practice-join-v1",
             ))
             @test demo["type"] == "case_result"
@@ -426,12 +432,12 @@ end
             @test demo["pass"] === nothing
             @test demo["practice_pass"] == true
             @test demo["progress_eligible"] == false
-            @test demo["columns"] == ["key", "reported_detected_n", "logged_detected_n", "log_status"]
+            @test demo["columns"] == ["key", "notebook_detected", "sheet_detected", "entry_status"]
             @test [row["key"] for row in demo["rows"]] == ["K-A", "K-B"]
             @test !haskey(demo, "evidence")
 
             wrong_practice = JuliaTime.handle_message(c3_run_request(
-                "join-report-log", "practice_report";
+                "join-report-log", "practice_counts";
                 request_id="c3-demo-wrong-practice", mode="demonstration",
                 activity_id="practice-join-v1",
             ))
@@ -454,7 +460,7 @@ end
 
             # Challenge names do not exist in the separate practice environment.
             hidden_challenge_input = JuliaTime.handle_message(c3_run_request(
-                "join-report-log", "leftjoin(report, handling_log, on=:tray_id)";
+                "join-report-log", "leftjoin(tray_counts, tally_sheet, on=:tray_id)";
                 request_id="c3-demo-no-challenge-input", mode="demonstration",
                 activity_id="practice-join-v1",
             ))
@@ -465,10 +471,10 @@ end
             @test !haskey(hidden_challenge_input, "evidence")
 
             for (name, code) in [
-                ("practice report mutation", "answer = leftjoin(practice_report, practice_log, on=:key); practice_report.reported_detected_n[1] = 99; answer"),
-                ("practice report rebinding", "practice_report = copy(practice_report); leftjoin(practice_report, practice_log, on=:key)"),
-                ("practice log mutation", "answer = leftjoin(practice_report, practice_log, on=:key); practice_log.logged_detected_n[1] = 99; answer"),
-                ("practice log rebinding", "practice_log = copy(practice_log); leftjoin(practice_report, practice_log, on=:key)"),
+                ("practice counts mutation", "answer = leftjoin(practice_counts, practice_sheet, on=:key); practice_counts.notebook_detected[1] = 99; answer"),
+                ("practice counts rebinding", "practice_counts = copy(practice_counts); leftjoin(practice_counts, practice_sheet, on=:key)"),
+                ("practice sheet mutation", "answer = leftjoin(practice_counts, practice_sheet, on=:key); practice_sheet.sheet_detected[1] = 99; answer"),
+                ("practice sheet rebinding", "practice_sheet = copy(practice_sheet); leftjoin(practice_counts, practice_sheet, on=:key)"),
             ]
                 reply = JuliaTime.handle_message(c3_run_request(
                     "join-report-log", code;
@@ -547,10 +553,10 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                 first_info = _receive_reply(ws)
                 @test first_info["request_id"] == "wire-c3-info-one"
                 @test first_info["move_id"] == "join-report-log"
-                @test [input["id"] for input in first_info["inputs"]] == ["report", "handling_log"]
+                @test [input["id"] for input in first_info["inputs"]] == ["tray_counts", "tally_sheet"]
 
                 HTTP.WebSockets.send(ws, JSON.json(c3_run_request(
-                    "join-report-log", "leftjoin(report, handling_log, on=:tray_id)";
+                    "join-report-log", "leftjoin(tray_counts, tally_sheet, on=:tray_id)";
                     request_id="wire-c3-join")))
                 joined = _receive_reply(ws)
                 @test joined["request_id"] == "wire-c3-join"
@@ -570,7 +576,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
 
                 HTTP.WebSockets.send(ws, JSON.json(c3_run_request(
                     "filter-disagreement",
-                    "joined[joined.reported_detected_n .!= joined.logged_detected_n, :]";
+                    "joined[joined.notebook_detected .!= joined.sheet_detected, :]";
                     request_id="wire-c3-filter")))
                 discrepancy = _receive_reply(ws)
                 @test discrepancy["request_id"] == "wire-c3-filter"

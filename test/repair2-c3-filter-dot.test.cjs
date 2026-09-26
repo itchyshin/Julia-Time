@@ -41,5 +41,15 @@ test("UI-12: the missing-dot line stays on its own move and on its own error", (
   // table is this move's own code-shape placeholder, so it gets the placeholder line (Repair 4,
   // test/repair4-c3-name-leads.test.cjs), not the missing-dot line.
   const placeholder = {status:"error", message:"table is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `table` not defined"};
-  assert.equal(client.errorRecovery("filter-disagreement", placeholder), "table is a placeholder from the code shape, not a name in this case. Here table is joined, left_count is reported_detected_n, and right_count is logged_detected_n. Your draft is still here; change that line and run again.");
+  assert.equal(client.errorRecovery("filter-disagreement", placeholder), "table is a placeholder from the code shape, not a name in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected. Your draft is still here; change that line and run again.");
+});
+
+test("Mia's playtest: an R-style filter(joined, cond) call gets filter's real signature", () => {
+  const notCallable = {status:"error", message:"A function was called with the wrong kind of argument.\n\nMethodError: objects of type DataFrames.DataFrame are not callable"};
+  const line = client.filterErrorCoaching(notCallable);
+  assert.match(line, /filter takes the rule first/);
+  assert.match(line, /filter\(row -> \.\.\., joined\)/);
+  assert.match(line, /joined\[rule, :\]/);
+  const recovery = client.recoveryCopy("filter-disagreement");
+  assert.ok(client.errorRecovery("filter-disagreement", notCallable).endsWith(" " + recovery));
 });

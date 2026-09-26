@@ -156,7 +156,7 @@ function check_mystery_c2(value, step)
             return (false, "Group the B09 records by tray_id.")
         grouped_rows = _mystery_c2_group_frame(value)
         _mystery_c2_columns(grouped_rows, MYSTERY_C2_SOURCE_COLUMNS) ||
-            return (false, "The grouped records must retain the B09 jar columns.")
+            return (false, "The grouped jars must keep the B09 jar columns.")
         return check_mystery_c1(grouped_rows)
     end
     return _mystery_c2_check_summary(value, step)
@@ -165,23 +165,24 @@ end
 function _mystery_c2_explanation(step::String, pass::Bool)
     if pass && step == "group"
         return Dict(
-            "julia" => "In the taught approach, groupby(jars, :tray_id) keeps the B09 records and partitions them by tray label. This accepted result has that partition.",
-            "case" => "The records are now organised for a tray-by-tray comparison; this is not a causal finding.",
+            "julia" => "The returned groups passed the check. The taught way is groupby(jars, :tray_id): it makes three groups, one per tray, and no jar is lost.",
+            "case" => "Three trays, two jars each. Now count.",
         )
     elseif pass && step == "counts"
         return Dict(
-            "julia" => "In the taught approach, nrow counts rows in each tray group and sum adds true detected values. This accepted table has those B09 counts.",
-            "case" => "The displayed counts describe the recorded B09 observations, not why they differ.",
+            "julia" => "The returned table passed the check. The taught way is combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n): nrow counts the jars in each tray, and sum counts the trues in detected.",
+            "case" => "T-A 2 of 2, T-B 2 of 2, T-C 1 of 2. Every tray has fleas, T-C included.",
         )
     elseif pass
         return Dict(
-            "julia" => "In the taught approach, detected_n ./ n divides each tray's detected count by its number of records. This accepted table has those B09 rates.",
-            "case" => "The rates describe a pattern in this simulated teaching fixture; they do not identify its cause.",
+            "julia" => "The returned table passed the check. The taught way is counts.rate = counts.detected_n ./ counts.n: it divides each tray's detected_n by its n, one tray at a time.",
+            "case" => "Every tray has fleas: T-A and T-B 1.0 (both jars), T-C 0.5 (one jar of two). The report's 0 for T-C does not match the notebook.",
+            "limit" => "Two jars per tray is a small count, so a share of 0.5 is only one jar.",
         )
     end
     return Dict(
         "julia" => "Return the requested grouped value or DataFrame for this step.",
-        "case" => "No tray comparison is established until the returned result matches all recorded B09 trays.",
+        "case" => "Nothing found yet: the returned result must match all B09 trays first.",
     )
 end
 
@@ -212,22 +213,23 @@ function mystery_c2_case_info(; request_id::String="")
         "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_C2_CHAPTER,
         "request_id" => request_id,
-        "title" => "Do the B09 tray records differ?",
-        "goal" => "Group the B09 records by tray, count detections, then compare detection rates. A pattern in these records is not its cause.",
-        "return_spec" => "Work through group, counts, then rates. The final table needs tray_id, n, detected_n, and rate.",
+        "title" => "The report says T-C has 0 fleas. What does the notebook say for each tray?",
+        "question" => "What does the notebook say for each tray?",
+        "goal" => "Group the B09 jars by tray, count the jars with fleas, then work out each tray's share.",
+        "return_spec" => "One step at a time: group by tray, count, then work out each tray's share of jars with fleas.",
         "data_label" => MYSTERY_DATA_LABEL,
         "case_batch" => MYSTERY_CASE_BATCH,
         "columns" => copy(MYSTERY_C2_SOURCE_COLUMNS),
         "rows" => mystery_rows(jars),
         "steps" => [
-            Dict("id" => "group", "title" => "Group the records", "return_spec" => "Return a GroupedDataFrame partitioned by tray_id."),
-            Dict("id" => "counts", "title" => "Count each tray", "return_spec" => "Return exactly tray_id, n, detected_n."),
-            Dict("id" => "rates", "title" => "Calculate rates", "return_spec" => "Return exactly tray_id, n, detected_n, rate, where rate is detected_n / n."),
+            Dict("id" => "group", "title" => "Step 1 · Put each tray's jars together", "return_spec" => "Return the jars in groups, one group per tray."),
+            Dict("id" => "counts", "title" => "Step 2 · Count jars and jars with fleas", "return_spec" => "Return one row per tray with three columns: tray_id, n (jars on the tray) and detected_n (jars with fleas)."),
+            Dict("id" => "rates", "title" => "Step 3 · Work out each tray's share", "return_spec" => "Return the counts table with one more column, rate: jars with fleas divided by all jars on that tray."),
         ],
         "hints" => [
-            Dict("stage" => "concept", "text" => "Split the B09 table by tray, then make one summary row per group."),
-            Dict("stage" => "shape", "text" => "Start with groupby(jars, :tray_id), then use combine(..., nrow => :n, :detected => sum => :detected_n)."),
-            Dict("stage" => "solution", "text" => "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n); transform(counts, [:detected_n, :n] => ((detected_n, n) -> detected_n ./ n) => :rate)"),
+            Dict("stage" => "concept", "text" => "Grouping does not count or drop any jar. It just puts jars with the same tray label together, then combine makes one summary row per group."),
+            Dict("stage" => "shape", "text" => "groupby(table, :column). Then combine(groupby(table, :column), nrow => :n) makes one row per group; add :detected => sum => :detected_n as a second piece after a comma."),
+            Dict("stage" => "solution", "text" => "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n); counts.rate = counts.detected_n ./ counts.n; counts"),
         ],
         "glossary" => [
             Dict("term" => "groupby", "definition" => "Partition a table into groups sharing the same key; here the key is tray_id."),
@@ -281,7 +283,7 @@ function mystery_c2_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     value_repr = r.value === nothing ? "" : _mystery_safe_repr(r.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     pass, feedback = r.status == :ok ? check_mystery_c2(r.value, String(step)) :
-        (false, "Julia did not produce the requested result for this move.")
+        (false, "Julia stopped before the end. Check the names, then run again.")
     dollar_note = pass ? nothing : _mystery_c2_dollar_note(code)
     dollar_note === nothing || (feedback = dollar_note * " " * feedback)
     result = _mystery_c2_result(request_id=String(request_id), step=String(step), status=String(r.status),
@@ -291,8 +293,8 @@ function mystery_c2_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     if pass && step == "rates"
         result["evidence"] = Dict(
             "id" => "c2-b09-tray-rates",
-            "title" => "B09 tray detection rates calculated",
-            "text" => "The returned rates summarise the recorded B09 jars by tray. They describe a pattern in this simulated teaching fixture, not a cause.",
+            "title" => "Fleas in every tray",
+            "text" => "Every tray has fleas: T-A and T-B 1.0 (both jars), T-C 0.5 (one jar of two). The report's 0 for T-C does not match the notebook.",
         )
     end
     return result

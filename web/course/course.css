@@ -79,3 +79,9 @@ a:focus-visible, button:focus-visible { outline:4px solid var(--orange); outline
 .route-card { width:min(680px,100%); }
 @media (max-width:760px) { .topbar { align-items:start; flex-direction:column; } .hero, .lower-grid, .guide-grid, .guide-recovery { grid-template-columns:1fr; } .hero img { min-height:190px; order:-1; } .chapter-grid, .case-thread dl { grid-template-columns:1fr; } .setup-details dl { grid-template-columns:1fr; } .hero-guide-link { margin-left:0; } }
 @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; scroll-behavior:auto !important; transition-duration:.01ms !important; } }
+
+/* 2026-09-25: plain solved / not solved signals on the Case Board. */
+.case-progress { font-weight:700; margin:.4rem 0 .8rem; }
+.case-progress--solved { font-size:1.1rem; }
+.chapter-solved { font-weight:700; margin:.1rem 0 .4rem; color:var(--muted); }
+.chapter-solved--yes { color:var(--teal); }

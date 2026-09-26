@@ -19,9 +19,9 @@
       link.hidden = false;
       return;
     }
-    const name = chapter === "C1" ? "Chapter 1: the disputed batch" : chapter === "C2" ? "Chapter 2: locate the pattern" : chapter === "C3" ? "Chapter 3: check the report" : chapter === "C4" ? "Chapter 4: plan a recheck" : chapter === "C5" ? "Chapter 5: test a suspicion" : "Chapter 6: compare explanations";
+    const name = chapter === "C1" ? "Chapter 1: the report and the notebook" : chapter === "C2" ? "Chapter 2: count by tray" : chapter === "C3" ? "Chapter 3: where did the 0 come from?" : chapter === "C4" ? "Chapter 4: plan a fair recheck" : chapter === "C5" ? "Chapter 5: too good to be true?" : "Chapter 6: are the fleas vanishing?";
     text(title, "Opening " + name);
-    text(status, "This keeps the established chapter page authoritative. If it does not open automatically, use the link below.");
+    text(status, "Your chapter is opening. If it does not appear in a moment, use the link below.");
     link.href = destination;
     text(link, "Open " + name + " →");
     root.setTimeout(function () { root.location.replace(destination); }, 60);

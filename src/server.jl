@@ -89,6 +89,8 @@ function handle_message(msg::Dict; on_status::Function=((_, __) -> nothing))
             chapter == "C5" && return mystery_c5_case_run(msg; on_status=on_status)
             chapter == "C6" && return mystery_c6_case_run(msg; on_status=on_status)
             return Dict("type" => "error", "message" => "Unknown mystery chapter.")
+        elseif type == "case_epilogue"
+            return mystery_epilogue_info(msg)
         elseif type == "case_action"
             chapter = get(msg, "chapter", nothing)
             chapter == "C5" && return mystery_c5_case_action(msg)
@@ -358,4 +360,84 @@ function run_server(; host::AbstractString="127.0.0.1", port::Integer=8000, open
         end
     end
     return nothing
+end
+
+"""
+    LAUNCH_PORTS
+
+Ports the learner launcher tries, in order. 8000 first keeps saved browser progress (which the
+browser stores per address) where earlier versions left it; the rest cover a Jupyter, Python or
+other local server that already holds 8000 on a student's computer.
+"""
+const LAUNCH_PORTS = 8000:8009
+
+"""
+    AllPortsBusy(ports)
+
+Thrown by `launch` when every port in `ports` is held by a program that is not Julia Time.
+"""
+struct AllPortsBusy <: Exception
+    ports::UnitRange{Int}
+end
+Base.showerror(io::IO, e::AllPortsBusy) =
+    print(io, "Ports $(first(e.ports)) to $(last(e.ports)) are all in use by other programs.")
+
+"""
+    _is_address_in_use(err) -> Bool
+
+True when a server start failed only because the port is taken. The wording differs by platform
+("address already in use" on macOS/Linux, the `EADDRINUSE` code on Windows), so match both.
+"""
+function _is_address_in_use(err)
+    message = lowercase(sprint(showerror, err))
+    return occursin("address already in use", message) || occursin("eaddrinuse", message)
+end
+
+"""
+    _serves_julia_time(host, port) -> Bool
+
+True when `host:port` already answers with the Julia Time Case Board, i.e. an earlier launcher
+window is still running. A free port refuses at once; the 15 s request deadline is generous because
+the first request in a fresh Julia session compiles the HTTP client, yet it still stops a silent
+non-HTTP program from stalling the launcher.
+"""
+function _serves_julia_time(host::AbstractString, port::Integer)
+    try
+        response = HTTP.get(_browser_url(host, port); connect_timeout=2, request_timeout=15, retry=false,
+                            redirect=false, status_exception=false)
+        return response.status == 200 && occursin("<title>Julia Time · Case Board</title>", String(response.body))
+    catch
+        return false
+    end
+end
+
+"""
+    launch(; host="127.0.0.1", ports=LAUNCH_PORTS, run=run_server, is_julia_time=_serves_julia_time, browser_opener=_open_browser)
+
+Entry point for `run.jl`. For each port in turn: if Julia Time is already running there, open the
+browser to it and return `(:reopened, port)`; otherwise try to serve there, moving to the next port
+only when this one is taken. Returns `(:served, port)` after the learner stops the game, and throws
+`AllPortsBusy` when no port works. `run`, `is_julia_time` and `browser_opener` are injectable so the
+port choice is testable without real sockets.
+"""
+function launch(; host::AbstractString="127.0.0.1", ports=LAUNCH_PORTS, run=run_server,
+                is_julia_time=_serves_julia_time, browser_opener::Function=_open_browser)
+    for port in ports
+        if is_julia_time(host, port)
+            url = _browser_url(host, port)
+            println("Julia Time is already running at $url, started from an earlier launcher window. Opening it in your browser.")
+            println("Keep that earlier window open while you play; this new window can be closed.")
+            flush(stdout)
+            _no_browser_env() || browser_opener(url)
+            return (:reopened, port)
+        end
+        try
+            run(; host=host, port=port)
+            return (:served, port)
+        catch err
+            _is_address_in_use(err) || rethrow()
+            port == last(ports) || println("Port $port is used by another program; trying $(port + 1).")
+        end
+    end
+    throw(AllPortsBusy(first(ports):last(ports)))
 end

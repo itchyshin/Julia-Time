@@ -39,11 +39,13 @@ export OPENBLAS_NUM_THREADS=1
 # the learner to type it into Terminal.
 if ! "$julia_bin" --startup-file=no --history-file=no --project=. -e 'using JuliaTime' >/dev/null 2>&1; then
   print "Julia Time has not finished its one-time setup yet. Running it once now; this can take several minutes."
-  "$julia_bin" --startup-file=no --history-file=no --project=. check_setup.jl
+  # The game opens next by itself, so check_setup.jl skips its docs/install.md line (this call only).
+  JULIATIME_SETUP_FROM_HELPER=1 "$julia_bin" --startup-file=no --history-file=no --project=. check_setup.jl
   setup_status=$?
   if [[ "$setup_status" -ne 0 ]]; then
     exit "$setup_status"
   fi
 fi
 
+print "Starting Julia Time. Keep this window open while you play."
 exec "$julia_bin" --startup-file=no --history-file=no --project=. run.jl

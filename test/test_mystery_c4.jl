@@ -60,7 +60,7 @@ end
         @test [move["id"] for move in info["moves"]] == [C4_MOVE]
         @test occursin("sample(eligible.jar_id, 3; replace=false)",
                         info["moves"][1]["hints"][3]["text"])
-        @test occursin("no new observations", lowercase(info["goal"]))
+        @test occursin("same chance", lowercase(info["goal"]))
     end
 
     @testset "checker accepts any three distinct supplied IDs and rejects invented plans" begin
@@ -77,14 +77,14 @@ end
         # UI-07: live runs are unseeded, so the scene must not promise a reproducible plan.
         scene = JuliaTime.mystery_c4_case_info()["scene"]["line"]
         @test !occursin(r"reproduc"i, scene)
-        @test occursin("fair, random three-jar plan", scene)
+        @test occursin("let chance pick three", lowercase(scene))
         # Playtest B1: the checker accepts any three distinct eligible IDs, so the accepted
         # explanation must not claim the learner ran a particular expression.
         accepted = JuliaTime._mystery_c4_explanation(true)["julia"]
         @test !occursin("sample", accepted)
         @test !occursin("replace=false", accepted)
-        @test occursin("returned three different IDs", accepted)
-        @test occursin("eligible.jar_id", accepted)
+        @test occursin("picked three different IDs", accepted)
+        @test occursin("Eddie's list", accepted)
         # Retest R3: the pass feedback is the first line under "Accepted". Code without
         # replace=false can still draw three different IDs, so the line must describe the
         # checked result and never claim the plan was drawn without replacement.
@@ -93,7 +93,13 @@ end
         @test passed
         @test !occursin("without replacement", feedback)
         @test !occursin("replace=false", feedback)
-        @test feedback == "These are three different eligible jar IDs, so no jar is planned twice."
+        @test feedback == "Three different jars from the list."
+        # Nit 16 (adversary review 2026-09-26): the checker only judges the returned value, so code
+        # without replace=false can pass by luck (about 37.5% of runs). Every C4 success carries a
+        # one-line reminder, since the game cannot tell whether the learner's code was actually safe.
+        @test JuliaTime._mystery_c4_explanation(true)["reminder"] ==
+            "Check that your line says replace=false. Without it, Julia can pick the same jar twice, and a run like this could pass by luck."
+        @test !haskey(JuliaTime._mystery_c4_explanation(false), "reminder")
     end
 
     @testset "the learner-owned sampling result is checked against fresh server truth" begin
@@ -110,8 +116,10 @@ end
             @test length(reply["rows"]) == 3
             @test length(unique([row["jar_id"] for row in reply["rows"]])) == 3
             @test reply["result_visual"]["type"] == "planned-recheck-rack"
-            @test occursin("no new observations", lowercase(reply["explanation"]["case"]))
-            @test !haskey(reply, "evidence")
+            @test occursin("three different jars from eddie's list", lowercase(reply["explanation"]["case"]))
+            @test !occursin("picked by chance", lowercase(reply["explanation"]["case"]))
+            @test haskey(reply, "evidence")
+            @test reply["evidence"]["claim"] == "Claim 1 is done: the 0 was a blank, and a fair recheck is planned."
 
             mutated = JuliaTime.mystery_c4_case_run(c4_run_request(
                 "answer = eligible.jar_id[[1, 2, 3]]; eligible = copy(eligible); answer";
@@ -152,7 +160,7 @@ end
                 @test bad["message"] == JuliaTime.run_code(code;
                     env=(eligible=JuliaTime.mystery_c4_expected_eligible(),)).message
                 @test bad["feedback"] ==
-                    "Julia did not complete this move. Keep the supplied eligible table unchanged, then try again."
+                    "Julia stopped before the end. Check the names, then run again."
             end
         finally
             JuliaTime.shutdown!()

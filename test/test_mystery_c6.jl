@@ -39,9 +39,10 @@ function c6_run_request(code; request_id="c6-run", case_id=C6_CASE_ID, chapter=C
 end
 
 @testset "Missing Fleas C6 predictive compatibility protocol" begin
-    @testset "fresh server-derived candidate bounds" begin
+    @testset "fresh server-derived story bounds" begin
         candidates = JuliaTime.mystery_c6_candidates()
         @test names(candidates) == ["model", "p", "lower", "upper"]
+        @test candidates.model == ["Vanishing", "Coin flip", "Thriving"]
         @test candidates.p == [0.1, 0.5, 0.8]
         @test all(row -> row.lower == quantile(Binomial(6, row.p), 0.1) &&
                          row.upper == quantile(Binomial(6, row.p), 0.9), eachrow(candidates))
@@ -62,10 +63,10 @@ end
         @test info["request_id"] == "c6-info-one"
         @test info["n_trials"] == 6
         @test info["observed_count"] == JuliaTime.mystery_c6_observed_count()
-        @test info["inputs"][1]["id"] == "candidate_models"
+        @test info["inputs"][1]["id"] == "stories"
         @test info["inputs"][1]["columns"] == ["model", "p", "lower", "upper"]
         @test occursin("lower ≤ observed_count ≤ upper", info["rule"])
-        @test occursin("nominal central predictive range", lowercase(info["key_note"]))
+        @test occursin("usual range", lowercase(info["key_note"]))
     end
 
     @testset "checker truth is independent from the presentation factory" begin
@@ -80,7 +81,7 @@ end
                 probabilities = collect(MYSTERY_C6_PROBABILITIES)
                 ranges = [Distributions.Binomial(MYSTERY_C6_N_TRIALS, p) for p in probabilities]
                 return DataFrame(
-                    model=["Candidate p = $(p)" for p in probabilities],
+                    model=collect(MYSTERY_C6_MODEL_NAMES),
                     p=probabilities,
                     lower=[Distributions.quantile(range, 0.1) for range in ranges],
                     upper=[Distributions.quantile(range, 0.9) for range in ranges],
@@ -89,8 +90,9 @@ end
         end
     end
 
-    @testset "fresh checker accepts only every compatible row, order independently" begin
+    @testset "fresh checker accepts only every fitting row, order independently" begin
         expected = JuliaTime.mystery_c6_expected_compatible()
+        @test expected.model == ["Coin flip", "Thriving"]
         @test JuliaTime.check_mystery_c6(expected)[1]
         @test JuliaTime.check_mystery_c6(expected[reverse(1:nrow(expected)), reverse(names(expected))])[1]
         @test !JuliaTime.check_mystery_c6(expected[:, ["model", "p", "lower"]])[1]
@@ -109,7 +111,7 @@ end
     @testset "challenge returns actual accepted evidence and protects all supplied inputs" begin
         JuliaTime.warmup!()
         try
-            code = "candidate_models[(candidate_models.lower .<= observed_count) .& (observed_count .<= candidate_models.upper), :]"
+            code = "stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]"
             reply = JuliaTime.mystery_c6_case_run(c6_run_request(code; request_id="c6-good"))
             @test reply["status"] == "ok"
             @test reply["pass"] == true
@@ -117,22 +119,21 @@ end
             @test reply["result_data"]["kind"] == "table"
             @test reply["result_data"]["rows"] == reply["rows"]
             @test reply["result_visual"]["data"]["rows"] == reply["rows"]
-            @test occursin("compatible", lowercase(reply["explanation"]["case"]))
-            # repair6-6 (2026-09-24 browser check): the page calls it the observed B09 count, as Chapter 5 does.
-            @test occursin("observed B09 count", reply["explanation"]["case"])
-            @test !occursin("retained", lowercase(reply["explanation"]["case"]))
-            @test occursin("does not rank", lowercase(reply["explanation"]["limit"]))
+            @test occursin("coin flip", lowercase(reply["explanation"]["case"]))
+            @test occursin("Fitting is not proof", reply["explanation"]["limit"])
+            @test reply["evidence"]["claim"] == "Claim 2, \"the fleas are vanishing\": not supported."
 
             for (label, bad_code) in [
-                ("mutation", "answer = candidate_models[(candidate_models.lower .<= observed_count) .& (observed_count .<= candidate_models.upper), :]; candidate_models[1, :upper] = 0; answer"),
-                ("rebind-table", "candidate_models = copy(candidate_models); candidate_models[(candidate_models.lower .<= observed_count) .& (observed_count .<= candidate_models.upper), :]"),
-                ("rebind-observed", "answer = candidate_models[(candidate_models.lower .<= observed_count) .& (observed_count .<= candidate_models.upper), :]; observed_count = observed_count + 1; answer"),
-                ("rebind-trials", "answer = candidate_models[(candidate_models.lower .<= observed_count) .& (observed_count .<= candidate_models.upper), :]; n_trials = 7; answer"),
-                ("wrong-answer", "candidate_models"),
+                ("mutation", "answer = stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]; stories[1, :upper] = 0; answer"),
+                ("rebind-table", "stories = copy(stories); stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]"),
+                ("rebind-observed", "answer = stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]; observed_count = observed_count + 1; answer"),
+                ("rebind-trials", "answer = stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]; n_trials = 7; answer"),
+                ("wrong-answer", "stories"),
             ]
                 bad_reply = JuliaTime.mystery_c6_case_run(c6_run_request(bad_code; request_id="c6-" * label))
                 @test bad_reply["pass"] == false
                 @test bad_reply["progress_eligible"] == false
+                @test !haskey(bad_reply, "evidence")
             end
 
             for code_value in ("", "   ", 4, nothing)
@@ -153,10 +154,10 @@ end
         JuliaTime.warmup!()
         try
             for (code, location, learner_line, reason) in [
-                ("candidate_models[candidate_models.lower <> observed_count, :]", "none:1:42",
-                 "candidate_models[candidate_models.lower <> observed_count, :]", "not a unary operator"),
-                ("row_rule = (candidate_models.lower .<= observed_count)\ncandidate_models[row_rule, :",
-                 "none:2:29", "candidate_models[row_rule, :", "Expected `]`"),
+                ("stories[stories.lower <> observed_count, :]", "none:1:24",
+                 "stories[stories.lower <> observed_count, :]", "not a unary operator"),
+                ("row_rule = (stories.lower .<= observed_count)\nstories[row_rule, :",
+                 "none:2:20", "stories[row_rule, :", "Expected `]`"),
             ]
                 reply = JuliaTime.mystery_c6_case_run(c6_run_request(code; request_id="c6-parse"))
                 @test reply["status"] == "error"
@@ -181,7 +182,7 @@ end
     # or the code is longer than 20000 characters, the helper returns nothing, so the guarded
     # worker run, which is time-limited, handles the code. A stub parser stands in for the throw.
     @testset "the pre-parse falls back to the guarded run when the parser throws or the code is long" begin
-        broken = "candidate_models[candidate_models.lower <> observed_count, :]"
+        broken = "stories[stories.lower <> observed_count, :]"
         @test JuliaTime._mystery_c6_parse_error(broken) isa Meta.ParseError
         @test JuliaTime._mystery_c6_parse_error(broken; parser=(code; kwargs...) -> throw(StackOverflowError())) === nothing
         @test JuliaTime._mystery_c6_parse_error(broken; parser=(code; kwargs...) -> error("parser failed")) === nothing
@@ -214,14 +215,14 @@ end
             @test !haskey(reply, "inputs")
         end
         for request in [
-            c6_run_request("candidate_models"; case_id="other"),
-            c6_run_request("candidate_models"; chapter="C5"),
-            c6_run_request("candidate_models"; move_id="unknown"),
-            c6_run_request("candidate_models"; mode="demonstration"),
-            c6_run_request("candidate_models"; activity_id="extension"),
-            c6_run_request("candidate_models"; simulation_id="changed"),
-            c6_run_request("candidate_models"; contract_version=2),
-            c6_run_request("candidate_models"; request_id=" "),
+            c6_run_request("stories"; case_id="other"),
+            c6_run_request("stories"; chapter="C5"),
+            c6_run_request("stories"; move_id="unknown"),
+            c6_run_request("stories"; mode="demonstration"),
+            c6_run_request("stories"; activity_id="extension"),
+            c6_run_request("stories"; simulation_id="changed"),
+            c6_run_request("stories"; contract_version=2),
+            c6_run_request("stories"; request_id=" "),
         ]
             reply = JuliaTime.mystery_c6_case_run(request)
             @test reply["type"] == "error"
@@ -230,9 +231,9 @@ end
     end
 
     @testset "case-run envelope requires its type before execution or progress" begin
-        missing_type = c6_run_request("candidate_models"; request_id="c6-missing-type")
+        missing_type = c6_run_request("stories"; request_id="c6-missing-type")
         delete!(missing_type, "type")
-        wrong_type = c6_run_request("candidate_models"; request_id="c6-wrong-type")
+        wrong_type = c6_run_request("stories"; request_id="c6-wrong-type")
         wrong_type["type"] = "case_info"
 
         for request in (missing_type, wrong_type)

@@ -22,14 +22,14 @@ const DETECTED_N = "detected_n is a name Julia does not know yet. Check the spel
 // summary["rate"] = summary["detected_n"] ./ summary["n"]
 const PANDAS = "Something went wrong running this line.\n\nArgumentError: syntax df[column] is not supported use df[!, column] instead";
 
-const ANSWER_LINES = ["groupby(jars, :tray_id)", "combine(groups, nrow => :n, :detected => sum => :detected_n)", "summary.rate = summary.detected_n ./ summary.n"];
+const ANSWER_LINES = ["groupby(jars, :tray_id)", "combine(groups, nrow => :n, :detected => sum => :detected_n)", "counts.rate = counts.detected_n ./ counts.n"];
 const assertNoAnswerLine = text => { for (const line of ANSWER_LINES) assert.ok(!text.includes(line), "coaching must not print the reference line " + line); };
 
 test("B12: an R-style $ in C2 is named, with the Julia way to reach a column for that move", () => {
   const rates = client.c2ErrorNextStep(errorResult("rates", DOLLAR));
   assert.match(rates, /R's \$ does not exist in Julia/);
   assert.match(rates, /with a dot/);
-  assert.match(rates, /summary\.detected_n/);
+  assert.match(rates, /counts\.detected_n/);
   assertNoAnswerLine(rates);
   for (const step of ["group", "counts"]) {
     const line = client.c2ErrorNextStep(errorResult(step, DOLLAR));
@@ -43,20 +43,20 @@ test("B12: an R-style $ in C2 is named, with the Julia way to reach a column for
 test("B12: a $ that Julia reads around the division is coached from its detected_n error", () => {
   const line = client.c2ErrorNextStep(errorResult("rates", DETECTED_N));
   assert.match(line, /:detected_n/, "the colon form for making the column in combine");
-  assert.match(line, /summary\.detected_n/, "the dot form for reading it from the summary");
+  assert.match(line, /counts\.detected_n/, "the dot form for reading it from the summary");
   // The same UndefVarError also comes from `summary.rate = detected_n ./ n` with no $ typed, so the line
   // names the dotted form without blaming R's $ (review note, 2026-09-24).
   assert.doesNotMatch(line, /\$/, "the error text cannot show that $ was typed");
   assertNoAnswerLine(line);
   const n = client.c2ErrorNextStep(errorResult("rates", DETECTED_N.replace(/detected_n/g, "n")));
   assert.match(n, /:n\b/);
-  assert.match(n, /summary\.n\b/);
+  assert.match(n, /counts\.n\b/);
 });
 
 test("B12: pandas-style summary[\"rate\"] is coached toward the Julia form", () => {
   const rates = client.c2ErrorNextStep(errorResult("rates", PANDAS));
   assert.match(rates, /pandas/);
-  assert.match(rates, /summary\.detected_n/);
+  assert.match(rates, /counts\.detected_n/);
   assertNoAnswerLine(rates);
   assert.match(client.c2ErrorNextStep(errorResult("group", PANDAS)), /:tray_id/);
 });
@@ -111,7 +111,7 @@ test("B14: the page draws tables, the rack and the rate parts with Julia's text,
 test("Rates copy agrees with the B09 data: every tray holds the same number of jars", () => {
   const purpose = client.casePurpose("rates");
   assert.doesNotMatch(purpose, /can hold different numbers|hold different numbers of jars/i, "the purpose line does not claim these trays differ in size");
-  assert.match(purpose, /fairly compare trays/i);
-  assert.match(client.lessonCopy("rates").teaching, /every tray has the same number of jars/);
+  assert.match(purpose, /small count/i);
+  assert.match(client.lessonCopy("rates").teaching, /compare trays of any size/);
   assert.doesNotMatch(purpose, /—/, "no em dash in new learner-facing text");
 });

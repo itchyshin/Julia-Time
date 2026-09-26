@@ -12,7 +12,7 @@ for (const chapter of [3, 4, 5, 6]) {
     const editor = html.indexOf('id="code"');
     assert.ok(answer >= 0, "an answer reference target is required");
     assert.ok(answer < editor, "the answer reference belongs immediately before the editor");
-    assert.match(source, /(Complete runnable answer|Reference code answer — runnable Julia)/);
+    assert.match(source, /(Complete runnable answer|Reference code answer(:| —) runnable Julia)/);
     assert.match(source, /document\.createElement\("pre"\)/);
   });
 }
@@ -20,7 +20,7 @@ for (const chapter of [3, 4, 5, 6]) {
 test("runnable references look like code answers and explain where live Julia output appears", () => {
   for (const sourceFile of ["mystery.js", "chapter2.js", "chapter3.js", "chapter5.js", "chapter6.js"]) {
     const source = fs.readFileSync(`web/${sourceFile}`, "utf8");
-    assert.match(source, /Reference code answer — runnable Julia/,
+    assert.match(source, /Reference code answer(:| —) runnable Julia/,
       `${sourceFile} names a revealed solution as code, not prose`);
     assert.match(source, /Run this code in your editor to see Julia.?s actual returned value below Run/,
       `${sourceFile} tells the learner how to see a real Julia result`);

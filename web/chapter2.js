@@ -8,43 +8,66 @@
   "use strict";
   function storagePrefix(attempt) { const base = "julia-time:missing-fleas:v1:c2:"; return /^[a-z0-9-]{1,80}$/.test(attempt || "") ? base + "attempt:" + attempt + ":" : base; }
   function caseBoardUrl(search) { const attempt = new URLSearchParams(search || "").get("attempt"); return "course/index.html" + (/^[a-z0-9-]{1,80}$/.test(attempt || "") ? "?attempt=" + encodeURIComponent(attempt) : ""); }
-  function caseLocation(step) { return ({group:"Case 2 of 6 · Group by tray", counts:"Case 2 of 6 · Count records and detections", rates:"Case 2 of 6 · Calculate rates"})[step] || "Case 2 of 6 · Group by tray"; }
+  function caseLocation(step) { return ({group:"Chapter 2 of 6 · Put each tray’s jars together", counts:"Chapter 2 of 6 · Count jars and jars with fleas", rates:"Chapter 2 of 6 · Work out each tray’s share"})[step] || "Chapter 2 of 6 · Put each tray’s jars together"; }
   const attempt = typeof location === "undefined" ? "" : new URLSearchParams(location.search).get("attempt");
   const PREFIX = storagePrefix(attempt), EVIDENCE_KEY = PREFIX + "evidence", STEP_KEY = PREFIX + "step";
   const STEPS = ["group", "counts", "rates"];
   const INFO_DEADLINE_MS = 5000, RUN_DEADLINE_MS = 7000;
   function requestedMove(search) { const move = new URLSearchParams(search || "").get("move"); return STEPS.includes(move) ? move : ""; }
   function hasAcceptedMove(progress, step) { return Boolean(progress && progress.accepted && typeof progress.accepted[step] === "string" && progress.accepted[step].trim()); }
+  // Round-4 bots (2026-09-26): a solved step folds its notebook table closed so the result and tray rack are not
+  // buried; the next step opens it again. One click on the summary reopens it at any time.
+  function notebookOpen(stepAccepted) { return !stepAccepted; }
   function canEnterStep(progress, step) {
     const index = STEPS.indexOf(step);
     return index === 0 || (index > 0 && hasAcceptedMove(progress, STEPS[index - 1]));
   }
+  // The first unsolved step, or the last step once every step is solved — the same rule
+  // chapter3.js's and chapter5.js's `initialMove` use (2026-09-25 fix).
+  function unlockedStep(accepted) {
+    const a = accepted && typeof accepted === "object" ? accepted : {};
+    return a.counts ? "rates" : a.group ? "counts" : "group";
+  }
+  // With no step in the address, resume at the first unsolved step (or the last when all are
+  // solved), not at `progress.step` (the step last *visited*, which stays "group" once a learner
+  // accepts it without also clicking Next — the AI-student reload bug, 2026-09-25). An explicit,
+  // reachable step in the address still wins.
   function initialStep(progress, requested) {
-    const fallback = progress && STEPS.includes(progress.step) ? progress.step : "group";
-    if (!STEPS.includes(requested)) return fallback;
-    const accepted = progress && progress.accepted && typeof progress.accepted === "object" ? progress.accepted : {};
-    const unlocked = accepted.counts ? "rates" : accepted.group ? "counts" : "group";
+    const unlocked = unlockedStep(progress && progress.accepted);
+    if (!STEPS.includes(requested)) return unlocked;
     return STEPS.indexOf(requested) <= STEPS.indexOf(unlocked) ? requested : unlocked;
   }
+  // A learner with any accepted C2 move in this browser has work worth resuming into the
+  // investigation directly, the same signal chapter3.js's `hasOwnChapterWork` uses.
+  function hasOwnChapterWork(progress) { return Boolean(progress && progress.accepted && Object.keys(progress.accepted).length > 0); }
+  // The "same move in R and Python" card must not show for a step unless that step's accepted
+  // result is also visible on the page (2026-09-25 fix). C2 only restores a visible accepted
+  // result after a reload for the "rates" step (its final evidence table, labelled as saved from
+  // an earlier visit — see `renderEvidence`'s `restored` text); group and counts have no such
+  // restored display, so their card stays hidden until run again in this session.
+  function bridgeCardCode(step, progress, evidence, freshlyAccepted) {
+    const visible = Boolean(freshlyAccepted) || (step === "rates" && Boolean(evidence));
+    return visible && progress && progress.accepted && typeof progress.accepted[step] === "string" ? progress.accepted[step] : "";
+  }
   const COPY = {
-    group: {title:"First, make tray groups", prompt:"Put the simulated jar records into groups using the tray label.", shape:"Start with the supplied jars table. Group its rows by the tray_id column. Return the groups so Julia can show one group for each tray.", hints:["The table is called jars. groupby makes a GroupedDataFrame: a set of smaller tables, one per tray.",":tray_id names the tray_id column. The colon is part of Julia’s column-name syntax here; it is not indexing all rows."], answerCode:"groupby(jars, :tray_id)", returnSpec:"a group for each tray"},
-    counts: {title:"Now count records and detections", prompt:"Use the supplied jar table to build tray groups and return one row per tray with its record count and recorded detections.", shape:"Make tray groups from jars, then combine them into one summary row per tray. combine takes pairs: nrow => :n counts the rows, and :detected => sum => :detected_n counts the true values.", hints:["A fresh Julia run starts with the supplied jars table, so first create groups again and give that result a name.","combine turns each group into one summary row. nrow => :n counts rows and names that new column n; true values contribute 1 when sum counts :detected."], answerCode:"groups = groupby(jars, :tray_id)\ncombine(groups, nrow => :n, :detected => sum => :detected_n)", returnSpec:"tray_id, n, detected_n"},
-    rates: {title:"Compare proportions, not just totals", prompt:"Build the tray summary again, then add each tray’s detected proportion: detections divided by records.", shape:"Build one summary row per tray from jars, as in move 2. Add a rate column by dividing with the dot: detected_n ./ n divides tray by tray. Return the completed summary table.", hints:["Give the summary table a name, such as summary. Its columns are then summary.detected_n and summary.n; on their own, detected_n and n are not names Julia knows.","A rate needs a numerator and denominator: detected_n ./ n. The dot divides each tray’s matching entries, and = stores the new rate column on summary."], answerCode:"summary = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\nsummary.rate = summary.detected_n ./ summary.n\nsummary", returnSpec:"tray_id, n, detected_n, rate"}
+    group: {title:"Step 1 · Put each tray’s jars together", prompt:"Start from jars. Group its rows by the tray_id column and return the groups.", shape:"Grouping does not count or drop any jar. It just puts jars with the same tray label together.\n\nComing from R? In R you’d reach for dplyr’s group_by; Julia’s grouping function is spelled groupby.", hints:["groupby(table, :column). The colon before the column name is how Julia names a column here."], answerCode:"groupby(jars, :tray_id)", returnSpec:"the jars in groups, one group per tray"},
+    counts: {title:"Step 2 · Count jars and jars with fleas", prompt:"Group again, then use combine to turn each group into one row.", shape:"For each tray, count its rows, and count the jars where detected is true.\n\nComing from R? In R you’d reach for summarise after group_by; Julia’s version is combine.", hints:["combine(groupby(table, :column), nrow => :n) makes one row per group. Read nrow => :n aloud as “count the rows, call it n”. Then add a second piece after a comma: :detected => sum => :detected_n. Read it aloud as “take detected, sum it, call it detected_n”. Each => is one “then”."], answerCode:"counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)", returnSpec:"one row per tray with tray_id, n (jars on the tray) and detected_n (jars with fleas)"},
+    rates: {title:"Step 3 · Work out each tray’s share", prompt:"Build counts as in step 2. Then add the new column with counts.rate = counts.detected_n ./ counts.n, and end with counts on its own line.", shape:"A share is a top number divided by a bottom number: jars with fleas over all jars, tray by tray.\n\nComing from R? In R you’d reach for mutate; in Julia you add a column by assigning to it.", hints:["table.new_column = table.top ./ table.bottom, then the table’s name on the last line so Julia shows it."], answerCode:"counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts", returnSpec:"the counts table with one more column, rate: jars with fleas divided by all jars on that tray"}
   };
-  COPY.group.teaching="A row is one jar. groupby is the Julia function that does not count or discard jars: it puts rows with the same tray label together. jars is your supplied B09 table; :tray_id names its tray column. The comma separates the table argument from the column argument. Check the exact names in the “Use these real names” card below.";
-  COPY.counts.teaching="Every Run Julia check starts with the supplied jars table. Make groups in this same editor, then combine them into one row per tray. nrow => :n means count the rows and call the new column n. :detected => sum => :detected_n means source column → calculation → result name. true counts as 1; false counts as 0. Before running, pick one tray in the source table: how many jars and how many true entries should its summary contain?";
-  COPY.rates.teaching="Every Run Julia check starts with jars, so this move needs a complete little script: build the summary, add a rate column, then return summary. The dot in ./ divides corresponding entries, one tray at a time; = assigns that new column. Here every tray has the same number of jars: counts and proportions will rank them the same. The fraction still tells you the share of jars with a recorded detection—not the number of fleas.";
+  COPY.group.teaching="Put jars from the same tray together, so we compare like with like.";
+  COPY.counts.teaching="A tray label is not enough: we need how many jars, and how many had fleas, on each tray.";
+  COPY.rates.teaching="A share lets us compare trays of any size, not just their totals.";
   const COMPOSITION = Object.freeze({
     counts: Object.freeze([
       Object.freeze({id:"group", text:"groups = groupby(jars, :tray_id)"}),
-      Object.freeze({id:"summary", text:"summary = combine(groups, nrow => :n, :detected => sum => :detected_n)"}),
-      Object.freeze({id:"return", text:"summary"})
+      Object.freeze({id:"counts", text:"counts = combine(groups, nrow => :n, :detected => sum => :detected_n)"}),
+      Object.freeze({id:"return", text:"counts"})
     ]),
     rates: Object.freeze([
       Object.freeze({id:"group", text:"groups = groupby(jars, :tray_id)"}),
-      Object.freeze({id:"summary", text:"summary = combine(groups, nrow => :n, :detected => sum => :detected_n)"}),
-      Object.freeze({id:"rate", text:"summary.rate = summary.detected_n ./ summary.n"}),
-      Object.freeze({id:"return", text:"summary"})
+      Object.freeze({id:"counts", text:"counts = combine(groups, nrow => :n, :detected => sum => :detected_n)"}),
+      Object.freeze({id:"rate", text:"counts.rate = counts.detected_n ./ counts.n"}),
+      Object.freeze({id:"return", text:"counts"})
     ])
   });
   function compositionCards(step) { return (COMPOSITION[step] || []).map(card => ({id:card.id, text:card.text})); }
@@ -52,10 +75,10 @@
   function lessonCopy(step) { return COPY[step]; }
   function casePurpose(step) {
     return ({
-      group:"Put the records from the same tray together so the next check compares like with like.",
-      counts:"A tray label alone is not evidence: we need to know how many jars and how many recorded detections belong to each tray.",
-      rates:"Calculate a share so we can fairly compare trays of any size, not just their totals."
-    })[step] || "Use the visible B09 records to make the next checkable move.";
+      group:"Put jars from the same tray together, so we compare like with like.",
+      counts:"Toto: “T-C has one. So where did my zero come from?”",
+      rates:"Two jars per tray is a small count, so a share of 0.5 is only one jar."
+    })[step] || "";
   }
   // T2 (2026-09-12 playtest): the code shape used to render unconditionally in the main task
   // body, above the real input names, turning the move into substitution rather than a decision.
@@ -64,15 +87,19 @@
   // UI-09 (2026-09-24): the first staged hint is a plain-language plan, so its button offers the
   // smallest help first, as in C1, and the exhausted button is disabled rather than a no-op.
   function hintButtonLabel(shown, total) {
-    if (shown >= total) return "All hints shown";
-    if (shown === 0) return "Show a first nudge";
-    return shown === total - 1 ? "Show the last hint" : "Show the next hint";
+    if (shown >= total) return "All help shown";
+    if (shown === 0) return "Show the idea";
+    return shown === total - 1 ? "Show the code shape" : "Show more help";
   }
+  // Repair 7 (orchestrator browser check, 2026-09-26): mystery_c2_case_info now always supplies its
+  // own "question", so this no longer falls through to "goal" and overwrites the Case question box
+  // with the step-goal sentence already shown lower on the page (a duplicate, item 5).
+  function caseQuestionText(message) { return message.question || message.goal || "Do recorded detections differ by tray?"; }
   function freshRunNote(step) {
     return ({
       group:"Each run starts fresh from jars. Julia returns the value of your last line, so end with the groups.",
-      counts:"Each run starts fresh from jars, so make the groups again here. Julia returns the value of your last line, so end with the summary table.",
-      rates:"Each run starts fresh from jars, so build the summary again here. Julia returns the value of your last line, so end with summary on its own line."
+      counts:"Each run starts fresh from jars, so make the groups again here. Julia returns the value of your last line, so end with the counts table.",
+      rates:"Each run starts fresh from jars, so build counts again here. Julia returns the value of your last line, so end with counts on its own line."
     })[step] || "";
   }
   function createState() { return {connection:"connecting", infoRequestId:null, outstandingRequestId:null, expired:false, statusMessage:null, metadataFailure:"", activeStep:"group", result:null, evidence:null, unlocked:"group"}; }
@@ -170,6 +197,12 @@
   function c2ErrorNextStep(message) {
     if (!message || message.status !== "error") return "";
     const detail = displayError(message), step = message.step;
+    // Repair 7 (orchestrator browser check, 2026-09-26): a learner who kept `groups` or `counts`
+    // from an earlier step (e.g. combine(groups, ...) in step 2) got only Julia's raw
+    // "UndefVarError: `groups` not defined", with no hint that the name does not survive to a
+    // fresh step. Keyed on that exact error text, made in step 1 (groups) or step 2 (counts).
+    const carried = detail.match(/UndefVarError: `(groups|counts)` not defined/);
+    if (carried) return "`" + carried[1] + "` was made in step " + (carried[1] === "groups" ? "1" : "2") + ". Each step starts fresh, so make it again here, starting from jars.";
     if (/\b(?:table|group_column|count_rows|boolean_column|numerator|denominator)\b.*(?:not defined|doesn't exist)|(?:not defined|doesn't exist).*\b(?:table|group_column|count_rows|boolean_column|numerator|denominator)\b/i.test(detail)) return "That is a template word, not one of this chapter's inputs. Use the named B09 inputs above: jars, :tray_id, nrow, and :detected. Or use Show the complete answer just above your editor.";
     const column = detail.match(/UndefVarError: `(tray_id|detected)` not defined/);
     if (column) return column[1] + " is a column of jars, not a name Julia knows on its own. Name the column with a colon: :" + column[1] + ".";
@@ -186,15 +219,18 @@
     if (reversed) return "Julia looked for a column named " + reversed[1] + " before combine made it. In a combine pair the source comes first and the new name goes last: " + pairFor(reversed[1]) + ".";
     // Repair 2 (B12): R's $ and pandas' df["col"] habits. summary$rate = ... raises no error at
     // all (Julia reads it as a new function named $); src/mystery_c2.jl says so in the feedback.
-    const reach = step === "rates" ? "read a column from your table with a dot, such as summary.detected_n" : "inside groupby and combine, name a column with a colon, such as :tray_id";
+    const reach = step === "rates" ? "read a column from your table with a dot, such as counts.detected_n" : "inside groupby and combine, name a column with a colon, such as :tray_id";
     if (/UndefVarError: `\$` not defined/.test(detail)) return "R's $ does not exist in Julia: " + reach + ".";
     if (/syntax df\[column\] is not supported/.test(detail)) return "A Julia table does not take a column name alone in square brackets, as pandas does: " + reach + ".";
-    const summaryColumn = step === "rates" && detail.match(/UndefVarError: `(detected_n|n)` not defined/);
-    if (summaryColumn) return summaryColumn[1] + " is not a name Julia knows on its own. When combine makes it, write :" + summaryColumn[1] + ". When you read it from your summary table, write summary." + summaryColumn[1] + ", with a dot.";
+    const countsColumn = step === "rates" && detail.match(/UndefVarError: `(detected_n|n)` not defined/);
+    if (countsColumn) return countsColumn[1] + " is not a name Julia knows on its own. When combine makes it, write :" + countsColumn[1] + ". When you read it from your counts table, write counts." + countsColumn[1] + ", with a dot.";
     if (step === "rates" && /only allowed to pass a vector as a column|cannot broadcast array to have fewer non-singleton dimensions/.test(detail)) return "Dividing two whole columns needs the dot: detected_n ./ n divides tray by tray. A plain / does not, and the .= suggestion in Julia's original error does not fix this.";
     if (step !== "group" && /no method matching iterate\(::Symbol\)/.test(detail)) return "combine takes pairs, not name = value: write nrow => :n and :detected => sum => :detected_n. In sum(:detected), sum gets only the column's name, not its values, so it cannot add them up.";
     if (/no method matching combine\(.*;/.test(detail)) return "combine takes pairs, not name = value: write nrow => :n, not n = nrow, and :detected => sum => :detected_n for the detections.";
     if (/no method matching combine\(::Pair/.test(detail)) return "combine needs the grouped table first, then the pairs. Make the groups with groupby, then pass them to combine before nrow => :n.";
+    if (step === "counts" && /no method matching nrow\(::DataFrames\.GroupedDataFrame/.test(detail)) return "nrow does not take the groups directly here. Inside combine, write nrow => :n; combine calls nrow for you, once per group.";
+    const oldName = detail.match(/UndefVarError: `(summary)` not defined/);
+    if (oldName) return "This name changed: use counts instead of " + oldName[1] + ". " + (step === "counts" ? "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)" : "counts.rate = counts.detected_n ./ counts.n") + ".";
     return "";
   }
   // Repair 3 (R5c): combine(jars, ...) without groupby runs and returns one ungrouped row, so there
@@ -216,12 +252,15 @@
   // Julia's / on two whole numbers always returns a Float64, which Julia prints with a decimal point.
   function juliaDivision(value) { return Number.isInteger(value) ? value.toFixed(1) : String(value); }
   function resultText(message) { const explanation = message && message.explanation; const parts = [c2ErrorNextStep(message) || c2ResultNextStep(message), message && (message.feedback || message.message)]; if (message && message.value_repr) parts.push("Julia returned: " + message.value_repr); if (explanation && explanation.julia) parts.push(explanation.julia); if (explanation && explanation.case) parts.push(explanation.case); return parts.filter(Boolean).join(" ") || (message && message.status === "error" ? displayError(message) : "No explanation was returned."); }
-  function runOutcomeStatus(message) {
+  const NOT_SAVED_STATUS = "Right answer, but this computer could not save it, so the Case Board will not show it. Run it once more; if this keeps happening, ask your helper.";
+  // Ask the saved record itself, never the write call: a write can fail silently (blocked storage, a damaged record).
+  function savedMove(courseState, storage, attempt, chapter, moveId) { try { return Boolean(storage && courseState && typeof courseState.hasSavedMove === "function" && courseState.hasSavedMove(storage, attempt, chapter, moveId)); } catch (_) { return false; } }
+  function runOutcomeStatus(message, saved) {
     if (!message) return "";
-    if (message.status === "ok" && message.pass === true) return "✓ Accepted — evidence saved.";
-    if (message.status === "timeout") return "Not accepted — the run timed out. No evidence was saved.";
-    if (message.status === "error") return "Not accepted — Julia could not run this code. No evidence was saved.";
-    return "Not accepted — no evidence was saved.";
+    if (message.status === "ok" && message.pass === true) return saved === false ? NOT_SAVED_STATUS : "Julia checked it: that's right.";
+    if (message.status === "timeout") return "Not yet. Your code took too long, so the lab stopped it. Your code is still here.";
+    if (message.status === "error") return "Not yet. Julia could not run this code. Your code is still here.";
+    return "Not yet. Julia ran your code; the result below is not quite what we need.";
   }
   function requestId() { return "c2-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9); }
   function isCurrentSocket(active, callback) { return active === callback; }
@@ -251,10 +290,19 @@
   function init() {
     const $ = id => document.getElementById(id); let storage = null; try { storage = localStorage; } catch (_) {}
     const courseState = typeof window !== "undefined" ? window.JuliaTimeCourseState : null;
-    let state = createState(), socket = null, caseInfo = null, hints = 0, answerShown = false, reconnects = 0, timer = null, infoTimer = null, runTimer = null, stopped=false, compositionOrder=[];
+    let state = createState(), socket = null, caseInfo = null, hints = 0, answerShown = false, reconnects = 0, timer = null, infoTimer = null, runTimer = null, stopped=false, compositionOrder=[], saveOk = true;
     const progress=loadProgress(storage);
-    state.unlocked=progress.accepted.counts ? "rates" : progress.accepted.group ? "counts" : "group";
-    const el = {code:$("code"), run:$("run"), status:$("run-status"), output:$("result"), rows:$("returned-rows"), returnedEmpty:$("returned-empty"), sourceRows:$("source-rows"), rack:$("rack"), liveRack:$("live-rack"), groupingPreview:$("grouping-preview"), groupingPreviewResult:$("grouping-preview-result"), showGroups:$("show-groups"), stepTitle:$("step-title"), prompt:$("step-prompt"), purpose:$("case-purpose"), hints:$("hints"), hint:$("show-hint"), answer:$("show-answer"), answerOutput:$("complete-answer"), connection:$("connection"), reconnect:$("reconnect"), question:$("question"), draftNote:$("draft-note"), next:$("next-move"), rateParts:$("rate-parts"), composition:$("composition-scaffold"), compositionCards:$("composition-cards"), compositionFeedback:$("composition-feedback"), checkComposition:$("check-composition"), resetComposition:$("reset-composition")};
+    state.unlocked=unlockedStep(progress.accepted);
+    const el = {code:$("code"), run:$("run"), status:$("run-status"), output:$("result"), rows:$("returned-rows"), returnedEmpty:$("returned-empty"), sourceRows:$("source-rows"), rack:$("rack"), liveRack:$("live-rack"), groupingPreview:$("grouping-preview"), groupingPreviewResult:$("grouping-preview-result"), showGroups:$("show-groups"), stepTitle:$("step-title"), prompt:$("step-prompt"), purpose:$("case-purpose"), hints:$("hints"), hint:$("show-hint"), answer:$("show-answer"), answerOutput:$("complete-answer"), connection:$("connection"), reconnect:$("reconnect"), question:$("question"), draftNote:$("draft-note"), next:$("next-move"), rateParts:$("rate-parts"), composition:$("composition-scaffold"), compositionCards:$("composition-cards"), compositionFeedback:$("composition-feedback"), checkComposition:$("check-composition"), resetComposition:$("reset-composition"), bridgeCard:$("bridge-card")};
+    const bridges = typeof window !== "undefined" ? window.JuliaTimeBridges : null;
+    function renderBridgeCard(step) { if (bridges) bridges.renderCard(el.bridgeCard, "C2/"+step, typeof progress.accepted[step] === "string" ? progress.accepted[step] : ""); }
+    // The card must not show for a step unless that step's accepted result is also visible
+    // (2026-09-25 fix, bridgeCardCode above). Kept separate from renderBridgeCard itself so its
+    // existing single-step contract (test/bridge-card.test.cjs) is unchanged.
+    function showBridgeCard(step, freshlyAccepted) {
+      if (bridgeCardCode(step, progress, state.evidence, freshlyAccepted)) renderBridgeCard(step);
+      else if (el.bridgeCard) { el.bridgeCard.replaceChildren(); el.bridgeCard.hidden = true; }
+    }
     const saved = storage ? loadEvidence(storage) : null; if (saved) { state.evidence = saved; renderEvidence(saved, true); }
     function current() { return COPY[state.activeStep]; }
     function clearRunTimer() { if(runTimer) { clearTimeout(runTimer); runTimer=null; } }
@@ -276,6 +324,7 @@
       el.compositionFeedback.textContent=compositionOrder.length === 0 ? "Choose the first piece." : "Your construction: " + compositionOrder.map(id => cards.find(card => card.id === id).text).join(" → ");
     }
     function showTimeout() { el.output.replaceChildren(); const copy=document.createElement("p"); copy.textContent=state.result.feedback; el.output.append(copy); }
+    function setNotebookOpen(open) { const notebook = document.querySelector(".source-notebook"); if (notebook) notebook.open = open; }
     function setStep(step, focus=true) {
       clearRunTimer();
       if (!STEPS.includes(step)) return;
@@ -287,6 +336,7 @@
         return;
       }
       state = cancelRun(state); state.activeStep = step; hints = 0; answerShown = false; compositionOrder=[];
+      setNotebookOpen(notebookOpen(false));
       $("course-location").textContent = caseLocation(step);
       el.stepTitle.textContent = current().title; el.prompt.textContent = current().prompt; el.purpose.textContent = casePurpose(step); $("return-spec").textContent = current().returnSpec; $("fresh-run").textContent = freshRunNote(step);
       $("step-teaching").textContent=current().teaching;
@@ -294,12 +344,12 @@
       const draft = starterDraft(storage, step);
       progress.step=step; saveProgress(storage,progress);
       el.code.value = draft; el.draftNote.textContent = draft ? "Restored your saved draft for this move; it is not supplied code." : "This editor begins empty. Each run starts with the supplied jars table, so write the complete little script for this move.";
-      el.hints.textContent = ""; el.hint.textContent = hintButtonLabel(0, allHints(step).length); el.hint.disabled = false; el.answerOutput.replaceChildren(); el.answer.textContent = "Show the complete answer"; el.answer.disabled = false; el.output.replaceChildren(); el.rows.replaceChildren(); el.liveRack.replaceChildren(); el.returnedEmpty.hidden = false; el.next.hidden = true; renderComposition();
+      el.hints.textContent = ""; el.hint.textContent = hintButtonLabel(0, allHints(step).length); el.hint.disabled = false; el.answerOutput.replaceChildren(); el.answer.textContent = "Show the complete answer"; el.answer.disabled = false; el.output.replaceChildren(); el.rows.replaceChildren(); el.liveRack.replaceChildren(); el.returnedEmpty.hidden = false; el.next.hidden = true; renderComposition(); showBridgeCard(step, false);
       if (caseInfo) renderCase(caseInfo);
       refreshMoveNav(); updateControls(); if(focus) { el.stepTitle.tabIndex=-1; el.stepTitle.focus(); }
     }
     function refreshMoveNav() { document.querySelectorAll(".moves > [data-step]").forEach(b => { b.setAttribute("aria-current", b.dataset.step === state.activeStep ? "step" : "false"); b.disabled = !canEnterStep(progress, b.dataset.step); }); }
-    function updateControls() { const busy = isRunPending(state); el.run.disabled = state.connection !== "connected" || !caseInfo || busy; el.status.textContent = busy ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result) : (state.connection === "connected" ? "Ready when you are" : "Connect to the lab to run Julia")); el.reconnect.hidden = !shouldShowReconnect(state); }
+    function updateControls() { const busy = isRunPending(state); el.run.disabled = state.connection !== "connected" || !caseInfo || busy; el.status.textContent = busy ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result, saveOk) : (state.connection === "connected" ? "Ready when you are" : "Connect to the lab to run Julia")); el.reconnect.hidden = !shouldShowReconnect(state); }
     function renderTable(rows, columns, target = el.rows, texts = null) { target.replaceChildren(); if (!Array.isArray(rows) || !Array.isArray(columns)) return; const table = document.createElement("table"), head = document.createElement("thead"), tr = document.createElement("tr"); columns.forEach(c => { const th=document.createElement("th"); th.textContent=c; tr.append(th); }); head.append(tr); table.append(head); const body=document.createElement("tbody"); rows.forEach((row, i) => { const r=document.createElement("tr"); columns.forEach(c => { const td=document.createElement("td"); td.textContent=juliaCell(row, Array.isArray(texts) ? texts[i] : null, c); r.append(td); }); body.append(r); }); table.append(body); target.append(table); }
     function renderGroupingPreview(rows) {
       el.groupingPreview.replaceChildren();
@@ -324,8 +374,8 @@
       });
       if(step !== "group") {const note=document.createElement("small"); note.textContent="Each symbol represents one counted jar, not a particular jar ID."; target.append(note);}
     }
-    function renderEvidence(evidence, restored) { renderRack("rates",evidence.rows,el.rack,evidence.row_text); $("evidence").hidden=false; $("comparisons").hidden=restored; $("evidence-copy").textContent = restored ? "Unverified saved display from this browser, not a fresh lab check. Saved data can be changed or become stale. Run the final move again to verify these values against the server's B09 records." : "These are your checked returned summaries. They describe recorded detections by tray, not a cause. Pick two trays: explain their detected counts, jar counts and proportions. What would you want to check in the handling log next?"; }
-    function renderCase(message) { caseInfo = message; state = Object.assign({}, state, {infoRequestId:null, metadataFailure:""}); clearInfoTimer(); const q = message.question || message.goal || "Do recorded detections differ by tray?"; el.question.textContent=q; if (Array.isArray(message.rows) && Array.isArray(message.columns)) renderTable(message.rows, message.columns, el.sourceRows); const example=rateExample(message.rows);if(state.activeStep==="rates"&&example)el.rateParts.innerHTML=`<strong>Rate parts:</strong> In tray <code>${example.tray_id}</code>, <code>detected_n</code> is ${example.detected_n} and <code>n</code> is ${example.n}, so <code>${example.detected_n} / ${example.n} = ${juliaDivision(example.rate)}</code>. Julia applies that matching division to every tray with <code>detected_n ./ n</code>.`; updateControls(); }
+    function renderEvidence(evidence, restored) { renderRack("rates",evidence.rows,el.rack,evidence.row_text); $("evidence").hidden=false; $("evidence-copy").textContent = restored ? "Unverified saved display from this browser. Run it again to check it today. Saved data can be changed or become stale. Run the final move again to verify these values against the server's B09 records." : "These are your checked returned summaries. They describe recorded detections by tray, not a cause. Pick two trays: explain their detected counts, jar counts and proportions. What would you want to check on the tally sheet next?"; }
+    function renderCase(message) { caseInfo = message; state = Object.assign({}, state, {infoRequestId:null, metadataFailure:""}); clearInfoTimer(); el.question.textContent=caseQuestionText(message); if (Array.isArray(message.rows) && Array.isArray(message.columns)) renderTable(message.rows, message.columns, el.sourceRows); const example=rateExample(message.rows);if(state.activeStep==="rates"&&example)el.rateParts.innerHTML=`<strong>Rate parts:</strong> In tray <code>${example.tray_id}</code>, <code>detected_n</code> is ${example.detected_n} and <code>n</code> is ${example.n}, so <code>${example.detected_n} / ${example.n} = ${juliaDivision(example.rate)}</code>. Julia applies that matching division to every tray with <code>detected_n ./ n</code>.`; updateControls(); }
     function handle(message) {
       if (isCurrentCaseInfo(state, message)) return renderCase(message);
       if (message.type === "error") { const before=state; state=failCaseInfo(state,message); if(before!==state) { clearInfoTimer(); el.sourceRows.textContent=state.metadataFailure; updateControls(); } return; }
@@ -338,17 +388,23 @@
       if(result.value_repr || result.message || result.stdout) {
         const raw=document.createElement("details"), summary=document.createElement("summary"), pre=document.createElement("pre");
         summary.textContent=result.status === "error" ? "Original Julia error" : "Actual Julia output";
-        pre.textContent=[result.stdout,result.message,result.value_repr].filter(Boolean).join("\n"); raw.append(summary,pre); el.output.append(raw);
+        // Mia's playtest: sibling elements built with createElement carry no whitespace between
+        // them, so a plain textContent read (unlike the visual, block-level layout) ran the
+        // explanation straight into "Actual Julia output" and that straight into the raw Julia
+        // value, e.g. "...T-C included.Actual Julia output3×3 DataFrame...". A leading newline on
+        // the <pre> and a separating text node before it keep every reading of the page spaced.
+        pre.textContent="\n"+[result.stdout,result.message,result.value_repr].filter(Boolean).join("\n"); raw.append(summary,pre); el.output.append(document.createTextNode(" "),raw);
       }
       if (Array.isArray(result.rows) && Array.isArray(result.columns)) renderTable(result.rows,result.columns,el.rows,result.row_text);
       el.liveRack.replaceChildren();
       const freshEvidence=state.evidence !== before.evidence;
       if(result.status === "ok" && result.pass === true) {
         if(showsLiveRack(result,freshEvidence)) renderRack(result.step,result.rows,el.liveRack,result.row_text);
-        progress.accepted[state.activeStep]=el.code.value; saveProgress(storage,progress); refreshMoveNav();
-        persistAcceptedCourseState(courseState, storage, attempt, state.activeStep, result);
+        setNotebookOpen(notebookOpen(true));
+        progress.accepted[state.activeStep]=el.code.value; saveProgress(storage,progress); refreshMoveNav(); showBridgeCard(state.activeStep, true);
+        persistAcceptedCourseState(courseState, storage, attempt, state.activeStep, result); saveOk = savedMove(courseState, storage, attempt, "C2", state.activeStep);
         const next=nextStep(state.activeStep,result);
-        if(next) { if(next !== "chapter3" && STEPS.indexOf(next)>STEPS.indexOf(state.unlocked)) state.unlocked=next; el.next.hidden=false; el.next.dataset.destination=next; el.next.textContent=next === "chapter3" ? "Next: connect the report to the handling log →" : "Next move: " + COPY[next].title + " →"; }
+        if(next) { if(next !== "chapter3" && STEPS.indexOf(next)>STEPS.indexOf(state.unlocked)) state.unlocked=next; el.next.hidden=false; el.next.dataset.destination=next; el.next.textContent=next === "chapter3" ? "Chapter 3: where did the 0 come from? →" : "Next: " + COPY[next].title + " →"; }
       }
       el.returnedEmpty.hidden = el.rows.childElementCount > 0 || el.liveRack.childElementCount > 0;
       if(state.evidence) {
@@ -365,7 +421,7 @@
       ws.addEventListener("message", event => { if(!isCurrentSocket(socket,ws)) return; try { handle(JSON.parse(event.data)); } catch (_) {} });
       ws.addEventListener("close", () => { if(!isCurrentSocket(socket,ws)) return; clearInfoTimer(); clearRunTimer(); state=disconnect(state); retry(); });
     }
-    function retry() { if(stopped) return; clearInfoTimer(); state=disconnect(state); updateControls(); if (++reconnects > 3) { el.connection.textContent="Lab link offline — your draft is still here."; return; } el.connection.textContent="Lab link interrupted — reconnecting…"; timer=setTimeout(connect, 1000 * reconnects); }
+    function retry() { if(stopped) return; clearInfoTimer(); state=disconnect(state); updateControls(); if (++reconnects > 3) { el.connection.textContent="Lab link offline: your draft is still here."; return; } el.connection.textContent="Lab link interrupted, reconnecting…"; timer=setTimeout(connect, 1000 * reconnects); }
     document.querySelectorAll(".moves [data-step]").forEach(b => b.addEventListener("click", () => setStep(b.dataset.step)));
     el.showGroups.addEventListener("click", () => {
       if (!caseInfo || !Array.isArray(caseInfo.rows)) { el.groupingPreviewResult.textContent="The jar records are still loading. Your code draft is unaffected."; return; }
@@ -375,7 +431,7 @@
       const cards=compositionCards(state.activeStep);
       if (!cards.length) return;
       if (compositionOrder.length !== cards.length) { el.compositionFeedback.textContent="Choose every piece, then check the order."; return; }
-      el.compositionFeedback.textContent=compositionIsCorrect(state.activeStep,compositionOrder) ? "Yes. That is the build order. These use the real names from this chapter; this practice did not run Julia, add evidence, or write code for you." : "Not yet. A later line needs a name made by an earlier line. Start again and build from the supplied jars table toward the returned summary.";
+      el.compositionFeedback.textContent=compositionIsCorrect(state.activeStep,compositionOrder) ? "Yes. That is the build order. These use the real names from this chapter; this practice did not run Julia, add evidence, or write code for you." : "Not yet. A later line needs a name made by an earlier line. Start again and build from the supplied jars table toward the returned counts table.";
     });
     el.resetComposition.addEventListener("click",()=>{compositionOrder=[];renderComposition();});
     el.code.addEventListener("input", () => { clearRunTimer(); state=cancelRun(state); el.next.hidden=true; if(storage) persistDraft(storage,state.activeStep,el.code.value); updateControls(); });
@@ -389,7 +445,7 @@
     function revealCompleteAnswer() {
       if (answerShown) return;
       const label=document.createElement("p"), pre=document.createElement("pre"), note=document.createElement("p");
-      label.className="complete-answer-label"; label.textContent="Reference code answer — runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or add evidence.";
+      label.className="complete-answer-label"; label.textContent="Reference code answer: runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or count as a saved answer.";
       pre.className="complete-answer-code"; pre.textContent=current().answerCode;
       note.textContent="Each Run Julia check starts fresh with the supplied jars table, so this block includes every line it needs.";
       el.answerOutput.append(label,pre,note); answerShown=true; el.answer.textContent="Complete answer shown"; el.answer.disabled=true;
@@ -401,6 +457,11 @@
     $("case-board").href = caseBoardUrl(location.search);
     $("new-attempt").addEventListener("click", () => { const url=new URL(location.href); url.searchParams.set("attempt",requestId()); location.assign(url.href); });
     setStep(initialStep(progress, requestedMove(location.search)),false);
+    // A learner with saved C2 progress (or an explicit move in the address, as the Case Board's
+    // Continue link sends) lands in the investigation directly, instead of the story screen they
+    // already read (2026-09-25 fix; matches chapter3.js's resume behaviour). The story stays
+    // reachable through the existing "Back to the story" button.
+    if (hasOwnChapterWork(progress) || requestedMove(location.search)) { $("scene").hidden=true; $("investigation").hidden=false; }
     $("start-investigation").addEventListener("click", () => {
       $("scene").hidden=true; $("investigation").hidden=false;
       el.stepTitle.tabIndex=-1; el.stepTitle.focus();
@@ -413,5 +474,5 @@
     $("reconnect").addEventListener("click", () => { reconnects=0; connect(); });
     window.addEventListener("pagehide", () => { stopped=true; clearTimeout(timer); clearInfoTimer(); clearRunTimer(); state=cancelRun(state); if(socket) socket.close(); }); connect();
   }
-  return {INFO_DEADLINE_MS, RUN_DEADLINE_MS, storagePrefix, caseBoardUrl, caseLocation, nextChapterUrl, requestedMove, initialStep, canEnterStep, blockedStepMessage, createState, beginInfo, failCaseInfo, expireInfo, isCurrentCaseInfo, beginRun, cancelRun, expireRun, isRunPending, applyRunStatus, leaveInvestigation, disconnect, shouldShowReconnect, applyCaseResult, validEvidenceDisplay, persistDraft, loadDraft, hasDraft, starterDraft, saveProgress, loadProgress, persistEvidence, loadEvidence, rackLabels, rateExample, groupingPreview, groupingPreviewMessage, jarMarks, showsLiveRack, nextStep, resultText, juliaCell, juliaDivision, runOutcomeStatus, displayError, c2ErrorNextStep, c2ResultNextStep, isCurrentSocket, lessonCopy, casePurpose, allHints, hintButtonLabel, freshRunNote, compositionCards, compositionIsCorrect, courseStepTitle, courseEvidencePayload, persistAcceptedCourseState, init};
+  return {notebookOpen, INFO_DEADLINE_MS, RUN_DEADLINE_MS, storagePrefix, caseBoardUrl, caseLocation, nextChapterUrl, requestedMove, initialStep, unlockedStep, hasOwnChapterWork, bridgeCardCode, canEnterStep, blockedStepMessage, createState, beginInfo, failCaseInfo, expireInfo, isCurrentCaseInfo, beginRun, cancelRun, expireRun, isRunPending, applyRunStatus, leaveInvestigation, disconnect, shouldShowReconnect, applyCaseResult, validEvidenceDisplay, persistDraft, loadDraft, hasDraft, starterDraft, saveProgress, loadProgress, persistEvidence, loadEvidence, rackLabels, rateExample, groupingPreview, groupingPreviewMessage, jarMarks, showsLiveRack, nextStep, resultText, juliaCell, juliaDivision, runOutcomeStatus, displayError, c2ErrorNextStep, c2ResultNextStep, isCurrentSocket, lessonCopy, casePurpose, allHints, hintButtonLabel, freshRunNote, caseQuestionText, compositionCards, compositionIsCorrect, courseStepTitle, courseEvidencePayload, persistAcceptedCourseState, init};
 });

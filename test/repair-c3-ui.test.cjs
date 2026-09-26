@@ -108,7 +108,7 @@ test("UI-12: an R (dplyr) join name gets a line keyed on Julia's error, before t
   const newer = client.errorRecovery("join-report-log", {status:"error", message:"UndefVarError: `left_join` not defined in `Main`\nSuggestion: check for spelling errors or missing imports."});
   assert.match(newer, /^left_join is an R \(dplyr\) name/, "Julia 1.11+ wording is recognised too");
   for (const text of [leftJoin, byKeyword]) {
-    assert.doesNotMatch(text, /leftjoin\(report, handling_log, on=:tray_id\)/, "no reference answer");
+    assert.doesNotMatch(text, /leftjoin\(tray_counts, tally_sheet, on=:tray_id\)/, "no reference answer");
     assert.doesNotMatch(text.slice(0, text.length - recovery.length), EM_DASH);
   }
 });
@@ -132,12 +132,12 @@ test("B9: C3 code-shape hints name their placeholders and map them to the case n
   assert.equal(rowRule.text, "row_rule = table.left_count .!= table.right_count", "the code line itself stays a generic shape");
   assert.match(rowRule.note, /placeholder/i);
   assert.match(rowRule.note, /table is joined/);
-  assert.match(rowRule.note, /left_count is reported_detected_n/);
-  assert.match(rowRule.note, /right_count is logged_detected_n/);
+  assert.match(rowRule.note, /left_count is notebook_detected/);
+  assert.match(rowRule.note, /right_count is sheet_detected/);
   const joinShape = client.helpStage("join-report-log", 1);
   assert.equal(joinShape.label, "Code shape");
-  assert.match(joinShape.note, /left_table, right_table and shared_column are placeholders/);
-  assert.match(joinShape.note, /Use these exact Julia names in your editor/, "points at the names card by its visible heading");
+  assert.match(joinShape.note, /placeholders/i);
+  assert.match(joinShape.note, /the table names above/);
   for (const move of ["join-report-log", "filter-disagreement"]) {
     const solution = client.lessonCopy(move).solution;
     for (let index = 0; client.helpStage(move, index); index += 1) {

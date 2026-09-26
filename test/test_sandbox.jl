@@ -199,8 +199,12 @@ end
     stale = lock(JuliaTime._POOL_LOCK) do
         pop!(JuliaTime._POOL)
     end
-    kill(stale.process)
-    wait(stale.process)
+    # SIGKILL, and a bounded wait (2026-09-26): this simulates a pooled worker that died. A real death and the
+    # sandbox's own _kill_worker! are immediate; the default SIGTERM makes Julia take a slow exit path (2-5 s
+    # locally, 12 s on CI) and an unbounded wait(process) on it was the one open-ended wait in this file, the
+    # lead for CI run 36203806989's 25-minute silence here. Same pattern as _kill_out_of_band below.
+    Sys.iswindows() ? kill(stale.process) : kill(stale.process, Base.SIGKILL)
+    @test Base.timedwait(() -> process_exited(stale.process), 30.0; pollint=0.05) === :ok
     stale.ready = false
     lock(JuliaTime._POOL_LOCK) do
         push!(JuliaTime._POOL, stale)   # a dead worker at the front of the pool

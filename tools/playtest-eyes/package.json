@@ -1,0 +1,9 @@
+{
+  "name": "playtest-eyes",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Headless-browser eyes for an AI student playing Julia Time",
+  "dependencies": {
+    "playwright": "1.60.0"
+  }
+}

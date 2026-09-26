@@ -6,73 +6,62 @@
 Julia. You write real Julia to investigate a simulated water-flea mystery; the
 screen shows what the code returned and what that result means for the case.
 
-You are in the right place before you download anything. This repository is the
-public doorway; the game itself runs privately on the learner's own computer so
-that the Julia code in the investigation is real.
+You are in the right place before you download anything. The game runs on your
+own computer, so the Julia code in the investigation is real.
 
-## Start here — before you download
+## Start here
 
-[**Download Julia Time**](https://github.com/itchyshin/Julia-Time/releases/latest)
+You need a Windows, Mac, or Linux computer (not a Chromebook, tablet, or phone;
+a lab computer is fine), plus three things:
 
-Download the ZIP from the release page, then follow the four steps below. You do not need to clone this repository, create a GitHub account, or
-understand a terminal before downloading.
-
-You need only three things:
-
-1. a **Julia Time archive** downloaded from this repository's
+1. a **Julia Time archive** from this repository's
    [Releases](https://github.com/itchyshin/Julia-Time/releases);
-2. **Julia 1.10.x**, the long-term-support version (not the newest Julia), installed once;
-3. an **internet connection for the first setup**, while Julia downloads this
-   folder's declared packages.
+2. **Julia 1.10.x**, the long-term-support version (not the newest Julia);
+3. an **internet connection for the first setup**.
 
-Do **not** install R, Python, NumPy, a Julia package called `JuliaTime`, or a
-GitHub account to play the mystery. R, Python, and NumPy belong only to a
-separate optional comparison laboratory after the game.
+You do not need a GitHub account or any terminal knowledge.
+Do **not** install R, Python, NumPy, or a Julia package called `JuliaTime`; R,
+Python, and NumPy are only for an optional comparison after the game.
 
-### Download, install, play
+### Three steps
 
-1. **Download and extract.** On the release page, click the `Julia-Time-<version>.zip`
-   file under *Assets*.
-   - **Windows:** right-click the ZIP and choose **Extract All**. Windows makes a folder
-     inside a folder: open the inner `Julia-Time-<version>` folder, the one that contains
-     `Play-Julia-Time-Windows`. Do not run the game from inside the ZIP.
+1. **Download and extract.** [**Download Julia Time**](https://github.com/itchyshin/Julia-Time/releases/latest)
+   and click the `Julia-Time-<version>.zip` file under *Assets*.
+   - **Windows:** right-click the ZIP, choose **Extract All**, then open the inner
+     `Julia-Time-<version>` folder (the one that contains `Play-Julia-Time-Windows`).
+     Do not run the game from inside the ZIP.
    - **Mac:** double-click the ZIP (Safari may already have done this), then open the
      `Julia-Time-<version>` folder.
-2. **Install Julia 1.10** and keep the installer's suggested choices:
-   - Windows 64-bit: [julia-1.10.12-win64.exe](https://julialang-s3.julialang.org/bin/winnt/x64/1.10/julia-1.10.12-win64.exe)
+2. **Install Julia 1.10**, keeping the installer's suggested choices:
+   - Windows 64-bit: [julia-1.10.12-win64.exe](https://julialang-s3.julialang.org/bin/winnt/x64/1.10/julia-1.10.12-win64.exe).
+     If asked, choose **Install for me only** (no administrator rights needed).
    - Mac with Apple Silicon (Apple menu > **About This Mac** shows "Chip Apple M…"):
      [julia-1.10.12-macaarch64.dmg](https://julialang-s3.julialang.org/bin/mac/aarch64/1.10/julia-1.10.12-macaarch64.dmg);
      open it and drag Julia into Applications.
    - Mac with an Intel processor (**About This Mac** shows "Processor … Intel"):
-     [julia-1.10.12-mac64.dmg](https://julialang-s3.julialang.org/bin/mac/x64/1.10/julia-1.10.12-mac64.dmg)
-   - Linux, or a later 1.10.x: the
-     [official Julia 1.10 LTS downloads](https://julialang.org/downloads/manual-downloads/#long_term_support_release).
+     [julia-1.10.12-mac64.dmg](https://julialang-s3.julialang.org/bin/mac/x64/1.10/julia-1.10.12-mac64.dmg).
+   - Linux: the [official Julia 1.10 LTS downloads](https://julialang.org/downloads/manual-downloads/#long_term_support_release).
 
-   A newer Julia already on your computer is fine: Julia Time finds the 1.10 beside it.
-   If the Windows installer asks, choose **Install for me only**; that needs no
-   administrator rights. Julia Time cannot run on a Chromebook, tablet, or phone; use a
-   Windows, Mac, or Linux computer (a lab computer is fine).
-3. **Play: double-click one file** in the extracted folder.
-   - **Windows:** double-click `Play-Julia-Time-Windows`. If Windows says it protected
-     your PC, or asks about an unknown publisher, choose **More info**, then **Run anyway**
-     (or **Run**).
-   - **Mac:** double-click `Play-Julia-Time-Mac.command`. If macOS says it cannot verify
-     the file, click **Done**, open **System Settings > Privacy & Security**, scroll down,
-     click **Open Anyway** next to `Play-Julia-Time-Mac.command`, then double-click it again.
-     If asked whether Terminal may access your Downloads folder, click **Allow**.
-   - **Linux:** run `chmod +x tools/setup/launch-linux.sh` once, then run
+   A newer Julia already on your computer is fine; Julia Time finds the 1.10 beside it.
+3. **Double-click to play.**
+   - **Windows:** `Play-Julia-Time-Windows`. If Windows says it protected your PC, choose
+     **More info**, then **Run anyway** (or **Run**).
+   - **Mac:** `Play-Julia-Time-Mac.command`. The first time, macOS says it cannot verify
+     the file: click **Done**, open **System Settings > Privacy & Security**, click
+     **Open Anyway**, then double-click it again. If asked about your Downloads folder,
+     click **Allow**.
+   - **Linux:** run `chmod +x tools/setup/launch-linux.sh` once, then
      `tools/setup/launch-linux.sh` whenever you want to play.
 
-   The first time, it prepares this folder's Julia packages (several minutes, needs
-   internet), then opens the Case Board in your browser. Later starts take seconds.
-4. **Keep the black window (Windows) or Terminal window (Mac) open while you play.** It
-   runs the game on **your own computer**. Press Enter in that window when you are done.
+   The first start prepares Julia's packages (several minutes), then opens the game in
+   your browser. Later starts take seconds. Keep the black window (Windows) or Terminal
+   window (Mac) open while you play, and press Enter in it when you are done.
 
-The earlier helpers still work: on Windows, `tools/setup/setup-windows.cmd` (one-time
-setup) and `tools/setup/launch-windows.cmd`; on a Mac, `tools/setup/launch-macos.command`.
-The detailed platform-specific commands and recovery steps are in
-[the installation guide](docs/install.md). The bundled visual guide opens from
-your downloaded folder as [Start Here](web/course/getting-started.html).
+**If the game does not appear**, double-click the same file again: if Julia Time is
+already running, it reopens the game. Still stuck? See
+[the installation guide](docs/install.md) or the bundled
+[Start Here](web/course/getting-started.html) page. The guide also covers the separate
+helpers `tools/setup/setup-windows.cmd` and `tools/setup/launch-macos.command`.
 
 ## What happens when you play
 
@@ -82,10 +71,11 @@ explanations. The code is the investigative move: a successful run returns
 actual data, changes the evidence you can see, and explains both what it does
 and what it does not establish.
 
-After you launch the local lab, the Case Board is at
-`http://127.0.0.1:8000/course/index.html`. That address works only on the
-computer running Julia Time; it is not a public website or a link for someone
-else's machine.
+After you launch the local lab, the Case Board is usually at
+`http://127.0.0.1:8000/course/index.html`; if another program already uses that
+address, the launcher picks the next free one (8001, 8002, …) and prints it. The
+address works only on the computer running Julia Time; it is not a public website
+or a link for someone else's machine.
 
 The case data are simulated from a seeded generator. Your work is saved only
 in your browser; there is no account, score, leaderboard, or remote server.

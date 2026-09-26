@@ -23,6 +23,10 @@
     {key:"C6/compatible-models", chapter:"C6", move_id:"compatible-models"}
   ]);
   const MOVE_BY_KEY = Object.freeze(Object.fromEntries(KNOWN_MOVES.map(move => [move.key, move])));
+  // Moves that existed in an earlier build and may still sit in a learner's browser. They are dropped on
+  // read; without this, one retired name made the whole record "malformed" and every later save failed
+  // silently (2026-09-25 playtest: "C4/select-eligible", live 2026-09-08 to 2026-09-09).
+  const RETIRED_MOVE_KEYS = Object.freeze(["C4/select-eligible"]);
 
   function attemptId(value) { return typeof value === "string" && ATTEMPT_PATTERN.test(value); }
   function coursePrefix(attempt) { return attemptId(attempt) ? BASE_PREFIX + "attempt:" + attempt + ":" : BASE_PREFIX; }
@@ -88,13 +92,16 @@
     if (!plainRecord(raw) || raw.schema_version !== 1 || raw.case_id !== CASE_ID || !plainRecord(raw.accepted)) return null;
     if (Object.keys(raw).some(key => !["schema_version", "case_id", "accepted"].includes(key))) return null;
     const state = makeCourseState(raw);
-    return Object.keys(state.accepted).length === Object.keys(raw.accepted).length ? state : null;
+    const current = Object.keys(raw.accepted).filter(key => !RETIRED_MOVE_KEYS.includes(key));
+    return Object.keys(state.accepted).length === current.length ? state : null;
   }
 
   function rawValue(storage, key) {
     try { return storage && typeof storage.getItem === "function" && key ? storage.getItem(key) : null; } catch (_) { return null; }
   }
-  function writeRaw(storage, key, value) { try { storage.setItem(key, value); return true; } catch (_) { return false; } }
+  // Announce each saved write so on-page status (the progress bar) updates at once; a same-page write fires no storage event.
+  function announce(key) { try { if (typeof window !== "undefined" && typeof CustomEvent === "function") window.dispatchEvent(new CustomEvent("juliatime:saved", {detail:{key}})); } catch (_) {} }
+  function writeRaw(storage, key, value) { try { storage.setItem(key, value); announce(key); return true; } catch (_) { return false; } }
   function readJson(storage, key) { const raw = rawValue(storage, key); if (raw === null) return null; try { return JSON.parse(raw); } catch (_) { return null; } }
 
   function courseStateStatus(storage, attempt) {
@@ -127,6 +134,13 @@
   function acceptedMoves(state) {
     const accepted = state && plainRecord(state.accepted) ? state.accepted : {};
     return KNOWN_MOVES.filter(move => snapshotFor(move.key, accepted[move.key])).map(move => ({key:move.key, provenance:"historical-browser"}));
+  }
+  // True only when this browser's saved record really holds the move. A page must check this before it
+  // tells the learner their evidence was saved: a write can fail (blocked storage, a damaged record).
+  function hasSavedMove(storage, attempt, chapter, moveId) {
+    const move = moveFor(chapter, moveId);
+    if (!move || courseStateStatus(storage, attempt) !== "valid") return false;
+    return acceptedMoves(readCourseState(storage, attempt)).some(item => item.key === move.key);
   }
   function hasCourseContent(state) { return acceptedMoves(state).length > 0; }
   function mergeHistoricalImport(existing, imported) {
@@ -221,5 +235,5 @@
   function readImportRecord(storage, attempt) { return importRecord(readJson(storage, importKey(attempt))) || emptyImportRecord(); }
   function writeImportRecord(storage, attempt, record) { const copy = importRecord(record); return Boolean(copy && writeRaw(storage, importKey(attempt), JSON.stringify(copy))); }
 
-  return {CASE_ID, BASE_PREFIX, KNOWN_MOVES, attemptId, coursePrefix, courseKey, cursorKey, notesKey, importKey, evidenceKey, draftKey, emptyCourseState, emptyImportRecord, makeCourseState, courseStateStatus, readCourseState, writeInitialCourseState, writeCourseState, recordHistoricalMoveIfMissing, acceptedMoves, hasCourseContent, mergeHistoricalImport, readEvidence, writeEvidenceIfMissing, readNotes, writeNotes, readDraft, writeDraft, readChallengeDrafts, writeChallengeDraft, readCursor, writeCursor, readImportRecord, writeImportRecord};
+  return {CASE_ID, BASE_PREFIX, KNOWN_MOVES, attemptId, coursePrefix, courseKey, cursorKey, notesKey, importKey, evidenceKey, draftKey, emptyCourseState, emptyImportRecord, makeCourseState, courseStateStatus, readCourseState, writeInitialCourseState, writeCourseState, recordHistoricalMoveIfMissing, acceptedMoves, hasSavedMove, hasCourseContent, mergeHistoricalImport, readEvidence, writeEvidenceIfMissing, readNotes, writeNotes, readDraft, writeDraft, readChallengeDrafts, writeChallengeDraft, readCursor, writeCursor, readImportRecord, writeImportRecord};
 });

@@ -18,12 +18,12 @@ test("C2 exposes one named Case Board route and a plain-language location", () =
   assert.equal(typeof client.caseBoardUrl,"function");
   assert.equal(client.caseBoardUrl("?attempt=field-7"), "course/index.html?attempt=field-7");
   assert.equal(client.caseBoardUrl("?attempt=../../bad"), "course/index.html");
-  assert.equal(client.caseLocation("group"), "Case 2 of 6 · Group by tray");
-  assert.equal(client.caseLocation("counts"), "Case 2 of 6 · Count records and detections");
-  assert.equal(client.caseLocation("rates"), "Case 2 of 6 · Calculate rates");
+  assert.equal(client.caseLocation("group"), "Chapter 2 of 6 · Put each tray’s jars together");
+  assert.equal(client.caseLocation("counts"), "Chapter 2 of 6 · Count jars and jars with fleas");
+  assert.equal(client.caseLocation("rates"), "Chapter 2 of 6 · Work out each tray’s share");
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   assert.match(html,/id="case-board"/);
-  assert.match(html,/Case 2 of 6/);
+  assert.match(html,/Chapter 2 of 6/);
 });
 
 test("C2 keeps Reconnect out of the ready screen and exposes it only for recovery", () => {
@@ -44,7 +44,9 @@ test("C2 accepts a valid Case Board Continue move without bypassing saved progre
   assert.equal(client.initialStep(afterGroup, "rates"), "counts");
   const afterCounts = {step:"group", accepted:{group:"groups", counts:"summary"}};
   assert.equal(client.initialStep(afterCounts, "rates"), "rates");
-  assert.equal(client.initialStep(afterCounts, "not-a-move"), "group");
+  // No step in the address resumes at the first unsolved step (2026-09-25 fix), not at
+  // progress.step (the step last visited); see test/c2-resume.test.cjs.
+  assert.equal(client.initialStep(afterCounts, "not-a-move"), "rates");
 });
 
 test("an intentionally empty saved draft is different from a missing draft", () => {
@@ -57,9 +59,9 @@ test("an intentionally empty saved draft is different from a missing draft", () 
 
 test("C2 gives a plain accepted-or-not-accepted status after each case run", () => {
   assert.equal(typeof client.runOutcomeStatus, "function");
-  assert.equal(client.runOutcomeStatus({status:"ok", pass:true}), "✓ Accepted — evidence saved.");
-  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not accepted.*no evidence was saved/i);
-  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not accepted.*timed out/i);
+  assert.equal(client.runOutcomeStatus({status:"ok", pass:true}), "Julia checked it: that's right.");
+  assert.match(client.runOutcomeStatus({status:"ok", pass:false}), /Not yet\. Julia ran your code/i);
+  assert.match(client.runOutcomeStatus({status:"timeout", pass:false}), /Not yet.*took too long/i);
 });
 
 test("summary jar marks use returned counts without assigning specimen identities", () => {
@@ -95,12 +97,16 @@ test("C2's tangible grouping bridge names ingredients without printing a finishe
   assert.doesNotMatch(message, /groupby\(jars, :tray_id\)/);
 });
 
-test("C2 offers a closed worked groupby example on separate data before the empty case editor", () => {
+test("C2 offers a closed worked groupby example on separate data inside the optional help after the editor", () => {
+  // move-first layout (2026-09-25): this optional aid moved into the shared `.jt-help` details
+  // after the editor/run/result area, so it now comes after #code, not before it.
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   const example = html.indexOf('id="groupby-worked-example"');
   const editor = html.indexOf('<textarea id="code"');
-  assert.ok(example > -1 && example < editor);
-  const copy = html.slice(example, editor);
+  assert.ok(example > -1 && example > editor);
+  const jtHelp = html.indexOf('class="jt-help"');
+  assert.ok(jtHelp > -1 && jtHelp < example, "the worked example lives inside the jt-help details");
+  const copy = html.slice(example, html.indexOf("</details>", example) + "</details>".length);
   assert.match(copy, /different jars/i);
   assert.match(copy, /groupby\(practice_jars, :tray_id\)/);
   assert.match(copy, /table first.*column/i);
@@ -109,9 +115,9 @@ test("C2 offers a closed worked groupby example on separate data before the empt
 
 test("C2 separates a plain build plan from real named inputs and runnable answers", () => {
   assert.equal(typeof client.lessonCopy,"function");
-  assert.match(client.lessonCopy("group").teaching, /groupby is the Julia function/i);
-  assert.match(client.lessonCopy("counts").teaching,/Make groups in this same editor/i);
-  assert.match(client.lessonCopy("rates").teaching,/complete little script/i);
+  assert.match(client.lessonCopy("group").teaching, /compare like with like/i);
+  assert.match(client.lessonCopy("counts").teaching,/how many jars, and how many had fleas/i);
+  assert.match(client.lessonCopy("rates").teaching,/compare trays of any size/i);
   assert.doesNotMatch(client.lessonCopy("rates").shape,/\b(?:group_column|count_rows|boolean_column)\b/);
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   assert.match(html,/id="named-inputs"/);
@@ -122,9 +128,9 @@ test("C2 separates a plain build plan from real named inputs and runnable answer
 
 test("C2 states the investigative reason for each coding move without supplying case code", () => {
   assert.equal(typeof client.casePurpose, "function");
-  assert.match(client.casePurpose("group"), /same tray/i);
-  assert.match(client.casePurpose("counts"), /how many jars.*how many recorded detections/i);
-  assert.match(client.casePurpose("rates"), /fairly compare trays/i);
+  assert.match(client.casePurpose("group"), /compare like with like/i);
+  assert.match(client.casePurpose("counts"), /T-C has one/i);
+  assert.match(client.casePurpose("rates"), /small count/i);
   assert.doesNotMatch(client.casePurpose("rates"), /summary\.detected_n|jars\[/);
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   const purpose = html.indexOf('id="case-purpose"');
@@ -135,17 +141,21 @@ test("C2 states the investigative reason for each coding move without supplying 
 test("C2 gives its compound summary moves an optional named-code rehearsal", () => {
   const counts = client.compositionCards("counts");
   const rates = client.compositionCards("rates");
-  assert.deepEqual(counts.map(card => card.id), ["group", "summary", "return"]);
-  assert.deepEqual(rates.map(card => card.id), ["group", "summary", "rate", "return"]);
+  assert.deepEqual(counts.map(card => card.id), ["group", "counts", "return"]);
+  assert.deepEqual(rates.map(card => card.id), ["group", "counts", "rate", "return"]);
   assert.ok(counts.every(card => !/\btable\b|group_column|count_rows|boolean_column/.test(card.text)));
   assert.ok(rates.every(card => !/\btable\b|group_column|count_rows|boolean_column/.test(card.text)));
   assert.match(counts[0].text,/groupby\(jars, :tray_id\)/);
-  assert.equal(client.compositionIsCorrect("rates", ["group", "summary", "rate", "return"]), true);
-  assert.equal(client.compositionIsCorrect("rates", ["summary", "group", "rate", "return"]), false);
+  assert.equal(client.compositionIsCorrect("rates", ["group", "counts", "rate", "return"]), true);
+  assert.equal(client.compositionIsCorrect("rates", ["counts", "group", "rate", "return"]), false);
+  // move-first layout (2026-09-25): this optional rehearsal moved into the shared `.jt-help`
+  // details after the editor/run/result area, so it now comes after #code, not before it.
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   const scaffold = html.indexOf('id="composition-scaffold"');
   const editor = html.indexOf('<textarea id="code"');
-  assert.ok(scaffold > -1 && scaffold < editor);
+  assert.ok(scaffold > -1 && scaffold > editor);
+  const jtHelp = html.indexOf('class="jt-help"');
+  assert.ok(jtHelp > -1 && jtHelp < scaffold, "the composition scaffold lives inside the jt-help details");
   assert.match(html, /practice only[\s\S]*does not run Julia[\s\S]*write into your editor/i);
 });
 

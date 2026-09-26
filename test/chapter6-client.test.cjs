@@ -7,14 +7,14 @@ const COLUMNS = ["model", "p", "lower", "upper"];
 const ROWS = [
   // This is the server-owned teaching fixture.  The browser must not reject a
   // legitimate case just because it duplicated an old range by hand.
-  {model:"Candidate p = 0.1", p:0.1, lower:0, upper:2},
-  {model:"Candidate p = 0.5", p:0.5, lower:1, upper:5},
-  {model:"Candidate p = 0.8", p:0.8, lower:4, upper:6}
+  {model:"Vanishing", p:0.1, lower:0, upper:2},
+  {model:"Coin flip", p:0.5, lower:1, upper:5},
+  {model:"Thriving", p:0.8, lower:4, upper:6}
 ];
 const COMPATIBLE = [ROWS[1], ROWS[2]];
 
 function info(request_id = "c6-info") {
-  return {type:"case",contract_version:1,case_id:"missing-fleas-v1",chapter:"C6",move_id:"compatible-models",mode:"challenge",activity_id:null,simulation_id:null,request_id,observed_count:5,n_trials:6,inputs:[{id:"candidate_models",columns:COLUMNS,rows:ROWS}]};
+  return {type:"case",contract_version:1,case_id:"missing-fleas-v1",chapter:"C6",move_id:"compatible-models",mode:"challenge",activity_id:null,simulation_id:null,request_id,observed_count:5,n_trials:6,inputs:[{id:"stories",columns:COLUMNS,rows:ROWS}]};
 }
 function reply(request_id = "c6-run", overrides = {}) {
   return Object.assign({type:"case_result",contract_version:1,case_id:"missing-fleas-v1",chapter:"C6",move_id:"compatible-models",mode:"challenge",activity_id:null,simulation_id:null,request_id,status:"ok",pass:true,progress_eligible:true,result_data:{kind:"table",columns:COLUMNS,rows:COMPATIBLE}}, overrides);
@@ -31,7 +31,7 @@ test("C6 tells a new learner which visible action loads the candidate models", (
   const c6 = require("../web/chapter6.js");
   const opening = c6.createState();
   assert.equal(opening.connection, "idle");
-  assert.equal(c6.connectionStatusText(opening), "Open the evidence board to load the candidate models.");
+  assert.equal(c6.connectionStatusText(opening), "Open the story board to load the stories.");
   assert.equal(c6.shouldShowReconnect(opening), false);
   const source = fs.readFileSync("web/chapter6.js", "utf8");
   assert.match(source, /shape\.style\.whiteSpace\s*=\s*"pre-wrap"/);
@@ -57,8 +57,8 @@ test("C6 distinguishes a restored learner draft from supplied code and names acc
   assert.equal(typeof c6.draftNotice, "function");
   assert.match(c6.draftNotice(true, true), /Restored your saved draft.*not supplied code/i);
   assert.match(c6.draftNotice(false, false), /starts empty/i);
-  assert.equal(c6.runOutcomeStatus(reply()), "✓ Accepted — evidence saved.");
-  assert.match(c6.runOutcomeStatus(reply("c6-rejected", {pass:false, progress_eligible:false})), /Not accepted.*no evidence was saved/i);
+  assert.equal(c6.runOutcomeStatus(reply()), "Julia checked it: that's right.");
+  assert.match(c6.runOutcomeStatus(reply("c6-rejected", {pass:false, progress_eligible:false})), /Not yet\. Julia ran your code/i);
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   assert.match(html, /id="draft-note"/);
 });
@@ -70,9 +70,8 @@ test("C6 prepares the inclusive-range decision before the editor and derives can
   assert.ok(contextStart >= 0, "the model context should be present");
   assert.ok(contextStart < html.indexOf('id="editor-title"'), "the model context should prepare the learner before the editor");
   const context = html.slice(contextStart, html.indexOf('class="editor"', contextStart));
-  assert.match(context, /hypothetical model inputs/i);
-  assert.match(context, /not explanations for the record discrepancy/i);
-  assert.match(context, /not true winners/i);
+  assert.match(context, /story.*chance that one jar shows fleas/i);
+  assert.match(context, /usual range/i);
   assert.match(context, /exactly on either edge stays in/i);
 
   const changed = info("c6-changed");
@@ -95,20 +94,35 @@ test("C6 has an accepted-result-only closing route rather than leaving the learn
   assert.match(activeVisual, /caseClosure\(state\.metadata, state\.evidence\.result_data\)/);
   assert.match(activeVisual, /Review the Case Board/);
   assert.match(activeVisual, /Optional: open the comparison laboratory/);
-  assert.match(activeVisual, /does not identify a culprit or prove a model true/);
+  assert.match(activeVisual, /fitting is not proof/i);
+});
+
+test("C6 stamps Claim 2 as not supported, matching the server's claim field, right after the fitting-is-not-proof line", () => {
+  const source = fs.readFileSync("web/chapter6.js", "utf8");
+  const nestedVisualStart = source.lastIndexOf("function drawVisual(){");
+  const nestedVisualEnd = source.indexOf("function render(){", nestedVisualStart);
+  const activeVisual = source.slice(nestedVisualStart, nestedVisualEnd);
+  const limitIndex = activeVisual.indexOf("Fitting is not proof");
+  const claimIndex = activeVisual.indexOf("Claim 2");
+  assert.ok(limitIndex >= 0 && claimIndex > limitIndex, "the Claim 2 stamp follows the limit line");
+  assert.match(activeVisual, /claim\.className\s*=\s*"claim-stamp"/);
+  assert.match(activeVisual, /section\.append\(title, intro, list, limit, claim, closing\)/);
+  const clientClaim = activeVisual.match(/claim\.textContent = "([^"]*)"/)[1];
+
+  // The client's wording must match the server's, word for word (src/mystery_c6.jl's "claim" field).
+  const server = fs.readFileSync("src/mystery_c6.jl", "utf8");
+  const serverClaim = server.match(/"claim" => "((?:[^"\\]|\\.)*)"/)[1].replace(/\\"/g, '"');
+  const normalize = text => text.replace(/[“”]/g, '"');
+  assert.equal(normalize(clientClaim), normalize(serverClaim));
 });
 
 test("C6 turns a checked compatible-range result into a bounded case conclusion", () => {
   const c6 = require("../web/chapter6.js");
   const closure = c6.caseClosure(info(), {kind:"table", columns:COLUMNS, rows:COMPATIBLE});
-  assert.equal(closure.title, "Case closed for today — a careful conclusion");
-  assert.match(closure.conclusion, /do not justify.*fleas vanished/i);
-  assert.match(closure.conclusion, /report and handling log disagree/i);
-  assert.match(closure.findings[0], /observed B09 count is 5/i);
-  assert.match(closure.findings[1], /T-C/);
-  assert.match(closure.findings[2], /Candidate p = 0\.5.*Candidate p = 0\.8/);
-  assert.match(closure.next, /recheck.*new observation/i);
-  assert.match(closure.limit, /does not choose a cause/i);
+  assert.equal(closure.title, "Both claims checked");
+  assert.match(closure.findings[0], /Claim 1.*T-C has no fleas.*blank box/i);
+  assert.match(closure.findings[1], /Claim 2.*vanishing.*not suspicious/i);
+  assert.match(closure.findings[2], /Still open.*recheck.*three jars/i);
   assert.equal(c6.caseClosure(info(), {kind:"table", columns:COLUMNS, rows:[ROWS[0]]}), null);
 });
 
@@ -142,36 +156,47 @@ test("C6 turns an overdue current metadata request into a visible recovery, with
   const recovered = c6.expireInfo(waiting, "c6-current-info");
   assert.equal(recovered.infoRequest, null);
   assert.equal(recovered.metadata, null);
-  assert.match(recovered.metadataFailure, /candidate table took too long/i);
+  assert.match(recovered.metadataFailure, /story board took too long/i);
   assert.match(recovered.metadataFailure, /draft is still here/i);
   assert.equal(c6.shouldShowReconnect(recovered), true);
 });
 
 test("C6 stages a generic composed range rule before its explicit complete-answer reveal", () => {
   const c6 = require("../web/chapter6.js");
-  assert.doesNotMatch(c6.COPY.shape, /candidate_models|observed_count|\.<=|\.&/);
-  assert.match(c6.COPY.range_rule, /lower_bound/);
-  assert.match(c6.COPY.range_rule, /target/);
-  assert.match(c6.COPY.range_rule, /upper_bound/);
-  assert.match(c6.COPY.range_rule, /\.<=/);
-  assert.match(c6.COPY.range_rule, /\.&/);
-  assert.match(c6.COPY.selection, /\[row_rule, :\]/);
-  assert.doesNotMatch(c6.COPY.range_rule, /candidate_models|observed_count/);
-  assert.doesNotMatch(c6.COPY.selection, /candidate_models|observed_count/);
-  assert.match(c6.COPY.solution, /candidate_models/);
+  // The bible teaches the fits_low/fits_high shape with placeholders table/target (not the case's
+  // own names), so the shape itself is generic even though it shows the real .<=/.& operators.
+  assert.doesNotMatch(c6.COPY.shape, /stories|observed_count/);
+  assert.match(c6.COPY.shape, /fits_low/);
+  assert.match(c6.COPY.shape, /fits_high/);
+  assert.match(c6.COPY.shape, /\.<=/);
+  assert.match(c6.COPY.shape, /\.&/);
+  assert.match(c6.COPY.range_rule, /low end/i);
+  assert.match(c6.COPY.range_rule, /high end/i);
+  assert.match(c6.COPY.selection, /\[fits_low \.& fits_high, :\]/);
+  assert.match(c6.COPY.solution, /\[fits_low \.& fits_high, :\]/);
+  assert.match(c6.COPY.solution, /stories/);
   assert.match(c6.COPY.solution, /observed_count/);
   assert.match(c6.COPY.syntax, /\.<=/);
   assert.match(c6.COPY.syntax, /\[rows, :\]/);
+});
+
+// A returning player's saved draft may still use the pre-rename name (bible v2 3.1:
+// candidate_models -> stories); the coaching leads with the actual UndefVarError.
+test("C6 coaches a returning player whose draft still uses candidate_models", () => {
+  const c6 = require("../web/chapter6.js");
+  const recovery = c6.challengeRecovery({status:"error", message:"UndefVarError: `candidate_models` not defined"});
+  assert.match(recovery, /This name changed: use stories instead of candidate_models\./);
+  assert.match(recovery, /draft is still here/i);
 });
 
 test("C6 turns a rejected run into a syntax-specific next step without leaking its answer", () => {
   const c6 = require("../web/chapter6.js");
   const recovery = c6.challengeRecovery();
   assert.match(recovery, /draft is still here/i);
-  assert.match(recovery, /Required result line near the top of the page, or open Help me start below/);
+  assert.match(recovery, /Required result line near the top of the page, or open Help me start in Stuck\? Hints below/);
   assert.doesNotMatch(recovery, /both comparisons/i);
   assert.match(recovery, /run again/i);
-  assert.doesNotMatch(recovery, /candidate_models/);
+  assert.doesNotMatch(recovery, /stories/);
   assert.doesNotMatch(recovery, /observed_count/);
   assert.equal(c6.connectionStatusText({runFailure:{message:recovery}}), "Your code is ready to revise.");
 });
@@ -180,12 +205,12 @@ test("C6 puts a generic two-check code shape before the empty editor", () => {
   const c6 = require("../web/chapter6.js");
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   const bridge = c6.preEditorBridge();
-  assert.match(bridge.shape, /row_rule = \(lower_bound \.<= target\) \.& \(target \.<= upper_bound\)/);
-  assert.match(bridge.shape, /table\[row_rule, :\]/);
+  assert.match(bridge.shape, /fits_low\s*=\s*table\.lower \.<= target/);
+  assert.match(bridge.shape, /table\[fits_low \.& fits_high, :\]/);
   assert.match(bridge.explanation, /Replace the generic names/i);
-  assert.doesNotMatch(bridge.shape, /candidate_models|observed_count/);
-  assert.equal(bridge.checks[0].inCase, "candidate_models.lower .<= observed_count");
-  assert.match(bridge.checks[0].note, /one true-or-false value per candidate/i);
+  assert.doesNotMatch(bridge.shape, /stories|observed_count/);
+  assert.equal(bridge.checks[0].inCase, "stories.lower .<= observed_count");
+  assert.match(bridge.checks[0].note, /one true-or-false value per story/i);
   assert.ok(html.indexOf('id="pre-editor-bridge"') < html.indexOf('id="code"'));
 });
 
@@ -244,12 +269,12 @@ test("C6 accepts the server-owned candidate ranges instead of a duplicated brows
 test("C6 accepts a structurally valid server-owned candidate table with changed ranges", () => {
   const c6 = require("../web/chapter6.js");
   const serverOwnedRows = [
-    {model:"Candidate p = 0.2", p:0.2, lower:0, upper:3},
-    {model:"Candidate p = 0.6", p:0.6, lower:2, upper:6}
+    {model:"Rare story", p:0.2, lower:0, upper:3},
+    {model:"Common story", p:0.6, lower:2, upper:6}
   ];
   const message = Object.assign(info("c6-server-owned"), {
     observed_count:4,
-    inputs:[{id:"candidate_models", columns:COLUMNS, rows:serverOwnedRows}]
+    inputs:[{id:"stories", columns:COLUMNS, rows:serverOwnedRows}]
   });
   let state = c6.createState();
   state = c6.beginInfo(state, "c6-server-owned");
@@ -257,25 +282,27 @@ test("C6 accepts a structurally valid server-owned candidate table with changed 
   assert.equal(state.metadata, message);
 });
 
-test("C6 keeps the Case Board visible and puts a returned-data learning scaffold before the editor", () => {
+test("C6 keeps the Case Board visible and makes the returned-data learning scaffold available after the editor", () => {
   const c6 = require("../web/chapter6.js");
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   assert.match(html, /id="case-board-scene"[^>]*>Case Board/);
   assert.match(html, /id="case-board"[^>]*>Case Board/);
-  assert.ok(html.indexOf('id="learning-scaffold"') < html.indexOf('id="code"'));
+  // move-first (2026-09-25): the range-practice scaffold is optional, so it now lives in the
+  // collapsed "Stuck? Help and practice" details after the editor rather than before the textarea.
+  assert.ok(html.indexOf('id="learning-scaffold"') > html.indexOf('id="code"'));
   const scaffold = c6.learningScaffold(info());
-  assert.match(scaffold.why, /compare the displayed model ranges/i);
+  assert.match(scaffold.why, /compare the story board.s usual ranges/i);
   assert.match(scaffold.observation, /observed B09 count is 5/i);
-  assert.match(scaffold.observation, /chance.*single jar/i);
+  assert.match(scaffold.observation, /chance that one jar shows fleas/i);
   assert.match(scaffold.observation, /six-jar counts/i);
-  assert.match(scaffold.observation, /not every count.*possibly produce/i);
-  assert.match(scaffold.observation, /not.*model true/i);
-  assert.match(scaffold.practice_stays, /practice model.*1 ≤ 3 ≤ 4/i);
-  assert.match(scaffold.practice_fails, /practice model.*0 ≤ 3 ≤ 2/i);
+  assert.match(scaffold.observation, /not every count.*possibly give/i);
+  assert.match(scaffold.observation, /not.*story true/i);
+  assert.match(scaffold.practice_stays, /practice story.*1 ≤ 3 ≤ 4/i);
+  assert.match(scaffold.practice_fails, /practice story.*0 ≤ 3 ≤ 2/i);
   assert.doesNotMatch(scaffold.practice_stays, /Candidate p|B09|5/);
   assert.doesNotMatch(scaffold.practice_fails, /Candidate p|B09|5/);
   assert.match(scaffold.bridge, /Help me start/i);
-  assert.doesNotMatch(scaffold.bridge, /candidate_models\[/);
+  assert.doesNotMatch(scaffold.bridge, /stories\[/);
 });
 
 test("C6 puts a cautious case-status bridge before the empty challenge without supplying code", () => {
@@ -283,11 +310,12 @@ test("C6 puts a cautious case-status bridge before the empty challenge without s
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   const source = fs.readFileSync(require.resolve("../web/chapter6.js"), "utf8");
   const status = c6.caseStatus(info());
-  assert.match(status.established, /report and handling log disagree.*T-C/i);
+  assert.match(status.established, /notebook and the tally sheet disagree.*T-C/i);
+  assert.match(status.established, /notebook has 1, the tally sheet.s box was left blank/i);
   assert.match(status.established, /observed B09 count is 5/i);
-  assert.match(status.unknown, /does not make any candidate model true/i);
-  assert.match(status.why_now, /could still contain the observed count/i);
-  assert.doesNotMatch(status.why_now, /candidate_models\[/);
+  assert.match(status.unknown, /fitting is not proof/i);
+  assert.match(status.why_now, /could give 5 of 6/i);
+  assert.doesNotMatch(status.why_now, /stories\[/);
   assert.ok(html.indexOf('id="case-status"') < html.indexOf('id="editor-title"'));
   assert.match(html, /Case status before you write/i);
   assert.match(source, /Why this move now/);
@@ -296,10 +324,9 @@ test("C6 puts a cautious case-status bridge before the empty challenge without s
 test("C6 frames compatibility as a cautious case decision with a real next investigation", () => {
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   const source = fs.readFileSync(require.resolve("../web/chapter6.js"), "utf8");
-  assert.match(html, /final honest decision does not name a cause/i);
-  assert.match(html, /predictions can still produce the B09 count/i);
-  assert.match(source, /not true or ranked explanations/i);
-  assert.match(source, /planned recheck is the next thing that could distinguish them/i);
+  assert.match(html, /Which stories could give the notebook.s 5 of 6/i);
+  assert.match(source, /fitting is not proof/i);
+  assert.match(source, /Still open.*recheck of three jars/i);
 });
 
 test("C6 clears previously accepted evidence before and after a matching failed or malformed run", () => {
@@ -322,7 +349,7 @@ test("C6 clears previously accepted evidence before and after a matching failed 
   state = c6.applyCaseResult(state, reply("c6-timeout", {status:"timeout", pass:false, progress_eligible:false, result_data:null}));
   assert.equal(state.evidence, null);
   assert.equal(state.runFailure.status, "timeout");
-  assert.equal(c6.runOutcomeStatus(state.runFailure), "Not accepted — the run timed out. No evidence was saved.");
+  assert.equal(c6.runOutcomeStatus(state.runFailure), "Not yet. Your code took too long, so the lab stopped it. Your code is still here.");
   assert.notEqual(state.runFailure.message, c6.challengeRecovery());
 
   state = c6.beginRun(state, "c6-malformed");
@@ -342,7 +369,7 @@ test("C6 ignores wrong-identity results and rejects changed, invented, or extra 
 
   for (const result_data of [
     {kind:"table",columns:[...COLUMNS, "extra"],rows:COMPATIBLE},
-    {kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {model:"Candidate p = 0.6"})]},
+    {kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {model:"A different story"})]},
     {kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {p:0.6})]},
     {kind:"table",columns:COLUMNS,rows:[ROWS[1], ROWS[1]]},
     {kind:"table",columns:COLUMNS,rows:[{model:"Invented",p:0.4,lower:0,upper:6}]},

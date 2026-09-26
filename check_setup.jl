@@ -4,8 +4,6 @@
 
 include(joinpath(@__DIR__, "tools", "setup", "common.jl"))
 
-const SETUP_NEXT_ACTION = "Next: open the Case Board with the matching command in docs/install.md."
-
 function setup_failure(title::AbstractString, detail::AbstractString, next::AbstractString)
     println("NOT OK — ", title)
     println(detail)
@@ -78,4 +76,5 @@ probe_value === nothing && setup_failure(
 
 total = t_instantiate + t_precompile + t_load + t_probe
 println("OK — Julia Time is ready (complete setup took ", round(total; digits=1), " seconds).")
-println(SETUP_NEXT_ACTION)
+next_action = setup_next_action(ENV)
+next_action === nothing || println(next_action)

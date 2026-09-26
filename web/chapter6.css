@@ -1,5 +1,33 @@
 /* C6 shares the case-file visual grammar with C5; this adds the evidence-board treatment. */
-.case code{font-size:1rem}.data table{border-collapse:collapse;width:100%;max-width:720px}.data th,.data td{border:1px solid var(--line);padding:7px;text-align:left}.data th{background:#e5efeb}.visual li{margin:.45rem 0;font-weight:650}@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+.case code{font-size:1rem}.data table{border-collapse:collapse;width:100%;max-width:720px;font-size:.9rem}.data th,.data td{border:1px solid var(--line);padding:4px 8px;text-align:left}.data th{background:#e5efeb}.visual li{margin:.45rem 0;font-weight:650}@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 .course-location{display:flex;gap:16px;align-items:baseline;margin:0 0 12px}.course-location a{font-weight:800;color:var(--teal)}.course-location p{margin:0;color:#5d6767;font-size:.9rem}.scaffold{background:#fffaf0;border:1px solid var(--line);border-top:6px solid var(--teal);box-shadow:4px 4px 0 #dfcfad;padding:24px;margin:22px 0}.scaffold h2{margin-top:0}.range-examples{background:#e5efeb;border-left:4px solid var(--teal);padding:10px 14px;margin:16px 0}.range-examples p{margin:.45rem 0}.bridge{border-left:4px solid var(--orange);padding-left:12px;font-weight:650}
+/* short-scroll (2026-09-25): the evidence-board legend, candidate table and case-status card each
+   used the shared .case/.data/.scaffold padding (28px, from chapter5.css) meant for one full panel;
+   with three of them stacked before the editor, tighten only these three by id so the code box is
+   not stacked so far below the step title. No text is hidden by this rule; #case-status also gets a
+   closed details for its two caution sentences (see the drawCaseStatus() change), styled below. */
+#move-card, #model-context, #data, #case-status { padding:14px 20px; margin:10px 0; }
+#case-status details { margin-top:.4rem; border-top:1px solid var(--line); padding-top:.4rem; }
+#case-status summary { cursor:pointer; font-weight:700; color:var(--teal); }
+#case-status details p { margin:.35rem 0; }
+/* short-scroll (2026-09-25): these plain paragraphs inherit the page's default 1em UA margin (18px
+   at this page's 18px base font), stacking up across four consecutive panels; tighten just the ones
+   before the editor. */
+#move-card h1, #move-card > p, #model-context > p, #data > p, #case-status > p, #case-status h2 { margin:.3rem 0; }
+#move-card .return { padding:8px 14px; margin:8px 0; }
+#model-context ul { margin:.4rem 0; }
+.editor > p:not(.keyboard) { margin:.4rem 0; }
+.editor-title h2 { margin:.1rem 0; }
+/* short-scroll (2026-09-25): the dark editor panel used the same 28px/22px chrome as the four
+   lighter panels above it; #editor-box tightens only this page's editor, not chapter5's. */
+#editor-box { padding:18px 24px; margin-top:12px; }
 header .connection{position:static;margin:.15rem 0 .7rem;color:#5d6767}.answer-reference{margin:1rem 0;padding:.85rem 1rem;border-left:5px solid var(--orange);background:#123746}.answer-reference p{margin:0 0 .65rem;font-weight:800}.complete-answer-code{display:block;width:100%;margin:.45rem 0;background:#050b0f;color:#fff8e9;border:2px solid #f0ae79;padding:14px;white-space:pre-wrap;font:1rem/1.4 ui-monospace,SFMono-Regular,monospace}.result table{border-collapse:collapse;width:100%;margin-top:.5rem}.result th,.result td{border:1px solid var(--line);padding:7px;text-align:left}.result th{background:#e5efeb;color:var(--ink)}
 .template-code{display:block;margin:.45rem 0;padding:12px;background:#eef4ef;color:var(--ink);border:1px dashed var(--teal);white-space:pre-wrap;font:.9rem/1.4 ui-monospace,SFMono-Regular,monospace}
+
+/* 2026-09-25: the ending's first line says whether the whole case is solved. */
+.case-completion { font-weight:700; font-size:1.1rem; padding:.6rem .8rem; border-left:5px solid #ef6e34; background:#fff3e8; }
+.case-completion--solved { border-left-color:#18777a; background:#e3f1ef; }
+
+/* Ending: the door that opens once the case is complete (docs/design/03-ending.md). */
+.ending-link{display:inline-block;margin:.4rem 0 .8rem;background:var(--orange,#ef6e34);color:#143242;border:2px solid var(--orange,#ef6e34);padding:.6rem .9rem;font-weight:800;text-decoration:none}
+.ending-link:hover{filter:brightness(1.08)}

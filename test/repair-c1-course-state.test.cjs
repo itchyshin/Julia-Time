@@ -32,7 +32,7 @@ function acceptedC1() {
     evidence:{id:"c1-b09-records", title:"B09 report records recovered"}};
 }
 
-test("an accepted C1 move reaches the shared course record without the Case Board, so C6's case file says ESTABLISHED", () => {
+test("an accepted C1 move reaches the shared course record without the Case Board, so C6's case file says What we know so far", () => {
   const storage = memoryStorage();
   assert.equal(typeof mystery.persistAcceptedCourseState, "function");
   assert.equal(mystery.persistAcceptedCourseState(courseState, storage, "", acceptedC1()), true);
@@ -48,8 +48,8 @@ test("an accepted C1 move reaches the shared course record without the Case Boar
   assert.ok(keys.includes("C1/select-records"));
   const rows = chapter6.caseFileRows(keys);
   assert.equal(rows[0].chapter, "C1");
-  assert.equal(rows[0].label, "ESTABLISHED");
-  assert.equal(rows[0].fact, "The disputed B09 records have been identified in the supplied case table.");
+  assert.equal(rows[0].label, "What we know so far");
+  assert.equal(rows[0].fact, "The notebook shows fleas in 5 of the 6 B09 jars.");
 });
 
 test("the direct C1 write records the same evidence the Case Board importer would, and points the board at Chapter 2", () => {
@@ -95,7 +95,8 @@ test("Chapter 1 loads the shared course state before its own script and saves an
   assert.ok(state > -1, "index.html loads course/course-state.js");
   assert.ok(own > state, "course-state.js loads before mystery.js");
   const source = fs.readFileSync(path.join(__dirname, "../web/mystery.js"), "utf8");
-  // The accepted branch of the result handler calls it right after the legacy save.
-  assert.match(source, /persistEvidence\(storage, display\)[^\n]*\n\s*if \(storage\) persistAcceptedCourseState\(courseState, storage, attempt, message\);/);
+  // The accepted branch saves first, then asks the saved record whether it holds the move, and only then
+  // draws the result line, so "evidence saved" is never shown for a save that failed (2026-09-25).
+  assert.match(source, /persistAcceptedCourseState\(courseState, storage, attempt, message\);\n\s*saveOk = savedMove\(courseState, storage, attempt, "C1", "select-records"\);\n\s*\}\n\s*renderResult\(message\);/);
   assert.match(source, /const courseState = typeof window !== "undefined" \? window\.JuliaTimeCourseState : null;/);
 });

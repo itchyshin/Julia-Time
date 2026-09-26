@@ -50,11 +50,13 @@ export OPENBLAS_NUM_THREADS=1
 # docs/install.md for you here, once, instead of only telling you to.
 if ! "$julia_bin" --startup-file=no --history-file=no --project=. -e 'using JuliaTime' >/dev/null 2>&1; then
   echo "Julia Time has not finished its one-time setup yet. Running it once now…"
-  "$julia_bin" --startup-file=no --history-file=no --project=. check_setup.jl
+  # The game opens next by itself, so check_setup.jl skips its docs/install.md line (this call only).
+  JULIATIME_SETUP_FROM_HELPER=1 "$julia_bin" --startup-file=no --history-file=no --project=. check_setup.jl
   setup_status=$?
   if [[ "$setup_status" -ne 0 ]]; then
     exit "$setup_status"
   fi
 fi
 
+echo "Starting Julia Time. Keep this terminal open while you play."
 exec "$julia_bin" --startup-file=no --history-file=no --project=. run.jl

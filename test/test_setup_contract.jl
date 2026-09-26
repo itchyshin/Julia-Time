@@ -122,12 +122,13 @@ end
             @test occursin("while true end", setup_text("tools", "setup", "probe_julia.jl"))
 
             @test occursin("host=\"127.0.0.1\"", replace(run_script, ' ' => ""))
-            @test occursin("port=8000", replace(run_script, ' ' => ""))
+            @test occursin("JuliaTime.launch(;host=\"127.0.0.1\",ports=JuliaTime.LAUNCH_PORTS)", replace(run_script, ' ' => ""))
+            @test JuliaTime.LAUNCH_PORTS == 8000:8009
             @test occursin("validate_setup_report", check_setup)
             @test occursin("setup_version_status", check_setup)
             @test occursin("1.10", check_setup)
             @test occursin("OK — Julia Time is ready", check_setup)
-            @test occursin(SETUP_NEXT_ACTION, check_setup)
+            @test occursin(SETUP_NEXT_ACTION, setup_text("tools", "setup", "common.jl"))  # printed via setup_next_action
 
             for launcher in (macos_launcher, windows_launcher)
                 lowered = lowercase(launcher)
@@ -182,6 +183,46 @@ end
                 end
             end
         end
+    end
+end
+
+@testset "the setup's closing line fits whoever started it" begin
+    # 2026-09-25: the Play launchers and setup-windows.cmd run check_setup.jl for the learner and then
+    # say what happens next themselves. The "open the Case Board with the matching command in
+    # docs/install.md" line is for a person who typed the setup command by hand; after a double-click
+    # it sent a first-time learner to the install guide just as the game was opening by itself.
+    @test isdefined(@__MODULE__, :setup_next_action)
+    if isdefined(@__MODULE__, :setup_next_action)
+        @test setup_next_action(Dict{String,String}()) == SETUP_NEXT_ACTION
+        @test setup_next_action(Dict("JULIATIME_SETUP_FROM_HELPER" => "")) == SETUP_NEXT_ACTION
+        @test setup_next_action(Dict("JULIATIME_SETUP_FROM_HELPER" => "0")) == SETUP_NEXT_ACTION
+        @test setup_next_action(Dict("JULIATIME_SETUP_FROM_HELPER" => "1")) === nothing
+    end
+    @test occursin("setup_next_action(ENV)", setup_text("check_setup.jl"))
+
+    if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
+        # The real script, end to end, both ways (about 15 s each on a set-up machine). Pkg.test runs
+        # this file with a JULIA_LOAD_PATH that leaves out the standard library, so `using Pkg` in
+        # check_setup.jl would fail; a learner's shell has neither of Pkg.test's settings.
+        course_root = normpath(joinpath(@__DIR__, ".."))
+        check_setup_cmd = `$(Base.julia_cmd()) --startup-file=no --history-file=no --project=$course_root $(joinpath(course_root, "check_setup.jl"))`
+        function run_setup(flag)
+            env = copy(ENV)
+            delete!(env, "JULIA_LOAD_PATH")
+            delete!(env, "JULIA_PROJECT")
+            env["JULIATIME_SETUP_FROM_HELPER"] = flag
+            output = IOBuffer()
+            process = run(pipeline(ignorestatus(setenv(check_setup_cmd, env)), stdout=output, stderr=output))
+            text = String(take!(output))
+            success(process) || @info "check_setup.jl failed in the test" flag text
+            return text
+        end
+        by_hand = run_setup("")
+        by_helper = run_setup("1")
+        @test occursin("OK — Julia Time is ready", by_hand)
+        @test occursin(SETUP_NEXT_ACTION, by_hand)
+        @test occursin("OK — Julia Time is ready", by_helper)
+        @test !occursin("docs/install.md", by_helper)
     end
 end
 

@@ -17,7 +17,7 @@ const NEXT = "Your draft is still here; change that line and run again.";
 const undefinedName = name => ({status:"error", message:name + " is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `" + name + "` not defined"});
 // joined[joined.left_count .!= joined.right_count, :]
 const LEFT_COUNT_COLUMN = {status:"error", message:"Something went wrong running this line.\n\nArgumentError: column name :left_count not found in the data frame"};
-const MOVE2_MAP = "Here table is joined, left_count is reported_detected_n, and right_count is logged_detected_n.";
+const MOVE2_MAP = "Here table is joined, left_count is notebook_detected, and right_count is sheet_detected.";
 
 // A name-level line ends with the neutral line and never with the move's checklist.
 function nameLead(move, message) {
@@ -33,27 +33,27 @@ test("move 1: a bare column name (on=tray_id) is coached toward a colon, not a f
   // leftjoin(report, handling_log, on=tray_id) and leftjoin(report, handling_log, tray_id)
   const lead = nameLead("join-report-log", undefinedName("tray_id"));
   assert.equal(lead, "tray_id is a column name, not a name Julia knows on its own. Name a column with a colon, as in on=:tray_id.");
-  for (const column of ["reported_detected_n", "logged_detected_n", "log_status"]) {
+  for (const column of ["notebook_detected", "sheet_detected", "entry_status"]) {
     assert.match(nameLead("join-report-log", undefinedName(column)), new RegExp("^" + column + " is a column name.*on=:tray_id\\.$"));
   }
 });
 
 test("move 2: a bare column name is coached toward reading it from joined with a dot", () => {
   // joined[reported_detected_n .!= logged_detected_n, :] and filter(joined, reported_detected_n != logged_detected_n)
-  assert.equal(nameLead("filter-disagreement", undefinedName("reported_detected_n")),
-    "reported_detected_n is a column of joined, not a name Julia knows on its own. Read a column from joined with a dot, as in joined.reported_detected_n.");
-  assert.equal(nameLead("filter-disagreement", undefinedName("logged_detected_n")),
-    "logged_detected_n is a column of joined, not a name Julia knows on its own. Read a column from joined with a dot, as in joined.logged_detected_n.");
+  assert.equal(nameLead("filter-disagreement", undefinedName("notebook_detected")),
+    "notebook_detected is a column of joined, not a name Julia knows on its own. Read a column from joined with a dot, as in joined.notebook_detected.");
+  assert.equal(nameLead("filter-disagreement", undefinedName("sheet_detected")),
+    "sheet_detected is a column of joined, not a name Julia knows on its own. Read a column from joined with a dot, as in joined.sheet_detected.");
   assert.doesNotMatch(nameLead("filter-disagreement", undefinedName("tray_id")), /starts fresh|\.!=|comma/);
 });
 
 test("R's $ is coached toward Julia's dot on both moves", () => {
   // joined$reported_detected_n, joined[joined$reported_detected_n .!= joined$logged_detected_n, :]
   assert.equal(nameLead("filter-disagreement", undefinedName("$")),
-    "R's $ does not exist in Julia: Julia reads a column with a dot, as in joined.reported_detected_n.");
-  // leftjoin(report, handling_log, on=report$tray_id)
+    "R's $ does not exist in Julia: Julia reads a column with a dot, as in joined.notebook_detected.");
+  // leftjoin(tray_counts, tally_sheet, on=tray_counts$tray_id)
   assert.equal(nameLead("join-report-log", undefinedName("$")),
-    "R's $ does not exist in Julia: Julia reads a column with a dot, as in report.tray_id. In leftjoin, name the shared column with a colon: on=:tray_id.");
+    "R's $ does not exist in Julia: Julia reads a column with a dot, as in tray_counts.tray_id. In leftjoin, name the shared column with a colon: on=:tray_id.");
 });
 
 test("move 2's own placeholders are named as placeholders and mapped to joined's names", () => {
@@ -66,13 +66,13 @@ test("move 2's own placeholders are named as placeholders and mapped to joined's
 });
 
 test("the fresh-start line is kept to the case's table names that this move does not supply", () => {
-  for (const name of ["report", "handling_log", "jars", "practice_report", "practice_log"]) {
+  for (const name of ["tray_counts", "tally_sheet", "jars", "practice_counts", "practice_sheet"]) {
     assert.equal(nameLead("filter-disagreement", undefinedName(name)),
       name + " is not defined in this run. Each run starts fresh, and this move supplies only joined, so start from joined.");
   }
-  for (const name of ["joined", "jars", "practice_report", "practice_log"]) {
+  for (const name of ["joined", "jars", "practice_counts", "practice_sheet"]) {
     assert.equal(nameLead("join-report-log", undefinedName(name)),
-      name + " is not defined in this run. Each run starts fresh, and this move supplies only report and handling_log, so start from those.");
+      name + " is not defined in this run. Each run starts fresh, and this move supplies only tray_counts and tally_sheet, so start from those.");
   }
   // Any other unknown name keeps the move's existing recovery copy, with no invented cause.
   for (const [move, name] of [["join-report-log", "reprot"], ["join-report-log", "leftJoin"], ["filter-disagreement", "row_rule"], ["filter-disagreement", "left_join"], ["filter-disagreement", "n"]]) {
@@ -82,7 +82,20 @@ test("the fresh-start line is kept to the case's table names that this move does
 
 test("move 1's placeholder line is followed by the neutral line, not the comma checklist", () => {
   const lead = nameLead("join-report-log", undefinedName("left_table"));
-  assert.equal(lead, "left_table is a placeholder from the code shape, not a name in this case. Here the left table is report, the right table is handling_log, and the shared column is :tray_id.");
+  assert.equal(lead, "left_table is a placeholder from the code shape, not a name in this case. Here the left table is tray_counts, the right table is tally_sheet, and the shared column is :tray_id.");
+});
+
+test("a returning player's draft using an old C3 table or column name is coached to the renamed one", () => {
+  const renamed = {
+    report:"tray_counts", handling_log:"tally_sheet", reported_detected_n:"notebook_detected",
+    logged_detected_n:"sheet_detected", log_status:"entry_status"
+  };
+  for (const [oldName, newName] of Object.entries(renamed)) {
+    for (const move of ["join-report-log", "filter-disagreement"]) {
+      const lead = nameLead(move, undefinedName(oldName));
+      assert.equal(lead, "This name changed: use " + newName + " instead of " + oldName + ".");
+    }
+  }
 });
 
 test("lines that name the move's own mistake still lead the move's recovery copy", () => {

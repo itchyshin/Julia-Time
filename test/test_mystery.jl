@@ -15,11 +15,11 @@ using DataFrames
         @test haskey(reply, "goal")
         @test haskey(reply, "return_spec")
         @test length(reply["hints"]) == 3
-        @test reply["hints"][2]["text"] == "Look first with jars[1:3, :], then make rows with jars.batch_id .== ..."
+        @test reply["hints"][2]["text"] == "table[table.column .== value, :]. Look first with jars[1:3, :]."
         @test reply["hints"][3]["text"] == "jars[jars.batch_id .== case_batch, :]"
         @test reply["worked_example"]["batch_id"] != reply["case_batch"]
         @test reply["worked_example"]["code"] == "jars[jars.batch_id .== \"B08\", :]"
-        @test occursin("Optional worked example", reply["worked_example"]["note"])
+        @test occursin("Worked example on the other batch", reply["worked_example"]["note"])
         terms = [entry["term"] for entry in reply["glossary"]]
         @test all(term -> term in terms, ["jars[rows, columns]", "jars[1:3, :]", "jars.batch_id", ".==", ":"])
         @test sort(collect(keys(reply["bridge"]))) == ["python", "r"]
