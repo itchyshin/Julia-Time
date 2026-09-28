@@ -20,10 +20,10 @@ a lab computer is fine), plus three things:
 3. an **internet connection for the first setup**.
 
 You do not need a GitHub account or any terminal knowledge.
-Do **not** install R, Python, NumPy, or a Julia package called `JuliaTime`; R,
-Python, and NumPy are only for an optional comparison after the game.
+You do not need R, Python or NumPy to play; they are only for the optional speed lab
+in step 4. Do **not** install a Julia package called `JuliaTime`.
 
-### Three steps
+### Three steps, and one optional
 
 1. **Download and extract.** [**Download Julia Time**](https://github.com/itchyshin/Julia-Time/releases/latest)
    and click the `Julia-Time-<version>.zip` file under *Assets*.
@@ -56,6 +56,23 @@ Python, and NumPy are only for an optional comparison after the game.
    The first start prepares Julia's packages (several minutes), then opens the game in
    your browser. Later starts take seconds. Keep the black window (Windows) or Terminal
    window (Mac) open while you play, and press Enter in it when you are done.
+
+4. **Optional, after the game: the speed lab (R and Python with NumPy).** The game
+   does not need these. At the end of the case you can open a speed lab that times the
+   same task in Julia, R and Python on your own computer. To include R and Python:
+   - **Mac:**
+     1. Install R from [CRAN](https://cloud.r-project.org/): choose *Download R for
+        macOS*, then the `.pkg` for your Mac (Apple Silicon or Intel), and open it.
+     2. Install Python 3 from [python.org](https://www.python.org/downloads/macos/)
+        and open the installer.
+     3. Open **Terminal** and run: `python3 -m pip install numpy`
+     4. Check: `python3 -c "import numpy; print('NumPy ready')"` and `Rscript --version`.
+     5. Close Julia Time (press Enter in its Terminal window) and double-click
+        `Play-Julia-Time-Mac.command` again, so the speed lab finds them.
+   - **Windows:** the speed lab cannot yet find R and Python after a normal Windows
+     install; this is fixed in the next version. You can still play the whole game.
+   - **Linux:** install `r-base` and `python3-numpy` with your package manager, then
+     start Julia Time again.
 
 **If the game does not appear**, double-click the same file again: if Julia Time is
 already running, it reopens the game. Still stuck? See
