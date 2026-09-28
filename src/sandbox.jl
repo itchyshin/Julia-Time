@@ -79,7 +79,10 @@ function _spawn_worker()
     project = dirname(Base.active_project())
     script = joinpath(@__DIR__, "sandbox_worker.jl")
     cmd = `$(Base.julia_cmd()) --startup-file=no --history-file=no --project=$project $script`
-    proc = open(pipeline(cmd, stderr=devnull), "r+")
+    # The worker's stderr is ours until its start-up finishes, so a failed `using JuliaTime` shows
+    # in this process's log; after that the worker sends its own stderr to devnull
+    # (src/sandbox_worker.jl), so a learner's stray output never reaches it.
+    proc = open(pipeline(cmd, stderr=stderr), "r+")
     _NEXT_WORKER_ID[] += 1
     worker = _SandboxWorker(_NEXT_WORKER_ID[], proc, false)
     lock(_POOL_LOCK) do
@@ -380,7 +383,8 @@ end
 # Truthful restart message for `_take_worker!` below: before this process has ever had a ready
 # worker (the very first move, possibly still racing the background warm-up started by
 # `start_server`), vs. after a worker has been killed (timeout, exit()) and must be replaced.
-_restart_message() = _EVER_READY[] ? "Restarting Julia after the stopped run…" : "Warming up Julia for the first run…"
+const _WARMUP_MESSAGE = "Warming up Julia for the first run…"
+_restart_message() = _EVER_READY[] ? "Restarting Julia after the stopped run…" : _WARMUP_MESSAGE
 
 # Wait (bounded by `ACQUIRE_BUDGET`) for an in-flight background warm-up before taking any
 # worker: the warm-up is still spawning and proving the startup workers, and two callers driving
@@ -400,7 +404,10 @@ end
 function _await_warmup!(on_status=nothing)
     warm = _warmup_in_flight()
     warm === nothing && return false
-    on_status !== nothing && on_status("restarting", _restart_message())
+    # Always the warm-up message here: the start-up warm-up proves a worker (latching _EVER_READY)
+    # before its own kill-path prewarm finishes, so _restart_message() would tell a first move that
+    # arrives in that window about a "stopped run" the learner never made (v0.2.4 smoke, 2026-09-27).
+    on_status !== nothing && on_status("restarting", _WARMUP_MESSAGE)
     deadline = time() + ACQUIRE_BUDGET
     while !istaskdone(warm) && time() < deadline && !_SHUTTING_DOWN[]
         Base.timedwait(() -> istaskdone(warm), 0.5; pollint=0.05)
@@ -408,7 +415,67 @@ function _await_warmup!(on_status=nothing)
     return true
 end
 
+# How often a "restarting" status is repeated while a learner's move waits for a worker. Every
+# chapter page (web/*.js) shows "This check took too long" once `RUN_DEADLINE_MS` (7 s) passes with
+# no frame for the pending run, and any status frame re-arms that deadline. Getting a worker can
+# take far longer than 7 s: a cold Windows CI runner spent ~47 s in the start-up warm-up
+# (CI 36278544365), and `ACQUIRE_BUDGET` allows 180 s. A single "restarting" frame at the start of
+# that wait therefore let the page show a false timeout; repeating it keeps the page's deadline
+# armed for as long as the server is truthfully still getting a worker ready.
+const STATUS_HEARTBEAT_S = 2.0
+
+# Repeats the last "restarting" status every `STATUS_HEARTBEAT_S` from a small timer task, started
+# at the first "restarting" and stopped (and waited for) before "running" or the reply is sent, so
+# no heartbeat frame can arrive after either. A failing send (the page closed the socket) only ends
+# the heartbeat; the move itself carries on.
+mutable struct _StatusHeartbeat
+    on_status::Any
+    message::String
+    timer::Union{Nothing,Timer}
+    task::Union{Nothing,Base.Task}
+end
+
+function _heartbeat_status!(hb::_StatusHeartbeat, kind::AbstractString, message::AbstractString)
+    if kind == "restarting"
+        hb.message = message
+        if hb.timer === nothing
+            timer = Timer(STATUS_HEARTBEAT_S; interval=STATUS_HEARTBEAT_S)
+            hb.timer = timer
+            hb.task = @async try
+                while true
+                    wait(timer)   # throws once the timer is closed, which ends the loop
+                    hb.on_status("restarting", hb.message)
+                end
+            catch
+            end
+        end
+    else
+        _stop_heartbeat!(hb)
+    end
+    hb.on_status(kind, message)
+    return nothing
+end
+
+function _stop_heartbeat!(hb::_StatusHeartbeat)
+    hb.timer === nothing && return nothing
+    close(hb.timer)
+    wait(hb.task)   # a frame being sent right now finishes before anything else is sent
+    hb.timer = nothing
+    hb.task = nothing
+    return nothing
+end
+
 function _take_worker!(on_status=nothing; reprove::Bool=false)
+    on_status === nothing && return _take_worker_narrated!(nothing, reprove)
+    hb = _StatusHeartbeat(on_status, "", nothing, nothing)
+    try
+        return _take_worker_narrated!((kind, message) -> _heartbeat_status!(hb, kind, message), reprove)
+    finally
+        _stop_heartbeat!(hb)
+    end
+end
+
+function _take_worker_narrated!(on_status, reprove::Bool)
     _await_refill!()
     waited_for_warmup = _await_warmup!(on_status)
     w = lock(_POOL_LOCK) do
@@ -553,13 +620,14 @@ end
 # Runs on the worker. Always returns plain, easily-serialised data except `value` itself — never
 # throws (every failure path is caught and turned into a `:error` tuple), except when the start
 # receipt below cannot be written because the parent's pipe is gone.
-function _eval_on_worker(code::String, env, seed, protected_bindings=())
+function _eval_on_worker(code::String, env, seed, protected_bindings=(), reply::IO=stdout)
     # Start receipt first, before anything from the request is evaluated. Only
-    # src/sandbox_worker.jl calls this function, and there `stdout` is the reply pipe to the parent.
-    # Once the receipt is in that pipe the parent treats this request as possibly run and never
-    # sends it to another worker (`_worker_round_trip`, `run_code`).
-    serialize(stdout, _REQUEST_RECEIVED)
-    flush(stdout)
+    # src/sandbox_worker.jl calls this function, and it passes its reply pipe to the parent as
+    # `reply` (its global stdout goes to devnull, so a learner's late background print cannot land
+    # in that pipe). Once the receipt is in that pipe the parent treats this request as possibly
+    # run and never sends it to another worker (`_worker_round_trip`, `run_code`).
+    serialize(reply, _REQUEST_RECEIVED)
+    flush(reply)
     m = Module(:Sandbox)
     Core.eval(m, :(using Random, Distributions, DataFrames, Statistics))
     # A learner's bare `exit()` is almost always an accidental experiment, not a request to tear
@@ -696,7 +764,8 @@ code never started), that worker is replaced and the move is sent once more to a
 fresh `budget`: the recovery is acquisition. A worker that dies after acknowledging (a line that
 calls `Base.exit()`, or crashes Julia) is reported as an error and never re-run. Optional
 `on_status(kind::String, message::String)` is called `("restarting", text)` if a worker must be (re)spawned or proven ready
-before this move, followed by `("running", "")` once that same worker is actually handed the code —
+before this move (repeated every `STATUS_HEARTBEAT_S` while that wait lasts, so a page's run
+deadline never fires during it), followed by `("running", "")` once that same worker is actually handed the code —
 so a caller can surface a truthful status while the learner waits and clear it when the run really
 starts. An already-warm pooled worker serves the move immediately and neither status fires (review
 2026-09-12-v02-candidate-panel-adversary.md, B1/B2/S1). Optional `protected_bindings` names input

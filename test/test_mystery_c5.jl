@@ -322,7 +322,7 @@ end
             "chapter" => "C5", "move_id" => "event-mask", "mode" => "challenge", "activity_id" => nothing,
             "simulation_id" => "c5-simulated-counts-v1", "code" => "1", "request_id" => "no-id-check"))
         @test !occursin("C5", failed["explanation"]["case"])
-        @test startswith(failed["explanation"]["case"], "Nothing found yet")
+        @test startswith(failed["explanation"]["case"], "Not yet")
     end
 end
 

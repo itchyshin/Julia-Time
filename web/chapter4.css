@@ -6,3 +6,17 @@
 .jt-help[open]>summary::before{content:"▾"}
 .jt-help>summary span{display:block;font-weight:400;font-size:.85em;color:#5d6b69;margin-top:.15rem}
 .jt-help>.inputs-panel{margin-top:1rem}.help p{border-left:4px solid var(--orange);padding-left:.7rem}.comparisons pre{background:#edf2ee;color:var(--ink);font-size:.85rem}.result:not(:empty){margin-top:1rem;padding:1rem;background:#fff0d9;border-left:4px solid var(--orange)}.result .input-table{background:var(--paper);padding:.75rem}.next{margin-top:1rem;font-weight:800}.visual-panel:empty{display:none}.returned-card article{display:inline-block;vertical-align:top;min-width:13rem;margin:.35rem .5rem .35rem 0;padding:.85rem;background:#e8f1eb;border-left:4px solid var(--teal)}.returned-card h2,.returned-card h3,.returned-card p{margin:.1rem 0}@media(max-width:650px){.topbar{align-items:flex-start;flex-direction:column;gap:.35rem}.scene-card{grid-template-columns:1fr}.scene-card img{min-height:0;max-height:15rem}.scene-copy{padding:1.3rem}.moves button{flex-basis:100%}.editor-heading{align-items:flex-start;flex-direction:column;gap:.2rem}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+/* Story spine (2026-09-27): one plain line under each step title saying why this code answers the question. */
+.step-why { font-weight: 400; margin: .4rem 0; }
+/* r3 (2026-09-27): hint text keeps its line breaks, so a three-line code shape reads as three lines. */
+.hint-ladder p{white-space:pre-line}
+/* r5 tap targets (2026-09-27): on a phone, stand-alone controls get a touch area at least 44 px tall. */
+@media (max-width: 720px){summary{min-height:44px;padding-top:.55rem;padding-bottom:.55rem}button{min-height:44px}.course-location a{display:inline-flex;align-items:center;min-height:44px}}
+/* r5 (2026-09-27): while Julia runs, Run keeps focus but looks unavailable (aria-disabled, not disabled). */
+.run[aria-disabled="true"]{opacity:.5;cursor:progress}
+/* r5 (2026-09-27): a hint button scrolled into view keeps room below it for its focus ring. */
+.hint-ladder button{scroll-margin-bottom:1rem}
+
+/* Round 7 (r7-bugs #3): the next-chapter button sits beside Run. */
+.controls>#next-move,.controls>#scene-next{margin-top:0}

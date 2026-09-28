@@ -17,11 +17,12 @@ test("C5 step 1's pass message is plain, not jargon", () => {
 
 test("explanationText omits an empty Limit rather than showing it blank", () => {
   const text = c5.explanationText({julia: "J.", case: "C.", limit: ""});
-  assert.equal(text, "Julia: J. Case: C.");
-  assert.doesNotMatch(text, /Limit:/);
+  // Round 8 (r8-audit #1): the lines are separate paragraphs now, with no labels.
+  assert.deepEqual(text, ["J.", "C."]);
+  assert.doesNotMatch(text.join(" "), /Limit:/);
 });
 
 test("explanationText keeps a real Limit line", () => {
   const text = c5.explanationText({julia: "J.", case: "C.", limit: "L."});
-  assert.equal(text, "Julia: J. Case: C. Limit: L.");
+  assert.deepEqual(text, ["J.", "C.", "L."]);
 });

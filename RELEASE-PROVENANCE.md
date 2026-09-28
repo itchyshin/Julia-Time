@@ -1,12 +1,12 @@
 # Release provenance
 
-- source_sha: 49a8994786a7b16ea5d3392822b81aba2c0133e4
-- date: 2026-09-26T23:06:37Z
+- source_sha: aea6e78596bcd618e99c82c7e8f28aed31fc5712
+- date: 2026-09-28T16:15:16Z
 - exclude: .codex/ AGENTS.md CLAUDE.md docs/dev-log/ docs/design/ docs/superpowers/ docs/build-plan.md docs/announcement-install-julia.md output/ LOOP/ .unlazy/ .ignore .github/
 
 ## How to reproduce
 
 ```text
-git checkout 49a8994786a7b16ea5d3392822b81aba2c0133e4
+git checkout aea6e78596bcd618e99c82c7e8f28aed31fc5712
 tools/release/export.sh --out <dir>
 ```

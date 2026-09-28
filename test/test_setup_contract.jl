@@ -127,7 +127,7 @@ end
             @test occursin("validate_setup_report", check_setup)
             @test occursin("setup_version_status", check_setup)
             @test occursin("1.10", check_setup)
-            @test occursin("OK — Julia Time is ready", check_setup)
+            @test occursin("OK: Julia Time is ready", check_setup)
             @test occursin(SETUP_NEXT_ACTION, setup_text("tools", "setup", "common.jl"))  # printed via setup_next_action
 
             for launcher in (macos_launcher, windows_launcher)
@@ -147,7 +147,7 @@ end
             @test !occursin("to follow", lowered_guide)
             @test !occursin("git clone", lowered_guide)
             @test occursin(r"(?i)supplied archive", install_guide)
-            @test occursin("OK — Julia Time is ready", install_guide)
+            @test occursin("OK: Julia Time is ready", install_guide)
             @test occursin(SETUP_NEXT_ACTION, install_guide)
             @test occursin("1. Julia", install_guide)
             @test occursin("2. `julia` is not found", install_guide)
@@ -219,9 +219,9 @@ end
         end
         by_hand = run_setup("")
         by_helper = run_setup("1")
-        @test occursin("OK — Julia Time is ready", by_hand)
+        @test occursin("OK: Julia Time is ready", by_hand)
         @test occursin(SETUP_NEXT_ACTION, by_hand)
-        @test occursin("OK — Julia Time is ready", by_helper)
+        @test occursin("OK: Julia Time is ready", by_helper)
         @test !occursin("docs/install.md", by_helper)
     end
 end

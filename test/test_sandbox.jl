@@ -1,5 +1,24 @@
 using Distributions, DataFrames
 
+# The server may repeat a "restarting" status while a worker is being started (a heartbeat for the
+# page's run deadline), so a status sequence is compared with consecutive repeats collapsed.
+_collapse_repeats(xs) = [x for (i, x) in enumerate(xs) if i == 1 || x != xs[i - 1]]
+
+# The shortest run deadline any chapter page uses (web/*.js `RUN_DEADLINE_MS`), in seconds: the
+# longest a page waits with no frame for a run before it shows "took too long".
+function _client_run_deadline_s()
+    web = joinpath(dirname(dirname(pathof(JuliaTime))), "web")
+    ms = Int[]
+    for f in readdir(web; join=true)
+        endswith(f, ".js") || continue
+        for m in eachmatch(r"RUN_DEADLINE_MS\s*=\s*(\d+)", read(f, String))
+            push!(ms, parse(Int, m.captures[1]))
+        end
+    end
+    isempty(ms) && error("no RUN_DEADLINE_MS found in web/*.js")
+    return minimum(ms) / 1000
+end
+
 @testset "sandbox" begin
     JuliaTime.warmup!()
 
@@ -188,7 +207,75 @@ end
     @test r.value == 2
     @test elapsed >= 1.0
     @test elapsed < JuliaTime.ACQUIRE_BUDGET
-    @test statuses == ["restarting", "running"]
+    @test _collapse_repeats(statuses) == ["restarting", "running"]
+    wait(slow)
+    JuliaTime.shutdown!()
+end
+
+@testset "a move waiting on the start-up warm-up is told Julia is warming up, not restarting" begin
+    # v0.2.4 smoke (2026-09-27): the warm-up proves a worker (latching _EVER_READY) and then runs its
+    # own kill-path prewarm. A first move that landed in that window heard "Restarting Julia after
+    # the stopped run…", although the learner had stopped nothing. Any wait on the start-up warm-up
+    # is a first-run wait, whatever _EVER_READY says.
+    JuliaTime.shutdown!()
+    ever_ready = JuliaTime._EVER_READY[]
+    JuliaTime._EVER_READY[] = true
+    slow = Threads.@spawn begin
+        sleep(1.0)
+        JuliaTime._top_up!(1)
+    end
+    JuliaTime._WARMUP_TASK[] = slow
+    events = Tuple{String,String}[]
+    r = JuliaTime.run_code("1+1"; on_status=(k, m) -> push!(events, (k, m)))
+    @test r.status === :ok && r.value == 2
+    restarting = [m for (k, m) in events if k == "restarting"]
+    @test !isempty(restarting)
+    @test first(restarting) == "Warming up Julia for the first run…"
+    @test !any(m -> occursin("stopped run", m), restarting)
+    wait(slow)
+    JuliaTime._EVER_READY[] = ever_ready
+    JuliaTime.shutdown!()
+end
+
+@testset "a long worker wait keeps the learner's page informed, so it never shows a false timeout" begin
+    # CI 36278544365 (Windows, 2026-09-26): a first move sent while the background warm-up was still
+    # running waited ~47 s for a worker, and the server sent one "restarting" frame at the start and
+    # nothing else until "running". Every chapter page gives up on a run after RUN_DEADLINE_MS with
+    # no frame for it and shows "This check took too long", so the learner saw a false timeout
+    # (then, ~40 s later, the real result replaced it). While a worker is being started or proven,
+    # the server must repeat its status often enough that the page's deadline never fires.
+    client_deadline_s = _client_run_deadline_s()
+    @test JuliaTime.STATUS_HEARTBEAT_S < client_deadline_s / 2
+    slow_s = client_deadline_s + 2.0   # longer than the page would wait without a fresh frame
+
+    # (a) a cold worker that takes longer than the page's deadline to start
+    JuliaTime.shutdown!()
+    events = Tuple{Float64,String}[]
+    t0 = time()
+    r = withenv("JULIATIME_TEST_SLOW_WORKER_START" => string(slow_s)) do
+        JuliaTime.run_code("1+1"; budget=3.0, on_status=(k, m) -> push!(events, (time(), k)))
+    end
+    t1 = time()
+    @test r.status === :ok && r.value == 2
+    @test t1 - t0 >= slow_s                     # the wait really was longer than the page's deadline
+    @test _collapse_repeats(last.(events)) == ["restarting", "running"]
+    @test maximum(diff([t0; first.(events); t1])) < client_deadline_s - 1.0
+    JuliaTime.shutdown!()
+
+    # (b) a background warm-up that only hands over a worker after the page's deadline
+    slow = Threads.@spawn begin
+        sleep(slow_s)
+        JuliaTime._top_up!(1)
+    end
+    JuliaTime._WARMUP_TASK[] = slow
+    events = Tuple{Float64,String}[]
+    t0 = time()
+    r = JuliaTime.run_code("1+1"; on_status=(k, m) -> push!(events, (time(), k)))
+    t1 = time()
+    @test r.status === :ok && r.value == 2
+    @test t1 - t0 >= slow_s
+    @test _collapse_repeats(last.(events)) == ["restarting", "running"]
+    @test maximum(diff([t0; first.(events); t1])) < client_deadline_s - 1.0
     wait(slow)
     JuliaTime.shutdown!()
 end
@@ -293,7 +380,9 @@ end
     mktempdir() do dir
         runs = joinpath(dir, "runs.txt")
         touch(runs)
-        detach = "@async (sleep(0.3); orig = stdout; redirect_stdout(devnull); close(orig)); nothing"
+        # Since the late-print fix (night 2026-09-27) the worker keeps its reply pipe as `Main.reply`, so
+        # close that pipe itself, as a hostile background task could.
+        detach = "@async (sleep(0.3); close(Main.reply)); nothing"
         @test JuliaTime.run_code(detach).status === :ok
         sleep(0.8)                                   # the worker is idle when the stream closes
         r = JuliaTime.run_code("open(io -> println(io, \"ran\"), $(repr(runs)), \"a\"); 1")
@@ -322,5 +411,27 @@ end
         @test countlines(runs) == 1
         @test JuliaTime.run_code("1+1").value == 2
     end
+    JuliaTime.shutdown!()
+end
+
+@testset "a late print from an earlier move's background task does not fail the next move" begin
+    # Night bug hunt 2026-09-27 (bug 7): `@async (sleep(1); println("late")); 1` returned fine,
+    # but its print landed in the worker's reply stream while the worker was idle, so the next
+    # correct move failed with "the sandbox worker replied before acknowledging the request".
+    JuliaTime.shutdown!()
+    JuliaTime.warmup!(n=1)
+    r = JuliaTime.run_code("@async (sleep(1); println(\"late\")); 1")
+    @test r.status === :ok
+    @test r.value == 1
+    sleep(2.0)                                   # the late print lands while the worker is idle
+    r = JuliaTime.run_code("1+1")
+    @test r.status === :ok
+    @test r.value == 2
+    @test r.message == ""
+    # What a move prints during its own run is still captured and shown with that move.
+    r = JuliaTime.run_code("println(\"seen\"); print(stderr, \"err\"); 3")
+    @test r.status === :ok
+    @test r.value == 3
+    @test r.stdout == "seen\nerr"
     JuliaTime.shutdown!()
 end

@@ -181,9 +181,11 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                             "type" => "case_run", "chapter" => "C1", "request_id" => "status-seq-1",
                             "code" => "jars[jars.batch_id .== case_batch, :]")))
                         statuses = String[]
+                        frame_times = [started]
                         result = nothing
                         while result === nothing
                             msg = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                            push!(frame_times, time())
                             if msg["type"] == "status"
                                 @test msg["request_id"] == "status-seq-1"
                                 push!(statuses, msg["status"])
@@ -194,15 +196,17 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                             end
                         end
                         elapsed = time() - started
-                        @test statuses == ["restarting", "running"]
+                        @test _collapse_repeats(statuses) == ["restarting", "running"]
                         @test result["request_id"] == "status-seq-1"
                         @test result["status"] == "ok"
                         @test result["pass"] == true
-                        # The 8s worker-start delay is real server time (past the client's old
-                        # 7000ms RUN_DEADLINE_MS) yet the sandbox layer never reports a timeout —
-                        # a learner-visible timeout is a client-side concern, fixed in web/*.js.
+                        # The 8s worker-start delay is real server time, past the pages' 7000ms
+                        # RUN_DEADLINE_MS, yet the sandbox layer never reports a timeout, and the
+                        # page never goes that long without a frame for this run: each frame
+                        # re-arms its deadline, so it shows no false "took too long" (CI 36278544365).
                         @test elapsed > 7.0
                         @test result["status"] != "timeout"
+                        @test maximum(diff(frame_times)) < _client_run_deadline_s() - 1.0
                     end
                 end
                 JuliaTime.warmup!()
@@ -358,10 +362,16 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                     "code" => "jars[jars.batch_id .== case_batch, :]")))
                 statuses = String[]
                 result = nothing
-                deadline = time() + 30.0
+                # A cold Windows runner takes ~47 s to finish this warm-up (CI 36278544365), so the
+                # overall bound is the server's own acquisition promise, not a guess. What the
+                # learner feels is the longest silence: the page shows "took too long" if no frame
+                # for the run arrives within its RUN_DEADLINE_MS, so that gap is checked instead.
+                frame_times = [time()]
+                deadline = time() + JuliaTime.ACQUIRE_BUDGET + 30.0
                 while result === nothing
                     time() > deadline && error("timed out waiting for case_result")
                     msg = JSON.parse(String(HTTP.WebSockets.receive(ws)))
+                    push!(frame_times, time())
                     if msg["type"] == "status"
                         @test msg["request_id"] == "warm-race-1"
                         push!(statuses, msg["status"])
@@ -375,6 +385,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                 @test result["request_id"] == "warm-race-1"
                 @test result["status"] == "ok"    # never a false timeout from racing the warm-up
                 @test result["pass"] == true
+                @test maximum(diff(frame_times)) < _client_run_deadline_s() - 1.0
             end
             # No double-spawn: the concurrent background warm-up and the learner's own worker
             # acquisition never push the pool past the hard cap.

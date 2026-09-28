@@ -25,7 +25,7 @@ test("each playable chapter exposes its data, required result, and an optional a
   assert.match(c2, /Your code can use them as <code>jars<\/code>/);
   assert.match(c2, /id="return-spec"/);
   assert.match(c2, /id="source-rows"/);
-  assert.match(c2, /Need the full answer\?/);
+  assert.doesNotMatch(c2, /Need the full answer\?/, "r3: the full-answer button lives in Stuck? Hints, after the hints");
   assert.match(c2, /id="show-answer"[^>]*>Show the full answer/);
 
   const c3 = page("chapter3.html");
@@ -40,7 +40,7 @@ test("each playable chapter exposes its data, required result, and an optional a
   assert.match(c4, /id="return-spec"/);
   assert.match(c4, /id="visible-inputs"/);
   assert.match(c4, /id="case-bindings"/);
-  assert.match(c4, /Stuck\? Hints<span>Small hints first, the full answer last/);
+  assert.match(c4, /Stuck\? Hints <span>Small hints first, the full answer last/);
   assert.match(c4, /id="show-answer"[^>]*>Show the full answer/);
 
   const c5 = page("chapter5.html");
@@ -49,7 +49,9 @@ test("each playable chapter exposes its data, required result, and an optional a
   assert.match(c5, /id="simulation-data"/);
   assert.match(c5Script, /Julia inputs: sim_counts/);
   assert.match(c5, /Stuck\? Hints/);
-  assert.match(c5, /id="answer"[^>]*>(Show|Skip to) the full answer/);
+  // Night round 2 (r2-bugs.md finding 2): one full-answer button per step.
+  assert.match(c5, /id="show-full-answer"[^>]*>Show the full answer/);
+  assert.doesNotMatch(c5, /id="answer"/);
 
   const c6 = page("chapter6.html");
   const c6Script = page("chapter6.js");
@@ -58,5 +60,6 @@ test("each playable chapter exposes its data, required result, and an optional a
   assert.match(c6, /id="learning-scaffold"/);
   assert.match(c6Script, /candidate_models|stories/);
   assert.match(c6, /Stuck\? Hints|Help me start/);
-  assert.match(c6, /id="answer"[^>]*>(Show|Skip to) the (full|complete) answer/);
+  assert.match(c6, /id="show-full-answer"[^>]*>Show the full answer/);
+  assert.doesNotMatch(c6, /id="answer"/);
 });

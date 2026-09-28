@@ -67,7 +67,7 @@ test("a solved chapter without a saved result table still gets an evidence line"
   assert.equal(lines.length, 2);
   // The stored title is an older build's wording; the board shows today's title instead
   // (adversary review item 5), looked up by chapter/move_id rather than trusted verbatim.
-  assert.ok(lines.some(line => /^Recheck tray: planned, not looked at yet:/.test(line)));
+  assert.ok(lines.some(line => /^Recheck jars: planned, not looked at yet\.$/.test(line)));
   assert.ok(!lines.some(line => /Three distinct rechecks planned/.test(line)));
   assert.ok(lines.some(line => /^Chapter 1: solved on this computer, but its result table was not saved here\. Run Chapter 1 again to see its evidence\.$/.test(line)));
 });

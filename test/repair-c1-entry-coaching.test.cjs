@@ -10,7 +10,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const client = require("../web/mystery.js");
 
-const SHARED = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Stuck? Hints” below if you need to place that rule in the table. Your draft is unchanged.";
+const SHARED = "Next step: read the batch_id column as a list, make a true-or-false row rule from it, then open “Show the idea” under “Stuck? Hints” below if you need to place that rule in the table.";
 
 // jars[jars["batch_id"] == "B09"], jars[jars["batch_id"] .== "B09", :] and, after following
 // DataFrames' own advice, jars[jars[!, "batch_id"] == "B09"] all return this text.
@@ -23,10 +23,14 @@ const NO_COLUMNS = "A function was called with the wrong kind of argument.\n\nMe
 const DOLLAR = "$ is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `$` not defined";
 const PLAIN_EQ = "Something went wrong running this line.\n\nArgumentError: invalid row index of type Bool";
 
+// r7-r-struggling #8 (2026-09-28): a mistake made after the row rule exists (a plain ==, a missing
+// columns position) ends with the chapters' error ending instead of the shared step.
+const ERROR_ENDING = "Change your code, then run again, or open Stuck? Hints below.";
 function firstLine(message) {
   const recovery = client.challengeRecovery({status:"error", pass:false, message});
-  assert.ok(recovery.endsWith(SHARED), "the coaching line sits in front of the existing recovery copy");
-  return recovery.slice(0, recovery.length - SHARED.length).trim();
+  const ending = [SHARED, ERROR_ENDING].find(item => recovery.endsWith(item));
+  assert.ok(ending, "the coaching line sits in front of the existing recovery copy");
+  return recovery.slice(0, recovery.length - ending.length).trim();
 }
 
 test("pandas-style one-position indexing gets its own line about jars[rows, columns] and jars.batch_id", () => {

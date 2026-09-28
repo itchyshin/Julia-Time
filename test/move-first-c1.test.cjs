@@ -99,8 +99,8 @@ test("A: the notebook-stage choice buttons are equal weight, side by side, each 
   assert.equal(learnMatch[1], stepMatch[1], "both buttons share one class: equal visual weight");
   assert.notEqual(learnMatch[1], "run-button", "no longer the loud primary style");
   assert.notEqual(stepMatch[1], "quiet-button", "no longer styled as the lesser secondary");
-  assert.equal(learnMatch[2], "New to indexing");
-  assert.equal(stepMatch[2], "Already know indexing");
+  assert.equal(learnMatch[2], "Two short warm-ups first"); // plain words, 2026-09-27
+  assert.equal(stepMatch[2], "Straight to the case");
   // Neither path was removed.
   assert.match(html, /New to picking rows\? Start here/);
   assert.match(html, /I know how to pick rows: go to the case/);

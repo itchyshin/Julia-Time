@@ -10,20 +10,24 @@ test("C5 keeps the opaque simulation fixture ID off the visible page", () => {
   assert.doesNotMatch(source, /Simulation fixture ID:/);
 });
 
-test("C5 frames its probability move as Momo's doubt about the notebook's 5 of 6", () => {
+// Setting rename (2026-09-28): C5 is no longer a suspicion test. It asks what a plain 50:50
+// starting guess gives, and says healthy jars would usually do better.
+test("C5 frames its probability move as what plain chance gives, not as Momo's doubt", () => {
   const html = fs.readFileSync("web/chapter5.html", "utf8");
-  assert.match(html, /too good to be true/i);
-  assert.match(html, /each jar were a coin flip/i);
-  assert.match(html, /5 or more of 6 jars show fleas/i);
+  assert.doesNotMatch(html, /too good to be true|doubt/i);
+  assert.match(html, /What would plain chance give\?/);
+  assert.match(html, /Before we use what we know about the jars, what would a plain 50:50 guess give\?/);
+  assert.match(html, /healthy jars would usually do better than 50:50/);
+  assert.match(html, /5 or more of 6 jars show springtails/i);
 });
 
 // Hana playtest (2026-09-26): the abstract card round took a beat to reconnect to "jars with
-// fleas"; tie the cards to the jars in the scene, before the card game opens.
+// springtails"; tie the cards to the jars in the scene, before the card game opens.
 test("C5 ties the cards to the jars before the card game opens", () => {
   const html = fs.readFileSync("web/chapter5.html", "utf8");
   const sceneStart = html.indexOf('id="scene"');
   const cardsStart = html.indexOf('id="cards"');
-  const tie = html.indexOf("Each card is one jar; teal means fleas.");
+  const tie = html.indexOf("Each card is one jar; teal means springtails.");
   assert.ok(tie > sceneStart && tie < cardsStart, "the tie-in line sits in the scene, before the card game");
 });
 // Panel adversary item 10 (2026-09-26): the static case-context line named the conclusion ("This
@@ -79,7 +83,7 @@ test("C5 refuses a direct file launch before creating a WebSocket or retry loop"
 test("C5 opening tells the learner which action begins its deferred lab connection", () => {
   assert.equal(
     c5.openingConnectionMessageForProtocol("http:"),
-    "Open Toto’s simulation table to load the lab data."
+    "Open Toto’s card table to load the cards."
   );
   assert.match(c5.openingConnectionMessageForProtocol("file:"), /run\.jl/);
 });
@@ -96,7 +100,7 @@ test("C5 keeps concrete challenge bindings for the warned final answer, not the 
 test("C5 turns a rejected run into a syntax-specific next step without leaking its answer", () => {
   const recovery = c5.challengeRecovery("event-mask");
   assert.match(recovery, /draft is still here/i);
-  assert.match(recovery, /Required result line near the top of the page, or open Help me start in Stuck\? Hints below/);
+  assert.match(recovery, /Required result line near the top of the page, or open Stuck\? Hints below/);
   assert.doesNotMatch(recovery, /compare every count/i);
   assert.match(recovery, /run again/i);
   assert.doesNotMatch(recovery, /sim_counts\s*\.>=\s*observed_count/);
@@ -159,7 +163,7 @@ test("C5 lets learners rehearse the generic event-to-frequency construction befo
 test("C5 keeps its raw simulation window small while leaving the full vector and distribution understandable", () => {
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
   assert.match(source, /Julia inputs: sim_counts/);
-  assert.match(source, /vector of all \$\{state\.metadata\.n_trials\} simulated counts/);
+  assert.match(source, /sim_counts: all \$\{formatCount\(state\.metadata\.n_trials\)\} round counts, one number per round/);
   assert.match(source, /First 12 supplied counts/);
   assert.match(source, /You do not need to count these by hand/);
   assert.match(source, /Show 18 more supplied counts/);
@@ -175,24 +179,28 @@ test("C5 keeps its raw simulation window small while leaving the full vector and
 test("C5 names both case inputs before asking for an observed-count comparison", () => {
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
   assert.match(source, /Julia inputs: sim_counts/);
-  assert.match(source, /observed_count: the supplied B09 count/);
+  assert.match(source, /observed_count: the notebook.s B09 count/);
 });
 
 test("C5 puts a reader-first case status before the empty challenge without supplying code", () => {
   const html = fs.readFileSync("web/chapter5.html", "utf8");
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
-  const status = c5.caseStatus(caseInfo());
-  assert.match(status.established, /notebook and the tally sheet disagree.*T-C/i);
-  assert.match(status.established, /notebook has 1, the tally sheet.s box was left blank/i);
-  assert.match(status.established, /observed B09 count is 3 of 6 jars/i);
-  assert.match(status.unknown, /does not show what really happened in the jars/i);
-  assert.doesNotMatch(status.unknown, /which record is right/i);
-  assert.match(status.why_now, /too good to be true/i);
+  // Night round 1: "Part 1 done" only once Chapter 3 is solved (third argument); see f4-chapters-2-6.test.cjs.
+  const status = c5.caseStatus(caseInfo(), undefined, true);
+  // Replay notes (2026-09-27): "Claim 1 is settled" asserted C3's finding even when C3 was skipped
+  // (all six chapters are playable from the Case Board). "Chapter 3 settles Claim 1" holds in any
+  // order. The "Still unknown" line was dropped (adds nothing beyond what "So far" already says).
+  assert.match(status.established, /Part 1 done/i);
+  assert.match(status.established, /blank box, not an empty tray/i);
+  assert.match(status.established, /under a plain 50:50 guess, how often would 3 or more of 6 jars show springtails/i);
+  assert.equal(status.unknown, "");
+  assert.doesNotMatch(status.why_now, /too good to be true/i);
+  assert.match(status.why_now, /what plain chance gives/i);
   assert.match(status.why_now, /mark each card round/i);
   assert.doesNotMatch(status.why_now, /sim_counts\s*\.>=\s*observed_count/);
   assert.ok(html.indexOf('id="case-status"') < html.indexOf('id="editor-title"'));
   assert.match(html, /Case status before you write/i);
-  assert.match(source, /Why this move now/);
+  assert.match(source, /Why this step now/);
 });
 
 function caseInfo(overrides = {}) {
@@ -234,7 +242,7 @@ test("C5 client exposes an empty independent editor and only accepts complete ve
   assert.equal(accepted.metadata.simulation_id, "opaque-server-simulation-42");
   assert.deepEqual(accepted.metadata.inputs[0].columns, ["simulation", "count"]);
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
-  assert.match(source, /Model inputs: \$\{state\.metadata\.n_jars\} trials per simulation; reference probability \$\{state\.metadata\.p_ref\}/);
+  assert.match(source, /Each round: \$\{state\.metadata\.n_jars\} cards, each teal half the time \(\$\{state\.metadata\.p_ref\}\)/);
 });
 
 test("a failed, stale, or malformed Move 2 result cannot replace an accepted result or become persistable", () => {
@@ -319,7 +327,7 @@ test("C5 turns a few supplied counts into the exact yes-or-no event before free 
   assert.deepEqual(c5.eventDecisionRows(null, 4), []);
   const source = fs.readFileSync(require.resolve("../web/chapter5.js"), "utf8");
   assert.match(source, /From one count to one yes-or-no result/);
-  assert.match(source, /Your Julia move will make this same comparison for every supplied count/);
+  assert.match(source, /Your Julia step will make this same comparison for every round/);
   assert.doesNotMatch(source.match(/From one count to one yes-or-no result[\s\S]{0,1800}/)[0], /sim_counts\s*\.>=\s*observed_count/);
 });
 

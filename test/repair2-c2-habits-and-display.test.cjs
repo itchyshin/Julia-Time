@@ -12,7 +12,7 @@ const path = require("node:path");
 const client = require("../web/chapter2.js");
 
 const GENERIC = "Julia did not produce the requested result for this move.";
-const EXPLANATION = {julia:"Return the requested grouped value or DataFrame for this step.", case:"No tray comparison is established until the returned result matches all recorded B09 trays."};
+const EXPLANATION = {julia:"Return the requested result for this step.", case:"No tray comparison is established until the returned result matches all recorded B09 trays."};
 const errorResult = (step, message) => ({type:"case_result", chapter:"C2", step, status:"error", pass:false, message, feedback:GENERIC, explanation:EXPLANATION});
 
 // summary.rate = (summary$detected_n) ./ (summary$n), summary$detected_n, groupby(jars, jars$tray_id)
@@ -61,13 +61,17 @@ test("B12: pandas-style summary[\"rate\"] is coached toward the Julia form", () 
   assert.match(client.c2ErrorNextStep(errorResult("group", PANDAS)), /:tray_id/);
 });
 
-test("B12: the new lines lead the existing recovery copy and Julia's error stays unchanged", () => {
+// Replay notes (2026-09-27): the coaching line used to be followed by the chapter's generic
+// recovery copy, reading as one wrong message after the right one; resultText now shows the
+// specific coaching alone (the same rule C1's challengeRecovery already applies).
+test("B12: the coaching line stands alone; Julia's error stays unchanged", () => {
   for (const [step, message] of [["rates", DOLLAR], ["rates", DETECTED_N], ["rates", PANDAS], ["group", DOLLAR]]) {
     const result = errorResult(step, message);
     const coaching = client.c2ErrorNextStep(result);
     const text = client.resultText(result);
-    assert.ok(coaching && text.startsWith(coaching), "coaching comes first: " + text);
-    assert.ok(text.includes(GENERIC), "the chapter's recovery copy still follows");
+    assert.ok(coaching, "a coaching line exists for " + step);
+    // Round 7 (r7-bugs #9): the line is followed only by the shared coaching ending.
+    assert.equal(text, coaching + " Change your code, then run again, or open Stuck? Hints below.", "coaching stands alone: " + text);
     assert.equal(client.displayError(result), message, "Julia's own error text is untouched");
     assert.doesNotMatch(coaching, /—/, "no em dash in new learner-facing text");
   }

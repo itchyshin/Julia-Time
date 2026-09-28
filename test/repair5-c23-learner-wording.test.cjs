@@ -44,9 +44,11 @@ test("C3 lesson copy refers to an earlier chapter by its learner-facing name", (
 });
 
 test("C2 and C3 server prose for a failed run names no internal chapter id", () => {
-  const c3 = read("src/mystery_c3.jl").match(/"case" => "(Nothing found yet[^"]*)"/)[1];
-  assert.doesNotMatch(c3, CHAPTER_ID);
-  assert.match(c3, /^Nothing found yet/);
+  // Round 3 (r3-struggling.md): the failed-run "case" and "limit" lines were boilerplate that said
+  // nothing about the mistake, so they are now empty; no failed-run line can name a chapter id.
+  const source = read("src/mystery_c3.jl");
+  assert.doesNotMatch(source, /Match this step's required result/);
+  for (const found of source.matchAll(/"(?:case|limit)" => "([^"]*)"/g)) assert.doesNotMatch(found[1], CHAPTER_ID);
 });
 
 const RATE_ROWS = [{tray_id:"T-A", n:2, detected_n:2, rate:1}, {tray_id:"T-B", n:2, detected_n:2, rate:1}, {tray_id:"T-C", n:2, detected_n:1, rate:0.5}];

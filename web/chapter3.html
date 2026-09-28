@@ -15,7 +15,7 @@
   <header class="topbar">
     <div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div>
     <p id="connection" aria-live="polite">Connecting to the lab…</p>
-    <button id="reconnect" class="quiet reconnect" type="button" hidden>Reconnect to lab</button>
+    <button id="reconnect" class="quiet reconnect" type="button" hidden>Reconnect to the lab</button>
   </header>
   <nav class="course-location" aria-label="Course location">
     <a id="case-board" href="course/index.html">Case Board</a>
@@ -25,21 +25,22 @@
     <section id="scene" class="opening" aria-labelledby="chapter-title">
       <div class="scene-card">
         <div class="scene-copy">
+          <p class="eyebrow">Part 1 of 3 · Check the report</p>
           <p class="eyebrow">Chapter 3 · Where did the 0 come from?</p>
-          <h1 id="chapter-title" tabindex="-1">The report was typed from a tally sheet</h1>
-          <p>The tally sheet is the paper where each tray’s count was written in a box. Toto typed the report from it. Each box is either filled in or left blank.</p>
-          <p class="dialogue"><strong>Toto:</strong> “I wrote it down. I may not have written it right.”</p>
-          <p>Line the sheet up with your counts from the notebook, tray by tray, and find the one that disagrees.</p>
+          <h1 id="chapter-title" tabindex="-1">Toto typed his report from a copy of the tally sheet</h1>
+          <p>The tally sheet is the paper where each tray’s count is written in a box. Toto copied it into the lab’s table, box by box, and typed his report from that table. The table also notes whether each paper box was filled in.</p>
+          <p class="dialogue"><strong>Toto:</strong> “I typed it up. I may not have typed it right.”</p>
+          <p>Line Toto’s copy up with your counts from the notebook, tray by tray, and find the tray where they disagree.</p>
         </div>
         <img src="assets/course/scene-c3-handling-desk.png" alt="Eddie holds two blank sheets side by side at a lab desk while Itchy, Toto and Momo examine the investigation materials.">
       </div>
       <section class="scene-brief" aria-labelledby="scene-goal">
-        <p class="eyebrow">Case question</p>
-        <h2 id="scene-goal">Do the sheet and the notebook agree?</h2>
-        <p>You may spot it by eye. Julia makes the check repeatable, for three trays or three thousand.</p>
+        <p class="eyebrow">This chapter’s question</p>
+        <h2 id="scene-goal">Do Toto’s typed copy and the notebook agree?</h2>
+        <p>You may spot the difference by eye. Julia makes the check repeatable, for three trays or three thousand.</p>
         <button id="start-investigation" class="run" type="button">Open the two records →</button>
         <section id="resume-saved" hidden aria-live="polite">
-          <p id="resume-saved-note">Your earlier work in this chapter is saved only on this computer. Run it again to check it today.</p>
+          <p id="resume-saved-note">Your earlier work in this chapter is saved only on this computer. Run it again to check it now.</p>
           <button id="resume-saved-move" class="quiet" type="button">Back to your saved step →</button>
         </section>
       </section>
@@ -56,9 +57,10 @@
       <section class="case-panel" aria-labelledby="move-title">
         <p class="eyebrow">Your step</p>
         <h1 id="move-title">Step 1 · Put each tray’s two records side by side</h1>
+        <p id="step-why" class="step-why"></p>
         <p id="move-question"></p>
         <p id="move-bridge" class="bridge"></p>
-        <div class="return"><span>Return</span><code id="return-spec"></code></div>
+        <div class="return"><span>Required result</span><code id="return-spec"></code></div>
       </section>
 
       <section id="visible-inputs" class="inputs-panel" aria-live="polite"></section>
@@ -71,36 +73,37 @@
         <section id="answer-before-editor" class="practice-bridge" aria-live="polite" hidden></section>
         <label for="code">Your Julia code</label>
         <textarea id="code" rows="8" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea>
-        <p id="draft-note" class="keyboard">This editor starts empty. Write your own Julia result.</p>
+        <p id="draft-note" class="keyboard">This editor starts empty. Write your own Julia code.</p>
         <p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p>
-        <div class="controls"><button id="run" class="run" type="button" disabled>Run this step →</button></div>
+        <div class="controls"><button id="run" class="run" type="button" disabled>Run this step →</button><button id="next-move" class="quiet next" type="button" hidden>Step 2: find the tray that disagrees →</button></div>
         <section id="result" class="result" aria-live="polite" aria-atomic="false" tabindex="-1"></section>
         <section id="bridge-card" class="bridge-card" hidden aria-live="polite" aria-label="The same step in R and Python"></section>
-        <details class="jt-help"><summary>Stuck? Hints <span>Small hints first, the full answer last. Your editor stays as you left it.</span></summary><details class="help"><summary>Show the idea</summary><div id="help-list" aria-live="polite"></div><div class="controls"><button id="next-help" class="quiet action" type="button">Show the idea</button><button id="show-answer" class="quiet action" type="button">Show the full answer</button></div></details>
+        <section id="blank-note" class="blank-note-slot" aria-live="polite" hidden></section>
+        <details class="jt-help"><summary>Stuck? Hints <span>Small hints first, the full answer last. Your editor stays as you left it.</span></summary><div class="help hint-ladder"><div id="help-list" aria-live="polite"></div><div class="controls"><button id="next-help" class="quiet action" type="button">Show the idea</button><button id="show-answer" class="quiet action" type="button">Show the full answer</button></div></div>
           <details id="demo-panel" class="worked-example demo"><summary>Practice first: line up two small tables (one minute) <span>Practice data with labels K-A and K-B. Does not count for the case.</span></summary>
             <p id="demo-copy">Practice data with labels K-A and K-B. Does not count for the case.</p>
             <section id="demo-inputs" class="demo-inputs" aria-live="polite"><p>Practice tables will appear here after the lab supplies them.</p></section>
             <section class="demo-editor" aria-labelledby="demo-heading">
-              <p class="eyebrow">Build, then run</p><h3 id="demo-heading">Try the join on separate data</h3>
-              <p id="demo-plan" class="practice-bridge"><strong>Before you run:</strong> which labels will match, and how many rows will Julia return? The two buttons below write only this practice editor, one clause at a time.</p>
+              <p class="eyebrow">Build, then run</p><h3 id="demo-heading">Try lining up two tables (a join) on separate data</h3>
+              <p class="step-why">Line up two small tables first, so the real one is not your first try.</p>
+              <p id="demo-plan" class="practice-bridge"><strong>Before you run:</strong> which labels will match, and how many rows will Julia return? The two buttons below write into this practice editor only, one piece at a time.</p>
               <label for="demo-code">Your practice Julia code</label>
               <textarea id="demo-code" rows="4" spellcheck="false" autocomplete="off" placeholder="Build or type a practice expression here…"></textarea>
-              <p id="demo-draft-note" class="keyboard">This separate practice editor begins empty.</p>
-              <div class="controls"><button data-demo-token="open" class="quiet action" type="button" disabled>Add <code>leftjoin(</code></button><button data-demo-token="key" class="quiet action" type="button" disabled>Add tables and key</button><button id="run-demo" class="run" type="button" disabled>Run demonstration</button></div>
+              <p id="demo-draft-note" class="keyboard">This separate practice editor starts empty.</p>
+              <div class="controls"><button data-demo-token="open" class="quiet action" type="button" disabled>Add <code>leftjoin(</code></button><button data-demo-token="key" class="quiet action" type="button" disabled>Add tables and key</button><button id="run-demo" class="run" type="button" disabled>Run this practice</button></div>
               <section id="demo-result" class="result demo-result" aria-live="polite" aria-atomic="false"></section>
               <section id="demo-case-bridge" class="demo-case-bridge" aria-live="polite" hidden>
                 <p class="eyebrow">Back to the case</p>
                 <p><strong>Practice only:</strong> this result used K-A/K-B practice data, not the case.</p>
                 <p><strong>Case tables:</strong> <code>tray_counts</code> (<code>tray_id</code>, <code>notebook_detected</code>) and <code>tally_sheet</code> (<code>tray_id</code>, <code>sheet_detected</code>, <code>entry_status</code>).</p>
-                <p><strong>Case question:</strong> How do we put each tray’s notebook count next to its tally-sheet box?</p>
-                <p><strong>Required return:</strong> One row per tray, with its notebook count and its tally-sheet columns.</p>
+                <p><strong>Case question:</strong> how do we put each tray’s notebook count next to its row in Toto’s typed copy?</p>
+                <p><strong>Required result:</strong> one row per tray, with its notebook count and the columns from Toto’s typed copy.</p>
                 <a id="return-to-case" class="quiet next" href="#code" hidden>Return to your case →</a>
               </section>
             </section>
           </details>
 
         </details>
-        <button id="next-move" class="quiet next" type="button" hidden>Step 2: find the tray that disagrees →</button>
       </section>
 
       <section id="returned-visual" class="visual-panel" aria-live="polite"></section>

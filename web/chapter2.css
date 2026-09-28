@@ -74,9 +74,21 @@ summary { color:var(--moss); }
 .tangible-practice h3 { margin-top:0; }
 .tangible-practice .live-rack { margin-top:.75rem; }
 .practice-result { margin:.75rem 0 0; font-weight:600; }
+/* Story spine beat 2 ("why this code"): one plain paragraph directly under a step's title. */
+.step-why { font-weight:400; margin:.4rem 0 0; }
 .result:not(:empty),.live-rack article { border-radius:0; }
 .evidence,.attempt { max-width:none; }
 .live-rack { grid-template-columns:repeat(auto-fit,minmax(11rem,1fr)); }
 .live-rack small { grid-column:1/-1; }
 .attempt { margin-top:1.5rem; }
 @media(max-width:650px) { .scene-card { grid-template-columns:1fr; } .scene-card img { min-height:0; max-height:15rem; } .scene-copy { padding:1.3rem; } .topbar .brand { font-size:1.5rem; } .moves > button { flex:1 1 8rem; } dl { display:block; } dd { margin-bottom:.6rem; } .course-location { padding-top:.7rem; } }
+/* r3 (2026-09-27): hint text keeps its line breaks, so a three-line code shape reads as three lines. */
+.hint-ladder p{white-space:pre-line}
+/* r5 tap targets (2026-09-27): on a phone, stand-alone controls get a touch area at least 44 px tall. */
+@media (max-width: 720px){summary{min-height:44px;padding-top:.55rem;padding-bottom:.55rem}button{min-height:44px}.course-location a{display:inline-flex;align-items:center;min-height:44px}#back-c1{display:inline-flex;align-items:center;min-height:44px}}
+/* r5 (2026-09-27): while Julia runs, Run keeps focus but looks unavailable (aria-disabled, not disabled). */
+.run[aria-disabled="true"]{opacity:.5;cursor:progress}
+/* r5 (2026-09-27): the step title is the work view's h1 (the scene's h1 is hidden there); it keeps the h2 look. */
+#step-title{font-size:1.5em;line-height:1.15;margin:.83em 0}
+/* r6 (2026-09-27, r6-rc #6): "Start a new empty attempt" is a quiet secondary button, not one styled like Run. */
+.attempt #new-attempt { background:transparent; color:var(--moss); border:1px solid var(--moss); font-weight:700; }

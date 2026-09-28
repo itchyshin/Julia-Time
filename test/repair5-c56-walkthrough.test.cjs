@@ -37,11 +37,11 @@ function c5Result(move, overrides) {
     status:"ok", pass:false, progress_eligible:false, value_repr:"", result_data:null
   }, overrides || {});
 }
-const C6_COLUMNS = ["model", "p", "lower", "upper"];
+const C6_COLUMNS = ["story", "p", "lower", "upper"];
 const C6_ROWS = [
-  {model:"Vanishing", p:0.1, lower:0, upper:2},
-  {model:"Coin flip", p:0.5, lower:1, upper:5},
-  {model:"Thriving", p:0.8, lower:4, upper:6}
+  {story:"Vanishing", p:0.1, lower:0, upper:2},
+  {story:"Coin flip", p:0.5, lower:1, upper:5},
+  {story:"Thriving", p:0.8, lower:4, upper:6}
 ];
 function c6Info() {
   return {type:"case", contract_version:1, case_id:CASE_ID, chapter:"C6", move_id:"compatible-models", mode:"challenge", activity_id:null, simulation_id:null, request_id:"c6-info", observed_count:5, n_trials:6, inputs:[{id:"stories", columns:C6_COLUMNS, rows:C6_ROWS}]};
@@ -148,16 +148,18 @@ test("repair5-4: C5 Move 2 case status talks about the frequency, not about nami
   assert.doesNotMatch(second.why_now, EM_DASH);
   assert.doesNotMatch(second.why_now, /sim_counts|sum\(|length\(|\.>=/, "no code, so no answer leak");
   assert.equal(c5.caseStatus(c5Info("event-frequency")).why_now, second.why_now, "without a move argument the metadata's move decides");
-  assert.match(web("chapter5.js"), /caseStatus\(state\.metadata,\s*state\.activeMove\)/, "the page passes the active move");
+  assert.match(web("chapter5.js"), /caseStatus\(state\.metadata,\s*state\.activeMove[,)]/, "the page passes the active move");
 });
 
 // ---- 5. Rejection text names things that exist on the page ----
-test("repair5-5: C5 and C6 rejection text names the Required result line and Help me start, not a missing cue", () => {
+// r3 (2026-09-27): the inner "Help me start" fold is gone, so the text names Stuck? Hints.
+test("repair5-5: C5 and C6 rejection text names the Required result line and Stuck? Hints, not a missing cue", () => {
   const texts = [c5.challengeRecovery("event-mask"), c5.challengeRecovery("event-frequency"), c6.challengeRecovery()];
   for (const text of texts) {
     assert.doesNotMatch(text, /cue/i);
     assert.match(text, /Required result line/);
-    assert.match(text, /Help me start/);
+    assert.match(text, /open Stuck\? Hints/);
+    assert.doesNotMatch(text, /Help me start/);
     assert.match(text, /draft is still here/i);
     assert.match(text, /run again/i);
     assert.doesNotMatch(text, EM_DASH);
@@ -165,13 +167,13 @@ test("repair5-5: C5 and C6 rejection text names the Required result line and Hel
   // Same kind (Rose sweep): the obsolete-draft caption appears at hint 0, when no answer panel is shown.
   const c5source = web("chapter5.js");
   assert.doesNotMatch(c5source, /use the runnable answer above/);
-  assert.match(c5source, /An obsolete incomplete draft was cleared\. Your valid drafts are safe; open Help me start in Stuck\? Hints below for the steps, or start your own\./);
+  assert.match(c5source, /An obsolete incomplete draft was cleared\. Your valid drafts are safe; open Stuck\? Hints below for the steps, or start your own\./);
   for (const page of ["chapter5.html", "chapter6.html"]) {
     const html = web(page);
     assert.match(html, /<span>Required result<\/span>/, `${page} labels a Required result line`);
-    assert.match(html, /<summary>Help me start /, `${page} has a Help me start control`);
+    assert.match(html, /<summary>Stuck\? Hints/, `${page} has a Stuck? Hints control`);
     assert.ok(html.indexOf("Required result") < html.indexOf('id="result"'), `${page}: Required result is above the run result`);
-    assert.ok(html.indexOf('id="result"') < html.indexOf("<summary>Help me start"), `${page}: Help me start is below the run result`);
+    assert.ok(html.indexOf('id="result"') < html.indexOf("<summary>Stuck? Hints"), `${page}: Stuck? Hints is below the run result`);
   }
 });
 
@@ -208,7 +210,7 @@ test("repair5-8: the C6 Case Board update line points at the Case file instead o
   assert.equal(c6Row.label, "What we know so far");
   const line = c6.boardUpdateLine(rows);
   assert.match(line, /^Case Board updated: /);
-  assert.match(line, /Case file below/);
+  assert.match(line, /case file below/);
   assert.ok(!line.includes(c6Row.fact), "the Chapter 6 fact appears once, in the Case file");
   assert.doesNotMatch(line, EM_DASH);
   assert.equal(c6.boardUpdateLine(c6.caseFileRows(MILESTONES.slice(0, 5))), "", "no update claim when Chapter 6 is not saved");

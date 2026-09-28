@@ -14,7 +14,7 @@
   const TABLES = "jars|joined|eligible|counts|groups|events|stories|tray_counts|tally_sheet|sim_counts";
   const PATTERN = new RegExp(
     "(?<![\\w.:])(?:" +
-      "(?:" + TABLES + ")\\.[a-z][a-z0-9_]*" +              // jars.batch_id, candidate_models.lower
+      "(?:" + TABLES + ")[.$][a-z][a-z0-9_]*" +              // jars.batch_id, candidate_models.lower, R's jars$batch_id
       "|[a-z][a-z0-9]*_[a-z0-9_]*\\.[a-z][a-z0-9_]*" +       // summary_x.y (underscore before the dot)
       "|:?[a-z][a-z0-9]*(?:_[a-z0-9]+)+" +                   // sim_counts, :tray_id, case_batch
     ")(?![\\w])|\\.(?:==|>=|<=|!=|&)", "g");

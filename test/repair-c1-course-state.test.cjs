@@ -49,7 +49,7 @@ test("an accepted C1 move reaches the shared course record without the Case Boar
   const rows = chapter6.caseFileRows(keys);
   assert.equal(rows[0].chapter, "C1");
   assert.equal(rows[0].label, "What we know so far");
-  assert.equal(rows[0].fact, "The notebook shows fleas in 5 of the 6 B09 jars.");
+  assert.equal(rows[0].fact, "The notebook shows springtails in 5 of the 6 B09 jars.");
 });
 
 test("the direct C1 write records the same evidence the Case Board importer would, and points the board at Chapter 2", () => {

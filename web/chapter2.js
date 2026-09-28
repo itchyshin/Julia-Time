@@ -8,7 +8,7 @@
   "use strict";
   function storagePrefix(attempt) { const base = "julia-time:missing-fleas:v1:c2:"; return /^[a-z0-9-]{1,80}$/.test(attempt || "") ? base + "attempt:" + attempt + ":" : base; }
   function caseBoardUrl(search) { const attempt = new URLSearchParams(search || "").get("attempt"); return "course/index.html" + (/^[a-z0-9-]{1,80}$/.test(attempt || "") ? "?attempt=" + encodeURIComponent(attempt) : ""); }
-  function caseLocation(step) { return ({group:"Chapter 2 of 6 · Put each tray’s jars together", counts:"Chapter 2 of 6 · Count jars and jars with fleas", rates:"Chapter 2 of 6 · Work out each tray’s share"})[step] || "Chapter 2 of 6 · Put each tray’s jars together"; }
+  function caseLocation(step) { return ({group:"Chapter 2 of 6 · Put each tray’s jars together", counts:"Chapter 2 of 6 · Count jars and jars with springtails", rates:"Chapter 2 of 6 · Work out each tray’s share"})[step] || "Chapter 2 of 6 · Put each tray’s jars together"; }
   const attempt = typeof location === "undefined" ? "" : new URLSearchParams(location.search).get("attempt");
   const PREFIX = storagePrefix(attempt), EVIDENCE_KEY = PREFIX + "evidence", STEP_KEY = PREFIX + "step";
   const STEPS = ["group", "counts", "rates"];
@@ -50,13 +50,19 @@
     return visible && progress && progress.accepted && typeof progress.accepted[step] === "string" ? progress.accepted[step] : "";
   }
   const COPY = {
-    group: {title:"Step 1 · Put each tray’s jars together", prompt:"Start from jars. Group its rows by the tray_id column and return the groups.", shape:"Grouping does not count or drop any jar. It just puts jars with the same tray label together.\n\nComing from R? In R you’d reach for dplyr’s group_by; Julia’s grouping function is spelled groupby.", hints:["groupby(table, :column). The colon before the column name is how Julia names a column here."], answerCode:"groupby(jars, :tray_id)", returnSpec:"the jars in groups, one group per tray"},
-    counts: {title:"Step 2 · Count jars and jars with fleas", prompt:"Group again, then use combine to turn each group into one row.", shape:"For each tray, count its rows, and count the jars where detected is true.\n\nComing from R? In R you’d reach for summarise after group_by; Julia’s version is combine.", hints:["combine(groupby(table, :column), nrow => :n) makes one row per group. Read nrow => :n aloud as “count the rows, call it n”. Then add a second piece after a comma: :detected => sum => :detected_n. Read it aloud as “take detected, sum it, call it detected_n”. Each => is one “then”."], answerCode:"counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)", returnSpec:"one row per tray with tray_id, n (jars on the tray) and detected_n (jars with fleas)"},
-    rates: {title:"Step 3 · Work out each tray’s share", prompt:"Build counts as in step 2. Then add the new column with counts.rate = counts.detected_n ./ counts.n, and end with counts on its own line.", shape:"A share is a top number divided by a bottom number: jars with fleas over all jars, tray by tray.\n\nComing from R? In R you’d reach for mutate; in Julia you add a column by assigning to it.", hints:["table.new_column = table.top ./ table.bottom, then the table’s name on the last line so Julia shows it."], answerCode:"counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts", returnSpec:"the counts table with one more column, rate: jars with fleas divided by all jars on that tray"}
+    group: {title:"Step 1 · Put each tray’s jars together", prompt:"Start from jars. Group its rows by the tray_id column and return the groups.", shape:"Grouping does not count or drop any jar. It just puts jars with the same tray label together.\n\nComing from R? In R you would use dplyr’s group_by; Julia’s grouping function is spelled groupby.", hints:["groupby(table, :column). The colon before the column name is how Julia names a column here."], answerCode:"groupby(jars, :tray_id)", returnSpec:"the jars in groups, one group per tray"},
+    counts: {title:"Step 2 · Count jars and jars with springtails", prompt:"Group again, then use combine to turn each group into one row.", shape:"For each tray, count its rows, and count the jars where detected is true.\n\nComing from R? In R you would use summarise after group_by; Julia’s version is combine.", hints:["combine(groupby(table, :column), nrow => :n) makes one row per group. Read nrow => :n aloud as “count the rows, call it n”. Then add a second piece after a comma: :detected => sum => :detected_n. Read it aloud as “take detected, sum it, call it detected_n”. Each => is one “then”."], answerCode:"counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)", returnSpec:"one row per tray with tray_id, n (jars on the tray) and detected_n (jars with springtails)"},
+    rates: {title:"Step 3 · Work out each tray’s share", prompt:"Build counts as in Step 2. Then add the new column with counts.rate = counts.detected_n ./ counts.n, and end with counts on its own line.", shape:"A share is a top number divided by a bottom number: jars with springtails over all jars, tray by tray.\n\nComing from R? In R you would use mutate; in Julia you add a column by assigning to it.", hints:["table.new_column = table.top ./ table.bottom, then the table’s name on the last line so Julia shows it."], answerCode:"counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts", returnSpec:"the counts table with one more column, rate (the share of jars with springtails): jars with springtails divided by all jars on that tray"}
   };
-  COPY.group.teaching="Put jars from the same tray together, so we compare like with like.";
-  COPY.counts.teaching="A tray label is not enough: we need how many jars, and how many had fleas, on each tray.";
+  COPY.group.teaching="Put jars from the same tray together, so we compare trays fairly.";
+  COPY.counts.teaching="A tray label is not enough: we need how many jars, and how many had springtails, on each tray.";
   COPY.rates.teaching="A share lets us compare trays of any size, not just their totals.";
+  // Story spine beat 2 ("why this code", docs/design/06-story-spine.md, approved 2026-09-27):
+  // one plain line under the step title, before the task text, saying why this code answers the
+  // case question.
+  COPY.group.why="To count per tray, first put each tray's jars together.";
+  COPY.counts.why="Count the jars and the jars with springtails on each tray: this is the number the report says is 0 for T-C.";
+  COPY.rates.why="A share is what the report's 0 really claims: 0 of 2 jars. Write every tray the same way.";
   const COMPOSITION = Object.freeze({
     counts: Object.freeze([
       Object.freeze({id:"group", text:"groups = groupby(jars, :tray_id)"}),
@@ -75,8 +81,8 @@
   function lessonCopy(step) { return COPY[step]; }
   function casePurpose(step) {
     return ({
-      group:"Put jars from the same tray together, so we compare like with like.",
-      counts:"Toto: “T-C has one. So where did my zero come from?”",
+      group:"Toto: “Every tray gets counted the same way, before anyone points at one.”",
+      counts:"Toto: “T-C has one jar with springtails. So where did my zero come from?”",
       rates:"Two jars per tray is a small count, so a share of 0.5 is only one jar."
     })[step] || "";
   }
@@ -86,11 +92,13 @@
   function allHints(step) { const lesson=lessonCopy(step); if (!lesson) return []; return [lesson.shape, ...(Array.isArray(lesson.hints) ? lesson.hints : [])]; }
   // UI-09 (2026-09-24): the first staged hint is a plain-language plan, so its button offers the
   // smallest help first, as in C1, and the exhausted button is disabled rather than a no-op.
+  // r4 (2026-09-27): the ladder ends with the whole line, as in C1 and C3-C6. The last rung is the
+  // step's full answer, shown above the editor, so the ladder is the text hints plus one.
   function hintButtonLabel(shown, total) {
     if (shown >= total) return "All help shown";
-    if (shown === 0) return "Show the idea";
-    return shown === total - 1 ? "Show the code shape" : "Show more help";
+    return ["Show the idea", "Show the code shape", "Show the whole line"][shown] || "Show more help";
   }
+  function ladderTotal(step) { return allHints(step).length + 1; }
   // Repair 7 (orchestrator browser check, 2026-09-26): mystery_c2_case_info now always supplies its
   // own "question", so this no longer falls through to "goal" and overwrites the Case question box
   // with the step-goal sentence already shown lower on the page (a duplicate, item 5).
@@ -125,7 +133,7 @@
     return Object.assign({}, state, {expired:true, statusMessage:null, result:{
       type:"case_result", chapter:"C2", step:state.activeStep, request_id:requestId,
       status:"timeout", pass:false,
-      feedback:"This check took too long. Your code is still here; check it, then run again."
+      feedback:"This check took too long. Check your code, then run again."
     }});
   }
   function isRunPending(state) { return Boolean(state.outstandingRequestId) && !state.expired; }
@@ -183,27 +191,54 @@
   // Repair 5 (2026-09-24 browser walk-through): an accepted rates run also fills the Descriptive
   // summary's tray rack, so the returned-evidence panel does not draw the same rack a second time.
   function showsLiveRack(result, freshEvidence) { return Boolean(result && result.status === "ok" && result.pass === true && !freshEvidence); }
+  // Round 6 (r6-rc #5): a chapter solved on an earlier run still offers the way on to Chapter 3.
+  function solvedNextDestination(progress) { return hasAcceptedMove(progress, "rates") ? "chapter3" : null; }
   function nextStep(step, result) { return result && result.status === "ok" && result.pass === true && result.step === step ? ({group:"counts", counts:"rates", rates:"chapter3"})[step] || null : null; }
   function nextChapterUrl(search) { const attempt = new URLSearchParams(search || "").get("attempt"); return "chapter3.html" + (/^[a-z0-9-]{1,80}$/.test(attempt || "") ? "?attempt=" + encodeURIComponent(attempt) : ""); }
   function blockedStepMessage(step) {
     const prior = STEPS[STEPS.indexOf(step) - 1];
     const label = ({group:"grouping", counts:"counting"})[prior] || "earlier";
-    return "This move uses the " + label + " line from the previous move. Each Julia check starts fresh, so finish that move first (or use its deliberate full-answer reveal if you already know it). Your draft is safe.";
+    return "This step uses the " + label + " line from the previous step. Each Julia check starts fresh, so finish that step first (or open its full answer if you already know it). Your draft is safe.";
   }
   function displayError(message) { return String(message && (message.message || message.error || message.value_repr) || "No error detail was returned."); }
   // UI-12 and playtest stopping points (2026-09-24): each line below is keyed on the sandbox's
   // actual error text for a common C2 mistake (pinned in test/test_mystery_c2.jl). It names the
   // habit and leads the chapter's existing recovery copy; Julia's own error stays verbatim below.
+  // Night round 1 (2026-09-27, r1-bugs.md bug 2): the sandbox refuses a run that rebinds or edits a
+  // supplied input (src/sandbox.jl protected_bindings and each chapter's guarded code), so the checker
+  // can compare against the untouched case data. That guard stays; this line gives its real reason,
+  // keyed on the sandbox's own text, instead of unrelated advice. It never shows the finished line.
+  function protectedInputCoaching(message) {
+    const found = String(message && message.status === "error" && message.message || "").match(/The supplied (\w+) (binding|records|values) changed/);
+    if (!found) return "";
+    const name = found[1];
+    const how = found[2] === "binding" ? "gives " + name + " a new value (" + name + " = …)" : "changes " + name + ", by giving it a new value or by editing it";
+    return "Your code " + how + ". This step needs " + name + " kept exactly as it was supplied, so the check stopped. Your idea may still be right: leave " + name + " as it is and let the last line return your result, or give the result a new name, such as result = …, and end with result.";
+  }
   function c2ErrorNextStep(message) {
     if (!message || message.status !== "error") return "";
     const detail = displayError(message), step = message.step;
+    const guarded = protectedInputCoaching(message);
+    if (guarded) return guarded;
+    // Night round 1 (r1-novice.md item 1): R's group_by, keyed on Julia's own UndefVarError, as C3 does for left_join.
+    if (/UndefVarError: `group_by` not defined/.test(detail)) return "group_by is R's (dplyr) name. Julia's grouping function is groupby, with no underscore; it takes the table first, then the column.";
+    // Night playtest 2026-09-26: R's %>% is not Julia syntax, so it reaches the sandbox as a raw
+    // parse error with no word about the pipe. Keyed on the pipe itself, which the parse error's
+    // source excerpt always reprints verbatim.
+    if (/%>%/.test(detail)) return "R's pipe %>% does not exist in Julia. Julia's pipe is |>, and grouping is groupby(jars, :tray_id).";
+    // Night playtest 2026-09-26: a pandas-style method call after a dot (e.g. jars.groupby(...))
+    // reads as a missing column named after the method, which looks like a typo rather than a
+    // habit. Keyed on the exact DataFrames text for a missing column.
+    const KNOWN_FUNCTIONS = Object.freeze({groupby:"groupby(jars, :tray_id)", sample:"sample(jars.jar_id, 3; replace=false)", mean:"mean(jars.detected)"});
+    const methodCall = detail.match(/column name :([a-zA-Z_]\w*) not found in the data frame/);
+    if (methodCall && KNOWN_FUNCTIONS[methodCall[1]]) return methodCall[1] + " is a function in Julia, not something you call after a dot: " + KNOWN_FUNCTIONS[methodCall[1]] + ".";
     // Repair 7 (orchestrator browser check, 2026-09-26): a learner who kept `groups` or `counts`
     // from an earlier step (e.g. combine(groups, ...) in step 2) got only Julia's raw
     // "UndefVarError: `groups` not defined", with no hint that the name does not survive to a
     // fresh step. Keyed on that exact error text, made in step 1 (groups) or step 2 (counts).
     const carried = detail.match(/UndefVarError: `(groups|counts)` not defined/);
     if (carried) return "`" + carried[1] + "` was made in step " + (carried[1] === "groups" ? "1" : "2") + ". Each step starts fresh, so make it again here, starting from jars.";
-    if (/\b(?:table|group_column|count_rows|boolean_column|numerator|denominator)\b.*(?:not defined|doesn't exist)|(?:not defined|doesn't exist).*\b(?:table|group_column|count_rows|boolean_column|numerator|denominator)\b/i.test(detail)) return "That is a template word, not one of this chapter's inputs. Use the named B09 inputs above: jars, :tray_id, nrow, and :detected. Or use Show the complete answer just above your editor.";
+    if (/\b(?:table|group_column|count_rows|boolean_column|numerator|denominator)\b.*(?:not defined|doesn't exist)|(?:not defined|doesn't exist).*\b(?:table|group_column|count_rows|boolean_column|numerator|denominator)\b/i.test(detail)) return "That is a template word, not one of this chapter's inputs. Use the named B09 inputs above: jars, :tray_id, nrow, and :detected. Or open Stuck? Hints below the editor and use Show the full answer.";
     const column = detail.match(/UndefVarError: `(tray_id|detected)` not defined/);
     if (column) return column[1] + " is a column of jars, not a name Julia knows on its own. Name the column with a colon: :" + column[1] + ".";
     // Repair 3 (R5, 2026-09-24 re-test): the counts and group stopping points below were left with
@@ -251,7 +286,37 @@
   }
   // Julia's / on two whole numbers always returns a Float64, which Julia prints with a decimal point.
   function juliaDivision(value) { return Number.isInteger(value) ? value.toFixed(1) : String(value); }
-  function resultText(message) { const explanation = message && message.explanation; const parts = [c2ErrorNextStep(message) || c2ResultNextStep(message), message && (message.feedback || message.message)]; if (message && message.value_repr) parts.push("Julia returned: " + message.value_repr); if (explanation && explanation.julia) parts.push(explanation.julia); if (explanation && explanation.case) parts.push(explanation.case); return parts.filter(Boolean).join(" ") || (message && message.status === "error" ? displayError(message) : "No explanation was returned."); }
+  // Replay notes (2026-09-27): an error-specific line (R's %>%, a pandas-style dot call, and the
+  // other c2ErrorNextStep coaching below) used to be followed by the chapter's generic recovery
+  // copy and explanation, reading as one wrong message ("Julia stopped before the end...") after
+  // the right one. The specific coaching now replaces that generic stack, the same rule C1's
+  // challengeRecovery already applies (web/mystery.js). c2ResultNextStep (a wrong-shape but
+  // non-error result) is unaffected: that coaching still leads the server's own feedback.
+  // v0.2.5 night (fixer I1): the server's "coaching" line names the mistake it read from the code
+  // (src/mystery_c2.jl .. mystery_c6.jl). It is "" when there is none, and never used on a passing run.
+  function serverCoaching(message) {
+    return message && message.pass !== true && typeof message.coaching === "string" ? message.coaching.trim() : "";
+  }
+  const STOPPED_ENDING = " Change your code, then run again, or open Stuck? Hints below.";
+  const FINISHED_ENDING = " Your draft is still here. Change it and run again, or open Stuck? Hints below.";
+  const RESTORED_DRAFT_NOTE = "Restored your saved draft for this step; it is not supplied code.";
+  function resultText(message) {
+    // The server's line replaces the page's own guess (for summarise, the page used to blame the
+    // n column; for counts <- ..., a step 2 carry-over).
+    // Round 7 (r7-bugs #9): a coaching line ends the way it does in C1 and C3 to C6.
+    const coaching = serverCoaching(message);
+    if (coaching) return coaching + (message.status === "error" ? STOPPED_ENDING : FINISHED_ENDING);
+    const errorCoaching = c2ErrorNextStep(message);
+    if (errorCoaching) return errorCoaching + STOPPED_ENDING;
+    const explanation = message && message.explanation;
+    const parts = [c2ResultNextStep(message), message && (message.feedback || message.message)];
+    if (message && message.value_repr) parts.push("Julia returned: " + message.value_repr);
+    if (explanation && explanation.julia) parts.push(explanation.julia);
+    // r3 (2026-09-27): the server's failure "case" line ("Match all B09 trays to see what this
+    // step finds") told a stuck learner nothing, so the case line shows only on an accepted run.
+    if (explanation && explanation.case && message.status === "ok" && message.pass === true) parts.push(explanation.case);
+    return parts.filter(Boolean).join(" ") || (message && message.status === "error" ? displayError(message) : "No explanation was returned.");
+  }
   const NOT_SAVED_STATUS = "Right answer, but this computer could not save it, so the Case Board will not show it. Run it once more; if this keeps happening, ask your helper.";
   // Ask the saved record itself, never the write call: a write can fail silently (blocked storage, a damaged record).
   function savedMove(courseState, storage, attempt, chapter, moveId) { try { return Boolean(storage && courseState && typeof courseState.hasSavedMove === "function" && courseState.hasSavedMove(storage, attempt, chapter, moveId)); } catch (_) { return false; } }
@@ -293,7 +358,7 @@
     let state = createState(), socket = null, caseInfo = null, hints = 0, answerShown = false, reconnects = 0, timer = null, infoTimer = null, runTimer = null, stopped=false, compositionOrder=[], saveOk = true;
     const progress=loadProgress(storage);
     state.unlocked=unlockedStep(progress.accepted);
-    const el = {code:$("code"), run:$("run"), status:$("run-status"), output:$("result"), rows:$("returned-rows"), returnedEmpty:$("returned-empty"), sourceRows:$("source-rows"), rack:$("rack"), liveRack:$("live-rack"), groupingPreview:$("grouping-preview"), groupingPreviewResult:$("grouping-preview-result"), showGroups:$("show-groups"), stepTitle:$("step-title"), prompt:$("step-prompt"), purpose:$("case-purpose"), hints:$("hints"), hint:$("show-hint"), answer:$("show-answer"), answerOutput:$("complete-answer"), connection:$("connection"), reconnect:$("reconnect"), question:$("question"), draftNote:$("draft-note"), next:$("next-move"), rateParts:$("rate-parts"), composition:$("composition-scaffold"), compositionCards:$("composition-cards"), compositionFeedback:$("composition-feedback"), checkComposition:$("check-composition"), resetComposition:$("reset-composition"), bridgeCard:$("bridge-card")};
+    const el = {code:$("code"), run:$("run"), status:$("run-status"), output:$("result"), rows:$("returned-rows"), returnedEmpty:$("returned-empty"), sourceRows:$("source-rows"), rack:$("rack"), liveRack:$("live-rack"), groupingPreview:$("grouping-preview"), groupingPreviewResult:$("grouping-preview-result"), showGroups:$("show-groups"), stepTitle:$("step-title"), stepWhy:$("step-why"), prompt:$("step-prompt"), purpose:$("case-purpose"), hints:$("hints"), hint:$("show-hint"), answer:$("show-answer"), answerOutput:$("complete-answer"), connection:$("connection"), reconnect:$("reconnect"), question:$("question"), draftNote:$("draft-note"), next:$("next-move"), rateParts:$("rate-parts"), composition:$("composition-scaffold"), compositionCards:$("composition-cards"), compositionFeedback:$("composition-feedback"), checkComposition:$("check-composition"), resetComposition:$("reset-composition"), bridgeCard:$("bridge-card")};
     const bridges = typeof window !== "undefined" ? window.JuliaTimeBridges : null;
     function renderBridgeCard(step) { if (bridges) bridges.renderCard(el.bridgeCard, "C2/"+step, typeof progress.accepted[step] === "string" ? progress.accepted[step] : ""); }
     // The card must not show for a step unless that step's accepted result is also visible
@@ -321,8 +386,11 @@
         button.addEventListener("click",()=>{compositionOrder.push(card.id);renderComposition();});
         el.compositionCards.append(button);
       });
-      el.compositionFeedback.textContent=compositionOrder.length === 0 ? "Choose the first piece." : "Your construction: " + compositionOrder.map(id => cards.find(card => card.id === id).text).join(" → ");
+      el.compositionFeedback.textContent=compositionOrder.length === 0 ? "Choose the first piece." : "Your order: " + compositionOrder.map(id => cards.find(card => card.id === id).text).join(" → ");
     }
+    // r3 struggling #3 (2026-09-27): the step 1 rehearsal and groupby example stayed in the hint
+    // drawer on steps 2 and 3. Help marked with data-step-help shows only on its own step.
+    function showStepHelp(step) { document.querySelectorAll("[data-step-help]").forEach(node => { node.hidden = node.dataset.stepHelp !== step; }); }
     function showTimeout() { el.output.replaceChildren(); const copy=document.createElement("p"); copy.textContent=state.result.feedback; el.output.append(copy); }
     function setNotebookOpen(open) { const notebook = document.querySelector(".source-notebook"); if (notebook) notebook.open = open; }
     function setStep(step, focus=true) {
@@ -338,18 +406,20 @@
       state = cancelRun(state); state.activeStep = step; hints = 0; answerShown = false; compositionOrder=[];
       setNotebookOpen(notebookOpen(false));
       $("course-location").textContent = caseLocation(step);
-      el.stepTitle.textContent = current().title; el.prompt.textContent = current().prompt; el.purpose.textContent = casePurpose(step); $("return-spec").textContent = current().returnSpec; $("fresh-run").textContent = freshRunNote(step);
+      el.stepTitle.textContent = current().title; el.stepWhy.textContent = current().why || ""; el.prompt.textContent = current().prompt; el.purpose.textContent = casePurpose(step); $("return-spec").textContent = current().returnSpec; $("fresh-run").textContent = freshRunNote(step);
       $("step-teaching").textContent=current().teaching;
       el.rateParts.hidden=step!=="rates";
       const draft = starterDraft(storage, step);
       progress.step=step; saveProgress(storage,progress);
-      el.code.value = draft; el.draftNote.textContent = draft ? "Restored your saved draft for this move; it is not supplied code." : "This editor begins empty. Each run starts with the supplied jars table, so write the complete little script for this move.";
-      el.hints.textContent = ""; el.hint.textContent = hintButtonLabel(0, allHints(step).length); el.hint.disabled = false; el.answerOutput.replaceChildren(); el.answer.textContent = "Show the complete answer"; el.answer.disabled = false; el.output.replaceChildren(); el.rows.replaceChildren(); el.liveRack.replaceChildren(); el.returnedEmpty.hidden = false; el.next.hidden = true; renderComposition(); showBridgeCard(step, false);
+      el.code.value = draft; el.draftNote.textContent = draft ? RESTORED_DRAFT_NOTE : "This editor starts empty. Each run starts with the supplied jars table, so write the complete little script for this step.";
+      el.hints.textContent = ""; el.hint.textContent = hintButtonLabel(0, ladderTotal(step)); el.hint.disabled = false; el.answerOutput.replaceChildren(); el.answer.textContent = "Show the full answer"; el.answer.hidden = false; el.answer.disabled = false; showStepHelp(step); el.output.replaceChildren(); el.rows.replaceChildren(); el.liveRack.replaceChildren(); el.returnedEmpty.hidden = false; el.rows.removeAttribute("tabindex"); showSolvedNext(); renderComposition(); showBridgeCard(step, false);
       if (caseInfo) renderCase(caseInfo);
       refreshMoveNav(); updateControls(); if(focus) { el.stepTitle.tabIndex=-1; el.stepTitle.focus(); }
     }
     function refreshMoveNav() { document.querySelectorAll(".moves > [data-step]").forEach(b => { b.setAttribute("aria-current", b.dataset.step === state.activeStep ? "step" : "false"); b.disabled = !canEnterStep(progress, b.dataset.step); }); }
-    function updateControls() { const busy = isRunPending(state); el.run.disabled = state.connection !== "connected" || !caseInfo || busy; el.status.textContent = busy ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result, saveOk) : (state.connection === "connected" ? "Ready when you are" : "Connect to the lab to run Julia")); el.reconnect.hidden = !shouldShowReconnect(state); }
+    // r5 (2026-09-27): while Julia runs, Run stays focusable and reads as busy (aria-disabled), so keyboard focus is not dropped to the page.
+    function holdRun(button, blocked, busy) { if (!button) return; button.disabled = blocked; if (busy && !blocked) button.setAttribute("aria-disabled", "true"); else button.removeAttribute("aria-disabled"); }
+    function updateControls() { const busy = isRunPending(state); holdRun(el.run, state.connection !== "connected" || !caseInfo, busy); el.status.textContent = busy ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result, saveOk) : (state.connection === "connected" ? "Julia is ready" : "Connect to the lab to run Julia")); el.reconnect.hidden = !shouldShowReconnect(state); }
     function renderTable(rows, columns, target = el.rows, texts = null) { target.replaceChildren(); if (!Array.isArray(rows) || !Array.isArray(columns)) return; const table = document.createElement("table"), head = document.createElement("thead"), tr = document.createElement("tr"); columns.forEach(c => { const th=document.createElement("th"); th.textContent=c; tr.append(th); }); head.append(tr); table.append(head); const body=document.createElement("tbody"); rows.forEach((row, i) => { const r=document.createElement("tr"); columns.forEach(c => { const td=document.createElement("td"); td.textContent=juliaCell(row, Array.isArray(texts) ? texts[i] : null, c); r.append(td); }); body.append(r); }); table.append(body); target.append(table); }
     function renderGroupingPreview(rows) {
       el.groupingPreview.replaceChildren();
@@ -374,17 +444,22 @@
       });
       if(step !== "group") {const note=document.createElement("small"); note.textContent="Each symbol represents one counted jar, not a particular jar ID."; target.append(note);}
     }
-    function renderEvidence(evidence, restored) { renderRack("rates",evidence.rows,el.rack,evidence.row_text); $("evidence").hidden=false; $("evidence-copy").textContent = restored ? "Unverified saved display from this browser. Run it again to check it today. Saved data can be changed or become stale. Run the final move again to verify these values against the server's B09 records." : "These are your checked returned summaries. They describe recorded detections by tray, not a cause. Pick two trays: explain their detected counts, jar counts and proportions. What would you want to check on the tally sheet next?"; }
-    function renderCase(message) { caseInfo = message; state = Object.assign({}, state, {infoRequestId:null, metadataFailure:""}); clearInfoTimer(); el.question.textContent=caseQuestionText(message); if (Array.isArray(message.rows) && Array.isArray(message.columns)) renderTable(message.rows, message.columns, el.sourceRows); const example=rateExample(message.rows);if(state.activeStep==="rates"&&example)el.rateParts.innerHTML=`<strong>Rate parts:</strong> In tray <code>${example.tray_id}</code>, <code>detected_n</code> is ${example.detected_n} and <code>n</code> is ${example.n}, so <code>${example.detected_n} / ${example.n} = ${juliaDivision(example.rate)}</code>. Julia applies that matching division to every tray with <code>detected_n ./ n</code>.`; updateControls(); }
+    function showSolvedNext() { const next = solvedNextDestination(progress); el.next.hidden = !next; if (next) { el.next.dataset.destination = next; el.next.textContent = "Chapter 3: where did the 0 come from? →"; } }
+    function renderEvidence(evidence, restored) { renderRack("rates",evidence.rows,el.rack,evidence.row_text); $("evidence").hidden=false; $("evidence-copy").textContent = restored ? "This rack is from an earlier run. Saved on this computer. Run the last step again to check it now." : "Julia checked these counts. They show how many jars had springtails on each tray, not why. Next: check these counts against the tally sheet."; }
+    function renderCase(message) { caseInfo = message; state = Object.assign({}, state, {infoRequestId:null, metadataFailure:""}); clearInfoTimer(); el.question.textContent=caseQuestionText(message); if (Array.isArray(message.rows) && Array.isArray(message.columns)) renderTable(message.rows, message.columns, el.sourceRows); const example=rateExample(message.rows);if(state.activeStep==="rates"&&example)el.rateParts.innerHTML=`<strong>Share parts:</strong> In tray <code>${example.tray_id}</code>, <code>detected_n</code> is ${example.detected_n} and <code>n</code> is ${example.n}, so <code>${example.detected_n} / ${example.n} = ${juliaDivision(example.rate)}</code>. Julia applies that matching division to every tray with <code>detected_n ./ n</code>.`; updateControls(); }
     function handle(message) {
       if (isCurrentCaseInfo(state, message)) return renderCase(message);
       if (message.type === "error") { const before=state; state=failCaseInfo(state,message); if(before!==state) { clearInfoTimer(); el.sourceRows.textContent=state.metadataFailure; updateControls(); } return; }
       if (message.type === "status") { const before=state; state=applyRunStatus(state,message); if(before===state) return; armRunDeadline(state.outstandingRequestId); updateControls(); return; }
       const before=state; state=applyCaseResult(state,message); if (before===state) return;
       clearRunTimer();
-      const result=state.result; el.output.replaceChildren(); el.next.hidden=true;
+      const result=state.result; el.output.replaceChildren(); showSolvedNext();
       const copy=document.createElement("p");
       copy.textContent=resultText(Object.assign({},result,{value_repr:""})); el.output.append(copy);
+      // r3 story F1 (2026-09-27): the step 3 limit ("T-C, the newest check, is down by one jar...")
+      // is its own line after an accepted run, the way Chapter 3 shows its limit.
+      const limit=result.status === "ok" && result.pass === true && result.explanation && result.explanation.limit;
+      if(limit) { const line=document.createElement("p"); line.className="limit"; line.textContent=String(limit); el.output.append(line); }
       if(result.value_repr || result.message || result.stdout) {
         const raw=document.createElement("details"), summary=document.createElement("summary"), pre=document.createElement("pre");
         summary.textContent=result.status === "error" ? "Original Julia error" : "Actual Julia output";
@@ -407,6 +482,8 @@
         if(next) { if(next !== "chapter3" && STEPS.indexOf(next)>STEPS.indexOf(state.unlocked)) state.unlocked=next; el.next.hidden=false; el.next.dataset.destination=next; el.next.textContent=next === "chapter3" ? "Chapter 3: where did the 0 come from? →" : "Next: " + COPY[next].title + " →"; }
       }
       el.returnedEmpty.hidden = el.rows.childElementCount > 0 || el.liveRack.childElementCount > 0;
+      // r5 (2026-09-27): the returned table is a tab stop only when it has rows; empty, it was an invisible stop.
+      if (el.rows.childElementCount > 0) el.rows.tabIndex = 0; else el.rows.removeAttribute("tabindex");
       if(state.evidence) {
         if(freshEvidence && storage) persistEvidence(storage,state.evidence);
         renderEvidence(state.evidence,!freshEvidence);
@@ -417,11 +494,11 @@
     function focusResult() { if (el.output) el.output.focus(); }
     function send(msg) { if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg)); }
     function connect() { if(stopped) return; clearInfoTimer(); clearRunTimer(); if (location.protocol === "file:") { state.connection="offline"; el.connection.textContent="Start the Julia server: open http://127.0.0.1:8000 after running run.jl"; updateControls(); return; } clearTimeout(timer); state=disconnect(state); caseInfo=null; const old=socket; socket=null; if(old) old.close(); state.connection="connecting"; el.connection.textContent="Connecting to the lab…"; updateControls(); try { socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws"); } catch (_) { return retry(); } const ws=socket;
-      ws.addEventListener("open", () => { if(!isCurrentSocket(socket,ws)) return; reconnects=0; state.connection="connected"; el.connection.textContent="Lab link ready"; const id=requestId(); state=beginInfo(state,id); updateControls(); send({type:"case_info", chapter:"C2", request_id:id}); infoTimer=setTimeout(()=>{const before=state;state=expireInfo(state,id);if(state!==before){el.sourceRows.textContent=state.metadataFailure;updateControls();}},INFO_DEADLINE_MS); });
+      ws.addEventListener("open", () => { if(!isCurrentSocket(socket,ws)) return; reconnects=0; state.connection="connected"; el.connection.textContent="Julia is ready"; const id=requestId(); state=beginInfo(state,id); updateControls(); send({type:"case_info", chapter:"C2", request_id:id}); infoTimer=setTimeout(()=>{const before=state;state=expireInfo(state,id);if(state!==before){el.sourceRows.textContent=state.metadataFailure;updateControls();}},INFO_DEADLINE_MS); });
       ws.addEventListener("message", event => { if(!isCurrentSocket(socket,ws)) return; try { handle(JSON.parse(event.data)); } catch (_) {} });
       ws.addEventListener("close", () => { if(!isCurrentSocket(socket,ws)) return; clearInfoTimer(); clearRunTimer(); state=disconnect(state); retry(); });
     }
-    function retry() { if(stopped) return; clearInfoTimer(); state=disconnect(state); updateControls(); if (++reconnects > 3) { el.connection.textContent="Lab link offline: your draft is still here."; return; } el.connection.textContent="Lab link interrupted, reconnecting…"; timer=setTimeout(connect, 1000 * reconnects); }
+    function retry() { if(stopped) return; clearInfoTimer(); state=disconnect(state); updateControls(); if (++reconnects > 3) { el.connection.textContent="Julia is offline: your draft is still here."; return; } el.connection.textContent="Connection to Julia lost. Reconnecting…"; timer=setTimeout(connect, 1000 * reconnects); }
     document.querySelectorAll(".moves [data-step]").forEach(b => b.addEventListener("click", () => setStep(b.dataset.step)));
     el.showGroups.addEventListener("click", () => {
       if (!caseInfo || !Array.isArray(caseInfo.rows)) { el.groupingPreviewResult.textContent="The jar records are still loading. Your code draft is unaffected."; return; }
@@ -434,24 +511,37 @@
       el.compositionFeedback.textContent=compositionIsCorrect(state.activeStep,compositionOrder) ? "Yes. That is the build order. These use the real names from this chapter; this practice did not run Julia, add evidence, or write code for you." : "Not yet. A later line needs a name made by an earlier line. Start again and build from the supplied jars table toward the returned counts table.";
     });
     el.resetComposition.addEventListener("click",()=>{compositionOrder=[];renderComposition();});
-    el.code.addEventListener("input", () => { clearRunTimer(); state=cancelRun(state); el.next.hidden=true; if(storage) persistDraft(storage,state.activeStep,el.code.value); updateControls(); });
+    // Round 7 (r7-bugs #7): the restored-draft note goes on the first edit and on Run, as in Chapter 1.
+    function clearRestoredDraftNote() { if (el.draftNote.textContent === RESTORED_DRAFT_NOTE) el.draftNote.textContent = ""; }
+    el.code.addEventListener("input", () => { clearRunTimer(); clearRestoredDraftNote(); state=cancelRun(state); showSolvedNext(); if(storage) persistDraft(storage,state.activeStep,el.code.value); updateControls(); });
     el.code.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); el.run.click(); } });
-    el.run.addEventListener("click", () => { if(el.run.disabled) return; const id=requestId(); state=beginRun(state,id,state.activeStep); updateControls(); el.output.textContent="Julia is checking this move (usually under two seconds)…"; send({type:"case_run", case_id:"missing-fleas-v1", chapter:"C2", step:state.activeStep, code:el.code.value, request_id:id}); armRunDeadline(id); });
+    el.run.addEventListener("click", () => { if(el.run.disabled || isRunPending(state)) return; clearRestoredDraftNote(); const id=requestId(); state=beginRun(state,id,state.activeStep); updateControls(); el.output.textContent="Julia is checking this step (usually under two seconds)…"; send({type:"case_run", case_id:"missing-fleas-v1", chapter:"C2", step:state.activeStep, code:el.code.value, request_id:id}); armRunDeadline(id); });
     function revealHints(lastIndex) {
-      const list=allHints(state.activeStep);
-      while(hints <= lastIndex && hints < list.length) { const p=document.createElement("p"); p.textContent=list[hints++]; el.hints.append(p); }
-      el.hint.textContent=hintButtonLabel(hints, list.length); el.hint.disabled=hints >= list.length;
+      const list=allHints(state.activeStep), total=ladderTotal(state.activeStep);
+      while(hints <= lastIndex && hints < total) {
+        if (hints < list.length) { const p=document.createElement("p"); p.textContent=list[hints]; el.hints.append(p); }
+        else revealCompleteAnswer();
+        hints++;
+      }
+      const done=hints >= total;
+      el.hint.textContent=hintButtonLabel(hints, total); el.hint.disabled=done;
+      // One full-answer control (r3, 2026-09-27): once the answer is out, the button has nothing left to show.
+      el.answer.hidden=done;
+      // r4 (2026-09-27): the button that had focus is now disabled or hidden, so focus moves to the answer.
+      if (done) focusShown(el.answerOutput);
     }
+    function focusShown(target) { if (!target) return; target.tabIndex = -1; target.focus({preventScroll:true}); target.scrollIntoView({block:"nearest"}); }
     function revealCompleteAnswer() {
       if (answerShown) return;
-      const label=document.createElement("p"), pre=document.createElement("pre"), note=document.createElement("p");
-      label.className="complete-answer-label"; label.textContent="Reference code answer: runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or count as a saved answer.";
+      const label=document.createElement("p"), pre=document.createElement("pre"), note=document.createElement("p"), pointer=document.createElement("p");
+      label.className="complete-answer-label"; label.textContent="Reference code answer: type or paste it into your editor and press Run this step to see what Julia returns. It does not count as a saved answer until Julia checks it.";
       pre.className="complete-answer-code"; pre.textContent=current().answerCode;
-      note.textContent="Each Run Julia check starts fresh with the supplied jars table, so this block includes every line it needs.";
-      el.answerOutput.append(label,pre,note); answerShown=true; el.answer.textContent="Complete answer shown"; el.answer.disabled=true;
+      note.textContent="Each run starts fresh with the supplied jars table, so this block includes every line it needs.";
+      el.answerOutput.append(label,pre,note); answerShown=true;
+      pointer.textContent="The complete runnable answer is shown above your editor."; el.hints.append(pointer);
     }
     el.hint.addEventListener("click", () => revealHints(hints));
-    el.answer.addEventListener("click", revealCompleteAnswer);
+    el.answer.addEventListener("click", () => revealHints(ladderTotal(state.activeStep) - 1));
     el.next.addEventListener("click", () => { const next=el.next.dataset.destination || nextStep(state.activeStep,state.result); if(next === "chapter3") { location.assign(nextChapterUrl(location.search)); return; } if(next) setStep(next); });
     $("back-c1").href = "index.html" + (attempt ? "?attempt=" + encodeURIComponent(attempt) : "");
     $("case-board").href = caseBoardUrl(location.search);
@@ -474,5 +564,5 @@
     $("reconnect").addEventListener("click", () => { reconnects=0; connect(); });
     window.addEventListener("pagehide", () => { stopped=true; clearTimeout(timer); clearInfoTimer(); clearRunTimer(); state=cancelRun(state); if(socket) socket.close(); }); connect();
   }
-  return {notebookOpen, INFO_DEADLINE_MS, RUN_DEADLINE_MS, storagePrefix, caseBoardUrl, caseLocation, nextChapterUrl, requestedMove, initialStep, unlockedStep, hasOwnChapterWork, bridgeCardCode, canEnterStep, blockedStepMessage, createState, beginInfo, failCaseInfo, expireInfo, isCurrentCaseInfo, beginRun, cancelRun, expireRun, isRunPending, applyRunStatus, leaveInvestigation, disconnect, shouldShowReconnect, applyCaseResult, validEvidenceDisplay, persistDraft, loadDraft, hasDraft, starterDraft, saveProgress, loadProgress, persistEvidence, loadEvidence, rackLabels, rateExample, groupingPreview, groupingPreviewMessage, jarMarks, showsLiveRack, nextStep, resultText, juliaCell, juliaDivision, runOutcomeStatus, displayError, c2ErrorNextStep, c2ResultNextStep, isCurrentSocket, lessonCopy, casePurpose, allHints, hintButtonLabel, freshRunNote, caseQuestionText, compositionCards, compositionIsCorrect, courseStepTitle, courseEvidencePayload, persistAcceptedCourseState, init};
+  return {notebookOpen, INFO_DEADLINE_MS, RUN_DEADLINE_MS, storagePrefix, caseBoardUrl, caseLocation, nextChapterUrl, requestedMove, initialStep, unlockedStep, hasOwnChapterWork, bridgeCardCode, canEnterStep, blockedStepMessage, createState, beginInfo, failCaseInfo, expireInfo, isCurrentCaseInfo, beginRun, cancelRun, expireRun, isRunPending, applyRunStatus, leaveInvestigation, disconnect, shouldShowReconnect, applyCaseResult, validEvidenceDisplay, persistDraft, loadDraft, hasDraft, starterDraft, saveProgress, loadProgress, persistEvidence, loadEvidence, rackLabels, rateExample, groupingPreview, groupingPreviewMessage, jarMarks, showsLiveRack, nextStep, solvedNextDestination, resultText, juliaCell, juliaDivision, runOutcomeStatus, displayError, c2ErrorNextStep, c2ResultNextStep, isCurrentSocket, lessonCopy, casePurpose, allHints, ladderTotal, hintButtonLabel, freshRunNote, caseQuestionText, compositionCards, compositionIsCorrect, courseStepTitle, courseEvidencePayload, persistAcceptedCourseState, init};
 });

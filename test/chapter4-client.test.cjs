@@ -106,7 +106,7 @@ test("C4's one accepted recheck rack is the route to the probability chapter", (
 test("C4 shows the revealed answer above the empty learner editor", () => {
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter4.html"), "utf8");
   assert.ok(html.indexOf('id="answer-before-editor"') < html.indexOf('id="code"'));
-  assert.match(client.fullAnswerReference(MOVE), /does not enter your editor/i);
+  assert.match(client.fullAnswerReference(MOVE), /does not go into your editor/i);
   assert.match(client.fullAnswerReference(MOVE), /sample\(eligible\.jar_id, 3; replace=false\)/);
 });
 
@@ -119,18 +119,14 @@ test("C4 keeps recovery, keyboard use, and no-invented-observation wording", () 
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
 
-test("C4 ends on Momo's teaser about the five jars, hidden until the step is accepted", () => {
+// r5 (2026-09-27): Momo's doubt is spoken once, in the C5 opening (story bible section 5, C4/C5 seam).
+// The C4 teaser line under the Next button was a second mention, so it is gone; the Next button names
+// what C5 does, not whose doubt it is.
+test("C4 ends on the Next button, with no teaser of Momo's doubt", () => {
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter4.html"), "utf8");
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter4.js"), "utf8");
-  const nextIndex = html.indexOf('id="next-move"');
-  const teaserIndex = html.indexOf('id="c4-teaser"');
-  assert.ok(nextIndex >= 0 && teaserIndex > nextIndex, "the teaser sits after the Next button");
-  const teaserMatch = html.match(/<p id="c4-teaser"[^>]*>(.*?)<\/p>/);
-  assert.ok(teaserMatch, "the teaser paragraph exists");
-  assert.match(teaserMatch[0], /\bhidden\b/, "the teaser starts hidden, like the Next button");
-  assert.match(teaserMatch[1], /Momo/);
-  assert.match(teaserMatch[1], /Something about those five jars bothers me/);
-  // The doubt itself is said once, in the C5 opening (story bible section 5, C4/C5 seam); this is a teaser only.
-  assert.doesNotMatch(teaserMatch[1], /too good to be true/i);
-  assert.match(source, /el\.teaser\.hidden\s*=\s*false/, "the teaser reveals alongside the Next button");
+  assert.ok(html.indexOf('id="next-move"') >= 0, "the Next button is still there");
+  assert.doesNotMatch(html, /id="c4-teaser"|bothers me/);
+  assert.doesNotMatch(source, /teaser|Momo's doubt|too good to be true/i);
+  assert.match(source, /el\.next\.textContent = "Chapter 5: what would plain chance give\? →"/);
 });

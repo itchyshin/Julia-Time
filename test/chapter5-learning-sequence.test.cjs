@@ -19,7 +19,7 @@ test("C5 explains how Toto's card game works before the supplied case inputs", (
   const recipeEnd = html.indexOf('</details>', recipe);
   const recipeCopy = html.slice(recipe, recipeEnd);
   assert.match(recipeCopy, /six cards, one for each jar/i);
-  assert.match(recipeCopy, /teal means fleas/i);
+  assert.match(recipeCopy, /teal means springtails/i);
   assert.match(recipeCopy, /1,?000 rounds/i);
   assert.match(recipeCopy, /what-if, not new jars/i);
 });

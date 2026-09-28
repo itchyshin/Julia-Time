@@ -28,7 +28,7 @@ test("UI-07: C4 never calls an unseeded random draw reproducible, and says re-ru
   assert.match(copy.planningProtocol, /fair/i);
   assert.match(copy.planningProtocol, /each run may choose a different three/i);
   assert.match(copy.planningProtocol, /any three different jars are right/i);
-  assert.match(html, /picked at random, so nobody chooses the jars that look easy/);
+  assert.match(html, /picked at random, so nobody chooses the jars they already trust/); // story spine 2026-09-27: one idea, same words as Itchy
 });
 
 test("UI-12: C4 names R's FALSE and TRUE from Julia's own error, before the existing recovery copy", () => {
@@ -56,16 +56,18 @@ test("UI-12: the rendered error result passes Julia's message to the recovery co
   assert.match(script, /message\.status === "error"\) p\.textContent = recoveryCopy\(message\)/);
 });
 
-test("stopping point: the item bridge points at the Help me start panel that holds the code shape", () => {
+// r3 (2026-09-27): the inner "Help me start" fold is gone; opening Stuck? Hints shows the ladder.
+test("stopping point: the item bridge points at the Stuck? Hints panel that holds the code shape", () => {
   const copy = client.lessonCopy(MOVE);
   assert.match(copy.itemBridge, /eligible\.jar_id/);
-  assert.match(copy.itemBridge, /Open Help me start in Stuck\? Hints below the editor/);
+  assert.match(copy.itemBridge, /Open Stuck\? Hints below the editor/);
   assert.doesNotMatch(copy.itemBridge, /sample\(eligible\.jar_id/);
-  const help = html.match(/<details class="help"><summary>([\s\S]*?)<\/summary>/);
+  assert.doesNotMatch(html, /Help me start/);
+  const help = html.match(/<details class="jt-help">\s*<summary>([\s\S]*?)<span>/);
   assert.ok(help, "C4 keeps one help panel");
-  assert.match(help[1], /^Help me start </, "the label the bridge names exists on the page");
+  assert.match(help[1], /^Stuck\? Hints/, "the label the bridge names exists on the page");
   assert.ok(html.indexOf('id="case-bindings"') < html.indexOf('id="code"'));
-  assert.ok(html.indexOf('id="code"') < html.indexOf('<details class="help">'), "the help panel is below the editor");
+  assert.ok(html.indexOf('id="code"') < html.indexOf('<details class="jt-help">'), "the help panel is below the editor");
 });
 
 test("stopping point: the page says plainly that Julia's sample repeats unless replace=false is given", () => {

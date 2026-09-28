@@ -30,7 +30,7 @@ test("the participant Start Here page explains the local game before asking for 
   assert.match(guide, /Only call the game ready when the Case Board says Julia is ready/i);
   assert.match(guide, /Internet is needed to download Julia and for the first course setup/i);
   assert.match(guide, /check_setup\.jl/);
-  assert.match(guide, /OK — Julia Time is ready/);
+  assert.match(guide, /OK: Julia Time is ready/);
   assert.match(guide, /run\.jl/);
   assert.match(guide, /Windows Command Prompt: start the local lab/i);
   assert.match(guide, /set JULIA_NUM_THREADS=4[\s\S]*set OPENBLAS_NUM_THREADS=1[\s\S]*run\.jl/i);
@@ -38,16 +38,33 @@ test("the participant Start Here page explains the local game before asking for 
   assert.match(guide, /\$env:JULIA_NUM_THREADS = "4"[\s\S]*\$env:OPENBLAS_NUM_THREADS = "1"[\s\S]*run\.jl/i);
   assert.match(guide, /127\.0\.0\.1:8000\/course\/index\.html/);
   assert.match(guide, /id="how-to-play"/);
-  assert.match(guide, /Help me start/i);
+  assert.match(guide, /Stuck\? Hints/i);
+  assert.doesNotMatch(guide, /Help me start/i);  // round 3: that fold no longer exists
   assert.match(guide, /final 10 terminal lines/i);
-  assert.match(guide, /Choose the block whose title exactly matches your terminal/i);
+  assert.match(guide, /Pick the block whose title exactly matches your terminal/i);
   assert.doesNotMatch(guide, /<details[^>]*\bopen\b/i, "a platform-specific command must never be the default visible command");
   assert.match(guide, /all six case chapters are on the Case Board/i);
   assert.match(guide, /href="http:\/\/127\.0\.0\.1:8000\/course\/index\.html"[^>]*>Open the local Case Board/i);
   assert.match(guide, /static page.*mystery.*own laptop/i);
   assert.match(readme, /\[Start here\]\(web\/course\/getting-started\.html\)/i);
   assert.match(install, /\[Start here\]\(\.\.\/web\/course\/getting-started\.html\)/i);
-  assert.doesNotMatch(guide, /<script\b/i, "the guide must remain a safe static page, not a second game client");
+  // The guide stays a safe static page, not a second game client: its one script only fixes one link.
+  const scripts = guide.match(/<script\b[^>]*>/gi) || [];
+  assert.deepEqual(scripts, ['<script defer src="getting-started.js">'], "the guide may load only its link script");
+  const linkScript = read("web/course/getting-started.js");
+  assert.doesNotMatch(linkScript, /WebSocket|localStorage|sessionStorage|fetch\(|XMLHttpRequest|innerHTML/, "the link script must not talk to the game or store anything");
+});
+
+test("Open the local Case Board stays on the port the game is running on and keeps the attempt", () => {
+  const {boardHref} = require("../web/course/getting-started.js");
+  const at = (href) => { const url = new URL(href); return {protocol:url.protocol, hostname:url.hostname, search:url.search}; };
+  // Served by the game on a fallback port: same address, so the link cannot open another program on 8000.
+  assert.equal(boardHref(at("http://127.0.0.1:8003/course/getting-started.html")), "index.html");
+  assert.equal(boardHref(at("http://localhost:8000/course/getting-started.html?attempt=f3-check")), "index.html?attempt=f3-check");
+  assert.equal(boardHref(at("http://127.0.0.1:8001/course/getting-started.html?attempt=Bad Id")), "index.html");
+  // Opened from the folder, or shared as a static page elsewhere: keep the usual local address in the HTML.
+  assert.equal(boardHref(at("file:///Users/me/julia-time/web/course/getting-started.html")), null);
+  assert.equal(boardHref(at("https://example.org/course/getting-started.html")), null);
 });
 
 test("the Case Board offers instructions without moving its primary game action", () => {

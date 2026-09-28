@@ -55,6 +55,8 @@
   background: #050b0f;
   color: #fff8e9;
   white-space: pre-wrap;
+  /* r5 (2026-09-27): a long pandas line breaks inside the card instead of widening a phone page. */
+  overflow-wrap: anywhere;
 }
 
 .bridge-card ul {

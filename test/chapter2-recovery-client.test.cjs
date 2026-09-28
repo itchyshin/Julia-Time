@@ -17,7 +17,9 @@ test("C2 expires only the current stalled run and restores a retryable timeout r
   assert.equal(recovered.evidence, null);
   assert.equal(recovered.result.status, "timeout");
   assert.equal(recovered.result.request_id, "c2-run-now");
-  assert.match(recovered.result.feedback, /code is still here/i);
+  // The outcome line above the result says "Your code is still here" once (still-here-once.test.cjs).
+  assert.match(recovered.result.feedback, /Check your code, then run again/);
+  assert.match(client.runOutcomeStatus(recovered.result), /code is still here/i);
   assert.match(recovered.result.feedback, /run again/i);
 });
 

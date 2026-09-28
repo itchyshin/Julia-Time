@@ -19,7 +19,7 @@ test("C1 exposes one named Case Board route and a plain-language location", () =
   assert.equal(client.caseLocation("intro"), "Chapter 1 of 6 · Meet the case");
   assert.equal(client.caseLocation("notebook"), "Chapter 1 of 6 · Inspect the notebook");
   assert.equal(client.caseLocation("code"), "Chapter 1 of 6 · Find the B09 jars");
-  assert.equal(client.caseLocation("result"), "Chapter 1 of 6 · Inspect your evidence");
+  assert.equal(client.caseLocation("result"), "Chapter 1 of 6 · The B09 jars");
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/index.html"),"utf8");
   assert.match(html, /id="case-board"/);
   assert.match(html, /Chapter 1 of 6/);
@@ -57,7 +57,7 @@ test("C1 names the practiced Boolean-row-selection path beside the independent e
   assert.ok(bridge > editor, "the transfer bridge should occur in the independent-editor panel");
   const bridgeCopy = html.slice(bridge, bridge + 700);
   assert.match(bridgeCopy, /Your step:.*make one true or false for each jar/i);
-  assert.match(bridgeCopy, /rows place/i);
+  assert.match(bridgeCopy, /rows position/i);
   assert.match(bridgeCopy, /all columns/i);
   assert.doesNotMatch(bridgeCopy, /jars\.batch_id\s*\.==\s*case_batch/);
   assert.doesNotMatch(bridgeCopy, /jars\[rows,\s*:\]/);
@@ -66,10 +66,10 @@ test("C1 names the practiced Boolean-row-selection path beside the independent e
 
 test("T3: the direct-entry bridge line names no practice screen the player never saw", () => {
   assert.match(client.bridgeText(true), /the practice/i);
-  assert.match(client.bridgeText(true), /rows place/i);
+  assert.match(client.bridgeText(true), /rows position/i);
   assert.match(client.bridgeText(true), /all columns/i);
   assert.doesNotMatch(client.bridgeText(false), /the practice/i);
-  assert.match(client.bridgeText(false), /rows place/i);
+  assert.match(client.bridgeText(false), /rows position/i);
   assert.match(client.bridgeText(false), /all columns/i);
 });
 
@@ -81,13 +81,13 @@ test("practice restores lesson and code together and rejects malformed saves", (
 
 test("C1 clears the indexing practice before teaching the separate Boolean-rule exercise", () => {
   const source = require("node:fs").readFileSync(require("node:path").join(__dirname, "../web/mystery.js"), "utf8");
-  assert.match(source, /Replace the earlier indexing expression with the rule shown above/i);
+  assert.match(source, /Replace your first try with the rule shown above/i); // plain words, 2026-09-27
   assert.match(source, /function showRuleLesson\(\)[\s\S]*?\$\("practice-code"\)\.value = ""/);
 });
 
 test("C1 tells the learner that the earlier indexing expression was cleared before the Boolean-rule task", () => {
   const source = require("node:fs").readFileSync(require("node:path").join(__dirname, "../web/mystery.js"), "utf8");
-  assert.match(source, /function beginRuleLesson\(\)[\s\S]*?earlier indexing expression has been cleared[\s\S]*?Type the Boolean rule shown above from scratch/i);
+  assert.match(source, /function beginRuleLesson\(\)[\s\S]*?your first try has been cleared[\s\S]*?Type the true-or-false rule shown above/i); // plain words, 2026-09-27
   assert.match(source, /\$\("practice-next"\)\.addEventListener\("click", beginRuleLesson\)/);
 });
 
@@ -116,14 +116,31 @@ test("C1 challenge errors name the missing row-rule decision without supplying a
     pass: false,
     message: "ArgumentError: syntax df[column] is not supported",
   });
-  assert.match(recovery, /batch_id column as a vector/i);
+  assert.match(recovery, /batch_id column as a list/i);
   assert.match(recovery, /true-or-false row rule/i);
-  assert.match(recovery, /first nudge/i);
+  assert.match(recovery, /Show the idea/);
   assert.doesNotMatch(recovery, /jars\.batch_id\s*\.==\s*case_batch/);
   assert.equal(client.challengeRecovery({status:"ok", pass:true}), "");
 });
 
-test("T4: the R-$ habit and the missing-broadcast-dot error get different first lines, then the shared step", () => {
+// S1 (2026-09-27 adversary review): renderResult (web/mystery.js) hid the server's own
+// result.feedback for ANY error, because challengeRecovery always returns at least the C1 "shared"
+// next step. A plain typo with no matching coaching (jars.bathc_id) must keep both the server's
+// feedback line and the shared next step, as in v0.2.3; only a specific coaching line replaces the
+// server's feedback. (Re-review 2026-09-27: returning "" here dropped the next step instead.)
+test("S1: an uncoached error keeps the shared next step and the server's feedback", () => {
+  const plainTypo = client.challengeRecovery({
+    status: "error",
+    message: "bathc_id is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `bathc_id` not defined",
+  });
+  assert.match(plainTypo, /^Next step: read the batch_id column as a list/);
+  assert.equal(client.hidesServerFeedback(plainTypo), false);
+  const coached = client.challengeRecovery({status: "error", message: "UndefVarError: `$` not defined"});
+  assert.equal(client.hidesServerFeedback(coached), true);
+  assert.equal(client.hidesServerFeedback(""), false);
+});
+
+test("T4: the R-$ habit and the missing-broadcast-dot error get different first lines and fitting endings", () => {
   const dollarError = client.challengeRecovery({
     status: "error",
     message: "$ is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `$` not defined",
@@ -135,10 +152,11 @@ test("T4: the R-$ habit and the missing-broadcast-dot error get different first 
   assert.notEqual(dollarError, boolError);
   assert.match(dollarError, /\$ does not exist in Julia/);
   assert.match(boolError, /not one per row/);
-  // Both still end in the same shared next step, so the recovery reads as one continuous path.
-  const shared = "Next step: read the batch_id column as a vector, make a true-or-false row rule from it, then use the first nudge under “Stuck? Hints” below if you need to place that rule in the table. Your draft is unchanged.";
+  // The $ mistake still ends in the shared next step. The plain == already made the row rule, so it
+  // ends with the error ending instead (r7-r-struggling #8, 2026-09-28).
+  const shared = "Next step: read the batch_id column as a list, make a true-or-false row rule from it, then open “Show the idea” under “Stuck? Hints” below if you need to place that rule in the table.";
   assert.ok(dollarError.endsWith(shared));
-  assert.ok(boolError.endsWith(shared));
+  assert.ok(boolError.endsWith("Change your code, then run again, or open Stuck? Hints below."));
 });
 
 test("C1 gives a plain accepted-or-not-accepted status after each case run", () => {
@@ -184,7 +202,7 @@ test("only the evidence display is persisted and can be restored", () => {
   const storage = memoryStorage();
   const evidence = { id: "b09", title: "B09 retained", text: "Three records" };
 
-  const display = { evidence, rows: [["B09", "flea"]], explanation: { julia: "filtered", case: "kept" } };
+  const display = { evidence, rows: [["B09", "springtail"]], explanation: { julia: "filtered", case: "kept" } };
   assert.equal(client.persistEvidence(storage, display), true);
   assert.deepEqual(client.loadEvidence(storage), display);
   assert.equal(client.persistCode(storage, "records[records.batch .== \"B09\", :]"), true);
@@ -246,9 +264,10 @@ test("typed server cells use their safe display label", () => {
   assert.equal(client.displayCell("B09"), "B09");
 });
 test('hint controls warn before revealing the complete solution', () => {
-  assert.equal(client.hintButtonLabel(0, 3), 'Show a first nudge');
+  // The same three labels as Chapters 2 to 6 (r1 audit F10).
+  assert.equal(client.hintButtonLabel(0, 3), 'Show the idea');
   assert.equal(client.hintButtonLabel(1, 3), 'Show the code shape');
-  assert.equal(client.hintButtonLabel(2, 3), 'Show the complete Julia line');
+  assert.equal(client.hintButtonLabel(2, 3), 'Show the whole line');
   assert.equal(client.hintButtonLabel(3, 3), 'All help shown');
 });
 

@@ -9,12 +9,13 @@ const client = require("../web/chapter3.js");
 test("C3 puts each friendly table title beside the Julia name and join role", () => {
   assert.deepEqual(client.tableIdentity("tray_counts"), {
     name: "tray_counts",
-    title: "Your counts from the notebook (Chapter 2)",
+    // r3 order (2026-09-27): Chapter 3 can be played before Chapter 2, so no "(Chapter 2)" claim.
+    title: "The notebook's counts for each tray",
     role: "Left table: keep every tray"
   });
   assert.deepEqual(client.tableIdentity("tally_sheet"), {
     name: "tally_sheet",
-    title: "The tally sheet the report was typed from",
+    title: "Toto’s typed copy of the tally sheet",
     role: "Right table: add its matching sheet columns"
   });
 });
@@ -22,12 +23,12 @@ test("C3 puts each friendly table title beside the Julia name and join role", ()
 test("C3 explains that move 2 starts from the lab's fresh copy of the joined table", () => {
   assert.deepEqual(client.tableIdentity("joined"), {
     name: "joined",
-    title: "A fresh copy of the lined-up table",
-    role: "The same as your step 1 result"
+    title: "The lined-up table",
+    role: "Your step 1 result, made again for this step"
   });
 
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
-  assert.match(source, /A fresh copy of the lined-up table, the same as your step 1 result/i);
+  assert.match(source, /Your step 1 result, made again for this step/i);
   assert.doesNotMatch(source, /not your earlier output/i);
   assert.doesNotMatch(source, /Fresh joined table from the lab/);
 });

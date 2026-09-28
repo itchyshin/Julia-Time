@@ -85,7 +85,34 @@ function _mystery_c2_dollar_note(code::AbstractString)
     found[] === nothing && return nothing
     table, column = found[]
     return "Julia read $(table)\$$(column) = ... as a new function named \$, so $(table) did not change. " *
-           "R's \$ does not reach a column in Julia: write $(table).$(column), with a dot."
+           "R's \$ does not read a column in Julia: write $(table).$(column), with a dot."
+end
+
+# Round 3 (r3-struggling.md items 4 and 5): two R habits that Julia's own error blames on a name.
+# counts.rate <- ... is read as counts.rate < -(...), so Julia says "column name :rate not found".
+# summarise(g, n = n(), ...) stops at n, and the page used to answer with a line about combine,
+# which the player never typed. Each is read from the parsed code, only after a failed run.
+const MYSTERY_C2_DPLYR_LINE = "summarise and n() are R's (dplyr) names. In Julia, combine makes one summary row per tray, and nrow counts the jars in each tray."
+
+# Round 7 (r7-r-struggling.md, runner-up): :detected => sum with no new name runs, and Julia names
+# the new column detected_sum. Said only when the returned table really has that column.
+const MYSTERY_C2_DETECTED_SUM_LINE = "Julia named that new column detected_sum, because the pair gave it no name. This step needs the name detected_n: add => :detected_n after sum."
+
+function _mystery_c2_coaching(code; message::AbstractString="", columns=String[])
+    shared = _mystery_coaching(code; message=message, way="combine and sum count every tray at once.",
+                               tables=(:jars => MYSTERY_C2_SOURCE_COLUMNS,))
+    isempty(shared) || return shared
+    parsed = _mystery_parsed_quietly(code)
+    parsed === nothing && return ""
+    dplyr = _mystery_any_node(parsed) do node
+        _mystery_calls(node, (:summarise, :summarize)) || (node isa Expr && node.head == :call && node.args == Any[:n])
+    end
+    dplyr && return MYSTERY_C2_DPLYR_LINE
+    unnamed = "detected_sum" in columns && _mystery_any_node(parsed) do node
+        _mystery_calls(node, (:(=>),)) && length(node.args) == 3 && node.args[2] == QuoteNode(:detected) &&
+            node.args[3] == :sum
+    end
+    return unnamed ? MYSTERY_C2_DETECTED_SUM_LINE : ""
 end
 
 function _mystery_c2_columns(value, expected_columns)
@@ -109,6 +136,9 @@ end
 
 function _mystery_c2_check_summary(value, step::String)
     required = step == "counts" ? MYSTERY_C2_COUNT_COLUMNS : MYSTERY_C2_RATE_COLUMNS
+    # Round 1 (2026-09-27): ending on counts.rate = ... (the R habit) returns only the new column.
+    step == "rates" && value isa AbstractVector && length(value) == DataFrames.nrow(_mystery_c2_expected()) &&
+        return (false, "Your last line gives only the new rate column. End with counts on its own line, so Julia returns the whole table.")
     _mystery_c2_columns(value, required) ||
         return (false, "Return exactly these columns: $(join(required, ", ")).")
 
@@ -118,7 +148,7 @@ function _mystery_c2_check_summary(value, step::String)
     seen = Set{String}()
     for row in 1:DataFrames.nrow(value)
         tray = value[row, "tray_id"]
-        tray isa AbstractString || return (false, "tray_id must identify each tray by its recorded text label.")
+        tray isa AbstractString || return (false, "tray_id must be the tray's name, such as \"T-A\".")
         tray in seen && return (false, "Each tray needs exactly one summary row.")
         push!(seen, String(tray))
         expected_row = findfirst(==(tray), expected.tray_id)
@@ -126,15 +156,15 @@ function _mystery_c2_check_summary(value, step::String)
         _mystery_c2_count_equal(value[row, "n"], expected.n[expected_row]) ||
             return (false, "Each tray's n must equal its number of B09 records.")
         _mystery_c2_count_equal(value[row, "detected_n"], expected.detected_n[expected_row]) ||
-            return (false, "Each tray's detected_n must equal its recorded detections.")
+            return (false, "Each tray's detected_n must be the number of its jars with springtails.")
         if step == "rates" && !_mystery_c2_rate_equal(value[row, "rate"], expected.rate[expected_row])
             return (false, "Each rate must equal detected_n / n for the recorded B09 tray.")
         end
     end
-    length(seen) == DataFrames.nrow(expected) || return (false, "At least one B09 tray is missing.")
+    length(seen) == DataFrames.nrow(expected) || return (false, "At least one B09 tray is not in your result.")
     return (true, step == "rates" ?
-        "The counts and rates match the recorded B09 tray summaries." :
-        "The counts match the recorded B09 tray summaries.")
+        "The counts and each tray's share come from the notebook's B09 rows." :
+        "The counts come from the notebook's B09 rows.")
 end
 
 """
@@ -157,38 +187,60 @@ function check_mystery_c2(value, step)
         grouped_rows = _mystery_c2_group_frame(value)
         _mystery_c2_columns(grouped_rows, MYSTERY_C2_SOURCE_COLUMNS) ||
             return (false, "The grouped jars must keep the B09 jar columns.")
-        return check_mystery_c1(grouped_rows)
+        pass, feedback = check_mystery_c1(grouped_rows)
+        # Night playtest 2026-09-26, item 10: this used to pass C1's own feedback ("All six B09 jars
+        # are present exactly once") straight through, so C2's first success line read as C1's.
+        pass && return (true, "Three groups made, one per tray: T-A, T-B and T-C. All six jars are still there, none lost.")
+        return (pass, feedback)
     end
     return _mystery_c2_check_summary(value, step)
 end
 
-function _mystery_c2_explanation(step::String, pass::Bool)
+const MYSTERY_C2_TAUGHT = Dict(
+    "group" => "groupby(jars, :tray_id)",
+    # Round 3 (r3-bugs.md item 2): the step's build-order cards teach the two-line form.
+    "counts" => ["combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)",
+                 "groups = groupby(jars, :tray_id); combine(groups, nrow => :n, :detected => sum => :detected_n)"],
+    "rates" => "counts.rate = counts.detected_n ./ counts.n",
+)
+
+function _mystery_c2_explanation(step::String, pass::Bool; code=nothing)
+    used = pass && haskey(MYSTERY_C2_TAUGHT, step) && _mystery_used_taught(code, MYSTERY_C2_TAUGHT[step])
     if pass && step == "group"
         return Dict(
-            "julia" => "The returned groups passed the check. The taught way is groupby(jars, :tray_id): it makes three groups, one per tray, and no jar is lost.",
+            "julia" => used ?
+                "Your groups are right. You used the way this game teaches: groupby makes three groups, one per tray, and no jar is lost." :
+                "Your groups are right. The way this game teaches is groupby(jars, :tray_id): it makes three groups, one per tray, and no jar is lost.",
             "case" => "Three trays, two jars each. Now count.",
         )
     elseif pass && step == "counts"
         return Dict(
-            "julia" => "The returned table passed the check. The taught way is combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n): nrow counts the jars in each tray, and sum counts the trues in detected.",
-            "case" => "T-A 2 of 2, T-B 2 of 2, T-C 1 of 2. Every tray has fleas, T-C included.",
+            "julia" => used ?
+                "Your table is right. You used the way this game teaches: nrow counts the jars in each tray, and sum counts the trues in detected." :
+                "Your table is right. The way this game teaches is combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n): nrow counts the jars in each tray, and sum counts the trues in detected.",
+            "case" => "T-A 2 of 2 jars, T-B 2 of 2 jars, T-C 1 of 2 jars. Every tray has springtails, T-C included.",
         )
     elseif pass
         return Dict(
-            "julia" => "The returned table passed the check. The taught way is counts.rate = counts.detected_n ./ counts.n: it divides each tray's detected_n by its n, one tray at a time.",
-            "case" => "Every tray has fleas: T-A and T-B 1.0 (both jars), T-C 0.5 (one jar of two). The report's 0 for T-C does not match the notebook.",
-            "limit" => "Two jars per tray is a small count, so a share of 0.5 is only one jar.",
+            "julia" => used ?
+                "Your table is right. You used the way this game teaches: ./ divides each tray's detected_n by its n, one tray at a time." :
+                "Your table is right. The way this game teaches is counts.rate = counts.detected_n ./ counts.n: it divides each tray's detected_n by its n, one tray at a time.",
+            "case" => "The report's 0 does not match the notebook. So where did the 0 come from?",
+            "limit" => "Two jars per tray is a small count. T-C, the last tray checked, has one fewer jar with springtails. One jar is too few to call a trend.",
         )
     end
+    # Round 3 (r3-struggling.md): "Match all B09 trays to see what this step finds" closed every
+    # failure and meant nothing to a player; the checker's own line names the mistake.
     return Dict(
-        "julia" => "Return the requested grouped value or DataFrame for this step.",
-        "case" => "Nothing found yet: the returned result must match all B09 trays first.",
+        "julia" => "Return the requested result for this step.",
+        "case" => "",
     )
 end
 
 function _mystery_c2_result(; request_id::String="", step::String="", status::String="error",
                             pass::Bool=false, message::String="", stdout::String="",
-                            rows=Any[], columns=String[], feedback::String="", value_repr::String="")
+                            rows=Any[], columns=String[], feedback::String="", value_repr::String="",
+                            code=nothing)
     return Dict{String, Any}(
         "type" => "case_result",
         "request_id" => request_id,
@@ -202,7 +254,7 @@ function _mystery_c2_result(; request_id::String="", step::String="", status::St
         "rows" => rows,
         "columns" => columns,
         "feedback" => feedback,
-        "explanation" => _mystery_c2_explanation(step, pass),
+        "explanation" => _mystery_c2_explanation(step, pass; code=code),
     )
 end
 
@@ -213,18 +265,18 @@ function mystery_c2_case_info(; request_id::String="")
         "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_C2_CHAPTER,
         "request_id" => request_id,
-        "title" => "The report says T-C has 0 fleas. What does the notebook say for each tray?",
+        "title" => "The report says T-C has 0 jars with springtails. What does the notebook say for each tray?",
         "question" => "What does the notebook say for each tray?",
-        "goal" => "Group the B09 jars by tray, count the jars with fleas, then work out each tray's share.",
-        "return_spec" => "One step at a time: group by tray, count, then work out each tray's share of jars with fleas.",
+        "goal" => "Group the B09 jars by tray, count the jars with springtails, then work out each tray's share.",
+        "return_spec" => "One step at a time: group by tray, count, then work out each tray's share of jars with springtails.",
         "data_label" => MYSTERY_DATA_LABEL,
         "case_batch" => MYSTERY_CASE_BATCH,
         "columns" => copy(MYSTERY_C2_SOURCE_COLUMNS),
         "rows" => mystery_rows(jars),
         "steps" => [
             Dict("id" => "group", "title" => "Step 1 · Put each tray's jars together", "return_spec" => "Return the jars in groups, one group per tray."),
-            Dict("id" => "counts", "title" => "Step 2 · Count jars and jars with fleas", "return_spec" => "Return one row per tray with three columns: tray_id, n (jars on the tray) and detected_n (jars with fleas)."),
-            Dict("id" => "rates", "title" => "Step 3 · Work out each tray's share", "return_spec" => "Return the counts table with one more column, rate: jars with fleas divided by all jars on that tray."),
+            Dict("id" => "counts", "title" => "Step 2 · Count jars and jars with springtails", "return_spec" => "Return one row per tray with three columns: tray_id, n (jars on the tray) and detected_n (jars with springtails)."),
+            Dict("id" => "rates", "title" => "Step 3 · Work out each tray's share", "return_spec" => "Return the counts table with one more column, rate: jars with springtails divided by all jars on that tray."),
         ],
         "hints" => [
             Dict("stage" => "concept", "text" => "Grouping does not count or drop any jar. It just puts jars with the same tray label together, then combine makes one summary row per group."),
@@ -271,7 +323,7 @@ function mystery_c2_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     code isa AbstractString || return _mystery_c2_result(request_id=String(request_id), step=String(step),
         message="`code` must be a string.", feedback="Type Julia code in the editor before running it.")
     isempty(strip(code)) && return _mystery_c2_result(request_id=String(request_id), step=String(step),
-        message="Write some Julia before running the case.", feedback="The editor is empty, so no sandbox worker was started.")
+        message="Write some Julia before running the case.", feedback="The editor is empty, so nothing was run.")
 
     r = lock(_RUN_LOCK) do
         run_code(String(code); env=(jars=_mystery_c2_input(),), budget=RUN_BUDGET,
@@ -283,18 +335,23 @@ function mystery_c2_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     value_repr = r.value === nothing ? "" : _mystery_safe_repr(r.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     pass, feedback = r.status == :ok ? check_mystery_c2(r.value, String(step)) :
-        (false, "Julia stopped before the end. Check the names, then run again.")
+        (false, _mystery_stopped_feedback(r.status))
     dollar_note = pass ? nothing : _mystery_c2_dollar_note(code)
     dollar_note === nothing || (feedback = dollar_note * " " * feedback)
+    # The coaching line replaces feedback that blamed a name; it is also sent on its own so the
+    # page can show it in place of its own error lines.
+    coaching = pass ? "" : _mystery_c2_coaching(code; message=r.message, columns=columns)
+    isempty(coaching) || (feedback = coaching)
     result = _mystery_c2_result(request_id=String(request_id), step=String(step), status=String(r.status),
         pass=pass, message=r.message, stdout=r.stdout, rows=rows, columns=columns, feedback=feedback,
-        value_repr=value_repr)
+        value_repr=value_repr, code=String(code))
+    result["coaching"] = coaching
     result["row_text"] = display === nothing ? Any[] : _mystery_c2_row_text(display)
     if pass && step == "rates"
         result["evidence"] = Dict(
             "id" => "c2-b09-tray-rates",
-            "title" => "Fleas in every tray",
-            "text" => "Every tray has fleas: T-A and T-B 1.0 (both jars), T-C 0.5 (one jar of two). The report's 0 for T-C does not match the notebook.",
+            "title" => "Springtails in every tray",
+            "text" => "Every tray has springtails: T-A and T-B 1.0 (both jars), T-C 0.5 (one jar of two). The report's 0 for T-C does not match the notebook.",
         )
     end
     return result

@@ -200,7 +200,7 @@
 
       candidate.addEventListener("error", function () {
         if (socket !== candidate) return;
-        settleConnectionFailure(candidate, "The local Julia lab connection failed. Start the supplied Julia Time launcher, then click Reconnect to Julia.");
+        settleConnectionFailure(candidate, "Julia is not connected. Start the supplied Julia Time launcher, then click Reconnect to Julia.");
       });
 
       candidate.addEventListener("close", function () {

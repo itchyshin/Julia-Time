@@ -3,7 +3,7 @@
 ![Itchy, Toto, Momo and Eddie around the Missing Fleas notebook](web/assets/lab-cast.png)
 
 **The Case of the Missing Fleas** is a locally run browser game for learning
-Julia. You write real Julia to investigate a simulated water-flea mystery; the
+Julia. You write real Julia to investigate a simulated springtail mystery; the
 screen shows what the code returned and what that result means for the case.
 
 You are in the right place before you download anything. The game runs on your
@@ -88,7 +88,7 @@ it is a teaching convenience, not a security boundary. See
 [the playtest observer sheet](docs/playtest-observer-sheet.md) for the
 no-rescue learner sessions. A printable [one-page observer sheet (PDF)](docs/playtest-observer-sheet.pdf)
 is ready for the person observing; do not help the player through a sticking
-point—record where their own next action became unclear.
+point; record where their own next action became unclear.
 
 ## Licence
 

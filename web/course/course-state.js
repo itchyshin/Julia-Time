@@ -64,6 +64,7 @@
     delete snapshot.fresh;
     delete snapshot.fresh_live;
     delete snapshot.current_verification;
+    if ("code" in snapshot && !acceptedCodeValue(snapshot.code)) delete snapshot.code;
     snapshot.case_id = CASE_ID;
     snapshot.chapter = move.chapter;
     snapshot.move_id = move.move_id;
@@ -119,17 +120,59 @@
     const valid = parseCourseState(makeCourseState(state));
     return Boolean(valid && writeRaw(storage, courseKey(attempt), JSON.stringify(valid)));
   }
+  function acceptedCodeValue(value) { return typeof value === "string" && value.trim().length > 0 && value.length <= 20000; }
+  // The code that was accepted: every page calls recordHistoricalMoveIfMissing when Julia accepts a run,
+  // and at that moment the page's saved draft is the code it ran (typing cancels a pending run). Keep a
+  // copy, so the ending shows the accepted answer and not whatever was typed later (r1 bug 3, 2026-09-27).
+  // Each later accepted run replaces that copy, so the ending shows the LATEST accepted code for every
+  // step (r7-r-struggling #1, 2026-09-28; decision Ada, night; the designer can reverse it).
+  // Chapters 1 and 2 keep drafts under their older names (legacy-import.js c1CodeKey, c2DraftKey).
+  const LEGACY_DRAFT_BASE = Object.freeze({C1:"julia-time:missing-fleas:v1:", C2:"julia-time:missing-fleas:v1:c2:"});
+  function acceptedDraftKey(attempt, move) {
+    const base = LEGACY_DRAFT_BASE[move.chapter];
+    if (!base) return draftKey(attempt, move.chapter, move.move_id, "challenge");
+    const prefix = attemptId(attempt) ? base + "attempt:" + attempt + ":" : base;
+    return prefix + (move.chapter === "C1" ? "code" : "draft:" + move.move_id);
+  }
+  function acceptedDraft(storage, attempt, move) {
+    const raw = rawValue(storage, acceptedDraftKey(attempt, move));
+    return acceptedCodeValue(raw) ? raw : null;
+  }
   function recordHistoricalMoveIfMissing(storage, attempt, chapter, moveId) {
     const move = moveFor(chapter, moveId);
     const status = courseStateStatus(storage, attempt);
     if (!move || status === "malformed") return false;
     const current = status === "valid" ? readCourseState(storage, attempt) : emptyCourseState();
-    if (Object.prototype.hasOwnProperty.call(current.accepted, move.key)) return false;
-    const accepted = Object.assign({}, current.accepted, {
-      [move.key]:{case_id:CASE_ID, chapter:move.chapter, move_id:move.move_id, provenance:"historical-browser"}
-    });
+    const code = acceptedDraft(storage, attempt, move);
+    if (Object.prototype.hasOwnProperty.call(current.accepted, move.key)) {
+      // Already saved: only the code changes, to the code of this latest accepted run. The rest of the
+      // record stays as first written.
+      if (code && current.accepted[move.key].code !== code) {
+        writeCourseState(storage, attempt, makeCourseState({accepted:Object.assign({}, current.accepted, {[move.key]:Object.assign({}, current.accepted[move.key], {code})})}));
+      }
+      return false;
+    }
+    const entry = {case_id:CASE_ID, chapter:move.chapter, move_id:move.move_id, provenance:"historical-browser"};
+    if (code) entry.code = code;
+    const accepted = Object.assign({}, current.accepted, {[move.key]:entry});
     const next = makeCourseState({accepted});
     return status === "missing" ? writeInitialCourseState(storage, attempt, next) : writeCourseState(storage, attempt, next);
+  }
+  // A later accepted run replaces the saved code, so "Your code" matches the latest saved result
+  // (r3 bug hunt #3, 2026-09-27: Chapter 4 draws new jars on every accepted run).
+  function refreshAcceptedCode(storage, attempt, chapter, moveId) {
+    const move = moveFor(chapter, moveId);
+    if (!move || courseStateStatus(storage, attempt) !== "valid") return false;
+    const current = readCourseState(storage, attempt), entry = current.accepted[move.key], code = acceptedDraft(storage, attempt, move);
+    if (!entry || !code) return false;
+    if (entry.code === code) return true;
+    return writeCourseState(storage, attempt, makeCourseState({accepted:Object.assign({}, current.accepted, {[move.key]:Object.assign({}, entry, {code})})}));
+  }
+  // Move key -> the code Julia accepted, for the moves that saved one.
+  function readAcceptedCode(storage, attempt) {
+    const accepted = readCourseState(storage, attempt).accepted, codes = {};
+    for (const move of KNOWN_MOVES) if (accepted[move.key] && acceptedCodeValue(accepted[move.key].code)) codes[move.key] = accepted[move.key].code;
+    return codes;
   }
   function acceptedMoves(state) {
     const accepted = state && plainRecord(state.accepted) ? state.accepted : {};
@@ -177,6 +220,17 @@
     const key = evidence && evidenceKey(attempt, evidence.chapter, evidence.move_id);
     if (!key || rawValue(storage, key) !== null) return false;
     return writeRaw(storage, key, JSON.stringify(evidence));
+  }
+
+  // The one field of a saved evidence record a later accepted run may change: the jars Chapter 4 drew
+  // (r3 bug hunt #3). The rest of the record stays as first written by writeEvidenceIfMissing.
+  function updateEvidenceJarIds(storage, attempt, chapter, moveId, jarIds) {
+    const key = evidenceKey(attempt, chapter, moveId);
+    if (!key || !Array.isArray(jarIds) || !jarIds.length || jarIds.length > 10000 || !jarIds.every(id => typeof id === "string" && id.length > 0 && id.length <= 160)) return false;
+    const current = evidenceItem(readJson(storage, key));
+    if (!current) return false;
+    current.jar_ids = jarIds.slice();
+    return writeRaw(storage, key, JSON.stringify(current));
   }
 
   function copyNotes(value) {
@@ -235,5 +289,5 @@
   function readImportRecord(storage, attempt) { return importRecord(readJson(storage, importKey(attempt))) || emptyImportRecord(); }
   function writeImportRecord(storage, attempt, record) { const copy = importRecord(record); return Boolean(copy && writeRaw(storage, importKey(attempt), JSON.stringify(copy))); }
 
-  return {CASE_ID, BASE_PREFIX, KNOWN_MOVES, attemptId, coursePrefix, courseKey, cursorKey, notesKey, importKey, evidenceKey, draftKey, emptyCourseState, emptyImportRecord, makeCourseState, courseStateStatus, readCourseState, writeInitialCourseState, writeCourseState, recordHistoricalMoveIfMissing, acceptedMoves, hasSavedMove, hasCourseContent, mergeHistoricalImport, readEvidence, writeEvidenceIfMissing, readNotes, writeNotes, readDraft, writeDraft, readChallengeDrafts, writeChallengeDraft, readCursor, writeCursor, readImportRecord, writeImportRecord};
+  return {CASE_ID, BASE_PREFIX, KNOWN_MOVES, attemptId, coursePrefix, courseKey, cursorKey, notesKey, importKey, evidenceKey, draftKey, emptyCourseState, emptyImportRecord, makeCourseState, courseStateStatus, readCourseState, writeInitialCourseState, writeCourseState, recordHistoricalMoveIfMissing, refreshAcceptedCode, readAcceptedCode, acceptedMoves, hasSavedMove, hasCourseContent, mergeHistoricalImport, readEvidence, writeEvidenceIfMissing, updateEvidenceJarIds, readNotes, writeNotes, readDraft, writeDraft, readChallengeDrafts, writeChallengeDraft, readCursor, writeCursor, readImportRecord, writeImportRecord};
 });

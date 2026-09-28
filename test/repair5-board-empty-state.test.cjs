@@ -45,8 +45,8 @@ test("a fresh board's evidence panel says plainly that no evidence is saved in t
 test("the changed-data notice does not call saved work historical", () => {
   const notice = client.dashboardModel(Object.assign(courseState.emptyCourseState(), {historicalChanged: ["legacy-key"]})).historicalNotice;
   assert.doesNotMatch(notice, /historical/i);
-  assert.match(notice, /on this computer changed\./);
-  assert.match(notice, /Your saved work was left unchanged/);
+  assert.match(notice, /on this computer has changed\./);
+  assert.match(notice, /Your current work was not touched/);
 });
 
 test("no learner-visible Case Board text says historical; only the provenance tag keeps the word", () => {

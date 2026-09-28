@@ -1,0 +1,7 @@
+/* The Missing Fleas intro movie. Scene and control styles come from ending.css; this is the one
+   rule intro.html needs of its own. */
+.intro-heading { font:clamp(1.6rem,4vw,2.4rem)/1.15 Georgia,serif; margin:1rem 0 .4rem; }
+
+/* The primary-action display rule would otherwise override the hidden attribute (seen in play-through 2026-09-27). */
+#intro-start[hidden], #intro-next[hidden] { display: none; }
+#intro-skip[hidden] { display: none; }

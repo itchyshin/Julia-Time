@@ -25,7 +25,7 @@ test("C3 begins with its handling-desk scene and an empty challenge editor", () 
   assert.match(html, /id="case-board"/);
   assert.match(html, /<a class="skip" href="#chapter-title">/);
   assert.match(html, /<textarea id="code"[^>]*><\/textarea>/);
-  assert.match(html, /The report was typed from a tally sheet/i);
+  assert.match(html, /Toto typed his report from a copy of the tally sheet/i);
 });
 
 test("C3 recognises only the two contract move IDs and their visible input sets", () => {
@@ -186,7 +186,7 @@ test("a valid saved C3 challenge cursor offers a fresh-check resume target", () 
   const html = fs.readFileSync(path.join(__dirname, "../web/chapter3.html"), "utf8");
   assert.match(html, /id="resume-saved"[^>]*hidden/);
   assert.match(html, /id="resume-saved-move"/);
-  assert.match(html, /run it again to check it today/i);
+  assert.match(html, /run it again to check it now/i);
 });
 
 test("only an accepted current challenge persists a draft-free historical progress, evidence, and next cursor", () => {
@@ -205,13 +205,13 @@ test("only an accepted current challenge persists a draft-free historical progre
   assert.equal(client.persistAcceptedCourseResult(courseState, storage, "try-1", validResult()), true);
   assert.deepEqual(calls, [
     ["progress", storage, "try-1", "C3", "join-report-log"],
-    ["evidence", storage, "try-1", {chapter:"C3", move_id:"join-report-log", title:"Connected tray records", row_count:3, provenance:"historical-browser"}],
+    ["evidence", storage, "try-1", {chapter:"C3", move_id:"join-report-log", title:"Notebook and Toto’s typed copy lined up", row_count:3, provenance:"historical-browser"}],
     ["cursor", storage, "try-1", {chapter:"C3", move_id:"filter-disagreement", mode:"challenge"}]
   ]);
 });
 
 test("C3 makes joining the first question and gives keyboard users a recovery route", () => {
-  assert.match(client.lessonCopy("join-report-log").question, /put each tray.s notebook count next to its tally-sheet box/i);
+  assert.match(client.lessonCopy("join-report-log").question, /put each tray.s notebook count next to its row in Toto.s typed copy/i);
   assert.match(client.lessonCopy("filter-disagreement").question, /differ/i);
   assert.equal(client.needsRecoveryFocus({status:"error"}), true);
   assert.equal(client.needsRecoveryFocus({status:"timeout"}), true);
@@ -232,21 +232,24 @@ test("a checked C3 disagreement gives the learner one named route to the recheck
 
 test("C3 never calls a checked result an unrun draft", () => {
   assert.match(client.draftStatus({status:"ok", pass:true}), /that's right/i);
-  assert.match(client.draftStatus({status:"ok", pass:false}), /not quite what we need/i);
+  assert.equal(client.draftStatus({status:"ok", pass:false}), "This is your code from the last run."); // round 7: no repeated "Not yet"
   assert.match(client.draftStatus({status:"timeout"}), /too long/i);
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
   assert.match(source, /el\.draftNote\.textContent = draftStatus\(message\);/);
 });
 
-test("the full-answer hint stops for an explicit confirmation and never supplies challenge code", () => {
+// r3 (2026-09-27, r3-bugs #6): "Show the whole line" shows the line on its first click; the
+// warning card that used to sit before it is gone, as in the other chapters.
+test("the full-answer hint shows the line on its first click and never supplies challenge code", () => {
   assert.equal(client.helpStage("join-report-log", 0).label, "Idea");
   assert.equal(client.helpStage("join-report-log", 0).button, "Show the code shape");
   assert.equal(client.helpStage("join-report-log", 1).label, "Code shape");
-  assert.equal(client.helpStage("join-report-log", 1).button, "Show the full answer");
-  const warning = client.helpStage("join-report-log", 2);
-  assert.match(warning.text, /will not write into your editor/i);
-  assert.equal(warning.button, "Show complete code now");
-  assert.equal(client.helpStage("join-report-log", 3).label, "Full answer");
+  assert.equal(client.helpStage("join-report-log", 1).button, "Show the whole line");
+  assert.equal(client.helpStage("join-report-log", 2).label, "Full answer");
+  assert.equal(client.helpStage("join-report-log", 2).button, "All help shown");
+  assert.equal(client.helpStage("join-report-log", 3), null);
+  const source0 = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
+  assert.doesNotMatch(source0, /Before the full answer|Show complete code now/);
   const source = fs.readFileSync(path.join(__dirname, "../web/chapter3.js"), "utf8");
   assert.match(source, /local server address shown by the launcher/i);
 });
@@ -255,18 +258,21 @@ test("C3 teaches a generic Boolean row mask in two small moves before the case a
   const comparison = client.helpStage("filter-disagreement", 1);
   assert.equal(comparison.label, "Build the row rule");
   assert.equal(comparison.text, "row_rule = table.left_count .!= table.right_count");
-  assert.equal(comparison.button, "Use the row rule to select rows");
+  assert.equal(comparison.button, "Show the whole line", "the row-rule pieces open with the code-shape level");
   assert.doesNotMatch(comparison.text, /joined|notebook_detected|sheet_detected/);
 
   const selection = client.helpStage("filter-disagreement", 2);
   assert.equal(selection.label, "Select with the row rule");
   assert.equal(selection.text, "table[row_rule, :]");
-  assert.equal(selection.button, "Show the combined code shape");
+  assert.equal(selection.button, "Show the whole line");
   assert.doesNotMatch(selection.text, /joined|notebook_detected|sheet_detected/);
 
   assert.equal(client.helpStage("filter-disagreement", 3).label, "Code shape");
-  assert.equal(client.helpStage("filter-disagreement", 4).label, "Before the full answer");
-  assert.equal(client.helpStage("filter-disagreement", 5).label, "Full answer");
+  assert.equal(client.helpStage("filter-disagreement", 4).label, "Full answer");
+  // One click on "Show the code shape" opens the row rule, the selection and the combined shape.
+  assert.equal(client.helpLevelEnd("filter-disagreement", 1), 3);
+  assert.equal(client.helpLevelEnd("filter-disagreement", 0), 0);
+  assert.equal(client.helpLevelEnd("filter-disagreement", 4), 4);
 });
 
 test("practice metadata and results need a separate exact demonstration identity", () => {
@@ -308,13 +314,13 @@ test("the optional practice panel has its own blank editor and deliberate build/
   assert.match(html, /data-demo-token="open"/);
   assert.match(html, /data-demo-token="key"/);
   assert.match(html, /id="run-demo"/);
-  assert.match(html, /Run demonstration/);
+  assert.match(html, /Run this practice/);
   assert.match(html, /which labels will match.*how many rows/i);
   assert.match(html, /id="demo-case-bridge"/);
   assert.match(html, /<code>tray_counts<\/code>.*<code>tray_id<\/code>.*<code>notebook_detected<\/code>/s);
   assert.match(html, /<code>tally_sheet<\/code>.*<code>tray_id<\/code>.*<code>sheet_detected<\/code>.*<code>entry_status<\/code>/s);
-  assert.match(html, /How do we put each tray.s notebook count next to its tally-sheet box\?/);
-  assert.match(html, /One row per tray, with its notebook count and its tally-sheet columns\./);
+  assert.match(html, /[Hh]ow do we put each tray.s notebook count next to its row in Toto.s typed copy\?/);
+  assert.match(html, /[Oo]ne row per tray, with its notebook count and the columns from Toto.s typed copy\./);
   assert.match(html, /<a id="return-to-case"[^>]*href="#code"/);
   assert.equal(client.shouldOfferCaseReturn(validDemoResult()), true);
   assert.equal(client.shouldOfferCaseReturn(validDemoResult({status:"error"})), true);

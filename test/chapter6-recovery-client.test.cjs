@@ -33,7 +33,7 @@ function c6CaseResult(pending, overrides) {
     move_id: pending.move_id, mode: pending.mode, activity_id: pending.activity_id,
     simulation_id: pending.simulation_id, request_id: pending.request_id,
     status: "ok", pass: true, progress_eligible: true,
-    result_data: {kind:"table", columns:["model", "p", "lower", "upper"], rows:[]},
+    result_data: {kind:"table", columns:["story", "p", "lower", "upper"], rows:[]},
   }, overrides || {});
 }
 

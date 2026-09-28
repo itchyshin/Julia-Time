@@ -165,7 +165,7 @@ test("asset auditor ignores commented and script-string image markup", () => {
 });
 
 test("asset auditor rejects remote and data image URIs", () => {
-  for (const source of ["https://example.test/flea.png", "data:image/png;base64,AAAA"]) {
+  for (const source of ["https://example.test/springtail.png", "data:image/png;base64,AAAA"]) {
     withFixture({html:`<img src="${source}">`}, ({webRoot, manifestPath}) => {
       assert.throws(
         () => auditCourseAssets({webRoot, manifestPath}),

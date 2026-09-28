@@ -10,7 +10,7 @@ const fs = require("node:fs");
 
 test("the Case Board headline is a plain instruction, not 'Find your next move.'", () => {
   const html = fs.readFileSync("web/course/index.html", "utf8");
-  assert.match(html, /<h1 id="board-title">Your next step\.<\/h1>/);
+  assert.match(html, /<h1 id="board-title">Your next step<\/h1>/);
   assert.doesNotMatch(html, /Find your next move\./);
 });
 

@@ -19,7 +19,7 @@ const DOLLAR_ERROR = "$ is a name Julia does not know yet. Check the spelling, o
 test("C1 keeps the help drawer on screen after a run that was not accepted", () => {
   assert.equal(typeof client.helpDrawerVisible, "function");
   const rejected = {status:"error", pass:false, message:DOLLAR_ERROR};
-  assert.match(client.challengeRecovery(rejected), /first nudge/i);
+  assert.match(client.challengeRecovery(rejected), /Show the idea/);
   assert.equal(client.helpDrawerVisible("result", rejected), true, "the nudge must be on screen where the feedback names it");
   assert.equal(client.helpDrawerVisible("result", {status:"ok", pass:false}), true);
   assert.equal(client.helpDrawerVisible("result", {type:"case_result", status:"timeout", pass:false}), true);
@@ -53,6 +53,6 @@ test("C1 copy names the closed help panel instead of pointing at hints 'below'",
 
 test("C1 recovery says where the first nudge is", () => {
   const recovery = client.challengeRecovery({status:"error", pass:false, message:DOLLAR_ERROR});
-  assert.match(recovery, /first nudge under “Stuck\? Hints” below/);
+  assert.match(recovery, /“Show the idea” under “Stuck\? Hints” below/);
   assert.doesNotMatch(recovery.replace("R's $ does not exist in Julia —", ""), /—/);
 });

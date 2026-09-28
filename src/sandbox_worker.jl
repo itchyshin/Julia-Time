@@ -19,6 +19,17 @@ let delay = get(ENV, "JULIATIME_TEST_SLOW_WORKER_START", "")
     isempty(delay) || sleep(parse(Float64, delay))
 end
 
+# Keep the reply pipe to ourselves. A learner's background task (`@async`, a `Timer`) can print
+# after its move has returned; with the global `stdout` still being the reply pipe, that text
+# landed between protocol messages and broke the next move ("replied before acknowledging the
+# request", night bug hunt 2026-09-27). So from here on the global stdout and stderr go to
+# devnull, and only this loop and the start receipt write to `reply`. What a move prints during
+# its own run is still captured by `_eval_on_worker`'s own redirect. Start-up errors above this
+# point still reach the parent's stderr (`_spawn_worker`).
+const reply = stdout
+redirect_stdout(devnull)
+redirect_stderr(devnull)
+
 while true
     request = try
         deserialize(stdin)
@@ -28,14 +39,14 @@ while true
 
     code, env, seed, protected_bindings = request
     result = try
-        JuliaTime._eval_on_worker(code, env, seed, protected_bindings)
+        JuliaTime._eval_on_worker(code, env, seed, protected_bindings, reply)
     catch e
         (:error, nothing, "", JuliaTime._format_error(e))
     end
 
     try
-        serialize(stdout, result)
-        flush(stdout)
+        serialize(reply, result)
+        flush(reply)
     catch
         break
     end

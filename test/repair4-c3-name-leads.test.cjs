@@ -13,7 +13,7 @@ const assert = require("node:assert/strict");
 const client = require("../web/chapter3.js");
 
 const EM_DASH = /—/;
-const NEXT = "Your draft is still here; change that line and run again.";
+const NEXT = "Change that line and run again.";
 const undefinedName = name => ({status:"error", message:name + " is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `" + name + "` not defined"});
 // joined[joined.left_count .!= joined.right_count, :]
 const LEFT_COUNT_COLUMN = {status:"error", message:"Something went wrong running this line.\n\nArgumentError: column name :left_count not found in the data frame"};
@@ -68,11 +68,11 @@ test("move 2's own placeholders are named as placeholders and mapped to joined's
 test("the fresh-start line is kept to the case's table names that this move does not supply", () => {
   for (const name of ["tray_counts", "tally_sheet", "jars", "practice_counts", "practice_sheet"]) {
     assert.equal(nameLead("filter-disagreement", undefinedName(name)),
-      name + " is not defined in this run. Each run starts fresh, and this move supplies only joined, so start from joined.");
+      name + " is not defined in this run. Each run starts fresh, and this step supplies only joined, so start from joined.");
   }
   for (const name of ["joined", "jars", "practice_counts", "practice_sheet"]) {
     assert.equal(nameLead("join-report-log", undefinedName(name)),
-      name + " is not defined in this run. Each run starts fresh, and this move supplies only tray_counts and tally_sheet, so start from those.");
+      name + " is not defined in this run. Each run starts fresh, and this step supplies only tray_counts and tally_sheet, so start from those.");
   }
   // Any other unknown name keeps the move's existing recovery copy, with no invented cause.
   for (const [move, name] of [["join-report-log", "reprot"], ["join-report-log", "leftJoin"], ["filter-disagreement", "row_rule"], ["filter-disagreement", "left_join"], ["filter-disagreement", "n"]]) {
@@ -101,10 +101,10 @@ test("a returning player's draft using an old C3 table or column name is coached
 test("lines that name the move's own mistake still lead the move's recovery copy", () => {
   const leftJoin = client.errorRecovery("join-report-log", undefinedName("left_join"));
   assert.match(leftJoin, /^left_join is an R \(dplyr\) name/);
-  assert.ok(leftJoin.endsWith(" " + client.recoveryCopy("join-report-log")));
+  assert.ok(leftJoin.endsWith(" Change your code, then run again, or open Stuck? Hints below.")); // round 7: no fixed comma advice
   const noDot = client.errorRecovery("filter-disagreement", {status:"error", message:"Something went wrong running this line.\n\nArgumentError: invalid row index of type Bool"});
   assert.match(noDot, /one true or false/);
-  assert.ok(noDot.endsWith(" " + client.recoveryCopy("filter-disagreement")));
+  assert.ok(noDot.endsWith(" Change your code, then run again, or open Stuck? Hints below."));
   // Non-error results and unknown moves get no name-level line.
   assert.equal(client.errorRecovery("filter-disagreement", Object.assign(undefinedName("tray_id"), {status:"ok"})), client.recoveryCopy("filter-disagreement"));
   assert.equal(client.errorRecovery("no-such-move", undefinedName("tray_id")), client.recoveryCopy("no-such-move"));

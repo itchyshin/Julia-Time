@@ -15,9 +15,9 @@
   const DEMO_ACTIVITY = "practice-join-v1";
   const DEMO_INPUTS = ["practice_counts", "practice_sheet"];
   const TABLE_IDENTITIES = Object.freeze({
-    tray_counts:Object.freeze({name:"tray_counts", title:"Your counts from the notebook (Chapter 2)", role:"Left table: keep every tray"}),
-    tally_sheet:Object.freeze({name:"tally_sheet", title:"The tally sheet the report was typed from", role:"Right table: add its matching sheet columns"}),
-    joined:Object.freeze({name:"joined", title:"A fresh copy of the lined-up table", role:"The same as your step 1 result"}),
+    tray_counts:Object.freeze({name:"tray_counts", title:"The notebook's counts for each tray", role:"Left table: keep every tray"}),
+    tally_sheet:Object.freeze({name:"tally_sheet", title:"Toto’s typed copy of the tally sheet", role:"Right table: add its matching sheet columns"}),
+    joined:Object.freeze({name:"joined", title:"The lined-up table", role:"Your step 1 result, made again for this step"}),
     practice_counts:Object.freeze({name:"practice_counts", title:"Practice counts", role:"Practice-only left table"}),
     practice_sheet:Object.freeze({name:"practice_sheet", title:"Practice sheet", role:"Practice-only right table"})
   });
@@ -30,10 +30,13 @@
     "join-report-log": {
       label: "Step 1 of 2 · Line up the two records",
       title: "Step 1 · Put each tray’s two records side by side",
-      question: "How do we put each tray’s notebook count next to its tally-sheet box?",
-      returnSpec: "One row per tray, with its notebook count and its tally-sheet columns.",
+      question: "How do we put each tray’s notebook count next to its row in Toto’s typed copy?",
+      returnSpec: "One row per tray, with its notebook count and the columns from Toto’s typed copy.",
       bridge: "Both tables have a tray_id column, and each tray appears once in each. That shared label tells Julia which rows belong together.",
-      concept: "Match each tray in tray_counts with the row for the same tray in tally_sheet.\n\nComing from R? In R you’d reach for dplyr’s left_join; Julia’s is spelled leftjoin.",
+      // Story spine beat 2 ("why this code", docs/design/06-story-spine.md, approved 2026-09-27):
+      // one plain line under the step title, before the task text.
+      why: "Put the notebook's count and Toto's typed count for each tray in one row, so they can be compared.",
+      concept: "Match each tray in tray_counts with the row for the same tray in tally_sheet.\n\nComing from R? In R you would use dplyr’s left_join; Julia’s is spelled leftjoin.",
       shape: "leftjoin(left_table, right_table, on=:shared_column)",
       shapeNote: "The three words are placeholders: use the table names above and :tray_id.",
       solution: "leftjoin(tray_counts, tally_sheet, on=:tray_id)",
@@ -43,19 +46,20 @@
     },
     "filter-disagreement": {
       label: "Step 2 of 2 · Find the tray that disagrees",
-      title: "Step 2 · Keep the tray where the notebook and the sheet disagree",
+      title: "Step 2 · Keep the tray where the notebook and Toto's typed copy disagree",
       question: "On which tray do the two counts differ?",
       returnSpec: "Only the row where notebook_detected and sheet_detected differ.",
-      bridge: "A fresh copy of the lined-up table, the same as your step 1 result.",
-      concept: "Keep a row only where the notebook count is not equal to the sheet count.\n\nComing from R? In R you’d reach for dplyr’s filter with !=; Julia uses the same true/false row rule as Chapter 1.",
+      bridge: "This step reuses your step 1 join: one row per tray, ready to compare the notebook count with Toto's typed count.",
+      why: "Keep only the tray where they disagree: that is where the 0 came from.",
+      concept: "Keep a row only where the notebook count is not equal to Toto's typed count.\n\nComing from R? In R you would use dplyr’s filter with !=; Julia uses the same true-or-false row rule as Chapter 1.",
       scaffolds: [
         // B9 (simulated playtest, P21/P43): the placeholders were typed as written. Say so and map them.
-        {label:"Build the row rule", text:"row_rule = table.left_count .!= table.right_count", note:"table, left_count and right_count are placeholders, not names in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected.", button:"Use the row rule to select rows"},
-        {label:"Select with the row rule", text:"table[row_rule, :]", button:"Show the combined code shape"}
+        {label:"Build the row rule", text:"row_rule = table.left_count .!= table.right_count", note:"table, left_count and right_count are placeholders, not names in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected."},
+        {label:"Select with the row rule", text:"table[row_rule, :]"}
       ],
       shape: "table[table.left_count .!= table.right_count, :]",
       solution: "joined[joined.notebook_detected .!= joined.sheet_detected, :]",
-      syntax: "Chapter 1’s .== compared each value with a target. .!= is its “not equal” partner: it checks each paired count and is true when they differ. Inside brackets, the comma separates the rows rule from the columns position; : in the second position means all columns. The dot: .!= compares row by row; a plain != compares the two whole columns and gives one answer.",
+      syntax: "Chapter 1’s .== compared each value with a target. .!= is its “not equal” partner: it checks each paired count and is true when they differ. Inside brackets, the comma separates the row rule from the columns position; : in the second position means all columns. The dot: .!= compares row by row; a plain != compares the two whole columns and gives one answer.",
       recovery: "Check that .!= has the dot, then keep the comma before : so Julia knows you want every column of the matching row.",
       visualTitle: "The tray that disagrees"
     }
@@ -142,23 +146,57 @@
     const name = undefinedName(message);
     const inputs = activeInputIds(move);
     if (!CASE_TABLES.includes(name) || !inputs.length || inputs.includes(name)) return "";
-    return name + " is not defined in this run. Each run starts fresh, and this move supplies only " + inputs.join(" and ") + ", so start from " + (inputs.length === 1 ? inputs[0] : "those") + ".";
+    return name + " is not defined in this run. Each run starts fresh, and this step supplies only " + inputs.join(" and ") + ", so start from " + (inputs.length === 1 ? inputs[0] : "those") + ".";
   }
   // Repair 4: after a line about one name, the move's checklist would name a different mistake.
-  const NAME_LEAD_NEXT = "Your draft is still here; change that line and run again.";
+  // r5 (2026-09-27): the outcome line above already says "Your code is still here", so this says it no second time.
+  const NAME_LEAD_NEXT = "Change that line and run again.";
+  // Night round 1 (2026-09-27, r1-bugs.md bug 2): the sandbox refuses a run that rebinds or edits a
+  // supplied input (src/sandbox.jl protected_bindings and each chapter's guarded code), so the checker
+  // can compare against the untouched case data. That guard stays; this line gives its real reason,
+  // keyed on the sandbox's own text, instead of unrelated advice. It never shows the finished line.
+  function protectedInputCoaching(message) {
+    const found = String(message && message.status === "error" && message.message || "").match(/The supplied (\w+) (binding|records|values) changed/);
+    if (!found) return "";
+    const name = found[1];
+    const how = found[2] === "binding" ? "gives " + name + " a new value (" + name + " = …)" : "changes " + name + ", by giving it a new value or by editing it";
+    return "Your code " + how + ". This step needs " + name + " kept exactly as it was supplied, so the check stopped. Your idea may still be right: leave " + name + " as it is and let the last line return your result, or give the result a new name, such as result = …, and end with result.";
+  }
+  // v0.2.5 night (fixer I1): the server's "coaching" line names the mistake it read from the code
+  // (src/mystery_c2.jl .. mystery_c6.jl). It is "" when there is none, and never used on a passing run.
+  function serverCoaching(message) {
+    return message && message.pass !== true && typeof message.coaching === "string" ? message.coaching.trim() : "";
+  }
+  // Round 6 (r6-audit #10): after a server coaching line, the same ending as C1, C5 and C6. The
+  // coaching line may name no line of code, so it never ends with "Change that line".
+  function coachingWithEnding(message) {
+    const coaching = serverCoaching(message);
+    if (!coaching) return "";
+    return coaching + (message.status === "error" ? " Change your code, then run again, or open Stuck? Hints below." : " Your draft is still here. Change it and run again, or open Stuck? Hints below.");
+  }
+  function finishedRecovery(move, message) {
+    return coachingWithEnding(message) || (message && message.feedback) || "That result does not yet match the requested return. " + recoveryCopy(move);
+  }
   function errorRecovery(move, message) {
+    const coached = coachingWithEnding(message);
+    if (coached) return coached;
+    const guarded = protectedInputCoaching(message);
+    if (guarded) return guarded;
     const named = move === "join-report-log" ? joinErrorCoaching(message) : move === "filter-disagreement" ? filterErrorCoaching(message) : "";
-    if (named) return named + " " + recoveryCopy(move);
+    // Round 7 (r7-r-struggling #8): the named line says what is wrong, so the fixed comma advice
+    // is dropped and the line ends as a coaching line does.
+    if (named) return named + " Change your code, then run again, or open Stuck? Hints below.";
     const nameLead = !knownMove(move) ? "" : oldNameCoaching(message) || (move === "join-report-log" ? joinPlaceholderCoaching(message) : filterPlaceholderCoaching(message)) || columnNameCoaching(move, message) || missingInputCoaching(move, message);
     return nameLead ? nameLead + " " + NAME_LEAD_NEXT : recoveryCopy(move);
   }
   function needsRecoveryFocus(message) { return Boolean(message && (message.status === "error" || message.status === "timeout")); }
+  // Round 7 (r7-bugs #6): the run status and the result already say "Not yet" and why, so the
+  // note under the editor does not repeat it; the same wording as Chapter 4.
   function draftStatus(message) {
-    if (!message || message.status === "timeout") return "Not yet. Your code took too long, so the lab stopped it. Your code is still here.";
-    if (message.status === "error") return "Not yet. Julia could not run this code. Your code is still here.";
+    if (!message || message.status === "timeout") return "Your code took too long, so the lab stopped it. Your code is still here.";
     if (message.status === "ok" && message.pass === true) return "Julia checked it: that's right. You can change it and run again.";
-    if (message.status === "ok") return "Not yet. Julia ran your code; the result below is not quite what we need.";
-    return "This is your own unrun draft for this move.";
+    if (message.status === "ok" || message.status === "error") return "This is your code from the last run.";
+    return "This is your own unrun draft for this step.";
   }
   // UI-08 (2026-09-24 browser check): the practice lines used to keep saying "not run yet" above
   // Julia's returned table. A null message means the run has started and not yet settled.
@@ -175,8 +213,8 @@
     return "This practice run did not finish, so there is no result to compare with your prediction yet.";
   }
   function draftNotice(hasCode, restored) {
-    if (!hasCode) return "This editor starts empty. Write your own Julia result.";
-    return restored ? "Restored your saved draft: it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
+    if (!hasCode) return "This editor starts empty. Write your own Julia code.";
+    return restored ? "Restored your saved draft: it is your earlier typing, not supplied code." : "This is your own unrun draft for this step.";
   }
   const NOT_SAVED_STATUS = "Right answer, but this computer could not save it, so the Case Board will not show it. Run it once more; if this keeps happening, ask your helper.";
   // Ask the saved record itself, never the write call: a write can fail silently (blocked storage, a damaged record).
@@ -191,13 +229,24 @@
   function helpStages(move) {
     const copy = lessonCopy(move);
     const scaffolds = Array.isArray(copy.scaffolds) ? copy.scaffolds : [];
+    // r3 (2026-09-27): one ladder in every chapter, Show the idea, Show the code shape, Show the
+    // whole line. Step 2's two row-rule pieces belong to its code-shape level and open with it, and
+    // "Show the whole line" shows the line at once (no warning card first). button is the label
+    // the ladder shows once that stage's level is out.
     return [
-      {label:"Idea", text:copy.concept, button:"Show the code shape"},
-      ...scaffolds,
-      Object.assign({label:"Code shape", text:copy.shape, button:"Show the full answer"}, copy.shapeNote ? {note:copy.shapeNote} : {}),
-      {label:"Before the full answer", text:"This will show one complete expression for the idea above. It will not write into your editor or count for the case.", button:"Show complete code now"},
-      {label:"Full answer", text:copy.solution, button:"All help shown"}
+      {label:"Idea", text:copy.concept, level:0, button:"Show the code shape"},
+      ...scaffolds.map(item => Object.assign({}, item, {level:1, button:"Show the whole line"})),
+      Object.assign({label:"Code shape", text:copy.shape, level:1, button:"Show the whole line"}, copy.shapeNote ? {note:copy.shapeNote} : {}),
+      {label:"Full answer", text:copy.solution, level:2, button:"All help shown"}
     ];
+  }
+  // The last stage index on the same ladder level as stage index, so one click opens a whole level.
+  function helpLevelEnd(move, index) {
+    const stages = helpStages(move), stage = stages[index];
+    if (!stage) return index;
+    let last = index;
+    while (stages[last + 1] && stages[last + 1].level === stage.level) last += 1;
+    return last;
   }
   function helpStage(move, index) {
     return helpStages(move)[index] || null;
@@ -253,9 +302,17 @@
   }
   // `pending` is kept (not nulled) on expiry so a correct result arriving late for this same
   // request is still applied rather than discarded (B1); `isRunPending` makes the run retryable.
+  // Night round 2 (r2-bugs.md finding 1): a server timeout carries its own feedback naming the
+  // cause (the code ran over the time limit; a loop that never ends is the usual cause). Show that
+  // line. The client's own deadline (expireRun) keeps its "took too long" text.
+  const TIMEOUT_FALLBACK = "Julia stopped your code because it ran too long. A loop that never ends is the usual cause.";
+  function serverTimeoutText(message) {
+    const feedback = message && typeof message.feedback === "string" ? message.feedback.trim() : "";
+    return (feedback || TIMEOUT_FALLBACK) + " Change your code, then run again.";
+  }
   function expireRun(state, requestId) {
     if (!state.pending || state.pending.request_id !== requestId) return state;
-    return Object.assign({}, state, {expired:true, statusMessage:null, result:{type:"case_result", status:"timeout", message:"This check took too long. Your draft is still here; check it, then run again."}});
+    return Object.assign({}, state, {expired:true, statusMessage:null, result:{type:"case_result", status:"timeout", message:"This check took too long. Check your code, then run again."}});
   }
   function cancelRun(state) { return Object.assign({}, state, {pending:null, expired:false, statusMessage:null, result:null}); }
   function cancelDemo(state) { return Object.assign({}, state, {demoInfoRequest:null, demoPending:null, demoExpired:false, demoStatusMessage:null, demoResult:null}); }
@@ -398,7 +455,7 @@
   }
   function persistAcceptedCourseResult(courseState, storage, attempt, result) {
     if (!isAcceptedChallengeResult(result) || !courseState || typeof courseState.recordHistoricalMoveIfMissing !== "function" || typeof courseState.writeEvidenceIfMissing !== "function" || typeof courseState.writeCursor !== "function") return false;
-    const title = result.move_id === "join-report-log" ? "Connected tray records" : "The 0 was a blank box";
+    const title = result.move_id === "join-report-log" ? "Notebook and Toto’s typed copy lined up" : "The 0 was a blank box";
     try {
       courseState.recordHistoricalMoveIfMissing(storage, attempt, CHAPTER, result.move_id);
       courseState.writeEvidenceIfMissing(storage, attempt, {chapter:CHAPTER, move_id:result.move_id, title:title, row_count:result.rows.length, provenance:"historical-browser"});
@@ -422,9 +479,9 @@
     const el = {
       scene:$("scene"), investigation:$("investigation"), start:$("start-investigation"), back:$("back-to-scene"), resumeSaved:$("resume-saved"), resumeSavedNote:$("resume-saved-note"), resumeSavedMove:$("resume-saved-move"),
       board:$("case-board"), location:$("course-location"), reconnect:$("reconnect"), moveButtons:document.querySelectorAll("[data-move]"),
-      title:$("move-title"), question:$("move-question"), bridge:$("move-bridge"), returnSpec:$("return-spec"), syntax:$("syntax-note"), challengeBridge:$("challenge-bridge"),
+      title:$("move-title"), stepWhy:$("step-why"), question:$("move-question"), bridge:$("move-bridge"), returnSpec:$("return-spec"), syntax:$("syntax-note"), challengeBridge:$("challenge-bridge"),
       inputs:$("visible-inputs"), bindings:$("case-bindings"), code:$("code"), run:$("run"), runStatus:$("run-status"), result:$("result"), visual:$("returned-visual"),
-      help:$("help-list"), nextHelp:$("next-help"), showAnswer:$("show-answer"), answerReference:$("answer-before-editor"), bridgeCard:$("bridge-card"), connection:$("connection"), nextMove:$("next-move"), draftNote:$("draft-note"),
+      help:$("help-list"), nextHelp:$("next-help"), showAnswer:$("show-answer"), answerReference:$("answer-before-editor"), bridgeCard:$("bridge-card"), blankNote:$("blank-note"), connection:$("connection"), nextMove:$("next-move"), draftNote:$("draft-note"),
       demoPanel:$("demo-panel"), demoCopy:$("demo-copy"), demoInputs:$("demo-inputs"), demoCode:$("demo-code"), demoTokenButtons:document.querySelectorAll("[data-demo-token]"), runDemo:$("run-demo"), demoPlan:$("demo-plan"), demoResult:$("demo-result"), demoCaseBridge:$("demo-case-bridge"), returnToCase:$("return-to-case"), demoDraftNote:$("demo-draft-note")
     };
     let storage = null;
@@ -470,12 +527,14 @@
       if (!el.resumeSaved) return;
       el.resumeSaved.hidden = !move;
       if (!move) return;
-      if (el.resumeSavedNote) el.resumeSavedNote.textContent = "Your earlier work in this chapter is saved only on this computer. Run it again to check it today.";
+      if (el.resumeSavedNote) el.resumeSavedNote.textContent = "Your earlier work in this chapter is saved only on this computer. Run it again to check it now.";
       if (el.resumeSavedMove) el.resumeSavedMove.textContent = "Back to your saved step: " + lessonCopy(move).title + " →";
     }
+    // r5 (2026-09-27): while Julia runs, Run stays focusable and reads as busy (aria-disabled), so keyboard focus is not dropped to the page.
+    function holdRun(button, blocked, busy) { if (!button) return; button.disabled = blocked; if (busy && !blocked) button.setAttribute("aria-disabled", "true"); else button.removeAttribute("aria-disabled"); }
     function updateControls() {
-      if (el.run) el.run.disabled = state.connection !== "connected" || !state.metadata || isRunPending(state);
-      if (el.runStatus) el.runStatus.textContent = isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result, saveOk) : (state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading the case file…") : "Connect to the lab to run Julia"));
+      holdRun(el.run, state.connection !== "connected" || !state.metadata, isRunPending(state));
+      if (el.runStatus) el.runStatus.textContent = isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.metadataFailure || (state.result ? runOutcomeStatus(state.result, saveOk) : (state.connection === "connected" ? (state.metadata ? "Julia is ready" : "Loading the case file…") : "Connect to the lab to run Julia"));
       if (el.reconnect) el.reconnect.hidden = !state.metadataFailure && (state.connection === "connected" || state.connection === "connecting");
       const demoReady = state.connection === "connected" && state.activeMove === "join-report-log" && Boolean(state.demoMetadata) && !isDemoRunPending(state);
       if (el.runDemo) el.runDemo.disabled = !demoReady;
@@ -488,6 +547,12 @@
       if (el.result) el.result.replaceChildren();
       if (el.visual) el.visual.replaceChildren();
       if (el.nextMove) { el.nextMove.hidden = true; el.nextMove.dataset.destination = ""; }
+      showSolvedNext();
+    }
+    // Round 6 (r6-rc #5): a chapter solved on an earlier run still offers the way on to Chapter 4.
+    function showSolvedNext() {
+      if (!el.nextMove || !acceptedMoveKeys(courseState, storage, attempt).includes("C3/filter-disagreement")) return;
+      el.nextMove.hidden = false; el.nextMove.dataset.destination = "chapter4"; el.nextMove.textContent = "Chapter 4: plan a fair recheck →";
     }
     function clearDemoResult() { if (el.demoResult) el.demoResult.replaceChildren(); if (el.demoCaseBridge) el.demoCaseBridge.hidden = true; if (el.returnToCase) el.returnToCase.hidden = true; }
     function clearRunTimer() { if (runTimer) { clearTimeout(runTimer); runTimer = null; } }
@@ -527,6 +592,7 @@
       const copy = current();
       if (el.location) el.location.textContent = "Chapter 3 of 6 · " + copy.label;
       if (el.title) el.title.textContent = copy.title;
+      if (el.stepWhy) el.stepWhy.textContent = copy.why || "";
       if (el.question) el.question.textContent = copy.question;
       if (el.bridge) el.bridge.textContent = copy.bridge;
       if (el.returnSpec) el.returnSpec.textContent = copy.returnSpec;
@@ -534,13 +600,15 @@
       // T2 (2026-09-12 playtest): the code shape used to leak into this always-visible panel,
       // duplicating the gated "Code shape" hint stage below and turning the move into
       // substitution rather than a decision. It now lives only in that staged hint.
-      if (el.challengeBridge) el.challengeBridge.textContent = "Use the visible case tables and the required result to decide your next Julia move.";
+      if (el.challengeBridge) el.challengeBridge.textContent = "Use the visible case tables and the required result to decide your next Julia step.";
       if (bridges) bridges.renderCard(el.bridgeCard, "C3/"+state.activeMove, acceptedCode[state.activeMove] || "");
+      syncBlankNote();
       if (el.code) el.code.value = drafts[state.activeMove] || "";
       if (el.draftNote) el.draftNote.textContent = draftNotice(Boolean(el.code && el.code.value), Boolean(restoredDrafts[state.activeMove]));
       if (el.help) el.help.replaceChildren();
       if (el.answerReference) { el.answerReference.hidden = true; el.answerReference.replaceChildren(); }
-      if (el.nextHelp) el.nextHelp.textContent = "Show the idea";
+      if (el.nextHelp) { el.nextHelp.textContent = "Show the idea"; el.nextHelp.disabled = false; }
+      if (el.showAnswer) el.showAnswer.hidden = false;
       hintIndex = 0;
       clearResult();
       if (el.demoPanel) el.demoPanel.hidden = state.activeMove !== "join-report-log";
@@ -551,13 +619,13 @@
       if (el.inputs) {
         el.inputs.replaceChildren();
         const p = document.createElement("p");
-        p.textContent = "Waiting for the lab to supply this move’s complete tables and column names…";
+        p.textContent = "Waiting for the lab to supply this step’s complete tables and column names…";
         el.inputs.append(p);
       }
       if (el.bindings) {
         el.bindings.replaceChildren();
         const p = document.createElement("p");
-        p.textContent = "Loading the exact Julia names you can use in this move…";
+        p.textContent = "Loading the exact Julia names you can use in this step…";
         el.bindings.append(p);
       }
       el.moveButtons.forEach(button => {
@@ -567,7 +635,7 @@
       });
       updateControls();
     }
-    const DEFAULT_DATA_LABEL = "Simulated data made for this game: no real jars, no real fleas.";
+    const DEFAULT_DATA_LABEL = "Simulated data made for this game: no real jars, no real springtails.";
     // short-scroll (2026-09-25): when every visible table shares the same data-label sentence,
     // renderInputs hoists one shared line above them instead of repeating it per table.
     function renderTable(input, opts) {
@@ -596,7 +664,9 @@
       const table = document.createElement("table");
       const thead = document.createElement("thead");
       const headRow = document.createElement("tr");
-      input.columns.forEach(column => { const th = document.createElement("th"); th.textContent = column; headRow.append(th); });
+      // Round 6 (r6-rc #1): on a phone a long column name may break after an underscore, so all four
+      // columns of the lined-up table fit on screen. The text itself is unchanged.
+      input.columns.forEach(column => { const th = document.createElement("th"); String(column).split("_").forEach((part, i, parts) => { th.append(part + (i < parts.length - 1 ? "_" : "")); if (i < parts.length - 1) th.append(document.createElement("wbr")); }); headRow.append(th); });
       thead.append(headRow);
       const body = document.createElement("tbody");
       input.rows.forEach(row => { const tr = document.createElement("tr"); input.columns.forEach(column => { const td = document.createElement("td"); td.textContent = safeText(row[column]); tr.append(td); }); body.append(tr); });
@@ -630,8 +700,8 @@
       el.inputs.replaceChildren();
       const heading = document.createElement("div");
       const label = document.createElement("p"); label.className = "eyebrow"; label.textContent = "Evidence in hand";
-      const h = document.createElement("h2"); h.textContent = state.activeMove === "join-report-log" ? "Left/right tags" : "Your lined-up table, ready for the next check";
-      const note = document.createElement("p"); note.className = "shared-key"; note.textContent = state.activeMove === "join-report-log" ? "Left table: keep every tray. Right table: add its matching sheet columns." : "A fresh copy of the lined-up table, the same as your step 1 result.";
+      const h = document.createElement("h2"); h.textContent = state.activeMove === "join-report-log" ? "The two tables to match" : "Your lined-up table, ready for the next check";
+      const note = document.createElement("p"); note.className = "shared-key"; note.textContent = state.activeMove === "join-report-log" ? "Left table: keep every tray. Right table: add its matching sheet columns." : "The lined-up table, rebuilt fresh for this step from your step 1 join.";
       heading.append(label, h, note);
       // short-scroll (2026-09-25): both move-1 tables normally carry the identical "simulated
       // teaching case" sentence; show it once above them instead of once per table, and lay the
@@ -643,7 +713,7 @@
       el.inputs.append(heading);
       el.inputs.classList.toggle("two-up", metadata.inputs.length > 1);
       metadata.inputs.forEach(input => el.inputs.append(renderTable(input, {hideDataLabel: Boolean(sharedLabel)})));
-      const returnNote = document.createElement("p"); returnNote.className = "return-bridge"; returnNote.textContent = "Use these tables to meet the return above.";
+      const returnNote = document.createElement("p"); returnNote.className = "return-bridge"; returnNote.textContent = "These are the tables your code should use for the required result above.";
       el.inputs.append(returnNote);
     }
     function renderDemoInputs(metadata) {
@@ -653,7 +723,7 @@
       el.demoInputs.append(label);
       metadata.inputs.forEach(input => el.demoInputs.append(renderTable(input)));
       if (el.demoCopy) el.demoCopy.textContent = "Practice data with labels K-A and K-B. Does not count for the case.";
-      if (el.demoPlan) el.demoPlan.textContent = "Before you run: which labels will match, and how many rows will Julia return? Then add the join’s opening, followed by the two practice tables and their shared key. These controls write only this practice editor.";
+      if (el.demoPlan) el.demoPlan.textContent = "Before you run: which labels will match, and how many rows will Julia return? Then add the join’s opening, followed by the two practice tables and their shared key. These controls write into this practice editor only.";
     }
     function appendTechnical(message, target) {
       const raw = [message && message.stdout, message && message.message, message && message.value_repr].filter(Boolean).join("\n");
@@ -677,11 +747,11 @@
       visual.rows.forEach(row => {
         const card = document.createElement("article");
         const tray = document.createElement("h3"); tray.textContent = row.tray_id;
-        const line = document.createElement("p"); line.textContent = "Notebook: " + row.notebook + " · Sheet: " + row.sheet + " · " + row.entry_status;
+        const line = document.createElement("p"); line.textContent = "Notebook: " + row.notebook + " · Toto typed: " + row.sheet + " · paper box: " + row.entry_status;
         card.append(tray, line); section.append(card);
       });
       const note = document.createElement("p"); note.className = "caution";
-      note.textContent = visual.kind === "tray-disagrees" ? "We know the box was left blank, not why; a recheck of the jars will tell us more." : "These connections show which tray each row belongs to; a shared tray label is not a cause.";
+      note.textContent = visual.kind === "tray-disagrees" ? "We know the box was left blank, not why. Next: plan a fair recheck of the jars." : "These connections show which tray each row belongs to.";
       section.append(note); el.visual.append(section);
     }
     function renderBlankNote() {
@@ -689,17 +759,24 @@
       section.className = "blank-note";
       const h = document.createElement("h3"); h.textContent = "How each language stores a blank"; section.append(h);
       const intro = document.createElement("p");
-      intro.textContent = "On the tally sheet, T-C\u2019s box was left blank, yet the table shows 0. A 0 and a blank are not the same thing. Here is what happens if you store the blank as a blank instead:";
+      intro.textContent = "On the paper tally sheet, T-C\u2019s box was left blank, yet Toto\u2019s typed copy shows 0. A 0 and a blank are not the same thing. Here is what happens if you store the blank as a blank instead:";
       section.append(intro);
       const list = document.createElement("ul");
       [
-        "R, the trap: if T-C\u2019s box were NA, dplyr::filter(joined, notebook_detected != sheet_detected) would quietly drop T-C, with no warning. The one tray that disagrees would vanish.",
+        "R, the trap: if T-C\u2019s box were NA, dplyr::filter(joined, notebook_detected != sheet_detected) would quietly drop T-C, with no warning. The one tray that disagrees would be gone.",
         "Julia: missing. The same row rule stops with an error, so you notice. sum([1, missing]) gives missing.",
         "R: NA. sum(c(1, NA)) gives NA; na.rm = TRUE gives 1.",
         "pandas: NaN. pd.Series([1, None]).sum() gives 1.0: it quietly skips the blank."
       ].forEach(text => { const li = document.createElement("li"); li.textContent = text; list.append(li); });
       section.append(list);
       return section;
+    }
+    // The blank note shows whenever the step 2 R and Python card shows, right below it.
+    function syncBlankNote() {
+      if (!el.blankNote) return;
+      const show = state.activeMove === "filter-disagreement" && Boolean(acceptedCode["filter-disagreement"]);
+      el.blankNote.replaceChildren(...(show ? [renderBlankNote()] : []));
+      el.blankNote.hidden = !show;
     }
     function renderResult(message) {
       if (!el.result) return;
@@ -708,13 +785,20 @@
       const outcome = document.createElement("p"); outcome.className = "run-outcome"; outcome.textContent = runOutcomeStatus(message, saveOk); el.result.append(outcome);
       const p = document.createElement("p");
       if (message.status === "error") p.textContent = errorRecovery(state.activeMove, message);
-      else if (message.status === "timeout") p.textContent = "The lab stopped this run to keep the session responsive. Your code is still here; check it and run again.";
+      else if (message.status === "timeout") p.textContent = message.feedback ? serverTimeoutText(message) : (message.message || serverTimeoutText(message));
       else if (message.status === "ok" && message.pass === true) p.textContent = message.feedback || "Julia returned your checked result. Read the returned table and visual together before making a claim.";
-      else p.textContent = message.feedback || "That result does not yet match the requested return. " + recoveryCopy(state.activeMove);
+      else p.textContent = finishedRecovery(state.activeMove, message);
       el.result.append(p);
       const explanation = message.explanation;
       if (explanation && typeof explanation === "object") {
-        [explanation.julia, explanation.case, explanation.limit].filter(Boolean).forEach(text => { const item = document.createElement("p"); item.textContent = String(text); el.result.append(item); });
+        // Night round 1 (r1-audit.md): the step 2 tray card below already ends with the limit line
+        // (story bible v2.1 change 3), so the server's own limit line is left out when that card shows.
+        const visual = message.status === "ok" && shouldRenderCaseVisual(message) ? visualData(state.activeMove, message) : null;
+        const cardCarriesLimit = Boolean(visual && visual.kind === "tray-disagrees");
+        // r3 (2026-09-27): the server's failure case and limit lines ("Match this step's required
+        // result...", "A failed run does not tell us...") are generic, so they show only on an accepted run.
+        const accepted = message.status === "ok" && message.pass === true;
+        [explanation.julia, accepted ? explanation.case : "", accepted && !cardCarriesLimit ? explanation.limit : ""].filter(Boolean).forEach(text => { const item = document.createElement("p"); item.textContent = String(text); el.result.append(item); });
       }
       if (message.status === "ok") {
         if (!appendReturnedTable(message, el.result)) {
@@ -723,9 +807,11 @@
         if (shouldRenderCaseVisual(message)) renderVisual(message);
       }
       if (state.activeMove === "filter-disagreement" && message.status === "ok" && message.pass === true) {
-        const toto = document.createElement("p"); toto.textContent = "Toto: \u201cSo my zero was a box nobody filled in. Zero fleas, or zero ink?\u201d"; el.result.append(toto);
-        const claim = document.createElement("p"); claim.className = "claim-stamp"; claim.textContent = "Claim 1, \u201cT-C has no fleas\u201d: not supported."; el.result.append(claim);
-        el.result.append(renderBlankNote());
+        const toto = document.createElement("p"); toto.textContent = "Toto: \u201cSo my zero was a box nobody filled in. Zero jars with springtails, or just an empty box?\u201d"; el.result.append(toto);
+        const claim = document.createElement("p"); claim.className = "claim-stamp"; claim.textContent = "Part 1 · Check the report: the 0 was a blank box, not an empty tray."; el.result.append(claim);
+        // r3 (2026-09-27): the R and Python card says "See \"How each language stores a blank\" below",
+        // so the note sits just after that card (syncBlankNote), not inside the result above it.
+        if (!el.blankNote) el.result.append(renderBlankNote());
       }
       appendTechnical(message, el.result);
       const destination = nextDestination(state.activeMove, message);
@@ -740,7 +826,7 @@
       if (!el.demoResult) return;
       el.demoResult.replaceChildren();
       const p = document.createElement("p");
-      if (message.status === "error") p.textContent = [joinErrorCoaching(message), "Check the practice table names and the shared key, then run this demonstration again. Your editor is unchanged."].filter(Boolean).join(" ");
+      if (message.status === "error") p.textContent = [serverCoaching(message) || joinErrorCoaching(message), "Check the practice table names and the shared key, then run this practice again. Your editor is unchanged."].filter(Boolean).join(" ");
       else if (message.status === "timeout") p.textContent = message.message || "The lab stopped this practice run. Your practice code is still here; check it and run again.";
       else p.textContent = message.feedback || "Julia lined up the K-A/K-B practice tables. Practice only.";
       el.demoResult.append(p);
@@ -753,7 +839,7 @@
       const showCaseBridge = shouldShowDemoCaseBridge(message);
       if (el.demoCaseBridge) el.demoCaseBridge.hidden = !showCaseBridge;
       if (el.returnToCase) el.returnToCase.hidden = !showCaseBridge;
-      if (showCaseBridge && el.challengeBridge) el.challengeBridge.textContent = "Case tables: tray_counts (tray_id, notebook_detected) and tally_sheet (tray_id, sheet_detected, entry_status). Case question: How do we put each tray’s notebook count next to its tally-sheet box?";
+      if (showCaseBridge && el.challengeBridge) el.challengeBridge.textContent = "Case tables: tray_counts (tray_id, notebook_detected) and tally_sheet (tray_id, sheet_detected, entry_status). Case question: how do we put each tray’s notebook count next to its row in Toto’s typed copy?";
     }
     function renderDemoRunStatus(message) {
       if (el.demoDraftNote) el.demoDraftNote.textContent = demoDraftStatus(message);
@@ -790,7 +876,7 @@
       socket.send(JSON.stringify(runMessage(state.activeMove, el.code.value, id)));
       clearResult();
       updateControls();
-      if (el.result) el.result.textContent = "Julia is checking your move…";
+      if (el.result) el.result.textContent = "Julia is checking your code…";
     }
     function sendDemoRun() {
       if (!socket || socket.readyState !== WebSocket.OPEN || !state.demoMetadata || isDemoRunPending(state) || !el.demoCode) return;
@@ -839,6 +925,7 @@
             renderSavedResume();
             acceptedCode[state.result.move_id] = submittedCode[state.result.move_id] || "";
             if (bridges) bridges.renderCard(el.bridgeCard, "C3/"+state.result.move_id, acceptedCode[state.result.move_id]);
+            syncBlankNote();
           }
           renderResult(state.result); renderMoveButtons(); updateControls();
           if (needsRecoveryFocus(state.result) && el.code) setTimeout(() => el.code.focus(), 0);
@@ -856,8 +943,8 @@
     function retry() {
       if (stopped) return;
       clearInfoTimer(); clearRunTimer(); clearDemoInfoTimer(); clearDemoRunTimer(); state = disconnect(state); updateControls();
-      if (++reconnects > 3) { if (el.connection) el.connection.textContent = "Lab link offline: your draft is still here."; return; }
-      if (el.connection) el.connection.textContent = "Lab link interrupted, reconnecting…";
+      if (++reconnects > 3) { if (el.connection) el.connection.textContent = "Julia is offline: your draft is still here."; return; }
+      if (el.connection) el.connection.textContent = "Connection to Julia lost. Reconnecting…";
       timer = setTimeout(connect, 900 * reconnects);
     }
     function connect() {
@@ -869,7 +956,7 @@
       state.connection = "connecting"; if (el.connection) el.connection.textContent = "Connecting to the lab…"; updateControls();
       try { socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws"); } catch (_) { retry(); return; }
       const ws = socket;
-      ws.addEventListener("open", () => { if (socket !== ws) return; reconnects = 0; state = Object.assign({}, state, {connection:"connected"}); if (el.connection) el.connection.textContent = "Lab link ready"; requestInfo(state.activeMove); if (el.demoPanel && el.demoPanel.open) requestDemoInfo(); updateControls(); });
+      ws.addEventListener("open", () => { if (socket !== ws) return; reconnects = 0; state = Object.assign({}, state, {connection:"connected"}); if (el.connection) el.connection.textContent = "Julia is ready"; requestInfo(state.activeMove); if (el.demoPanel && el.demoPanel.open) requestDemoInfo(); updateControls(); });
       ws.addEventListener("message", event => { if (socket !== ws) return; try { handle(JSON.parse(event.data)); } catch (_) {} });
       ws.addEventListener("close", () => { if (socket !== ws) return; retry(); });
     }
@@ -883,7 +970,7 @@
     function setMove(move) {
       if (!knownMove(move)) return;
       if (move === "filter-disagreement" && !(state.joinAccepted || canOpenMove(courseState, storage, attempt, move))) {
-        if (el.runStatus) el.runStatus.textContent = "First connect the two records with a checked join; then this move opens.";
+        if (el.runStatus) el.runStatus.textContent = "First connect the two records with a checked join; then this step opens.";
         return;
       }
       if (el.code) drafts[state.activeMove] = el.code.value;
@@ -931,31 +1018,44 @@
       persistDemoDraft(courseState, storage, attempt, demoDraft);
       state = cancelDemo(state); clearDemoResult();
       if (el.demoDraftNote) el.demoDraftNote.textContent = "Planned practice code, not run yet. It is separate from the case editor.";
-      if (el.demoPlan) el.demoPlan.textContent = "Not run yet. The practice expression below will run only when you choose Run demonstration.";
+      if (el.demoPlan) el.demoPlan.textContent = "Not run yet. The practice expression below will run only when you choose Run this practice.";
       updateControls();
     }));
     if (el.runDemo) el.runDemo.addEventListener("click", sendDemoRun);
+    function focusShown(target) { if (!target || target.hidden) return; target.tabIndex = -1; target.focus({preventScroll:true}); target.scrollIntoView({block:"nearest"}); }
+    // r5 (2026-09-27): a new hint is added above the button, so scroll both into view; the focused button stays on screen. It runs again after 100 ms because code-names.js marks up the hint's code names 50 ms later, which moves the button.
+    function keepHintInView(hint, button) { const show = () => { if (hint) hint.scrollIntoView({block:"nearest"}); if (button && !button.disabled) button.scrollIntoView({block:"nearest"}); }; show(); setTimeout(show, 100); }
     function showHelpThrough(lastStage) {
+      const wasDone = hintIndex >= helpStages(state.activeMove).length;
+      let added = null;
       while (hintIndex <= lastStage) {
         const stage = helpStage(state.activeMove, hintIndex);
         if (!stage) break;
         if (stage.label === "Full answer" && el.answerReference) {
           const label = document.createElement("p"), code = document.createElement("pre");
-          label.textContent = "Reference code answer: runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or count as a saved answer.";
+          label.textContent = "Reference code answer: type or paste it into your editor and press Run this step to see what Julia returns. It does not count as a saved answer until Julia checks it.";
           code.className = "complete-answer-code";
           code.textContent = stage.text;
           el.answerReference.replaceChildren(label, code);
           el.answerReference.hidden = false;
+          // Round 7 (r7-r-struggling #6): say where the answer went, as C1, C2, C5 and C6 do.
+          const pointer = document.createElement("p"); pointer.textContent = "The complete runnable answer is shown above your editor."; el.help.append(pointer); added = pointer;
           hintIndex += 1;
           if (el.nextHelp) el.nextHelp.textContent = stage.button;
           continue;
         }
-        const item = document.createElement("p"); const strong = document.createElement("strong"); strong.textContent = stage.label + ": "; item.append(strong, document.createTextNode(stage.text)); el.help.append(item); hintIndex += 1;
+        const item = document.createElement("p"); const strong = document.createElement("strong"); strong.textContent = stage.label + ": "; item.append(strong, document.createTextNode(stage.text)); el.help.append(item); added = item; hintIndex += 1;
         if (stage.note) { const note = document.createElement("p"); note.textContent = stage.note; el.help.append(note); }
         if (el.nextHelp) el.nextHelp.textContent = stage.button;
       }
+      // All help shown: the ladder stops, and the full-answer button has nothing left to show.
+      const done = hintIndex >= helpStages(state.activeMove).length;
+      if (el.nextHelp) el.nextHelp.disabled = done;
+      if (el.showAnswer) el.showAnswer.hidden = done;
+      // r4 (2026-09-27): the button that had focus is now disabled or hidden, so focus moves to the answer.
+      if (done && !wasDone) focusShown(el.answerReference); else keepHintInView(added, el.nextHelp);
     }
-    if (el.nextHelp) el.nextHelp.addEventListener("click", () => showHelpThrough(hintIndex));
+    if (el.nextHelp) el.nextHelp.addEventListener("click", () => showHelpThrough(helpLevelEnd(state.activeMove, hintIndex)));
     if (el.showAnswer) el.showAnswer.addEventListener("click", () => showHelpThrough(helpStages(state.activeMove).length - 1));
     if (el.nextMove) el.nextMove.addEventListener("click", () => {
       const destination = el.nextMove.dataset.destination;
@@ -974,5 +1074,5 @@
     return null;
   }
 
-  return {landsInInvestigation, CASE_ID, CHAPTER, INFO_DEADLINE_MS, RUN_DEADLINE_MS, knownMove, tableIdentity, activeInputIds, lessonCopy, recoveryCopy, joinErrorCoaching, filterErrorCoaching, errorRecovery, needsRecoveryFocus, draftStatus, demoDraftStatus, demoPlanStatus, draftNotice, runOutcomeStatus, helpStage, caseBoardUrl, nextChapterUrl, nextDestination, requestedMove, createState, beginInfo, failCaseInfo, expireInfo, beginRun, expireRun, cancelRun, cancelDemo, disconnect, isRunPending, isDemoRunPending, applyRunStatus, applyDemoRunStatus, applyCaseInfo, applyCaseResult, beginDemoInfo, expireDemoInfo, applyDemoInfo, beginDemoRun, expireDemoRun, applyDemoResult, visualData, shouldRenderCaseVisual, shouldOfferCaseReturn, shouldShowDemoCaseBridge, acceptedMoveKeys, canOpenMove, initialMove, savedChallengeResume, persistChallengeDraft, persistDemoDraft, persistAcceptedCourseResult, infoMessage, runMessage, demoInfoMessage, demoRunMessage, init};
+  return {landsInInvestigation, helpLevelEnd, CASE_ID, CHAPTER, INFO_DEADLINE_MS, RUN_DEADLINE_MS, knownMove, tableIdentity, activeInputIds, lessonCopy, recoveryCopy, joinErrorCoaching, filterErrorCoaching, errorRecovery, finishedRecovery, needsRecoveryFocus, draftStatus, demoDraftStatus, demoPlanStatus, draftNotice, runOutcomeStatus, helpStage, caseBoardUrl, nextChapterUrl, nextDestination, requestedMove, createState, beginInfo, failCaseInfo, expireInfo, beginRun, expireRun, cancelRun, cancelDemo, disconnect, isRunPending, isDemoRunPending, applyRunStatus, applyDemoRunStatus, applyCaseInfo, applyCaseResult, beginDemoInfo, expireDemoInfo, applyDemoInfo, beginDemoRun, expireDemoRun, applyDemoResult, visualData, shouldRenderCaseVisual, shouldOfferCaseReturn, shouldShowDemoCaseBridge, acceptedMoveKeys, canOpenMove, initialMove, savedChallengeResume, persistChallengeDraft, persistDemoDraft, persistAcceptedCourseResult, infoMessage, runMessage, demoInfoMessage, demoRunMessage, init};
 });

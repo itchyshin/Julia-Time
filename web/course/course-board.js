@@ -8,18 +8,41 @@
     const params = new URLSearchParams(root.location.search);
     const attempt = params.get("attempt") || "";
     const continueAction = document.getElementById("continue-action");
+    const skipIntroAction = document.getElementById("skip-intro");
     const changedHistoryAction = document.getElementById("changed-history-action");
+    const introScript = root.JuliaTimeIntroScript;
+    // Every link off the board keeps the attempt, or coming back shows another attempt's progress.
+    const withAttempt = page => page + (attempt ? "?attempt=" + encodeURIComponent(attempt) : "");
+    const introDestination = withAttempt("intro.html");
+    for (const [id, page] of [["watch-intro-link", "intro.html"], ["how-to-play-link", "getting-started.html"]]) {
+      const link = document.getElementById(id);
+      if (link) link.href = withAttempt(page);
+    }
     function render(options) {
       const model = client.dashboardModel(client.loadCourseState(storage(), attempt, options));
       const destination = client.adapterDestination(model.continue.chapter, attempt, model.continue.move);
-      continueAction.href = model.completion.complete ? client.endingDestination(attempt) : destination || "chapter.html";
-      const readyLabel = (model.completion.complete ? "See how the case ends" : model.continue.label) + " →";
-      continueAction.dataset.readyLabel = readyLabel;
-      text(continueAction, readyLabel);
+      const c1Destination = client.adapterDestination("C1", attempt) || destination || "chapter.html";
+      if (model.startWithIntro) {
+        continueAction.href = introDestination;
+        const introLabel = (introScript ? introScript.boardStart : "Start with the intro") + " →";
+        continueAction.dataset.readyLabel = introLabel;
+        text(continueAction, introLabel);
+        skipIntroAction.href = c1Destination;
+        text(skipIntroAction, introScript ? introScript.boardSkip : "Skip the intro: go to Chapter 1");
+        skipIntroAction.hidden = false;
+      } else {
+        continueAction.href = model.completion.complete ? client.endingDestination(attempt) : destination || "chapter.html";
+        const readyLabel = (model.completion.complete ? "See how the case ends" : model.continue.label) + " →";
+        continueAction.dataset.readyLabel = readyLabel;
+        text(continueAction, readyLabel);
+        skipIntroAction.hidden = true;
+      }
       text(document.getElementById("board-status"), model.historicalNotice);
       const progressLine = document.getElementById("case-progress");
       if (progressLine) { text(progressLine, model.completion.line); progressLine.classList.toggle("case-progress--solved", model.completion.complete); }
       if (model.completion.complete) text(document.getElementById("board-title"), model.completion.headline);
+      // r8-rc (2026-09-28): "Before you play:" is setup advice; once the case is closed it is not needed.
+      const setupReminder = document.getElementById("setup-reminder"); if (setupReminder) setupReminder.hidden = model.completion.complete;
       text(document.getElementById("case-question"), model.caseThread.question);
       const established = document.getElementById("case-established");
       text(established, model.caseThread.established);
@@ -41,7 +64,7 @@
         text(solved, card.solvedLabel);
         article.className = "chapter-card" + (card.playable ? "" : " unavailable");
         label.className = "eyebrow";
-        text(label, "Chapter " + card.chapter.slice(1));
+        text(label, (card.part ? card.part + " · " : "") + "Chapter " + card.chapter.slice(1));
         text(title, card.title);
         text(status, card.status);
         if (card.playable) {
@@ -58,7 +81,11 @@
       if (!model.evidence.length) text(evidence, model.evidenceEmpty);
       for (const item of model.evidence) {
         const line = document.createElement("p");
-        text(line, item.line);
+        // r6-rc #7: a jar ID such as J-092 stays on one line (its hyphen would otherwise break).
+        for (const part of String(item.line).split(/(J-\d{3})/)) {
+          if (!/^J-\d{3}$/.test(part)) { if (part) line.append(part); continue; }
+          const id = document.createElement("span"); id.className = "jar-id"; id.textContent = part; line.append(id);
+        }
         evidence.append(line);
       }
       const concepts = document.getElementById("concept-list");

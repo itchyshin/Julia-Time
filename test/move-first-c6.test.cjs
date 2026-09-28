@@ -22,7 +22,7 @@ test("C6 has one closed .jt-help details, after #code, holding the learning scaf
   let depth = 0, end = start;
   for (const m of html.slice(start).matchAll(/<details\b|<\/details>/g)) { depth += m[0] === "<details" ? 1 : -1; if (depth === 0) { end = start + m.index + m[0].length; break; } }
   const block = html.slice(start, end);
-  assert.match(block, /<summary>Stuck\? Hints<span>Small hints first, the full answer last\. Your editor stays as you left it\.<\/span><\/summary>/, "exact summary text");
+  assert.match(block, /<summary>Stuck\? Hints <span>Small hints first, the full answer last\. Your editor stays as you left it\.<\/span><\/summary>/, "exact summary text");
   assert.ok(block.includes('id="learning-scaffold"'), "#learning-scaffold is inside .jt-help");
 
   const codeIndex = html.indexOf('id="code"');

@@ -9,11 +9,11 @@
   "use strict";
 
   const MOVE_COPY = Object.freeze({
-    "C1/select-records":{chapter:"C1", move:"select-records", label:"find the B09 jars", concepts:["picking rows with a true/false rule", "table columns"]},
+    "C1/select-records":{chapter:"C1", move:"select-records", label:"find the B09 jars", concepts:["picking rows with a true-or-false rule", "table columns"]},
     "C2/group":{chapter:"C2", move:"group", label:"group the jars by tray", concepts:["grouping rows by a label"]},
-    "C2/counts":{chapter:"C2", move:"counts", label:"count the jars with fleas", concepts:["one summary row per group", "naming results with = and =>"]},
+    "C2/counts":{chapter:"C2", move:"counts", label:"count the jars with springtails", concepts:["one summary row per group", "naming results with = and =>"]},
     "C2/rates":{chapter:"C2", move:"rates", label:"work out each tray's share", concepts:["shares", "dividing column by column with ./"]},
-    "C3/join-report-log":{chapter:"C3", move:"join-report-log", label:"line up the notebook and the tally sheet", concepts:["matching rows by a shared label"]},
+    "C3/join-report-log":{chapter:"C3", move:"join-report-log", label:"line up the notebook and Toto's typed table", concepts:["matching rows by a shared label"]},
     "C3/filter-disagreement":{chapter:"C3", move:"filter-disagreement", label:"find the tray that disagrees", concepts:["not-equal, row by row, with .!="]},
     "C4/plan-distinct-recheck":{chapter:"C4", move:"plan-distinct-recheck", label:"pick three jars by chance", concepts:["random picks with no repeats"]},
     "C5/event-mask":{chapter:"C5", move:"event-mask", label:"mark the rounds with 5 or more", concepts:["comparing every value with .>="]},
@@ -26,10 +26,19 @@
   // show today's wording, so it looks the title up by chapter/move_id here rather than trusting
   // what was saved (adversary review item 5).
   const EVIDENCE_TITLES = Object.freeze({
-    "C1/select-records":"The B09 jars, found",
-    "C2/rates":"Fleas in every tray",
+    "C1/select-records":"The six B09 jars, found in the notebook",
+    "C2/group":"Every B09 jar sorted by tray",
+    "C2/counts":"Each tray's jars counted, and the jars with springtails",
+    "C2/rates":"Springtails in every tray",
+    "C3/join-report-log":"Notebook and Toto's typed table lined up",
     "C3/filter-disagreement":"The 0 was a blank box",
-    "C4/plan-distinct-recheck":"Recheck tray: planned, not looked at yet",
+    "C4/plan-distinct-recheck":"Recheck jars: planned, not looked at yet",
+    // S5 (2026-09-27 adversary review): a v0.2.3 save had these titled "Simulation event named" and
+    // "Simulation event frequency calculated" (both banned insider phrases); C5 renamed them to
+    // "Marked the rounds" and "Worked out how often" (web/chapter5.js persistAccepted), but this map
+    // was never given the new keys, so a returning player still saw the old titles on the Case Board.
+    "C5/event-mask":"Marked the rounds",
+    "C5/event-frequency":"Worked out how often",
     "C6/compatible-models":"Which stories still fit"
   });
   function evidenceTitle(item) { return EVIDENCE_TITLES[item.chapter + "/" + item.move_id] || item.title; }
@@ -171,9 +180,20 @@
     if (started) return "Started. Carry on with the next step.";
     return fallback;
   }
-  function conceptsFor(keys) {
-    const concepts = [];
-    for (const key of ORDERED_KEYS) if (keys.has(key)) for (const concept of MOVE_COPY[key].concepts) if (!concepts.includes(concept)) concepts.push(concept);
+  // An idea that names a Julia operator is listed only when the step's saved accepted code uses it, so the
+  // Case Board and the ending's "Ideas you used" agree with the code they show (r7-r-struggling #1). A
+  // save from before accepted code was kept lists every idea, as before.
+  const CONCEPT_OPERATOR = Object.freeze({"dividing column by column with ./":/\.\//, "not-equal, row by row, with .!=":/\.!=/, "comparing every value with .>=":/\.>=/});
+  function codeUses(code, concept) {
+    const pattern = CONCEPT_OPERATOR[concept];
+    return !pattern || typeof code !== "string" || !code.trim() || pattern.test(code.replace(/#.*$/gm, ""));
+  }
+  function conceptsFor(keys, accepted) {
+    const concepts = [], saved = accepted && typeof accepted === "object" ? accepted : {};
+    for (const key of ORDERED_KEYS) if (keys.has(key)) {
+      const code = saved[key] && typeof saved[key] === "object" ? saved[key].code : undefined;
+      for (const concept of MOVE_COPY[key].concepts) if (codeUses(code, concept) && !concepts.includes(concept)) concepts.push(concept);
+    }
     return concepts;
   }
   function nextMove(keys) {
@@ -186,50 +206,50 @@
     return candidate && candidate.chapter === fallback.chapter && candidate.move === fallback.move ? candidate : null;
   }
   function caseThread(keys, next) {
-    const question = "Toto's report says the fleas in batch B09 are vanishing, and tray T-C has 0. The notebook records fleas. Which is right?";
+    const question = "Toto's report says the springtails are dying out. Are they?";
     let established = "Nothing checked yet. Start with Chapter 1.";
     let unknown = "What the notebook says about batch B09.";
     const complete = ORDERED_KEYS.every(key => keys.has(key));
     if (complete) {
-      established = "Case closed: the fleas were never shown to be missing. The report's 0 was a blank box, and a vanishing rate almost never gives 5 of 6.";
+      established = "Case closed: the springtails were never shown to be dying out. The report's 0 was a blank box, and a dying-out rate almost never gives 5 of 6.";
       unknown = "What the recheck of three jars will show.";
     } else if (keys.has("C6/compatible-models")) {
-      established = "The 0 for T-C was a blank box, not an empty tray. And a vanishing rate almost never gives the 5 of 6 jars we saw.";
+      established = "The 0 for T-C was a blank box, not an empty tray. And a dying-out rate almost never gives the 5 of 6 jars we saw.";
       unknown = "What the recheck of three jars will show.";
     } else if (keys.has("C5/event-frequency")) {
-      established = "The 0 was a blank box. And 5 of 6 is not suspicious: coin-flip jars give 5 or more about 1 time in 9.";
-      unknown = "Whether the fleas are really vanishing.";
+      established = "The 0 was a blank box. And 5 of 6 is not unusual: under a plain 50:50 guess, 5 or more of 6 happens about 1 time in 9.";
+      unknown = "Whether the springtails are really dying out.";
     } else if (keys.has("C4/plan-distinct-recheck")) {
       established = "The 0 was a blank box. A fair recheck of three jars is planned.";
-      unknown = "Whether 5 of 6 jars with fleas is suspiciously high, and whether the fleas are vanishing.";
+      unknown = "What plain chance would give, and whether the springtails are dying out.";
     } else if (keys.has("C3/filter-disagreement")) {
-      established = "The report's 0 for tray T-C was a blank box on the tally sheet, not an empty tray.";
-      unknown = "Whether a second look at the jars agrees with the notebook.";
+      established = "T-C has springtails after all: the report's 0 was a blank box on the tally sheet, not an empty tray.";
+      unknown = "Whether the notebook itself is right.";
     } else if (keys.has("C3/join-report-log")) {
-      established = "Each tray's notebook count and tally-sheet box are side by side.";
+      established = "Each tray's notebook count and Toto's typed count are side by side.";
       unknown = "Whether any tray disagrees.";
     } else if (keys.has("C2/rates")) {
-      established = "Every B09 tray has fleas in the notebook: T-A 2, T-B 2, T-C 1.";
+      established = "Every B09 tray has springtails in the notebook: T-A 2 of 2 jars, T-B 2 of 2 jars, T-C 1 of 2 jars.";
       unknown = "Where the report's 0 for tray T-C came from.";
     } else if (keys.has("C1/select-records")) {
-      established = "The notebook shows fleas in 5 of the 6 B09 jars.";
+      established = "The notebook shows springtails in 5 of the 6 B09 jars.";
       unknown = "What each tray shows, and where the report's 0 for T-C came from.";
     }
     const why = {
       "C1/select-records":"The report is about batch B09. Find its jars in the notebook.",
-      "C2/group":"The report blames tray T-C. Put each tray's jars together.",
-      "C2/counts":"Count the jars, and the jars with fleas, on each tray.",
-      "C2/rates":"Work out each tray's share, so trays of any size compare fairly.",
-      "C3/join-report-log":"The report was typed from the tally sheet. Line it up with the notebook.",
+      "C2/group":"The report says T-C has 0 jars with springtails. Put each tray's jars together.",
+      "C2/counts":"Count the jars, and the jars with springtails, on each tray.",
+      "C2/rates":"Write each tray as a share. The report's 0 really means 0 of 2 jars.",
+      "C3/join-report-log":"Toto typed his report from his typed table. Line that table up with the notebook.",
       "C3/filter-disagreement":"Keep the tray where the two counts disagree.",
       "C4/plan-distinct-recheck":"Plan a recheck, choosing the jars by chance.",
-      "C5/event-mask":"Is 5 of 6 too good to be true? Mark Toto's rounds with 5 or more.",
+      "C5/event-mask":"What would plain chance give? Mark Toto's rounds with 5 or more.",
       "C5/event-frequency":"Work out how often 5 or more happened.",
-      "C6/compatible-models":"The report says vanishing. See which stories could give 5 of 6."
+      "C6/compatible-models":"The report says dying out. See which stories could give 5 of 6."
     };
     const key = next.chapter + "/" + next.move;
     const whyNext = complete
-      ? "Both claims are checked. The recheck of three jars is still to come."
+      ? "All three parts are done. The recheck of three jars is still to come."
       : why[key] || "See what the case has shown so far, and what is still to find out.";
     return {question, established, unknown, whyNext, hasEstablishedFact: keys.size > 0};
   }
@@ -256,15 +276,21 @@
       return {chapter, label, fact, line: label + ": " + fact};
     });
   }
-  // Chapter 5 saves the number of simulations as row_count: its answer is one true-or-false value per
-  // simulation (and, for event-frequency, their frequency), not a table of records.
+  // The three jar IDs chance picked in Chapter 4, when its saved result kept them (web/chapter4.js
+  // jar_ids); otherwise null, and the board says only that a recheck is planned.
+  function drawnJars(item) {
+    const ids = item && Array.isArray(item.jar_ids) ? item.jar_ids : null;
+    return ids && ids.length === 3 && ids.every(id => typeof id === "string" && /^J-\d{3}$/.test(id)) && new Set(ids).size === 3 ? ids.slice() : null;
+  }
+  // A plain finding per saved step (r2 story review C3, 2026-09-27): no "saved rows" or result counts.
+  // Chapter 5 saves the number of rounds as row_count: its answer is one true-or-false value per round.
   function evidenceLine(item) {
-    const n = item.row_count;
-    const results = n + " yes-or-no result" + (n === 1 ? "" : "s") + ", one per simulation";
-    const saved = item.chapter === "C5" && item.move_id === "event-mask" ? results
-      : item.chapter === "C5" && item.move_id === "event-frequency" ? "from " + results
-      : n + " saved row" + (n === 1 ? "" : "s");
-    return evidenceTitle(item) + ": " + saved + ".";
+    const key = item.chapter + "/" + item.move_id;
+    const n = typeof item.row_count === "number" ? item.row_count.toLocaleString("en-US") : item.row_count;  // "1,000", as on every other screen
+    if (key === "C5/event-mask") return evidenceTitle(item) + ": which of Toto's " + n + " rounds gave 5 or more.";
+    if (key === "C5/event-frequency") return evidenceTitle(item) + ": from Toto's " + n + " rounds.";
+    const jars = key === "C4/plan-distinct-recheck" ? drawnJars(item) : null;
+    return evidenceTitle(item) + (jars ? ": " + jars.slice(0, -1).join(", ") + " and " + jars[2] : "") + ".";
   }
   const CHAPTER_STEPS = Object.freeze({
     C1:["C1/select-records"], C2:["C2/group", "C2/counts", "C2/rates"], C3:["C3/join-report-log", "C3/filter-disagreement"],
@@ -297,12 +323,12 @@
     const resumed = moveFromCursor(state && state.cursor, fallback);
     const next = resumed || fallback;
     const cards = [
-      {chapter:"C1", title:"1 · The report and the notebook", playable:true, href:"C1", status:chapterStatus(keys, ["C1/select-records"], "Ready: find the B09 jars")},
-      {chapter:"C2", title:"2 · Count by tray", playable:true, href:"C2", status:chapterStatus(keys, ["C2/group", "C2/counts", "C2/rates"], "Ready: count the fleas in each tray")},
-      {chapter:"C3", title:"3 · Where did the 0 come from?", playable:true, href:"C3", status:chapterStatus(keys, ["C3/join-report-log", "C3/filter-disagreement"], "Ready: line up the notebook and the tally sheet")},
-      {chapter:"C4", title:"4 · Plan a fair recheck", playable:true, href:"C4", status:chapterStatus(keys, ["C4/plan-distinct-recheck"], "Ready: pick three jars to look at again")},
-      {chapter:"C5", title:"5 · Too good to be true?", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Ready: play Toto's card game")},
-      {chapter:"C6", title:"6 · Are the fleas vanishing?", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Ready: test three stories about the fleas")}
+      {chapter:"C1", part:"Part 1 · Check the report", title:"1 · The report and the notebook", playable:true, href:"C1", status:chapterStatus(keys, ["C1/select-records"], "Ready: find the B09 jars")},
+      {chapter:"C2", part:"Part 1 · Check the report", title:"2 · Count by tray", playable:true, href:"C2", status:chapterStatus(keys, ["C2/group", "C2/counts", "C2/rates"], "Ready: count the jars with springtails on each tray")},
+      {chapter:"C3", part:"Part 1 · Check the report", title:"3 · Where did the 0 come from?", playable:true, href:"C3", status:chapterStatus(keys, ["C3/join-report-log", "C3/filter-disagreement"], "Ready: line up the notebook and Toto's typed table")},
+      {chapter:"C4", part:"Part 2 · Check the notebook", title:"4 · Plan a fair recheck", playable:true, href:"C4", status:chapterStatus(keys, ["C4/plan-distinct-recheck"], "Ready: pick three jars to look at again")},
+      {chapter:"C5", part:"Part 2 · Check the notebook", title:"5 · What would plain chance give?", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Ready: play Toto's card game")},
+      {chapter:"C6", part:"Part 3 · Test the claim", title:"6 · Are the springtails dying out?", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Ready: test three stories about the springtails")}
     ];
     const evidenceChapters = new Set(Array.isArray(state && state.evidence) ? state.evidence.map(item => item.chapter) : []);
     for (const card of cards) card.solvedLabel = solvedLabel(keys, card.chapter, evidenceChapters);
@@ -319,19 +345,22 @@
     const draftNames = draftKeys.map(key => "Chapter " + MOVE_COPY[key].chapter.slice(1) + ": " + MOVE_COPY[key].label);
     const complete = ORDERED_KEYS.every(key => keys.has(key));
     const changedHistory = Boolean(state && Array.isArray(state.historicalChanged) && state.historicalChanged.length);
+    // A brand-new player (never resumed, nothing saved yet) sees the intro movie first.
+    const startWithIntro = !(resumed || keys.size > 0);
     return {
       continue:{chapter:next.chapter, move:next.move, label:(complete ? "Review" : resumed || keys.size > 0 ? "Continue" : "Start") + " Chapter " + next.chapter.slice(1) + ": " + next.label},
+      startWithIntro,
       cards,
       completion:completion(keys),
       caseThread:caseThread(keys, next),
       evidence,
-      concepts:conceptsFor(keys),
+      concepts:conceptsFor(keys, state && state.accepted),
       evidenceEmpty:keys.size ? "Your solved steps are saved, but this computer has no saved result tables for them. Run a chapter again to see its evidence here." : "No findings saved on this computer yet.",
       draftNotice:draftNames.length ? "Saved draft" + (draftNames.length === 1 ? "" : "s") + " available for " + draftNames.join("; ") + "." : "",
       changedHistoryAction:changedHistory ? "Use the changed save" : "",
       historicalNotice:changedHistory
-        ? "Earlier saved data on this computer changed. Your saved work was left unchanged; this board will not import the change automatically."
-        : keys.size ? "Your earlier answers are saved on this computer; run a chapter again for a fresh check today." : "Nothing saved on this computer yet."
+        ? "Some older saved data on this computer has changed. Your current work was not touched, and this board will not import the change automatically."
+        : keys.size ? "Your saved work is on this computer. Open any chapter to run it again." : "Nothing saved on this computer yet."
     };
   }
 
@@ -341,5 +370,5 @@
     return Boolean(pending && reply && pending.case_id === courseState.CASE_ID && pending.mode === "challenge" && knownMove && reply.type === "case_result" && keys.every(key => typeof pending[key] === "string" && pending[key] && reply[key] === pending[key]));
   }
 
-  return {CHAPTER_STEPS, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
+  return {CHAPTER_STEPS, drawnJars, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
 });

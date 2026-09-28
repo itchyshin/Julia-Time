@@ -205,10 +205,10 @@ for (const width of [509, 375, 1280]) {
   });
 }
 
-test("the evidence board summary reports how many B09 jars have fleas", () => {
+test("the evidence board summary reports how many B09 jars have springtails", () => {
   const five = Array.from({ length: 6 }, (_, k) => ({ jar_id: "J-08" + k, batch_id: "B09", detected: k < 5 }));
   assert.equal(typeof client.evidenceSummary, "function");
-  assert.equal(client.evidenceSummary({}, five), "5 of 6 B09 jars have fleas. Next: which trays are they on?");
-  assert.equal(client.evidenceSummary({}, []), "0 of 0 B09 jars have fleas. Next: which trays are they on?");
+  assert.equal(client.evidenceSummary({}, five), "5 of 6 B09 jars have springtails. Next: which trays are they on?");
+  assert.equal(client.evidenceSummary({}, []), "0 of 0 B09 jars have springtails. Next: which trays are they on?");
   assert.match(source, /el\["evidence-summary"\]\.textContent = evidenceSummary\(evidence, rows\)/, "the board renders this summary");
 });

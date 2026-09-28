@@ -17,7 +17,7 @@ function mystery_epilogue_facts()
     DataFrames.nrow(gap) == 1 || error("The ending expects exactly one disagreeing tray.")
     events = mystery_c5_expected_events()
     candidates = mystery_c6_candidates()
-    compatible = Set(mystery_c6_expected_compatible().model)
+    compatible = Set(mystery_c6_expected_compatible().story)
     return Dict{String, Any}(
         "batch_id" => MYSTERY_CASE_BATCH,
         "n_jars" => DataFrames.nrow(b09),
@@ -37,9 +37,9 @@ function mystery_epilogue_facts()
         "n_per_simulation" => MYSTERY_C5_N_JARS,
         "n_simulations" => length(events),
         "matching_events" => count(events),
-        "models" => [Dict{String, Any}("model" => String(row.model), "p" => Float64(row.p),
+        "models" => [Dict{String, Any}("model" => String(row.story), "p" => Float64(row.p),
                                        "lower" => Int(row.lower), "upper" => Int(row.upper),
-                                       "compatible" => row.model in compatible)
+                                       "compatible" => row.story in compatible)
                      for row in eachrow(candidates)],
     )
 end

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Start here: what Julia Time is, what to install, and how to play The Case of the Missing Fleas.">
-  <title>Julia Time · Start Here</title><link rel="stylesheet" href="course.css">
+  <title>Julia Time · Start here</title><link rel="stylesheet" href="course.css"><script defer src="getting-started.js"></script>
 </head>
 <body>
 <a class="skip" href="#start-here">Skip to the instructions</a>
@@ -13,7 +13,7 @@
     <div class="hero-copy">
       <p class="eyebrow">Before the investigation</p>
       <h1 id="guide-title">Start here.</h1>
-      <p>Julia Time is a local browser game in which you use real Julia to investigate a simulated water-flea mystery.</p>
+      <p>Julia Time is a local browser game in which you use real Julia to investigate a simulated springtail mystery.</p>
       <p class="guide-promise">You do not need to build the game, create a GitHub account, find a package in a registry, or install R or Python.</p>
       <a class="primary-action" href="#setup-heading">Set up Julia Time</a>
       <p class="guide-local-note"><strong>Already downloaded Julia Time?</strong> You are now in the bundled local guide. This guide can be shared as a static page, but the mystery itself runs on your own laptop after you start the local lab. If you reached this guide before downloading the folder, return to the public <a href="https://github.com/itchyshin/Julia-Time#start-here--before-you-download">Julia Time README</a> first.</p>
@@ -26,16 +26,16 @@
     <h2 id="what-heading">What is Julia Time?</h2>
     <div class="guide-grid">
       <article class="panel"><h3>Julia Time</h3><p>This supplied folder and learning game. It runs locally on your own laptop.</p></article>
-      <article class="panel"><h3>Julia</h3><p>Julia is the programming language. It runs the game and the small investigation moves you write.</p></article>
+      <article class="panel"><h3>Julia</h3><p>Julia is the programming language. It runs the game and the small investigation steps you write.</p></article>
       <article class="panel"><h3>R and Python</h3><p>They are optional reference languages only. You do not need either one for this build of the mystery.</p></article>
     </div>
-    <aside class="guide-callout"><strong>A useful technical detail, without homework:</strong> the folder is a local Julia project called <code>JuliaTime</code>. Do not run <code>Pkg.add("JuliaTime")</code>; the one-time setup prepares the folder’s own declared packages.</aside>
+    <aside class="guide-callout"><strong>One technical detail (nothing to do):</strong> the folder is a local Julia project called <code>JuliaTime</code>. Do not run <code>Pkg.add("JuliaTime")</code>; the one-time setup prepares the folder’s own declared packages.</aside>
   </section>
 
   <section class="guide-section" aria-labelledby="terminal-heading">
     <p class="eyebrow">The one computer step</p>
     <h2 id="terminal-heading">Open a terminal in the Julia Time folder</h2>
-    <p>A <strong>terminal</strong> is simply the small text window that can run a command in a folder. The commands below only work when that window is in the extracted Julia Time folder, not in Downloads generally, and not in a different project.</p>
+    <p>A <strong>terminal</strong> is simply the small text window that can run a command in a folder. The commands below only work when that window is in the extracted Julia Time folder, not just anywhere in Downloads, and not in a different project.</p>
     <div class="guide-grid">
       <article class="panel"><h3>Mac</h3><p>In Finder, open the extracted Julia Time folder. Control-click its background and choose <strong>New Terminal at Folder</strong> (or open Terminal and drag the folder onto it after typing <code>cd </code>).</p></article>
       <article class="panel"><h3>Windows</h3><p>In File Explorer, open the extracted Julia Time folder, then right-click its background and choose <strong>Open in Terminal</strong>.</p></article>
@@ -56,7 +56,7 @@
     </ol>
     <aside class="guide-callout"><strong>If your computer asks first:</strong> on Windows, a warning about an unknown publisher or "Windows protected your PC" means choose <strong>More info</strong>, then <strong>Run anyway</strong> (or <strong>Run</strong>). On a Mac, "cannot verify" means click <strong>Done</strong>, open System Settings, Privacy &amp; Security, click <strong>Open Anyway</strong> next to the file, then double-click it again; if asked whether Terminal may use your Downloads folder, click <strong>Allow</strong>.</aside>
     <p>Prefer a terminal, or need to recover? The blocks below are the same one-time check typed by hand. On Windows, <code>tools/setup/setup-windows.cmd</code> runs it on its own too.</p>
-    <p class="guide-platform-note"><strong>Choose your platform deliberately:</strong> choose the block whose title exactly matches your terminal. Mac/Linux and Windows commands are different; do not copy a command meant for another platform.</p>
+    <p class="guide-platform-note"><strong>Choose your platform carefully:</strong> pick the block whose title exactly matches your terminal. Mac/Linux and Windows commands are different; do not copy a command meant for another platform.</p>
     <details class="guide-details">
       <summary>Mac or Linux Terminal: one-time check</summary>
       <pre><code>JULIA_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 julia --startup-file=no --history-file=no --project=. check_setup.jl</code></pre>
@@ -73,7 +73,7 @@ julia --startup-file=no --history-file=no --project=. check_setup.jl</code></pre
 $env:OPENBLAS_NUM_THREADS = "1"
 julia --startup-file=no --history-file=no --project=. check_setup.jl</code></pre>
     </details>
-    <p class="guide-success">Setup is complete only when the terminal says <code>OK — Julia Time is ready</code>.</p>
+    <p class="guide-success">Setup is complete only when the terminal says <code>OK: Julia Time is ready</code>.</p>
   </section>
 
   <section class="guide-section" aria-labelledby="start-heading">
@@ -103,15 +103,15 @@ julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
   </section>
 
   <section id="how-to-play" class="guide-section" aria-labelledby="play-heading">
-    <p class="eyebrow">How to play without hunting around</p>
-    <h2 id="play-heading">Your code is the investigation move.</h2>
+    <p class="eyebrow">How to play, step by step</p>
+    <h2 id="play-heading">Your code is the investigation step.</h2>
     <ol class="guide-flow">
       <li><strong>Read the brief.</strong> Each chapter puts the question, the relevant data, and the required result in view before you write.</li>
       <li><strong>Inspect the evidence.</strong> Look at the visible table, its column names, and the records you need to reason about.</li>
-      <li><strong>Write a small Julia move.</strong> The editor starts empty (or restores your own earlier typing). You are not expected to invent a whole answer from nothing.</li>
-      <li><strong>Run it and read what happened.</strong> Julia returns the actual result. A successful move explains both what the code did and what it does, and does not, establish about the case.</li>
-      <li><strong>Use help when you want it.</strong> <em>Help me start</em> gives a small nudge first. Depending on the chapter, it can also offer a code shape, an optional full solution, or a different-data practice example. It is help, not a test.</li>
-      <li><strong>Return to the Case Board.</strong> When browser storage is available, it saves your evidence and points to the next available move. It is not a grade or leaderboard.</li>
+      <li><strong>Write a small piece of Julia.</strong> The editor starts empty (or restores your own earlier typing). You are not expected to invent a whole answer from nothing.</li>
+      <li><strong>Run it and read what happened.</strong> Julia returns the actual result. A successful step explains what the code did, and what it shows (and does not show) about the case.</li>
+      <li><strong>Use help when you want it.</strong> <em>Stuck? Hints</em>, below the editor, gives a small idea first, then a code shape, then the whole line. A separate <em>Show the full answer</em> button is there when you want it. It is help, not a test.</li>
+      <li><strong>Return to the Case Board.</strong> When browser storage is available, it saves your evidence and points to the next available step. It is not a grade or leaderboard.</li>
     </ol>
   </section>
 
@@ -130,7 +130,7 @@ julia --startup-file=no --history-file=no --project=. run.jl</code></pre>
     </details>
   </section>
 
-  <aside class="setup-reminder"><strong>What is playable now:</strong> all six case chapters are on the Case Board. The mystery can start with Julia alone; any R/Python comparison is an optional separate laboratory, never a requirement for solving the case.</aside>
+  <aside class="setup-reminder"><strong>What is playable now:</strong> all six case chapters are on the Case Board. The mystery can start with Julia alone; any R and Python comparison is in the optional speed lab, never a requirement for solving the case.</aside>
   <p class="guide-return"><a id="local-case-board" class="primary-action" href="http://127.0.0.1:8000/course/index.html">Open the local Case Board</a></p>
 </main>
 </body>

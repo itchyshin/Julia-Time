@@ -41,8 +41,8 @@ end
 @testset "Missing Fleas C6 predictive compatibility protocol" begin
     @testset "fresh server-derived story bounds" begin
         candidates = JuliaTime.mystery_c6_candidates()
-        @test names(candidates) == ["model", "p", "lower", "upper"]
-        @test candidates.model == ["Vanishing", "Coin flip", "Thriving"]
+        @test names(candidates) == ["story", "p", "lower", "upper"]
+        @test candidates.story == ["Dying out", "Coin flip", "Thriving"]
         @test candidates.p == [0.1, 0.5, 0.8]
         @test all(row -> row.lower == quantile(Binomial(6, row.p), 0.1) &&
                          row.upper == quantile(Binomial(6, row.p), 0.9), eachrow(candidates))
@@ -64,7 +64,7 @@ end
         @test info["n_trials"] == 6
         @test info["observed_count"] == JuliaTime.mystery_c6_observed_count()
         @test info["inputs"][1]["id"] == "stories"
-        @test info["inputs"][1]["columns"] == ["model", "p", "lower", "upper"]
+        @test info["inputs"][1]["columns"] == ["story", "p", "lower", "upper"]
         @test occursin("lower ≤ observed_count ≤ upper", info["rule"])
         @test occursin("usual range", lowercase(info["key_note"]))
     end
@@ -73,7 +73,7 @@ end
         expected = JuliaTime.mystery_c6_expected_compatible()
         try
             @eval JuliaTime function mystery_c6_candidates()
-                DataFrame(model=["Changed presentation"], p=[0.25], lower=[0], upper=[6])
+                DataFrame(story=["Changed presentation"], p=[0.25], lower=[0], upper=[6])
             end
             @test JuliaTime.mystery_c6_expected_compatible() == expected
         finally
@@ -81,7 +81,7 @@ end
                 probabilities = collect(MYSTERY_C6_PROBABILITIES)
                 ranges = [Distributions.Binomial(MYSTERY_C6_N_TRIALS, p) for p in probabilities]
                 return DataFrame(
-                    model=collect(MYSTERY_C6_MODEL_NAMES),
+                    story=collect(MYSTERY_C6_MODEL_NAMES),
                     p=probabilities,
                     lower=[Distributions.quantile(range, 0.1) for range in ranges],
                     upper=[Distributions.quantile(range, 0.9) for range in ranges],
@@ -92,10 +92,10 @@ end
 
     @testset "fresh checker accepts only every fitting row, order independently" begin
         expected = JuliaTime.mystery_c6_expected_compatible()
-        @test expected.model == ["Coin flip", "Thriving"]
+        @test expected.story == ["Coin flip", "Thriving"]
         @test JuliaTime.check_mystery_c6(expected)[1]
         @test JuliaTime.check_mystery_c6(expected[reverse(1:nrow(expected)), reverse(names(expected))])[1]
-        @test !JuliaTime.check_mystery_c6(expected[:, ["model", "p", "lower"]])[1]
+        @test !JuliaTime.check_mystery_c6(expected[:, ["story", "p", "lower"]])[1]
         wrong_bound = copy(expected); wrong_bound[1, "upper"] += 1
         @test !JuliaTime.check_mystery_c6(wrong_bound)[1]
         wrong_value = copy(expected); wrong_value[1, "p"] = 0.2
@@ -103,7 +103,7 @@ end
         duplicated = vcat(expected, expected[1:1, :])
         @test !JuliaTime.check_mystery_c6(duplicated)[1]
         @test !JuliaTime.check_mystery_c6(expected[1:max(0, nrow(expected)-1), :])[1]
-        invented = vcat(expected, DataFrame(model=["Invented"], p=[0.3], lower=[0], upper=[4]))
+        invented = vcat(expected, DataFrame(story=["Invented"], p=[0.3], lower=[0], upper=[4]))
         @test !JuliaTime.check_mystery_c6(invented)[1]
         @test !JuliaTime.check_mystery_c6("compatible")[1]
     end
@@ -121,7 +121,7 @@ end
             @test reply["result_visual"]["data"]["rows"] == reply["rows"]
             @test occursin("coin flip", lowercase(reply["explanation"]["case"]))
             @test occursin("Fitting is not proof", reply["explanation"]["limit"])
-            @test reply["evidence"]["claim"] == "Claim 2, \"the fleas are vanishing\": not supported."
+            @test reply["evidence"]["claim"] == "Part 3 done: “dying out” was never shown."
 
             for (label, bad_code) in [
                 ("mutation", "answer = stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]; stories[1, :upper] = 0; answer"),

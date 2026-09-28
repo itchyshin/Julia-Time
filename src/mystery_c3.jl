@@ -17,7 +17,7 @@ const MYSTERY_C3_PRACTICE_JOIN_COLUMNS = [
 """
     mystery_c3_tray_counts() -> DataFrame
 
-Build a fresh tray summary from the seeded B09 teaching fixture: the notebook's fleas-with-jars
+Build a fresh tray summary from the seeded B09 teaching fixture: the notebook's springtails-with-jars
 count per tray. It is intentionally separate from both the tally sheet and the checker
 constructors below.
 """
@@ -30,8 +30,10 @@ end
 """
     mystery_c3_tally_sheet() -> DataFrame
 
-Return a fresh, separately simulated tally sheet: the paper the report was typed from. T-C's box
-was left blank; the data show only that, never a claim about what happened in the jar.
+Return a fresh, separately simulated `tally_sheet`: Toto's typed copy of the tally sheet, the table
+his report came from. `sheet_detected` is what Toto typed; `entry_status` says whether the paper box was
+filled in. T-C's paper box was left blank and Toto typed a 0 for it; the data show only that, never a
+claim about what happened in the jar.
 """
 function mystery_c3_tally_sheet()
     return DataFrame(
@@ -144,10 +146,10 @@ function _mystery_c3_check_exact_rows(value, expected, move_id::String)
             "Check the .!= row rule and return only the row where notebook_detected and sheet_detected differ.")
         matched[expected_row] = true
     end
-    all(matched) || return (false, "At least one required tray row is missing.")
+    all(matched) || return (false, "At least one tray is not in your result.")
     return (true, move_id == "join-report-log" ?
         "Every tray in tray_counts is matched to one tally_sheet row with unchanged values." :
-        "The returned row is exactly the one tray where the notebook and the sheet disagree.")
+        "The returned row is exactly the one tray where the notebook and Toto's typed copy disagree.")
 end
 
 """
@@ -181,7 +183,7 @@ end
 """Check the separate demonstration join without making it eligible for case progress."""
 function check_mystery_c3_practice_join(value)
     _mystery_c3_columns(value, MYSTERY_C3_PRACTICE_JOIN_COLUMNS) ||
-        return (false, "Return the practice key and its matched tally-sheet columns.")
+        return (false, "Return the practice key and the matched columns from the practice sheet.")
     expected = mystery_c3_practice_expected_join()
     DataFrames.nrow(value) == DataFrames.nrow(expected) ||
         return (false, "Return one matched row for each practice key.")
@@ -191,12 +193,12 @@ function check_mystery_c3_practice_join(value)
             !matched[candidate] && _mystery_c3_practice_row_matches(value, actual_row, expected, candidate)
         end
         expected_row === nothing &&
-            return (false, "Check the practice key and keep the matched tally-sheet values unchanged.")
+            return (false, "Check the practice key and keep the matched practice-sheet values unchanged.")
         matched[expected_row] = true
     end
     return all(matched) ?
         (true, "Julia lined up the K-A/K-B practice tables. Practice: does not count for the case.") :
-        (false, "At least one practice key is missing.")
+        (false, "At least one practice key is not in your result.")
 end
 
 function _mystery_c3_moves()
@@ -204,7 +206,7 @@ function _mystery_c3_moves()
         Dict{String, Any}(
             "id" => "join-report-log",
             "title" => "Put each tray's two records side by side",
-            "required_result" => "One row per tray, with its notebook count and its tally-sheet columns.",
+            "required_result" => "One row per tray, with its notebook count and the columns from Toto's typed copy.",
             "concept" => "Match each tray in tray_counts with the row for the same tray in tally_sheet.",
             "code_shape" => "leftjoin(left_table, right_table, on=:shared_column)",
             "syntax" => [
@@ -221,16 +223,16 @@ function _mystery_c3_moves()
         ),
         Dict{String, Any}(
             "id" => "filter-disagreement",
-            "title" => "Keep the tray where the notebook and the sheet disagree",
+            "title" => "Keep the tray where the notebook and Toto's typed copy disagree",
             "required_result" => "Only the row where notebook_detected and sheet_detected differ.",
-            "concept" => "Keep a row only where the notebook count is not equal to the sheet count.",
+            "concept" => "Keep a row only where the notebook count is not equal to Toto's typed count.",
             "code_shape" => "table[table.left_count .!= table.right_count, :]",
             "syntax" => [
                 Dict("token" => ".!=", "meaning" => "compares the two columns row by row and makes true-or-false values."),
                 Dict("token" => ":", "meaning" => "keeps all columns in this indexing position."),
             ],
             "hints" => [
-                Dict("stage" => "concept", "text" => "Keep a row only where the notebook count is not equal to the sheet count."),
+                Dict("stage" => "concept", "text" => "Keep a row only where the notebook count is not equal to Toto's typed count."),
                 Dict("stage" => "shape", "text" => "Use table[table.left_count .!= table.right_count, :] to keep rows where two columns differ. table, left_count and right_count are placeholders, not names in this case: here table is joined, left_count is notebook_detected, and right_count is sheet_detected."),
                 Dict("stage" => "solution", "text" => "joined[joined.notebook_detected .!= joined.sheet_detected, :]"),
             ],
@@ -262,20 +264,20 @@ function mystery_c3_case_info(; move_id::String="join-report-log", request_id::S
     title, question, goal, key_note = if mode == "demonstration"
         (
             "Practice first: line up two small tables (one minute)",
-            "Can each practice key be matched to one tally-sheet row?",
-            "Use the separate K-A/K-B practice tables to rehearse a safe join. Practice: does not count for the case.",
+            "Can each practice key be matched to one practice-sheet row?",
+            "Use the separate K-A/K-B practice tables to practise a join (lining up two tables by a shared label). Practice: does not count for the case.",
             "key names the same practice row in both tables; every key occurs once in each table.",
         )
     elseif move_id == "join-report-log"
         (
             "Put each tray's two records side by side",
-            "How do we put each tray's notebook count next to its tally-sheet box?",
-            "Match the two sheets safely by tray_id. A successful join prepares a comparison; it does not yet say why any counts differ.",
+            "How do we put each tray's notebook count next to its row in Toto's typed copy?",
+            "Line up the two tables by tray_id (a join). A successful join prepares a comparison; it does not yet say why any counts differ.",
             "tray_id names the same tray in both tables; every tray ID occurs once in each table.",
         )
     else
         (
-            "Keep the tray where the notebook and the sheet disagree",
+            "Keep the tray where the notebook and Toto's typed copy disagree",
             "On which tray do the two counts differ?",
             "Keep only the row where notebook_detected and sheet_detected differ. It does not yet tell us what really happened in the jar.",
             "tray_id identifies the already matched tray in each joined row.",
@@ -292,7 +294,7 @@ function mystery_c3_case_info(; move_id::String="join-report-log", request_id::S
     elseif move_id == "join-report-log"
         [
             _mystery_c3_input("tray_counts", "Your counts from the notebook (Chapter 2)", mystery_c3_tray_counts()),
-            _mystery_c3_input("tally_sheet", "The tally sheet the report was typed from", mystery_c3_tally_sheet()),
+            _mystery_c3_input("tally_sheet", "Toto's typed copy of the tally sheet", mystery_c3_tally_sheet()),
         ]
     else
         [_mystery_c3_input("joined", "A fresh copy of the lined-up table, the same as your step 1 result", mystery_c3_joined())]
@@ -308,7 +310,7 @@ function mystery_c3_case_info(; move_id::String="join-report-log", request_id::S
         "scene" => Dict(
             "id" => "c3-handling-desk",
             "speaker" => "Eddie",
-            "line" => "Line up the same tray on both, then look for the odd one out.",
+            "line" => "Line up the same tray on both, then look for the one that does not match.",
             "image" => "assets/lab-cast.png",
             "alt" => "Itchy, Toto, Momo, and Eddie together in the Missing Fleas teaching lab.",
         ),
@@ -372,33 +374,85 @@ function mystery_c3_case_info(msg::AbstractDict)
                                 mode=mode, activity_id=activity_id)
 end
 
-function _mystery_c3_explanation(move_id::String, pass; mode::String="challenge")
+# Round 7 (r7-r-struggling.md item 8): joined[rule] without , : got "keep the comma", which reads
+# as if the comma were there. Read from the parsed code: a C3 table with one position in brackets
+# (`_mystery_one_position_line`, src/mystery.jl, shared with C6 in round 8).
+const _MYSTERY_C3_TABLES = Dict(
+    "join-report-log" => (:tray_counts => MYSTERY_C3_TRAY_COUNTS_COLUMNS, :tally_sheet => MYSTERY_C3_TALLY_SHEET_COLUMNS),
+    "filter-disagreement" => (:joined => MYSTERY_C3_JOIN_COLUMNS,),
+)
+
+function _mystery_c3_coaching(code::String, move_id::String, mode::String; message::AbstractString="")
+    tables = mode == "demonstration" ? () : get(_MYSTERY_C3_TABLES, move_id, ())
+    shared = _mystery_coaching(code; message=message, way="leftjoin and .!= work on every tray at once.",
+                               tables=tables,
+                               which_tail=move_id == "filter-disagreement" ? MYSTERY_R_WHICH_RULE_TAIL : "")
+    isempty(shared) || return shared
+    return _mystery_one_position_line(code, tables)
+end
+
+# Round 7 (r7-r-struggling.md item 2): joined[joined.entry_status .== "left blank", :] returns the
+# right row without comparing the two counts. It stays accepted, but the line must not say it compared.
+const MYSTERY_C3_SHORTCUT_LINE = "Your row is right. This finds the right tray because its box is blank. The way this game teaches compares the two counts with .!=, which also finds a tray where both are filled in but differ."
+const _MYSTERY_C3_COUNT_COMPARISONS = (:!=, :.!=, :≠, :.≠, :<, :>, :.<, :.>, :(==), :.==, :isequal)
+
+function _mystery_c3_compares_counts(code)
+    parsed = _mystery_parsed_quietly(code)
+    parsed === nothing && return true   # unknown: keep the usual line
+    # Both counts are read (joined.x, row.x, :x or "x") and some comparison is used (also as
+    # ByRow(!=)); the shortcut reads entry_status only.
+    reads(column) = _mystery_any_node(n -> n == QuoteNode(column) || n == String(column), parsed)
+    compares = _mystery_any_node(n -> n in _MYSTERY_C3_COUNT_COMPARISONS ||
+        n isa Expr && n.head == :comparison, parsed)
+    return compares && reads(:notebook_detected) && reads(:sheet_detected)
+end
+
+const MYSTERY_C3_TAUGHT = Dict(
+    "practice" => "leftjoin(practice_counts, practice_sheet, on=:key)",
+    "join-report-log" => "leftjoin(tray_counts, tally_sheet, on=:tray_id)",
+    "filter-disagreement" => "joined[joined.notebook_detected .!= joined.sheet_detected, :]",
+)
+
+function _mystery_c3_explanation(move_id::String, pass; mode::String="challenge", code=nothing,
+                                 practice_pass=nothing)
     if mode == "demonstration"
+        # Round 3 (r3-bugs.md item 1): the praise needs a passing practice run, not only the
+        # taught line somewhere in the code.
         return Dict(
-            "julia" => "The taught way in this practice is leftjoin(practice_counts, practice_sheet, on=:key), which lines up rows from the two practice tables that share a label.",
+            "julia" => practice_pass === true && _mystery_used_taught(code, MYSTERY_C3_TAUGHT["practice"]) ?
+                "You used the way this game teaches in this practice: leftjoin lines up rows from the two practice tables that share a label." :
+                "The way this game teaches in this practice is leftjoin(practice_counts, practice_sheet, on=:key), which lines up rows from the two practice tables that share a label.",
             "case" => "This result used the separate K-A/K-B practice tables. Practice: does not count for the case.",
-            "limit" => "Practice output does not show whether the notebook and the sheet disagree in the real case.",
+            "limit" => "Practice output does not show whether the notebook and Toto's typed copy disagree in the real case.",
         )
     end
+    used = pass === true && _mystery_used_taught(code, MYSTERY_C3_TAUGHT[move_id])
     if pass && move_id == "join-report-log"
         return Dict(
-            "julia" => "The returned table passed the check. The taught way to build it is leftjoin(tray_counts, tally_sheet, on=:tray_id): on= names the shared label, and :tray_id names that column. leftjoin keeps every tray from tray_counts, even one the tally sheet lacked.",
-            "case" => "Now each tray has its notebook count and its sheet box in one row.",
+            "julia" => used ?
+                "Your table is right. You used the way this game teaches: on= names the shared label, and :tray_id names that column. leftjoin keeps every tray from tray_counts, even a tray that tally_sheet does not have." :
+                "Your table is right. The way this game teaches to build it is leftjoin(tray_counts, tally_sheet, on=:tray_id): on= names the shared label, and :tray_id names that column. leftjoin keeps every tray from tray_counts, even a tray that tally_sheet does not have.",
+            "case" => "Now each tray has its notebook count and Toto's typed count in one row.",
             "limit" => "",
         )
     elseif pass
         return Dict(
-            "julia" => "The returned row passed the check. The taught way uses .!= to compare notebook_detected and sheet_detected row by row, then keeps the rows where the answer is true.",
-            "case" => "Only T-C disagrees: the notebook has 1, the sheet has 0, and its box was left blank. That 0 is not a count: nobody counted anything there. The report's zero is a blank, not an empty tray.",
-            "limit" => "We know the box was left blank, not why; a recheck of the jars will tell us more.",
+            "julia" => !used && code isa AbstractString && !_mystery_c3_compares_counts(code) ?
+                MYSTERY_C3_SHORTCUT_LINE : used ?
+                "Your row is right. You used the way this game teaches: .!= compares notebook_detected and sheet_detected row by row, and the rows where the answer is true are kept." :
+                "Your row is right. The way this game teaches uses .!= to compare notebook_detected and sheet_detected row by row, then keeps the rows where the answer is true.",
+            "case" => "Only T-C disagrees: the notebook has 1. On the tally sheet, T-C's box was left blank. Toto typed a 0 into his table for that blank, and his report used it. That 0 is not a count: nobody counted anything there. Toto jumped to two conclusions: a blank box became a 0, and one 0 became “dying out”. Part 1 done. But everything from here rests on the notebook.",
+            "limit" => "We know the box was left blank, not why. Next: can we trust the notebook? Plan a fair recheck of its jars.",
         )
     end
     return Dict(
         "julia" => move_id == "join-report-log" ?
             "Return a DataFrame that matches each tray in tray_counts to its tally_sheet row by tray_id." :
             "Return the one joined row selected by the .!= comparison.",
-        "case" => "Nothing found yet: the returned rows must match this step first.",
-        "limit" => "A failed run does not tell us what really happened in the jar, or point at any person.",
+        # Round 3 (r3-struggling.md): these two lines closed every failure, whatever went wrong,
+        # and told the player nothing; the checker's own line names the mistake.
+        "case" => "",
+        "limit" => "",
     )
 end
 
@@ -423,7 +477,8 @@ function _mystery_c3_result(; request_id::String="", move_id::String="join-repor
                             mode::String="challenge", activity_id=nothing,
                             status::String="error", pass=false, message::String="",
                             stdout::String="", rows=Any[], columns=String[], feedback::String="",
-                            value_repr::String="", result_data=nothing, practice_pass=nothing)
+                            value_repr::String="", result_data=nothing, practice_pass=nothing,
+                            code=nothing)
     return Dict{String, Any}(
         "type" => "case_result",
         "contract_version" => 1,
@@ -445,7 +500,8 @@ function _mystery_c3_result(; request_id::String="", move_id::String="join-repor
         "rows" => rows,
         "result_data" => result_data,
         "feedback" => feedback,
-        "explanation" => _mystery_c3_explanation(move_id, pass; mode=mode),
+        "explanation" => _mystery_c3_explanation(move_id, pass; mode=mode, code=code,
+                                                   practice_pass=practice_pass),
         "result_visual" => _mystery_c3_result_visual(move_id, rows, pass),
     )
 end
@@ -462,12 +518,9 @@ function _mystery_c3_guarded_code(code::String, protected_bindings)
         name = String(binding)
         identity = "__juliatime_c3_$(name)_identity__"
         push!(setup, "$(identity) = objectid($(name))")
-        push!(checks, "objectid($(name)) == $(identity) || error(\"The supplied $(name) binding changed. Keep the source table unchanged; create a separate result, then try again.\")")
+        push!(checks, "objectid($(name)) == $(identity) || error(\"The supplied table $(name) was changed. Keep the source table unchanged; create a separate result, then try again.\")")
     end
-    return join(setup, "\n") *
-           "\n__juliatime_c3_answer__ = begin\n" * code *
-           "\nend\n" * join(checks, "\n") *
-           "\n__juliatime_c3_answer__"
+    return _mystery_guarded_code(code, "__juliatime_c3_answer__"; before=setup, after=checks)
 end
 
 # R7 (simulated re-test, 2026-09-24): a parse error in the wrapped text pointed at wrapper lines
@@ -551,7 +604,7 @@ function mystery_c3_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
         pass=mode == "demonstration" ? nothing : false,
         practice_pass=mode == "demonstration" ? false : nothing,
         message="Write some Julia before running the case.",
-        feedback="The editor is empty, so no sandbox worker was started.")
+        feedback="The editor is empty, so nothing was run.")
 
     env, protected_bindings = if mode == "demonstration"
         ((practice_counts=mystery_c3_practice_counts(), practice_sheet=mystery_c3_practice_sheet()),
@@ -583,10 +636,13 @@ function mystery_c3_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     elseif sandbox_result.status == :ok
         check_mystery_c3(sandbox_result.value, move_id)
     else
-        (false, "Julia stopped before the end. Check the names, then run again.")
+        (false, _mystery_stopped_feedback(sandbox_result.status))
     end
     pass = mode == "demonstration" ? nothing : checked
     practice_pass = mode == "demonstration" ? checked : nothing
+    # R's <- and Python habits named on a failed run, as in C2; sent on its own so the page can lead with it.
+    coaching = checked ? "" : _mystery_c3_coaching(String(code), move_id, mode; message=sandbox_result.message)
+    isempty(coaching) || (feedback = coaching)
     result = _mystery_c3_result(
         request_id=request_id,
         move_id=move_id,
@@ -602,13 +658,15 @@ function mystery_c3_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
         value_repr=value_repr,
         result_data=_mystery_c3_result_data(display),
         practice_pass=practice_pass,
+        code=String(code),
     )
+    result["coaching"] = coaching
     if pass === true && move_id == "filter-disagreement"
         result["evidence"] = Dict(
             "id" => "c3-recording-disagreement",
             "title" => "The 0 was a blank box",
-            "text" => "The notebook says 1 for tray T-C, the sheet says 0, and its box was left blank. That 0 is not a count: nobody counted anything there.",
-            "claim" => "Claim 1, \"T-C has no fleas\": not supported.",
+            "text" => "The notebook says 1 for tray T-C. On the tally sheet its box was left blank, and Toto typed a 0 for it in his table. That 0 is not a count: nobody counted anything there.",
+            "claim" => "Part 1 · Check the report: the 0 was a blank box, not an empty tray.",
         )
     end
     return result

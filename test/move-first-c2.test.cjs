@@ -64,7 +64,7 @@ test("C2: the small hints sit first inside the help panel; the bridge card stays
   // (#bridge-card, see the test above), then the shared help panel with small hints first inside it.
   const editor = html.indexOf('id="code"');
   const jtHelp = html.indexOf('<details class="jt-help">');
-  const hintLadder = html.indexOf('<details class="help">');
+  const hintLadder = html.indexOf('<div class="help hint-ladder">');
   const summaryEnd = html.indexOf('</summary>', jtHelp) + '</summary>'.length;
   assert.ok(editor > -1 && jtHelp > editor, "the help panel sits after the editor");
   assert.equal(hintLadder, summaryEnd, "the small hints are the first thing inside the help panel");

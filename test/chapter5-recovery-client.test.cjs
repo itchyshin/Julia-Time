@@ -44,7 +44,9 @@ test("C5 expires only its current code run and preserves prior evidence", () => 
   assert.equal(client.isRunPending(recovered), false);
   assert.deepEqual(recovered.evidence, {move_id:"event-mask"});
   assert.equal(recovered.runFailure.status, "timeout");
-  assert.match(recovered.runFailure.feedback, /code is still here/i);
+  // The outcome line above the result says "Your code is still here" once (still-here-once.test.cjs).
+  assert.match(recovered.runFailure.feedback, /Check your code, then run again/);
+  assert.match(client.runOutcomeStatus(recovered.runFailure), /code is still here/i);
 });
 
 function c5CaseResult(pending, overrides) {

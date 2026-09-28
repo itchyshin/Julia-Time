@@ -126,7 +126,7 @@ connection and computer. Do not close the terminal while it runs.
 When you type the command yourself, success ends with:
 
 ```text
-OK — Julia Time is ready
+OK: Julia Time is ready
 Next: open the Case Board with the matching command in docs/install.md.
 ```
 

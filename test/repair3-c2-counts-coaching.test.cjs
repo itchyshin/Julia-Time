@@ -9,7 +9,7 @@ const assert = require("node:assert/strict");
 const client = require("../web/chapter2.js");
 
 const GENERIC = "Julia did not produce the requested result for this move.";
-const EXPLANATION = {julia:"Return the requested grouped value or DataFrame for this step.", case:"No tray comparison is established until the returned result matches all recorded B09 trays."};
+const EXPLANATION = {julia:"Return the requested result for this step.", case:"No tray comparison is established until the returned result matches all recorded B09 trays."};
 const errorResult = (step, message) => ({type:"case_result", chapter:"C2", step, status:"error", pass:false, message, feedback:GENERIC, explanation:EXPLANATION, rows:[], columns:[], value_repr:""});
 
 // groups = groupby(jars, :tray_id); combine(groups, nrow => n, :detected => sum => detected_n)
@@ -103,14 +103,20 @@ test("R5c: the returned-value line is keyed on the actual result, not added to o
   assert.equal(client.c2ErrorNextStep(UNGROUPED_COUNTS), "", "c2ErrorNextStep still coaches errors only");
 });
 
-test("R5: every new line leads the existing recovery copy, keeps Julia's error, and uses no em dash", () => {
+// Replay notes (2026-09-27): an error-specific line used to be followed by the chapter's generic
+// recovery copy and explanation, reading as one wrong message after the right one. resultText now
+// shows the specific coaching alone (the same rule C1's challengeRecovery already applies).
+// c2ResultNextStep (a wrong-shape but non-error result, e.g. UNGROUPED_COUNTS/RATES below) is
+// unaffected: that coaching still leads the server's own feedback.
+test("R5: every new error line stands alone, keeps Julia's error text intact, and uses no em dash", () => {
   const cases = [["counts", BARE_N], ["counts", BARE_DETECTED_N], ["counts", REVERSED_N], ["counts", REVERSED_DETECTED_N], ["rates", REVERSED_N], ["group", PRACTICE_JARS]];
   for (const [step, message] of cases) {
     const result = errorResult(step, message);
     const coaching = client.c2ErrorNextStep(result);
     const text = client.resultText(result);
-    assert.ok(coaching && text.startsWith(coaching), "coaching comes first: " + text);
-    assert.ok(text.includes(GENERIC), "the chapter's recovery copy still follows");
+    assert.ok(coaching, "a coaching line exists for " + step);
+    // Round 7 (r7-bugs #9): the line is followed only by the shared coaching ending.
+    assert.equal(text, coaching + " Change your code, then run again, or open Stuck? Hints below.", "coaching stands alone: " + text);
     assert.equal(client.displayError(result), message, "Julia's own error text is untouched");
     assert.doesNotMatch(coaching, /—/, "no em dash in new learner-facing text");
   }

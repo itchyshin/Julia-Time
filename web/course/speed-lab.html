@@ -3,33 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Julia Time optional bootstrap comparison laboratory.">
+  <meta name="description" content="Julia Time: the optional speed lab.">
   <title>Julia Time · Optional speed lab</title>
   <link rel="stylesheet" href="course.css">
 </head>
 <body>
-  <a class="skip" href="#speed-lab">Skip to the optional comparison</a>
+  <a class="skip" href="#speed-lab">Skip to the speed lab</a>
   <header class="shell topbar">
-    <div><p class="eyebrow">Julia Time / optional laboratory</p><p class="brand">Bootstrap comparison</p></div>
-    <a id="return-case-board" class="quiet-link" href="index.html">Return to Case Board</a>
+    <div><p class="eyebrow">Julia Time / optional</p><p class="brand">The speed lab</p></div>
+    <a id="return-case-board" class="quiet-link" href="index.html">Return to the Case Board</a>
   </header>
   <main id="speed-lab" class="shell guide-main">
     <section class="guide-section" aria-labelledby="speed-title">
       <p class="eyebrow">Optional after the mystery</p>
       <h1 id="speed-title">Curious how the same bootstrap runs in three languages?</h1>
-      <p><strong>What this page is for:</strong> after you finish the mystery, you can ask one fair question on <em>this</em> computer: do Julia, R, and Python give the same answer to the same supplied bootstrap calculation, and how long does each take here?</p>
+      <p><strong>What this page is for:</strong> after you finish the mystery, you can ask one fair question on <em>this</em> computer: do Julia, R and Python give the same answer to the same supplied bootstrap calculation, and how long does each take here?</p>
       <ol>
         <li><strong>Step 1: confirm the answers agree.</strong> The lab runs a fixed calculation in all three languages and checks the returned values.</li>
-        <li><strong>Step 2: time those matching calculations.</strong> This unlocks only when Step 1 passes, so we never compare unlike answers.</li>
+        <li><strong>Step 2: time those matching calculations.</strong> This unlocks only when Step 1 passes, so we never time answers that do not match.</li>
         <li><strong>Step 3: read one local report.</strong> It describes this computer and these settings; it is not a claim that a language always wins.</li>
       </ol>
-      <p>A <strong>bootstrap</strong> repeatedly resamples a fixed dataset and recalculates one summary. If a language is missing, the page says so; the Missing Fleas mystery is still complete. Each language has a 30-second total limit across both fixed workloads.</p>
-      <aside class="setup-reminder"><strong>You do not need to do this to learn Julia or finish the case.</strong> Leave this page if you would rather continue the mystery. This laboratory is only for comparing one small calculation on this computer.</aside>
+      <p>A <strong>bootstrap</strong> repeatedly resamples a fixed dataset and recalculates one summary. If a language is missing, the page says so; you can still play the whole Missing Fleas mystery. Each language has a 30-second total limit across both fixed workloads.</p>
+      <aside class="setup-reminder"><strong>You do not need to do this to learn Julia or finish the case.</strong> Leave this page if you would rather continue the mystery. The speed lab is only for comparing one small calculation on this computer.</aside>
     </section>
     <section class="guide-section" aria-labelledby="controls-title">
       <h2 id="controls-title">Try the optional experiment</h2>
       <p><strong>Before you start:</strong> leave the Julia Time terminal running. Start with Step 1 below; this page will tell you whether the optional experiment is available.</p>
-      <p id="speed-status" aria-live="polite">Step 1: confirm that this computer can run the same calculation in Julia, R, and Python.</p>
+      <p id="speed-status" aria-live="polite">Step 1: confirm that this computer can run the same calculation in Julia, R and Python.</p>
       <div class="editor-controls">
         <button id="check-speed-lab" type="button">Step 1: check matching answers</button>
         <button id="run-speed-lab" type="button" disabled>Step 2: time the fixed calculation</button>
@@ -60,7 +60,7 @@
     const run = document.getElementById("run-speed-lab");
     const client = window.JuliaTimeSpeedLab;
     if (!client || !window.WebSocket) {
-      status.textContent = "This optional laboratory needs a current browser with WebSocket support. Return to the Case Board; the mystery is still playable.";
+      status.textContent = "The speed lab needs a current browser with WebSocket support. Return to the Case Board; the mystery is still playable.";
       check.disabled = true;
       run.disabled = true;
       return;

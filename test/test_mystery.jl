@@ -157,6 +157,8 @@ using DataFrames
             ))
             @test timed_out["request_id"] == "timeout-1"
             @test timed_out["status"] == "timeout"
+            # Round 1 (2026-09-27): a timeout names the real cause, not the names.
+            @test timed_out["feedback"] == "Your code ran for more than 5 seconds, so Julia stopped it. A loop that never ends is the usual cause."
             @test !haskey(timed_out, "evidence")
             recovered_after_timeout = JuliaTime.handle_message(Dict(
                 "type" => "case_run", "request_id" => "after-timeout-1",

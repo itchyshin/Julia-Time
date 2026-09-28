@@ -51,7 +51,7 @@ test("C6 case-status keeps the established fact and the limit visible; only why-
   assert.match(body, /unknown\.textContent = status\.unknown/);
   assert.match(body, /why\.textContent = status\.why_now/);
   assert.match(body, /details\.append\(summary, why\)/);
-  assert.match(body, /el\.caseStatus\.append\(eyebrow, title, established, unknown, details\)/,
+  assert.match(body, /el\.caseStatus\.append\(eyebrow, established, unknown, details\)/,
     "the established fact and the limit stay outside the closed details, visible without a click");
 });
 

@@ -92,3 +92,14 @@ test("the page announces only a short scene line and has one h1", () => {
 test("an older game that does not know the ending gets restart advice", () => {
   assert.match(read("web/course/ending.js"), /OLD_GAME = "This copy of Julia Time was started before the ending existed/);
 });
+
+// r1 novice note 2 (2026-09-27): right after the last Next the dark credits box looked empty; the
+// staged fade started at 1.4 s and finished at 5.6 s. Keep the roll, but every line is in by about 2.5 s.
+test("the credits roll in within about two and a half seconds", () => {
+  const css = require("node:fs").readFileSync(require("node:path").join(__dirname, "../web/course/ending.css"), "utf8");
+  const rule = css.match(/\.finale-play \.credits > \* \{[^}]*animation:ending-fade ([\d.]+)s[^}]*animation-delay:calc\(([\d.]+)s \+ var\(--i, 0\) \* ([\d.]+)s\)/);
+  assert.ok(rule, "the credits keep one staged fade rule");
+  const [duration, start, step] = rule.slice(1).map(Number);
+  assert.ok(start <= 0.3, "the first credit line starts almost at once");
+  assert.ok(start + 7 * step + duration <= 2.5, "the eighth line is in by about 2.5 s");
+});

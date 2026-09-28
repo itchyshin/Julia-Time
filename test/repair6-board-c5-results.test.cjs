@@ -42,18 +42,22 @@ function boardWith(saved, attempt = "") {
 test("the Case Board describes Chapter 5's saved true-or-false results, not records", () => {
   const {model} = boardWith(SAVED);
   const line = move => model.evidence.find(item => item.move_id === move).line;
-  assert.equal(line("event-mask"), "Simulation event named: 1000 yes-or-no results, one per simulation.");
-  assert.equal(line("event-frequency"), "Simulation event frequency calculated: from 1000 yes-or-no results, one per simulation.");
+  // S5 (2026-09-27 adversary review): EVIDENCE_TITLES now overrides these v0.2.3 saved titles
+  // ("Simulation event named" / "Simulation event frequency calculated", both banned insider
+  // phrases) with C5's current titles, the same as every other returning-player evidence title.
+  assert.equal(line("event-mask"), "Marked the rounds: which of Toto's 1,000 rounds gave 5 or more.");
+  assert.equal(line("event-frequency"), "Worked out how often: from Toto's 1,000 rounds.");
   for (const move of ["event-mask", "event-frequency"]) assert.doesNotMatch(line(move), /record/i);
 });
 
-test("record-based evidence keeps its record count", () => {
+// G3 r2 (2026-09-27): the board states a plain finding; "6 saved rows" was program talk (r2 story review C3).
+test("record-based evidence states a plain finding, with no saved-row count", () => {
   // The stored title ("B09 report records recovered") is an older build's wording; the board shows
   // today's title instead (adversary review item 5), looked up by chapter/move_id.
   const {model} = boardWith(SAVED);
-  assert.equal(model.evidence.find(item => item.chapter === "C1").line, "The B09 jars, found: 6 saved rows.");
+  assert.equal(model.evidence.find(item => item.chapter === "C1").line, "The six B09 jars, found in the notebook.");
   const one = boardWith([Object.assign({}, SAVED[0], {row_count:1})]).model;
-  assert.equal(one.evidence[0].line, "The B09 jars, found: 1 saved row.");
+  assert.equal(one.evidence[0].line, "The six B09 jars, found in the notebook.");
 });
 
 test("the stored Chapter 5 evidence is unchanged by the new wording", () => {
@@ -64,7 +68,8 @@ test("the stored Chapter 5 evidence is unchanged by the new wording", () => {
 
 test("the board page shows the model's evidence line and composes no record count itself", () => {
   const board = fs.readFileSync(path.join(__dirname, "../web/course/course-board.js"), "utf8");
-  assert.match(board, /text\(line, item\.line\)/);
+  // r6 (2026-09-27): the line may be split only to wrap jar IDs in a no-break span; its words stay the model's.
+  assert.match(board, /String\(item\.line\)\.split\(\/\(J-\\d\{3\}\)\/\)/);
   assert.doesNotMatch(board, /saved record/);
 });
 

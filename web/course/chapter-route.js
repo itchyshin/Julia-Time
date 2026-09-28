@@ -19,7 +19,7 @@
       link.hidden = false;
       return;
     }
-    const name = chapter === "C1" ? "Chapter 1: the report and the notebook" : chapter === "C2" ? "Chapter 2: count by tray" : chapter === "C3" ? "Chapter 3: where did the 0 come from?" : chapter === "C4" ? "Chapter 4: plan a fair recheck" : chapter === "C5" ? "Chapter 5: too good to be true?" : "Chapter 6: are the fleas vanishing?";
+    const name = chapter === "C1" ? "Chapter 1: the report and the notebook" : chapter === "C2" ? "Chapter 2: count by tray" : chapter === "C3" ? "Chapter 3: where did the 0 come from?" : chapter === "C4" ? "Chapter 4: plan a fair recheck" : chapter === "C5" ? "Chapter 5: what would plain chance give?" : "Chapter 6: are the springtails dying out?";
     text(title, "Opening " + name);
     text(status, "Your chapter is opening. If it does not appear in a moment, use the link below.");
     link.href = destination;

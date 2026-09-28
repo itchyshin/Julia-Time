@@ -63,16 +63,16 @@ const ACCEPTED_MASK = {status:"ok", pass:true, progress_eligible:true, message:"
   result_data:{kind:"boolean-vector", length:1000, true_count:113, preview:[F, F, T, T, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F]}};
 // Move 1: sim_counts .> observed_count. The same value came back for sim_counts .>= observed_count + 1.
 const STRICT_MASK = {status:"ok", pass:false, progress_eligible:false, message:"",
-  feedback:"Check the direction: an event is a simulated count at least the observed count.",
+  feedback:"Check the direction: an event is a round's count at least the observed count.",
   value_repr:BITVECTOR([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "⋮", 0, 0, 0, 0, 0, 0, 0, 0, 0]),
   result_data:{kind:"boolean-vector", length:1000, true_count:18, preview:[F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F]}};
 // Move 1: sim_counts .== observed_count and sim_counts .< observed_count.
 const EQUAL_MASK = {status:"ok", pass:false, progress_eligible:false, message:"",
-  feedback:"Check the direction: an event is a simulated count at least the observed count.",
+  feedback:"Check the direction: an event is a round's count at least the observed count.",
   value_repr:BITVECTOR([0, 0, 0, 1, 0, 0, 0, 0, 0, 0, "⋮", 0, 1, 0, 0, 0, 0, 0, 0, 0]),
   result_data:{kind:"boolean-vector", length:1000, true_count:95, preview:[F, F, F, T, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F]}};
 const BELOW_MASK = {status:"ok", pass:false, progress_eligible:false, message:"",
-  feedback:"Check the direction: an event is a simulated count at least the observed count.",
+  feedback:"Check the direction: an event is a round's count at least the observed count.",
   value_repr:BITVECTOR([1, 1, 0, 0, 1, 1, 1, 1, 1, 1, "⋮", 1, 0, 1, 1, 1, 1, 1, 1, 1]),
   result_data:{kind:"boolean-vector", length:1000, true_count:887, preview:[T, T, F, F, T, T, T, T, T, T, T, T, T, F, T, T, T, T, T, T]}};
 // Move 1: sim_counts >= observed_count (no dot).
@@ -90,11 +90,11 @@ const STRICT_FREQUENCY = {status:"ok", pass:false, progress_eligible:false, mess
   value_repr:"(events = Bool[0, 0, 1, 0, 0, 0, 0, 0, 0, 0  …  0, 0, 0, 0, 0, 0, 0, 0, 0, 0], frequency = 0.018)",
   result_data:{kind:"event-frequency", length:1000, matching:18, trials:1000, frequency:0.018, preview:[F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F]}};
 
-const C6_COLUMNS = ["model", "p", "lower", "upper"];
+const C6_COLUMNS = ["story", "p", "lower", "upper"];
 const C6_ROWS = [
-  {lower:0, model:"Vanishing", p:0.1, upper:2},
-  {lower:1, model:"Coin flip", p:0.5, upper:5},
-  {lower:4, model:"Thriving", p:0.8, upper:6}
+  {lower:0, story:"Vanishing", p:0.1, upper:2},
+  {lower:1, story:"Coin flip", p:0.5, upper:5},
+  {lower:4, story:"Thriving", p:0.8, upper:6}
 ];
 function c6Ready() {
   let state = c6.beginInfo(c6.createState(), "c6-info");
@@ -117,7 +117,7 @@ const C6_UNDEFINED = {status:"error", pass:false, progress_eligible:false, value
 // stories[stories.lower .<= observed_count, :]
 const C6_LOWER_ONLY = {status:"ok", pass:false, progress_eligible:false, message:"",
   feedback:"Return every candidate whose displayed bounds contain the observation, once each.",
-  value_repr:"3×4 DataFrame\n Row │ model      p        lower  upper\n     │ String     Float64  Int64  Int64\n─────┼──────────────────────────────────\n   1 │ Vanishing      0.1      0      2\n   2 │ Coin flip      0.5      1      5\n   3 │ Thriving       0.8      4      6",
+  value_repr:"3×4 DataFrame\n Row │ story      p        lower  upper\n     │ String     Float64  Int64  Int64\n─────┼──────────────────────────────────\n   1 │ Vanishing      0.1      0      2\n   2 │ Coin flip      0.5      1      5\n   3 │ Thriving       0.8      4      6",
   result_data:{kind:"table", columns:C6_COLUMNS, rows:C6_ROWS}};
 // The reference answer (accepted).
 const C6_ACCEPTED_DATA = {kind:"table", columns:C6_COLUMNS, rows:[C6_ROWS[1], C6_ROWS[2]]};
@@ -137,7 +137,7 @@ test("item 1: after Move 2 is accepted the move line says Move 2 is done, not th
 
   state = c5Run(c5Ready(state, "event-mask", "c5-info-1"), "event-mask", "c5-run-1", ACCEPTED_MASK);
   assert.ok(state.evidence, "the real Move 1 answer is accepted");
-  assert.equal(c5.moveLockText(state), "Event saved; Step 2 is now open.");
+  assert.equal(c5.moveLockText(state), "Step 1 is done: every round is marked. Step 2 is open.");
 
   state = c5Run(c5Ready(state, "event-frequency", "c5-info-2"), "event-frequency", "c5-run-2", ACCEPTED_FREQUENCY);
   assert.ok(state.evidence, "the real Move 2 answer is accepted");
@@ -161,20 +161,20 @@ test("item 1: after Move 2 is accepted the move line says Move 2 is done, not th
 test("item 2: once Move 1 is done, the evidence area shows Move 2 text instead of Move 1 text", () => {
   assert.equal(typeof c5.evidenceNotes, "function");
   const first = c5.evidenceNotes(realC5Info("event-mask"), "event-mask");
-  assert.equal(first.distribution, "Each bar is the number of supplied simulations with that count. Your next Julia move will name the bars at least the observed count (5).", "Step 1 is unchanged");
-  assert.match(first.comparison, /so it returns one true-or-false answer per simulation/, "Step 1 is unchanged");
+  assert.equal(first.distribution, "Each bar is the number of rounds with that count. Your next Julia step will name the bars for counts of at least 5.", "Step 1 is unchanged");
+  assert.match(first.comparison, /so it returns one true-or-false answer per round/, "Step 1 is unchanged");
 
   const second = c5.evidenceNotes(realC5Info("event-frequency"), "event-frequency");
   for (const text of [second.distribution, second.comparison]) {
-    assert.doesNotMatch(text, /Your next Julia move will name the bars/);
-    assert.doesNotMatch(text, /so it returns one true-or-false answer per simulation/);
+    assert.doesNotMatch(text, /Your next Julia step will name the bars/);
+    assert.doesNotMatch(text, /so it returns one true-or-false answer per round/);
     assert.match(text, /Step 1/);
     assert.match(text, /fraction of all/);
     assert.doesNotMatch(text, EM_DASH);
     assert.doesNotMatch(text, NO_ANSWER, "no code and no answer");
   }
-  assert.match(second.distribution, /observed count \(5\)/);
-  assert.match(second.distribution, /1000 simulations/);
+  assert.match(second.distribution, /counts of at least 5 are the event/);
+  assert.match(second.distribution, /1,000 rounds/);
   assert.match(second.comparison, /not a second dataset; it does not count for the case/);
 
   const source = web("chapter5.js");
@@ -191,7 +191,9 @@ test("item 3: the real strict-comparison result gets a lead about equal counts, 
   assert.match(failure.feedback, /equal to the observed count/);
   assert.match(failure.feedback, /\.>= means at least/);
   assert.match(failure.feedback, /\.> means greater than/);
-  assert.ok(failure.feedback.endsWith(shared), "the lead sits in front of the unchanged shared step");
+  // Round 7 (r7-r-struggling #8): a specific lead drops the fixed "did not meet the stated check".
+  assert.ok(failure.feedback.endsWith(" Your draft is still here. Change it and run again, or open Stuck? Hints below."), "the lead ends as a coaching line does");
+  assert.doesNotMatch(failure.feedback, /did not meet the stated check/);
   assert.doesNotMatch(failure.feedback, NO_ANSWER, "no answer leak");
   assert.doesNotMatch(failure.feedback, EM_DASH);
   assert.equal(failure.value_repr, STRICT_MASK.value_repr, "Julia's actual returned value still reaches the page verbatim");
@@ -201,7 +203,7 @@ test("item 3: the real strict-comparison result gets a lead about equal counts, 
   state = c5Run(c5Ready(state, "event-frequency", "c5-info-2"), "event-frequency", "c5-run-2", STRICT_FREQUENCY);
   assert.equal(state.runFailure.status, "rejected");
   assert.match(state.runFailure.feedback, /“at least the observed count”/);
-  assert.ok(state.runFailure.feedback.endsWith(c5.challengeRecovery("event-frequency")));
+  assert.ok(state.runFailure.feedback.endsWith(" Your draft is still here. Change it and run again, or open Stuck? Hints below."));
   assert.doesNotMatch(state.runFailure.feedback, NO_ANSWER);
 });
 
@@ -224,9 +226,11 @@ test("item 4: C6 and C5 error runs end with next steps that fit an error, not 'd
   const andand = c6Run("c6-andand", C6_ANDAND);
   assert.equal(c6.runOutcomeStatus(andand.runFailure), "Not yet. Julia could not run this code. Your code is still here.");
   const errorShared = c6.challengeRecovery({status:"error"});
+  // Replay notes (2026-09-27): the shown outcome above already says "Your code is still here", so
+  // an error's challengeRecovery text no longer repeats the same idea as "Your draft is still here".
   for (const text of [andand.runFailure.message, c6Run("c6-undefined", C6_UNDEFINED).runFailure.message]) {
     assert.doesNotMatch(text, /did not meet the stated check/);
-    assert.match(text, /Your draft is still here/);
+    assert.doesNotMatch(text, /Your draft is still here/);
     assert.match(text, /Original Julia error below/);
     assert.match(text, /run again/);
     assert.ok(text.endsWith(errorShared), "one shared error step");
@@ -254,9 +258,9 @@ test("item 4: C6 and C5 error runs end with next steps that fit an error, not 'd
 test("item 5: a story card shows p once, skipping it only when the story name already states it", () => {
   assert.equal(typeof c6.cardProbabilityLabel, "function");
   // The story names (Vanishing, Coin flip, Thriving) do not state p, so the card shows it.
-  for (const row of C6_ROWS) assert.equal(c6.cardProbabilityLabel({model:row.model, p:row.p}), "p = " + row.p, row.model);
-  assert.equal(c6.cardProbabilityLabel({model:"Rare recorded detection", p:0.2}), "p = 0.2", "a name without p still shows p");
-  assert.equal(c6.cardProbabilityLabel({model:"Rare (p = 0.2)", p:0.2}), "", "a name that already states p is not repeated");
+  for (const row of C6_ROWS) assert.equal(c6.cardProbabilityLabel({story:row.story, p:row.p}), "p = " + row.p, row.story);
+  assert.equal(c6.cardProbabilityLabel({story:"Rare recorded detection", p:0.2}), "p = 0.2", "a name without p still shows p");
+  assert.equal(c6.cardProbabilityLabel({story:"Rare (p = 0.2)", p:0.2}), "", "a name that already states p is not repeated");
   assert.match(web("chapter6.js"), /cardProbabilityLabel\(card\)/, "the page uses it");
 });
 
@@ -276,11 +280,12 @@ test("item 6: C6 calls the count what C5 calls it: Observed B09 count", () => {
 // Repair 7 (2026-09-26): the closure no longer lists the kept candidate names dynamically (that
 // list had no "and" before its last item, e.g. "Coin flip, Thriving can give 5 of 6"); it now uses
 // the bible's fixed, plain three-line summary (docs/design/05-story-bible.md, "Both claims checked").
-test("item 7: the case conclusion is short and names both claims plainly", () => {
+test("item 7: the case conclusion is short and names all three parts plainly", () => {
   const closure = c6.caseClosure(c6Ready().metadata, C6_ACCEPTED_DATA);
   const text = closure.findings.join("\n");
   assert.doesNotMatch(text, /retained these displayed candidate rows/);
   assert.ok(closure.findings.length <= 4);
-  assert.match(text, /Claim 1/);
-  assert.match(text, /Claim 2/);
+  assert.match(text, /Part 1/);
+  assert.match(text, /Part 2/);
+  assert.match(text, /Part 3/);
 });

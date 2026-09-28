@@ -51,8 +51,8 @@
     const status = all ? CASE_SOLVED
       : solved && !hasEvidence ? "Chapter " + number + ": ✓ solved on an earlier visit. Run it again to see its evidence here."
       : solved ? "Chapter " + number + ": ✓ solved in this browser."
-      : saved.length ? "Chapter " + number + ": " + savedList + " of " + steps.length + " saved. Solve step " + next + " to finish this chapter."
-      : "Chapter " + number + ": not solved yet. It counts once Julia accepts your answer and it is saved.";
+      : saved.length ? "Chapter " + number + ": " + savedList + " of " + steps.length + " saved. Solve step " + next + (steps.length - saved.length > 1 ? " next." : " to finish this chapter.")
+      : "Chapter " + number + ": not solved yet. It counts once Julia checks your answer.";
     const earlier = openEarlier.length
       ? chapterList(openEarlier) + (openEarlier.length === 1 ? " is" : " are") + " not solved yet. You can explore here, but the case needs that evidence too."
       : "";
@@ -72,7 +72,9 @@
     const style = document.createElement("style"); style.textContent = STYLE; document.head.append(style);
     const bar = document.createElement("section");
     bar.className = "jt-progress"; bar.setAttribute("aria-label", "Case progress"); bar.setAttribute("role", "status");
-    document.body.prepend(bar);
+    // After the skip link, so the skip link stays the first Tab stop on the page.
+    const skip = document.querySelector("body > .skip, body > .skip-link");
+    if (skip) skip.after(bar); else document.body.prepend(bar);
     let shown = "";
     function draw() {
       const model = bannerModel(storage, attempt, chapter);

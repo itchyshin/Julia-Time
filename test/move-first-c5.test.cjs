@@ -37,7 +37,7 @@ test("C5 has exactly one closed .jt-help details, after #code, holding the optio
 
   const { start, end } = jtHelpBlock(html);
   const block = html.slice(start, end);
-  assert.match(block, /<summary>Stuck\? Hints<span>Small hints first, the full answer last\. Your editor stays as you left it\.<\/span><\/summary>/, "exact summary text");
+  assert.match(block, /<summary>Stuck\? Hints <span>Small hints first, the full answer last\. Your editor stays as you left it\.<\/span><\/summary>/, "exact summary text");
 
   const codeIndex = html.indexOf('id="code"');
   assert.ok(codeIndex >= 0 && codeIndex < start, ".jt-help comes after #code in the document");

@@ -29,8 +29,8 @@ test("the C2 rate answer is a labelled, standalone code block", () => {
   const html = fs.readFileSync(path.join(root, "web", "chapter2.html"), "utf8");
 
   assert.match(script, /answerCode:/, "C2 stores a complete answer separately from prose hints");
-  assert.match(script, /Reference code answer: runnable Julia/, "C2 labels the full answer honestly as runnable code");
+  assert.match(script, /Reference code answer: type or paste it into your editor/, "C2 labels the full answer honestly as runnable code");
   assert.match(script, /counts = combine\(groupby\(jars, :tray_id\)/, "the rate answer rebuilds counts in its fresh run");
   assert.doesNotMatch(script, /draft = carryDraft\(/, "C2 does not imply that an earlier sandbox binding still exists");
-  assert.ok(html.indexOf('id="result"') < html.indexOf('<details class="help">'), "a run result appears before optional help");
+  assert.ok(html.indexOf('id="result"') < html.indexOf('class="jt-help"'), "a run result appears before optional help");
 });

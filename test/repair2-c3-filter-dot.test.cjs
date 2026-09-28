@@ -21,8 +21,10 @@ test("UI-12: a missing dot in the filter move gets a line keyed on Julia's error
   for (const message of [NO_DOT_INDEX, NO_DOT_SUBSET]) {
     const text = client.errorRecovery("filter-disagreement", message);
     assert.notEqual(text, recovery, "the missing-dot error gets its own line");
-    assert.ok(text.endsWith(" " + recovery), "the existing recovery copy follows the new line");
-    const lead = text.slice(0, text.length - recovery.length - 1);
+    // Round 7 (r7-r-struggling #8): the coaching ending, not the fixed recovery copy, follows the new line.
+    const ending = " Change your code, then run again, or open Stuck? Hints below.";
+    assert.ok(text.endsWith(ending), "the coaching ending follows the new line");
+    const lead = text.slice(0, text.length - ending.length);
     assert.match(lead, /one true or false/i, "says what Julia actually received");
     assert.match(lead, /each row/i);
     assert.match(lead, /\.!=/, "names the dotted operator");
@@ -41,7 +43,7 @@ test("UI-12: the missing-dot line stays on its own move and on its own error", (
   // table is this move's own code-shape placeholder, so it gets the placeholder line (Repair 4,
   // test/repair4-c3-name-leads.test.cjs), not the missing-dot line.
   const placeholder = {status:"error", message:"table is a name Julia does not know yet. Check the spelling, or define it first.\n\nUndefVarError: `table` not defined"};
-  assert.equal(client.errorRecovery("filter-disagreement", placeholder), "table is a placeholder from the code shape, not a name in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected. Your draft is still here; change that line and run again.");
+  assert.equal(client.errorRecovery("filter-disagreement", placeholder), "table is a placeholder from the code shape, not a name in this case. Here table is joined, left_count is notebook_detected, and right_count is sheet_detected. Change that line and run again.");
 });
 
 test("Mia's playtest: an R-style filter(joined, cond) call gets filter's real signature", () => {
@@ -51,5 +53,6 @@ test("Mia's playtest: an R-style filter(joined, cond) call gets filter's real si
   assert.match(line, /filter\(row -> \.\.\., joined\)/);
   assert.match(line, /joined\[rule, :\]/);
   const recovery = client.recoveryCopy("filter-disagreement");
-  assert.ok(client.errorRecovery("filter-disagreement", notCallable).endsWith(" " + recovery));
+  assert.ok(client.errorRecovery("filter-disagreement", notCallable).endsWith(" Change your code, then run again, or open Stuck? Hints below."));
+  assert.ok(!client.errorRecovery("filter-disagreement", notCallable).includes(recovery));
 });

@@ -282,3 +282,24 @@ test("C1 dark-panel link and note styles stay readable on every surface they rea
   }
   assert.deepEqual(failures, [], "unreadable C1 text:\n" + failures.join("\n"));
 });
+
+// Night playtest 2026-09-26, item 1: web/course/code-names.js injects a global badge style
+// (main :not(pre)>code) meant for paper-coloured panels, giving every inline <code> a pale
+// background (#e8f0ed). It reaches the binding-note bar's own <code>jars</code>, <code>case_batch
+// </code> and <code>"B09"</code> on the dark editor panel too, and only .binding-note code's own
+// color was set, so those names read as pale cream text on that pale badge. This test folds in
+// code-names.js's injected style (not a linked stylesheet, so stylesheets() alone would miss it)
+// and requires the real cascade winner to stay AA-readable.
+test("the Write Julia binding-note badges (jars, case_batch, \"B09\") read against code-names.js's global badge style", () => {
+  const codeNamesSource = read("web/course/code-names.js");
+  const styleMatch = codeNamesSource.match(/const STYLE = "([^"]+)"/);
+  assert.ok(styleMatch, "web/course/code-names.js still defines its injected badge STYLE string");
+  const injectedRules = parseRules(styleMatch[1], 1280);
+  const rules = stylesheets(1280).concat(injectedRules).map((rule, order) => Object.assign({}, rule, { order }));
+  const chain = chainTo("editor-heading").slice(0, 1)
+    .concat([element("p", { class: "binding-note" }), element("code")]);
+  const { color, background, colorFrom, backgroundFrom } = computed(rules, chain);
+  const ratio = contrast(color, background);
+  assert.ok(ratio >= AA_BODY_TEXT,
+    `binding-note code: rgb(${color}) from "${colorFrom}" on rgb(${background}) from "${backgroundFrom}" = ${ratio.toFixed(2)}:1`);
+});

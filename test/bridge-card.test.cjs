@@ -39,7 +39,7 @@ test("every bridge has a non-empty R line, Python line, a lead line, and at leas
     assert.ok(entry.python.length > 0, key + " has a Python line");
     assert.equal(typeof entry.lead, "string");
     assert.ok(entry.lead.length > 0, key + " has a lead line");
-    assert.match(entry.lead, /trips R users/, key + " lead names the R trap");
+    assert.match(entry.lead, /trips up R users/, key + " lead names the R trap");
     assert.ok(Array.isArray(entry.differences) && entry.differences.length >= 2, key + " has at least two differences");
   });
 });

@@ -1,21 +1,21 @@
-# Missing Fleas, chapter 6: compare three simple stories about how often a jar shows fleas.
+# Missing Fleas, chapter 6: compare three simple stories about how often a jar shows springtails.
 # Fitting means only that the fixed observation lies inside a story's usual range (a discrete
 # 0.1/0.9 Binomial range). It is deliberately a table-filtering rule, not a verdict about which
 # story generated the observation.
 
 const MYSTERY_C6_CHAPTER = "C6"
 const MYSTERY_C6_MOVE = "compatible-models"
-const MYSTERY_C6_COLUMNS = ["model", "p", "lower", "upper"]
+const MYSTERY_C6_COLUMNS = ["story", "p", "lower", "upper"]
 const MYSTERY_C6_N_TRIALS = 6
 const MYSTERY_C6_PROBABILITIES = (0.1, 0.5, 0.8)
-const MYSTERY_C6_MODEL_NAMES = ("Vanishing", "Coin flip", "Thriving")
+const MYSTERY_C6_MODEL_NAMES = ("Dying out", "Coin flip", "Thriving")
 
 """Return fresh story rows with server-derived discrete 0.1/0.9 Binomial bounds."""
 function mystery_c6_candidates()
     probabilities = collect(MYSTERY_C6_PROBABILITIES)
     ranges = [Distributions.Binomial(MYSTERY_C6_N_TRIALS, p) for p in probabilities]
     return DataFrame(
-        model=collect(MYSTERY_C6_MODEL_NAMES),
+        story=collect(MYSTERY_C6_MODEL_NAMES),
         p=probabilities,
         lower=[Distributions.quantile(range, 0.1) for range in ranges],
         upper=[Distributions.quantile(range, 0.9) for range in ranges],
@@ -27,7 +27,7 @@ function _mystery_c6_checker_candidates()
     probabilities = MYSTERY_C6_PROBABILITIES
     ranges = [Distributions.Binomial(MYSTERY_C6_N_TRIALS, p) for p in probabilities]
     return DataFrame(
-        model=collect(MYSTERY_C6_MODEL_NAMES),
+        story=collect(MYSTERY_C6_MODEL_NAMES),
         p=Float64[p for p in probabilities],
         lower=[Distributions.quantile(range, 0.1) for range in ranges],
         upper=[Distributions.quantile(range, 0.9) for range in ranges],
@@ -64,11 +64,11 @@ end
 
 function _mystery_c6_row_matches(actual::DataFrames.DataFrame, actual_row::Int,
                                   expected::DataFrames.DataFrame, expected_row::Int)
-    actual[actual_row, "model"] isa AbstractString || return false
+    actual[actual_row, "story"] isa AbstractString || return false
     actual[actual_row, "p"] isa Float64 || return false
     actual[actual_row, "lower"] isa Int || return false
     actual[actual_row, "upper"] isa Int || return false
-    return String(actual[actual_row, "model"]) == expected[expected_row, "model"] &&
+    return String(actual[actual_row, "story"]) == expected[expected_row, "story"] &&
            actual[actual_row, "p"] == expected[expected_row, "p"] &&
            actual[actual_row, "lower"] == expected[expected_row, "lower"] &&
            actual[actual_row, "upper"] == expected[expected_row, "upper"]
@@ -95,8 +95,54 @@ function check_mystery_c6(value)
             return (false, "Keep the story label, p, lower bound, and upper bound unchanged; do not add or duplicate a row.")
         matched[expected_row] = true
     end
-    all(matched) || return (false, "At least one story that fits is missing.")
+    all(matched) || return (false, "At least one story that fits is not in your result.")
     return (true, "These are exactly the stories whose usual range includes the notebook's count.")
+end
+
+# Round 3 (r3-struggling.md item 2): a .& between two comparisons written without brackets binds
+# first, so Julia compares against observed_count .& stories.upper: the code runs (or stops) and
+# the rows are wrong. Read from the parsed code: an & or .& that sits directly inside a comparison.
+const MYSTERY_C6_BRACKETS_LINE = "Each comparison needs its own brackets. Without them, Julia joins the two values next to .& first, then compares, so the rows come out wrong. Put brackets around each comparison, as in (a .<= b) .& (c .<= d)."
+const _MYSTERY_C6_COMPARISONS = (:<, :<=, :>, :>=, :(==), :!=, :.<, :.<=, :.>, :.>=, :.==, :.!=)
+const _MYSTERY_C6_ANDS = (:&, :.&, :|, :.|)
+
+function _mystery_c6_coaching(code; message::AbstractString="")
+    tables = (:stories => MYSTERY_C6_COLUMNS,)
+    # A missing dot (isless on a Vector) is named by the shared rule first (r8-fuzz.md item 2).
+    shared = _mystery_coaching(code; message=message, way=".<= and .& check every story at once.",
+        tables=tables, which_tail=MYSTERY_R_WHICH_RULE_TAIL)
+    isempty(shared) || return shared
+    parsed = _mystery_parsed_quietly(code)
+    parsed === nothing && return ""
+    # Round 8 (r8-fuzz.md item 2): brackets are the fix only when the comparisons already have
+    # their dots, and not when both sides of the & are the same value (x .& x is just x).
+    loose = _mystery_any_node(parsed) do node
+        node isa Expr || return false
+        if node.head == :comparison
+            operands, ops = node.args[1:2:end], node.args[2:2:end]
+        elseif _mystery_calls(node, _MYSTERY_C6_COMPARISONS)
+            operands, ops = node.args[2:end], Any[node.args[1]]
+        else
+            return false
+        end
+        all(op -> startswith(String(op), "."), ops) &&
+            any(operand -> _mystery_calls(operand, _MYSTERY_C6_ANDS) && length(operand.args) == 3 &&
+                operand.args[2] != operand.args[3], operands)
+    end
+    # Round 4 (r4-bugs.md item 6): the parser drops brackets, so ((a .<= b) .& (c .<= d)) .== true
+    # has the same tree as the mistake. Also read the text: a comparison and an & (or |) must sit
+    # next to each other with no bracket between them.
+    loose && _mystery_c6_unbracketed_and(code) && return MYSTERY_C6_BRACKETS_LINE
+    # Round 8 (r8-fuzz.md item 8): stories[rule] with no , : as in C3.
+    return _mystery_one_position_line(code, tables)
+end
+
+function _mystery_c6_unbracketed_and(code)
+    text = _mystery_code_text(code)
+    comparison = raw"(?:[<>]=|==|!=|<(?!-)|(?<![-=])>)"
+    and = raw"(?<![&|])\.?[&|](?![&|])"
+    return occursin(Regex(comparison * raw"[^()\[\]&|,\n]*" * and), text) ||
+           occursin(Regex(and * raw"[^()\[\]&|,\n]*" * comparison), text)
 end
 
 function _mystery_c6_moves()
@@ -123,14 +169,14 @@ function mystery_c6_case_info(; move_id::String=MYSTERY_C6_MOVE, request_id::Str
         "type" => "case", "contract_version" => 1, "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_C6_CHAPTER, "move_id" => move_id, "mode" => "challenge",
         "activity_id" => nothing, "simulation_id" => nothing, "request_id" => request_id,
-        "title" => "Are the fleas vanishing?",
-        "question" => "The report says \"vanishing\". Which story could give the notebook's 5 of 6?",
+        "title" => "Are the springtails dying out?",
+        "question" => "The report says “dying out”. Which story could give the notebook's 5 of 6?",
         "goal" => "Keep every story whose usual range includes 5.",
         "rule" => "lower ≤ observed_count ≤ upper",
-        "key_note" => "p is the story's chance that one jar shows fleas. The usual range is the counts out of six the story gives most of the time; both ends count.",
+        "key_note" => "p is the story's chance that one jar shows springtails. The usual range is the counts out of six the story gives most of the time; both end values are included.",
         "n_trials" => MYSTERY_C6_N_TRIALS, "observed_count" => observed_count,
         "inputs" => [Dict{String, Any}(
-            "id" => "stories", "label" => "The story board: one row per story, columns: model (the story's name), p, lower, upper",
+            "id" => "stories", "label" => "The story board: one row per story, columns: story (the story's name), p, lower, upper",
             "data_label" => MYSTERY_DATA_LABEL, "columns" => _mystery_columns(candidates),
             "rows" => _mystery_c6_rows(candidates),
         )],
@@ -156,17 +202,21 @@ function mystery_c6_case_info(msg::AbstractDict)
     return mystery_c6_case_info(request_id=String(request_id))
 end
 
-function _mystery_c6_explanation(pass)
+const MYSTERY_C6_TAUGHT = "fits_low = stories.lower .<= observed_count; fits_high = observed_count .<= stories.upper; stories[fits_low .& fits_high, :]"
+
+function _mystery_c6_explanation(pass; code=nothing)
     if pass === true
         return Dict(
-            "julia" => "Your result kept exactly the stories whose usual range includes the notebook's 5. The taught way builds fits_low = stories.lower .<= observed_count and fits_high = observed_count .<= stories.upper, then keeps the rows where both are true.",
-            "case" => "Coin flip and Thriving can give 5 of 6. Vanishing almost never can: 5 is outside its usual range of 0 to 2. The notebook does not look like vanishing fleas.",
-            "limit" => "Fitting is not proof: two stories still fit.",
+            "julia" => _mystery_used_taught(code, MYSTERY_C6_TAUGHT) ?
+                "Your result kept exactly the stories whose usual range includes the notebook's 5. You used the way this game teaches: fits_low and fits_high check each end of the range, and the rows where both are true are kept." :
+                "Your result kept exactly the stories whose usual range includes the notebook's 5. The way this game teaches builds fits_low = stories.lower .<= observed_count and fits_high = observed_count .<= stories.upper, then keeps the rows where both are true.",
+            "case" => "Coin flip and Thriving can give 5 of 6. Dying out almost never can: 5 is outside its usual range of 0 to 2. Coin flip is the same half-and-half as Toto's cards. Part 3 done: the notebook does not look like springtails dying out.",
+            "limit" => "Fitting is not proof: two stories still fit. And one jar fewer on the newest tray is too few to show a trend.",
         )
     end
     return Dict(
         "julia" => "Return the story rows for which lower ≤ observed_count ≤ upper, preserving every displayed value.",
-        "case" => "Nothing found yet: the returned rows must match this step first.",
+        "case" => "Not yet: the returned rows must match this step first.",
         "limit" => "A failed run means the returned rows do not yet match the rule.",
     )
 end
@@ -180,7 +230,8 @@ end
 
 function _mystery_c6_result(; request_id::String="", status::String="error", pass=false,
                             message::String="", stdout::String="", value_repr::String="",
-                            rows=Any[], columns=String[], feedback::String="", result_data=nothing)
+                            rows=Any[], columns=String[], feedback::String="", result_data=nothing,
+                            code=nothing)
     result = Dict{String, Any}(
         "type" => "case_result", "contract_version" => 1, "case_id" => MYSTERY_CASE_ID,
         "chapter" => MYSTERY_C6_CHAPTER, "move_id" => MYSTERY_C6_MOVE, "mode" => "challenge",
@@ -189,7 +240,7 @@ function _mystery_c6_result(; request_id::String="", status::String="error", pas
         "progress_eligible" => status == "ok" && pass === true, "message" => message,
         "stdout" => stdout, "value_repr" => value_repr, "columns" => columns, "rows" => rows,
         "result_data" => result_data, "feedback" => feedback,
-        "explanation" => _mystery_c6_explanation(pass),
+        "explanation" => _mystery_c6_explanation(pass; code=code),
         "result_visual" => pass === true && result_data !== nothing ?
             Dict("type" => "compatible-model-evidence-board", "data" => Dict("rows" => rows)) : nothing,
     )
@@ -197,20 +248,19 @@ function _mystery_c6_result(; request_id::String="", status::String="error", pas
         result["evidence"] = Dict(
             "id" => "c6-story-fit",
             "title" => "Which stories still fit",
-            "text" => "Coin flip and Thriving can give 5 of 6. Vanishing almost never can.",
-            "claim" => "Claim 2, \"the fleas are vanishing\": not supported.",
+            "text" => "Coin flip and Thriving can give 5 of 6. Dying out almost never can.",
+            "claim" => "Part 3 done: “dying out” was never shown.",
         )
     end
     return result
 end
 
 function _mystery_c6_guarded_code(code::String)
-    return "__juliatime_c6_candidates_identity__ = objectid(stories)\n" *
-           "__juliatime_c6_candidates_snapshot__ = deepcopy(stories)\n" *
-           "__juliatime_c6_answer__ = begin\n" * code * "\nend\n" *
-           "isequal(stories, __juliatime_c6_candidates_snapshot__) || error(\"The supplied stories values changed. Keep the inputs unchanged and create a separate result.\")\n" *
-           "objectid(stories) == __juliatime_c6_candidates_identity__ || error(\"The supplied stories binding changed. Keep the inputs unchanged and create a separate result.\")\n" *
-           "__juliatime_c6_answer__"
+    return _mystery_guarded_code(code, "__juliatime_c6_answer__";
+        before=["__juliatime_c6_candidates_identity__ = objectid(stories)",
+                "__juliatime_c6_candidates_snapshot__ = deepcopy(stories)"],
+        after=["isequal(stories, __juliatime_c6_candidates_snapshot__) || error(\"The supplied stories values changed. Keep the inputs unchanged and create a separate result.\")",
+               "objectid(stories) == __juliatime_c6_candidates_identity__ || error(\"The supplied table stories was changed. Keep the inputs unchanged and create a separate result.\")"])
 end
 
 # R7 (2026-09-24 re-test): the guard above wraps the learner's code, so a ParseError raised on the
@@ -263,7 +313,7 @@ function mystery_c6_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
         feedback="Type Julia code in the editor before running this step.")
     isempty(strip(code)) && return _mystery_c6_result(
         request_id=request_id, message="Write some Julia before running the case.",
-        feedback="The editor is empty, so no sandbox worker was started.")
+        feedback="The editor is empty, so nothing was run.")
 
     env = (stories=mystery_c6_candidates(), observed_count=mystery_c6_observed_count(),
            n_trials=MYSTERY_C6_N_TRIALS)
@@ -280,10 +330,16 @@ function mystery_c6_case_run(msg::AbstractDict; on_status::Function=((_, __) -> 
     value_repr = display === nothing ? "" : _mystery_safe_repr(display)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     checked, feedback = sandbox_result.status == :ok ? check_mystery_c6(display) :
-        (false, "Julia stopped before the end. Check the names, then run again.")
-    return _mystery_c6_result(
+        (false, _mystery_stopped_feedback(sandbox_result.status))
+    coaching = checked ? "" : _mystery_c6_coaching(String(code); message=sandbox_result.message)
+    isempty(coaching) || (feedback = coaching)
+    result = _mystery_c6_result(
         request_id=request_id, status=String(sandbox_result.status), pass=checked,
         message=sandbox_result.message, stdout=sandbox_result.stdout, value_repr=value_repr,
         rows=rows, columns=columns, feedback=feedback, result_data=_mystery_c6_result_data(display),
+        code=String(code),
     )
+    # A line naming the mistake, sent on its own so the page can lead with it; "" when there is none.
+    result["coaching"] = coaching
+    return result
 end

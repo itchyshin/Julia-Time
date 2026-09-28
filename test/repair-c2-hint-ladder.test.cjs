@@ -18,17 +18,19 @@ test("C2 hint labels start with the smallest help, never promise a code shape, a
   for (const step of STEPS) {
     const total = client.allHints(step).length;
     assert.equal(total, 2, step + " keeps two staged hints: idea, then code shape");
-    const labels = Array.from({length: total + 1}, (_, shown) => client.hintButtonLabel(shown, total));
-    assert.deepEqual(labels, ["Show the idea", "Show the code shape", "All help shown"]);
+    // r4 (2026-09-27): the ladder is the two text hints plus the whole line.
+    const rungs = client.ladderTotal(step);
+    const labels = Array.from({length: rungs + 1}, (_, shown) => client.hintButtonLabel(shown, rungs));
+    assert.deepEqual(labels, ["Show the idea", "Show the code shape", "Show the whole line", "All help shown"]);
   }
   assert.match(read("chapter2.html"), /<button id="show-hint" type="button">Show the idea<\/button>/, "the static first paint matches the script's first label");
 });
 
 test("C2 disables the hint button once every hint is shown and re-enables it on a new move", () => {
   const source = read("chapter2.js");
-  assert.match(source, /el\.hint\.disabled\s*=\s*hints\s*>=\s*list\.length/);
-  assert.match(source, /el\.hint\.textContent\s*=\s*hintButtonLabel\(hints,\s*list\.length\)/);
-  assert.match(source, /el\.hint\.textContent\s*=\s*hintButtonLabel\(0,\s*allHints\(step\)\.length\);\s*el\.hint\.disabled\s*=\s*false/);
+  assert.match(source, /const done=hints >= total;/);
+  assert.match(source, /el\.hint\.textContent=hintButtonLabel\(hints, total\); el\.hint\.disabled=done;/);
+  assert.match(source, /el\.hint\.textContent\s*=\s*hintButtonLabel\(0,\s*ladderTotal\(step\)\);\s*el\.hint\.disabled\s*=\s*false/);
   assert.match(read("chapter2.css"), /#show-hint:disabled\s*\{[^}]*cursor:\s*not-allowed/, "an exhausted hint button looks unavailable");
 });
 

@@ -13,7 +13,7 @@
   <script defer src="chapter6.js"></script>
 </head>
 <body>
-  <a class="skip" href="#editor-title">Skip to your Julia move</a>
+  <a class="skip" href="#move-title">Skip to your Julia step</a>
   <main>
     <header>
       <p class="eyebrow">Julia Time / Case files</p>
@@ -21,30 +21,33 @@
       <p id="status" class="connection">● Connecting to the lab…</p>
       <nav class="course-location" aria-label="Course location">
         <a id="case-board-scene" href="course/index.html">Case Board</a>
-        <p>Chapter 6 of 6 · Are the fleas vanishing?</p>
+        <p>Chapter 6 of 6 · Are the springtails dying out?</p>
       </nav>
     </header>
 
     <section id="scene" class="scene">
-      <img src="assets/course/scene-c6-evidence-board.png" alt="The four investigators examine a calm evidence board in the laboratory.">
+      <img src="assets/course/scene-c6-evidence-board.png" alt="The four investigators examine the story board in the laboratory.">
       <div>
-        <p class="eyebrow">Chapter 6 · Are the fleas vanishing?</p>
-        <h2 id="scene-title" tabindex="-1">The report’s last word was "vanishing"</h2>
-        <p>Eddie pins three stories to the board, each a simple guess about how often a jar shows fleas. Each story comes with its usual range: the counts out of six it gives most of the time. Which stories could give the notebook’s 5 of 6?</p>
-        <button id="start" class="run" type="button">Open the story board →</button>
+        <p class="eyebrow">Part 3 of 3 · Test the claim</p>
+        <p class="eyebrow">Chapter 6 · Are the springtails dying out?</p>
+        <h2 id="scene-title" tabindex="-1">The notebook holds up so far. Does 5 of 6 look like springtails dying out?</h2>
+        <p>Under a plain 50:50 guess, 5 or more of 6 comes up about 1 time in 9, so 5 of 6 is not unusual. Now use the notebook’s 5 of 6 to test the report’s last word: dying out. Eddie pins three stories to the board. Each story gives a chance that a jar shows springtails, and a usual range: the counts out of six that the story gives most of the time.</p>
+        <p><strong>Eddie:</strong> “These three are guesses to test, not facts. Dying out is the report’s claim written as a number. Which of them could give 5?”</p>
+        <div class="controls scene-controls"><button id="start" class="run" type="button">Open the story board →</button><a id="scene-ending" class="ending-link" href="course/ending.html" hidden>See how the case ends →</a></div>
       </div>
     </section>
 
     <section id="work" hidden>
       <nav class="top" aria-label="Chapter controls">
-        <button id="back" class="quiet" type="button">← Back to story</button>
+        <button id="back" class="quiet" type="button">← Back to the story</button>
         <a id="case-board" class="quiet" href="course/index.html">Case Board</a>
-        <button id="reconnect" class="quiet" type="button" hidden>Reconnect to lab</button>
+        <button id="reconnect" class="quiet" type="button" hidden>Reconnect to the lab</button>
       </nav>
 
       <section id="move-card" class="case">
-        <p class="eyebrow">Your one clear move</p>
-        <h1 id="move-title" tabindex="-1">Your step · Keep the stories whose range includes 5</h1>
+        <p class="eyebrow">Your one clear step</p>
+        <h2 id="move-title" tabindex="-1">Your step · Keep the stories whose range includes 5</h2>
+        <p class="step-why">A story could give 5 only if 5 sits inside its usual range, so check the low end, then the high end, and keep the rows that pass both.</p>
         <p>Every story row where <code>lower</code> is at most 5 and <code>upper</code> is at least 5, each row once, all four columns.</p>
         <div class="return"><span>Required result</span><code>Every story row, once each, for which lower ≤ observed_count ≤ upper.</code></div>
         <p id="observed" class="limit"></p>
@@ -52,9 +55,10 @@
 
       <section id="model-context" class="data scaffold" aria-labelledby="model-context-title">
         <p class="eyebrow">The story board · before you code</p>
-        <h2 id="model-context-title">Three stories about the fleas</h2>
-        <p><code>p</code> is the story’s chance that one jar shows fleas. The usual range is the counts out of six the story gives most of the time; both ends count.</p>
-        <ul id="candidate-model-cards" aria-label="Stories about the fleas" aria-live="polite"></ul>
+        <h2 id="model-context-title">Three stories about the springtails</h2>
+        <p><code>p</code> is the story’s chance that one jar shows springtails. The usual range is the counts out of six the story gives most of the time; both end values are included.</p>
+        <ul id="candidate-model-cards" aria-label="Stories about the springtails" aria-live="polite"></ul>
+        <p>Dying out is the report’s claim, “the springtails are dying out”, written as a number: a jar shows springtails only 1 time in 10. Dying out here means jars going empty: by the time of the check most jars would be empty. Thriving is the opposite guess: most jars show springtails, 8 times in 10.</p>
         <p><strong>Your step:</strong> keep every story whose usual range includes 5. A count exactly on either edge stays in.</p>
       </section>
 
@@ -63,20 +67,21 @@
 
       <section id="editor-box" class="editor">
         <div class="editor-title"><div><p class="eyebrow">Write Julia</p><h2 id="editor-title">Your editor</h2></div></div>
-        <p>Use <code>stories</code> and <code>observed_count</code> from the displayed lab file. This editor starts empty.</p>
+        <p>Use <code>stories</code> and <code>observed_count</code> from the story board above. This editor starts empty.</p>
         <p id="syntax" class="syntax"></p>
         <div id="pre-editor-bridge" class="bridge"></div>
-        <section class="named-inputs" aria-labelledby="named-inputs-heading"><p class="eyebrow">Use these real names</p><h3 id="named-inputs-heading">What your Julia code can use</h3><dl><dt><code>stories</code></dt><dd>The story board above: one row per story, with columns <code>model</code>, <code>p</code>, <code>lower</code> and <code>upper</code>.</dd><dt><code>.lower</code>, <code>.upper</code></dt><dd>Read one column, for example <code>stories.lower</code>.</dd><dt><code>observed_count</code></dt><dd>The notebook's 5. Keep a row when it lies between that row's lower and upper, both ends included.</dd></dl></section>
-        <section class="answer-route" aria-labelledby="answer-route-heading"><h3 id="answer-route-heading">Need the full answer?</h3><p>Show one complete answer that uses the real names above. It is for reference only and does not enter your editor.</p><button id="show-full-answer" class="quiet" type="button">Show the full answer</button></section>
+        <section class="named-inputs" aria-labelledby="named-inputs-heading"><p class="eyebrow">Use these real names</p><h3 id="named-inputs-heading">What your Julia code can use</h3><dl><dt><code>stories</code></dt><dd>The story board above: one row per story, with columns <code>story</code>, <code>p</code>, <code>lower</code> and <code>upper</code>.</dd><dt><code>.lower</code>, <code>.upper</code></dt><dd>Read one column, for example <code>stories.lower</code>.</dd><dt><code>observed_count</code></dt><dd>The notebook’s 5. Keep a row when 5 lies between that row’s lower and upper values, both ends included.</dd></dl></section>
+        
         <section id="answer-before-editor" class="answer-reference" aria-live="polite" hidden></section>
         <label for="code">Your Julia code</label>
         <textarea id="code" rows="7" spellcheck="false" autocomplete="off" placeholder="Write your own Julia code here…"></textarea>
-        <p id="draft-note" class="keyboard">This editor starts empty. Write your own Julia result.</p>
+        <p id="draft-note" class="keyboard">This editor starts empty. Write your own Julia code.</p>
         <p class="keyboard"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs your code.</p>
         <button id="run" class="run" type="button" disabled>Run this step →</button>
+        <a id="solved-ending" class="ending-link" href="course/ending.html" hidden>See how the case ends →</a>
         <section id="result" class="result" aria-live="polite" tabindex="-1"></section>
-        <section id="bridge-card" class="bridge-card" hidden aria-live="polite" aria-label="The same move in R and Python"></section>
-        <details class="jt-help"><summary>Stuck? Hints<span>Small hints first, the full answer last. Your editor stays as you left it.</span></summary><details class="help"><summary>Help me start <span>small hints first, the full answer last; your editor stays as you left it</span></summary><div id="hint" aria-live="polite"></div><button id="next-hint" class="quiet" type="button">Show the idea</button><button id="answer" class="quiet" type="button">Skip to the full answer</button></details><section id="learning-scaffold" class="scaffold" aria-live="polite" hidden></section></details>
+        <section id="bridge-card" class="bridge-card" hidden aria-live="polite" aria-label="The same step in R and Python"></section>
+        <details class="jt-help"><summary>Stuck? Hints <span>Small hints first, the full answer last. Your editor stays as you left it.</span></summary><div class="help hint-ladder"><div id="hint" aria-live="polite"></div><div class="controls"><button id="next-hint" class="quiet" type="button">Show the idea</button><button id="show-full-answer" class="quiet" type="button">Show the full answer</button></div></div><section id="learning-scaffold" class="scaffold" aria-live="polite" hidden></section></details>
         
         
       </section>

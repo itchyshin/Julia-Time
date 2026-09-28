@@ -38,7 +38,7 @@ function moveTwoNote() {
   return match[1];
 }
 
-test("Chapter 3 move 2 explains the fresh joined table in plain words", () => {
+test("Chapter 3 move 2 explains the fresh joined table in plain, non-repeated words", () => {
   const identity = chapter3.tableIdentity("joined");
   const bridge = chapter3.lessonCopy("filter-disagreement").bridge;
   const note = moveTwoNote();
@@ -46,10 +46,13 @@ test("Chapter 3 move 2 explains the fresh joined table in plain words", () => {
     assert.doesNotMatch(text, JARGON, text);
     assert.doesNotMatch(text, /—/, "no em dash in new learner-facing text: " + text);
   }
-  assert.equal(identity.title, "A fresh copy of the lined-up table");
-  assert.equal(identity.role, "The same as your step 1 result");
-  for (const text of [bridge, note]) {
-    assert.match(text, /fresh copy/, text);
-    assert.match(text, /step 1/, text);
-  }
+  assert.equal(identity.title, "The lined-up table");
+  assert.equal(identity.role, "Your step 1 result, made again for this step");
+  // Night playtest 2026-09-26: the same sentence read four times on one screen (identity title +
+  // role, the bridge panel, and this note). Each spot now says it differently.
+  const combined = identity.title + ". " + identity.role;
+  assert.notEqual(combined, bridge);
+  assert.notEqual(combined, note);
+  assert.notEqual(bridge, note);
+  for (const text of [combined, bridge, note]) assert.match(text, /step 1/i, text);
 });

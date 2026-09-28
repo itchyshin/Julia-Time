@@ -64,3 +64,10 @@ test("C4 (B1/B2) a restarting status extends the wait and running clears it", ()
   const expired = client.expireRun(waiting, "c4-run-now");
   assert.equal(client.applyRunStatus(expired, {type:"status", request_id:"c4-run-now", status:"restarting"}), expired);
 });
+
+test("C4 names R's $ habit on eligible$jar_id, as C1 does for jars$batch_id", () => {
+  const message = {status: "error", message: "UndefVarError: `$` not defined\nStacktrace: [1] top-level scope"};
+  const recovery = client.recoveryCopy(message);
+  assert.match(recovery, /R's \$ does not exist in Julia/);
+  assert.match(recovery, /eligible\.jar_id/);
+});

@@ -14,7 +14,7 @@
   "use strict";
 
   const CASE_ID = "missing-fleas-v1";
-  const SCENE_MS = 7000;
+  const SCENE_MS = 12000; // Shinichi, 2026-09-27: 7 s was too fast to read a scene's line and the player's code
   const REPLY_MS = 8000;
   const CODE_LINES = 8;
   const CODE_CHARS = 600;
@@ -24,7 +24,7 @@
     C5:"../assets/course/scene-c5-toto-card-table.png", C6:"../assets/course/scene-c6-evidence-board.png",
     final:"../assets/lab-cast.png"
   });
-  // Each scene shows the saved code of its chapter's last step.
+  // Each scene shows the accepted code of its chapter's last step.
   const CODE_STEP = Object.freeze({C1:"C1/select-records", C2:"C2/rates", C3:"C3/filter-disagreement",
     C4:"C4/plan-distinct-recheck", C5:"C5/event-frequency", C6:"C6/compatible-models"});
   const KNOWN_FUNCTIONS = Object.freeze(["filter", "subset", "groupby", "combine", "nrow", "sum", "length",
@@ -82,11 +82,13 @@
   }
   function captionFor(chapter, f) {
     const d = f.disagreement;
-    if (chapter === "C1") return "You found the " + f.n_jars + " " + f.batch_id + " jars in the notebook. " + f.n_detected + " of them have fleas.";
-    if (chapter === "C2") return "Jars with fleas, by tray: " + listText(f.trays.map(t => t.tray_id + " " + t.detected_n)) + ".";
-    if (chapter === "C3") return "Tray " + d.tray_id + ": the notebook counts " + d.notebook_detected + ", but the tally sheet shows " + d.sheet_detected + ", and its box was " + d.entry_status + ".";
-    if (chapter === "C4") return "You planned a recheck of " + f.recheck_size + " jars from " + listText(f.eligible_jars) + ". Nobody has looked yet.";
-    if (chapter === "C5") return f.observed_count + " of " + f.n_per_simulation + " jars had fleas. In " + f.n_simulations.toLocaleString("en-US")
+    if (chapter === "C1") return "You found the " + f.n_jars + " " + f.batch_id + " jars in the notebook. " + f.n_detected + " of them have springtails.";
+    if (chapter === "C2") return "Jars with springtails, by tray: " + listText(f.trays.map(t => t.tray_id + " " + t.detected_n + (t.detected_n === 1 ? " jar" : " jars"))) + ".";
+    if (chapter === "C3") return "Tray " + d.tray_id + ": the notebook counts " + d.notebook_detected + ", and Toto's typed table shows " + d.sheet_detected + ". On the paper, the box was " + d.entry_status + ".";
+    if (chapter === "C4") return f.picked_jars
+      ? "You let chance pick " + listText(f.picked_jars) + " from the " + f.eligible_jars.length + " jars that can still be opened. Nobody has looked yet."
+      : "You planned a recheck of " + f.recheck_size + " jars from " + listText(f.eligible_jars) + ". Nobody has looked yet.";
+    if (chapter === "C5") return f.observed_count + " of " + f.n_per_simulation + " jars had springtails. In " + f.n_simulations.toLocaleString("en-US")
       + " rounds of Toto's coin-flip cards, " + f.observed_count + " or more came up " + plural(f.matching_events, "time", "times") + ".";
     if (chapter === "C6") {
       const out = f.models.filter(m => !m.compatible).map(m => m.model), keep = f.models.filter(m => m.compatible).map(m => m.model);
@@ -97,7 +99,7 @@
   }
   function buildScenes(facts, script, drafts) {
     return script.scenes.map((scene, index) => ({
-      chapter:scene.chapter, number:index + 1, title:scene.title, image:IMAGES[scene.chapter], alt:scene.alt,
+      chapter:scene.chapter, number:index + 1, title:String(scene.title).replace("{logged}", String(facts.disagreement.sheet_detected)), image:IMAGES[scene.chapter], alt:scene.alt,
       caption:captionFor(scene.chapter, facts), speaker:scene.speaker, line:scene.line, code:codeFor(drafts, scene.chapter),
       aha:scene.chapter === "C3" ? {tray_id:facts.disagreement.tray_id, reported:facts.disagreement.notebook_detected,
         logged:facts.disagreement.sheet_detected, status:facts.disagreement.entry_status} : null
@@ -120,11 +122,12 @@
     const d = facts.disagreement;
     const notFitting = facts.models.filter(m => !m.compatible).map(m => m.model);
     return {
-      stamp:script.final.stamp, headline:script.final.headline,
-      reveal:"The notebook shows fleas in " + facts.n_detected + " of " + facts.n_jars + " " + facts.batch_id + " jars. Tray "
-        + d.tray_id + "'s 0 was a box " + d.entry_status + " on the tally sheet, not an empty tray. And the "
+      stamp:script.final.stamp, headline:script.final.headline, answer:String(script.final.answer).replace("{logged}", String(d.sheet_detected)),
+      reveal:"The notebook shows springtails in " + facts.n_detected + " of " + facts.n_jars + " " + facts.batch_id + " jars. Tray "
+        + d.tray_id + "'s 0 was typed in for a box " + d.entry_status + " on the paper tally sheet, not an empty tray. The notebook's " + facts.n_detected + " of " + facts.n_jars + " is not unusual under a plain 50:50 guess. And the "
         + (notFitting.length ? listText(notFitting) : "no") + " story almost never gives " + facts.observed_count + " of " + facts.n_per_simulation + ".",
-      stillOpen:"Still open: what the recheck of " + facts.recheck_size + " jars from " + listText(facts.eligible_jars) + " will find.",
+      stillOpen:"Still to do: the recheck of " + (facts.picked_jars ? listText(facts.picked_jars) + ", the jars chance picked"
+        : facts.recheck_size + " jars from " + listText(facts.eligible_jars)) + ". It is the one check only the jars can give.",
       speaker:script.final.speaker, line:script.final.line, punSpeaker:script.final.punSpeaker, punSignOff:script.final.punSignOff, wellDone:script.final.wellDone,
       image:IMAGES.final, alt:script.final.alt, investigators:script.final.investigators.slice(),
       featuring:featuring(drafts), concepts:Array.isArray(concepts) ? concepts.slice() : [], dataLabel:dataLabel || ""
@@ -138,6 +141,26 @@
     const drafts = {};
     for (const [key, value] of Object.entries(courseState.readChallengeDrafts(storage, attempt) || {})) if (!/^C[12]\//.test(key)) drafts[key] = value;
     return Object.assign(drafts, legacyImport ? legacyImport.chapterDrafts(storage, attempt) : {});
+  }
+  // The code Julia accepted for each step. A save from before accepted code was kept falls back to its draft.
+  function learnerCode(storage, attempt) {
+    const accepted = typeof courseState.readAcceptedCode === "function" ? courseState.readAcceptedCode(storage, attempt) : {};
+    return Object.assign(learnerDrafts(storage, attempt), accepted);
+  }
+
+  // The three jars chance picked in Chapter 4, from its saved result (null when that save has none).
+  function pickedJars(storage, attempt) {
+    let saved = [];
+    try { saved = courseState.readEvidence(storage, attempt); } catch (_) { saved = []; }
+    const item = saved.find(entry => entry.chapter === "C4" && entry.move_id === "plan-distinct-recheck");
+    return item ? client.drawnJars(item) : null;
+  }
+  // The facts plus the drawn jars, only when they are the recheck's size and all on the server's eligible list;
+  // otherwise the facts unchanged, and the ending names the whole eligible list as before.
+  function withPickedJars(facts, picked) {
+    const fits = Array.isArray(picked) && picked.length === facts.recheck_size && new Set(picked).size === picked.length
+      && picked.every(id => facts.eligible_jars.includes(id));
+    return fits ? Object.assign({}, facts, {picked_jars:picked.slice()}) : facts;
   }
 
   // index === count is the finale.
@@ -160,6 +183,11 @@
   function text(node, value) { if (node) node.textContent = value || ""; }
   // Display only: keep a record name (letter, hyphen, code) and "p = value" on one line.
   function keepTogether(value) { return String(value).replace(/([A-Z])-(?=[A-Z0-9])/g, "$1\u2011").replace(/\bp = /g, "p\u00a0=\u00a0"); }
+  // The Chapter 3 card: notebook, paper sheet, Toto's typed table, report, one line each (r3 story F6).
+  function ahaLines(script, aha) {
+    const fill = value => String(value).replace(/\{(reported|status|logged)\}/g, (_, name) => String(aha[name]));
+    return [script.aha.report, script.aha.paper, script.aha.log, script.aha.copied].map(fill);
+  }
   function sceneNode(doc, scene, animate, script) {
     const figure = doc.createElement("figure"), image = doc.createElement("img"), body = doc.createElement("figcaption");
     const eyebrow = doc.createElement("p"), title = doc.createElement("h3"), caption = doc.createElement("p"), line = doc.createElement("blockquote");
@@ -170,14 +198,14 @@
     caption.className = "ending-caption"; text(caption, keepTogether(scene.caption));
     body.append(eyebrow, title, caption);
     if (scene.aha) {
-      const aha = doc.createElement("div"), report = doc.createElement("span"), log = doc.createElement("span"), zero = doc.createElement("s"), note = doc.createElement("span"), copied = doc.createElement("span");
+      const aha = doc.createElement("div");
       aha.className = "aha" + (animate ? " aha-play" : "");
-      text(report, script.aha.report + ": " + scene.aha.reported);
-      text(zero, String(scene.aha.logged));
-      note.className = "aha-note"; text(note, scene.aha.status + ": " + script.aha.note);
-      log.append(doc.createTextNode(script.aha.log + ": "), zero, note);
-      copied.className = "aha-note"; text(copied, script.aha.copied);
-      aha.append(report, log, copied); body.append(aha);
+      ahaLines(script, scene.aha).forEach((value, index) => {
+        const item = doc.createElement("span");
+        if (index === 1 || index === 3) item.className = "aha-note";
+        text(item, value); aha.append(item);
+      });
+      body.append(aha);
     }
     line.className = "ending-line"; text(line, scene.speaker + ": “" + scene.line + "”");
     body.append(line);
@@ -194,7 +222,7 @@
     const root = $("ending-finale");
     root.classList.remove("finale-play");
     if (animate) { void root.offsetWidth; root.classList.add("finale-play"); }
-    text($("ending-stamp"), finale.stamp); text($("ending-headline"), finale.headline); text($("ending-reveal"), keepTogether(finale.reveal));
+    text($("ending-stamp"), finale.stamp); text($("ending-headline"), finale.headline); text($("ending-answer"), finale.answer || ""); text($("ending-reveal"), keepTogether(finale.reveal));
     text($("ending-final-line"), finale.speaker + ": “" + finale.line + "”");
     const pun = $("ending-pun");
     if (pun) text(pun, finale.punSignOff ? finale.punSpeaker + ": “" + finale.punSignOff + "”" : "");
@@ -247,7 +275,7 @@
     const status = $("ending-status");
     if (!gate.complete) { status.hidden = true; $("ending-locked").hidden = false; text($("ending-open"), gate.line); return; }
     if (win.location.protocol === "file:" || !win.WebSocket) { text(status, FILE_MESSAGE); return; }
-    const drafts = learnerDrafts(storage, attempt);
+    const drafts = learnerCode(storage, attempt), picked = pickedJars(storage, attempt);
     const reduced = Boolean(win.matchMedia && win.matchMedia("(prefers-reduced-motion: reduce)").matches);
     const requestId = "ending-" + Date.now().toString(36);
     let socket = null, done = false;
@@ -260,6 +288,7 @@
       if (done) return;
       let reply = null; try { reply = JSON.parse(event.data); } catch (_) { return; }
       const parsed = epilogueFacts(reply, requestId);
+      if (parsed) parsed.facts = withPickedJars(parsed.facts, picked);
       if (!parsed) { if (reply && reply.type === "error") { win.clearTimeout(timer); done = true; text(status, OLD_GAME); try { socket.close(); } catch (_) {} } return; }
       done = true; win.clearTimeout(timer); try { socket.close(); } catch (_) {}
       status.hidden = true;
@@ -268,6 +297,6 @@
   }
 
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", init);
-  return {CASE_ID, SCENE_MS, REPLY_MS, IMAGES, epilogueRequest, epilogueFacts, endingGate, buildScenes, buildFinal, learnerDrafts, keepTogether,
+  return {CASE_ID, SCENE_MS, REPLY_MS, IMAGES, ahaLines, epilogueRequest, epilogueFacts, endingGate, pickedJars, withPickedJars, buildScenes, buildFinal, learnerDrafts, learnerCode, keepTogether,
     featuring, listText, createPlayer, playerStep, init};
 });

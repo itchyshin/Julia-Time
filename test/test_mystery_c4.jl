@@ -95,10 +95,11 @@ end
         @test !occursin("replace=false", feedback)
         @test feedback == "Three different jars from the list."
         # Nit 16 (adversary review 2026-09-26): the checker only judges the returned value, so code
-        # without replace=false can pass by luck (about 37.5% of runs). Every C4 success carries a
-        # one-line reminder, since the game cannot tell whether the learner's code was actually safe.
+        # without replace=false used to pass by luck (about 37.5% of runs); since the night fix
+        # (2026-09-27) the checker reruns the code under fixed seeds, so it no longer can. Every C4 success carries a
+        # one-line reminder of why replace=false matters.
         @test JuliaTime._mystery_c4_explanation(true)["reminder"] ==
-            "Check that your line says replace=false. Without it, Julia can pick the same jar twice, and a run like this could pass by luck."
+            "Keep replace=false in your line. Without it, Julia can pick the same jar twice; that is why Julia ran your code again several times before saying it is right."
         @test !haskey(JuliaTime._mystery_c4_explanation(false), "reminder")
     end
 
@@ -119,7 +120,7 @@ end
             @test occursin("three different jars from eddie's list", lowercase(reply["explanation"]["case"]))
             @test !occursin("picked by chance", lowercase(reply["explanation"]["case"]))
             @test haskey(reply, "evidence")
-            @test reply["evidence"]["claim"] == "Claim 1 is done: the 0 was a blank, and a fair recheck is planned."
+            @test reply["evidence"]["claim"] == "Part 1 done. Part 2 has begun: a fair recheck is planned, and one check is left for today."
 
             mutated = JuliaTime.mystery_c4_case_run(c4_run_request(
                 "answer = eligible.jar_id[[1, 2, 3]]; eligible = copy(eligible); answer";

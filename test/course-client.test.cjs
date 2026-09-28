@@ -144,7 +144,8 @@ test("a current C3 acceptance can add only a historical browser marker without r
 
   assert.equal(courseState.recordHistoricalMoveIfMissing(storage, attempt, "C3", "join-report-log"), true);
   assert.deepEqual(courseState.readCourseState(storage, attempt).accepted["C3/join-report-log"], {
-    case_id:"missing-fleas-v1", chapter:"C3", move_id:"join-report-log", provenance:"historical-browser"
+    // The accepted record also keeps the code that was run (r1 bug 3: the ending shows the accepted answer).
+    case_id:"missing-fleas-v1", chapter:"C3", move_id:"join-report-log", provenance:"historical-browser", code:"my own unfinished join"
   });
   assert.equal(courseState.readChallengeDrafts(storage, attempt)["C3/join-report-log"], "my own unfinished join");
   assert.equal(courseState.recordHistoricalMoveIfMissing(storage, attempt, "C3", "join-report-log"), false);
@@ -209,7 +210,7 @@ test("changed legacy data is reported and does not silently fill a destination",
   const loaded = client.loadCourseState(storage, attempt);
   assert.deepEqual(courseState.acceptedMoves(loaded), []);
   assert.deepEqual(loaded.historicalChanged, [legacy.c2ProgressKey(attempt)]);
-  assert.match(client.dashboardModel(loaded).historicalNotice, /^Earlier saved data on this computer changed\./);
+  assert.match(client.dashboardModel(loaded).historicalNotice, /^Some older saved data on this computer has changed\./);
   assert.equal(storage.writes.length, beforeWrites);
 });
 
@@ -253,12 +254,14 @@ test("the Case Board continues with the earliest playable missing move", () => {
     {key:"C1/select-records", provenance:"historical-browser"},
     {key:"C2/group", provenance:"historical-browser"}
   ]}));
-  assert.deepEqual(afterGroup.continue, {chapter:"C2", move:"counts", label:"Continue Chapter 2: count the jars with fleas"});
+  assert.deepEqual(afterGroup.continue, {chapter:"C2", move:"counts", label:"Continue Chapter 2: count the jars with springtails"});
 });
 
 test("the Case Board keeps one modest mystery thread: question, fact, unknown, and why now", () => {
   const first = client.dashboardModel(courseState.emptyCourseState()).caseThread;
-  assert.match(first.question, /report.*B09.*notebook/i);
+  // Story spine (docs/design/06-story-spine.md, approved 2026-09-27): the case question is the
+  // exact one-question wording used on the Chapter 1 opening and the Case Board.
+  assert.match(first.question, /report.*springtails are dying out.*are they/i);
   assert.match(first.established, /nothing checked yet/i);
   assert.match(first.unknown, /notebook says about batch B09/i);
   assert.match(first.whyNext, /report is about batch B09/i);
@@ -272,28 +275,28 @@ test("the Case Board keeps one modest mystery thread: question, fact, unknown, a
     {key:"C3/filter-disagreement", provenance:"historical-browser"}
   ]})).caseThread;
   assert.match(afterC3.established, /blank box on the tally sheet/i);
-  assert.match(afterC3.unknown, /second look at the jars/i);
+  assert.match(afterC3.unknown, /whether the notebook itself is right/i); // Part 2's question, 2026-09-27
   assert.match(afterC3.whyNext, /recheck/i);
 
   const afterC5 = client.dashboardModel(courseState.makeCourseState({moves:[
     ...["C1/select-records", "C2/group", "C2/counts", "C2/rates", "C3/join-report-log", "C3/filter-disagreement", "C4/plan-distinct-recheck", "C5/event-mask", "C5/event-frequency"].map(key => ({key, provenance:"historical-browser"}))
   ]})).caseThread;
   assert.match(afterC5.established, /1 time in 9/i);
-  assert.match(afterC5.whyNext, /vanishing/i);
+  assert.match(afterC5.whyNext, /dying out/i);
   assert.doesNotMatch(JSON.stringify(afterC5), /culprit|prove|candidate/i);
 
   const afterC6 = client.dashboardModel(courseState.makeCourseState({moves:[
     ...["C1/select-records", "C2/group", "C2/counts", "C2/rates", "C3/join-report-log", "C3/filter-disagreement", "C4/plan-distinct-recheck", "C5/event-mask", "C5/event-frequency", "C6/compatible-models"].map(key => ({key, provenance:"historical-browser"}))
   ]})).caseThread;
-  assert.match(afterC6.established, /never shown to be missing/i);
+  assert.match(afterC6.established, /never shown to be dying out/i);
   assert.match(afterC6.unknown, /recheck of three jars/i);
-  assert.match(afterC6.whyNext, /both claims are checked/i);
+  assert.match(afterC6.whyNext, /all three parts are done/i); // three parts, 2026-09-27
 
   const onlyC6 = client.dashboardModel(courseState.makeCourseState({moves:[
     {key:"C6/compatible-models", provenance:"historical-browser"}
   ]})).caseThread;
   assert.match(onlyC6.established, /blank box, not an empty tray/i);
-  assert.doesNotMatch(onlyC6.whyNext, /both claims are checked/i);
+  assert.doesNotMatch(onlyC6.whyNext, /all three parts are done/i);
   assert.match(onlyC6.whyNext, /report is about batch B09/i);
 });
 
@@ -314,7 +317,7 @@ test("C3 becomes the next playable investigation only after its real route exist
 
   const firstC3 = client.dashboardModel(beforeC3);
   const joinedC3 = client.dashboardModel(afterJoin);
-  assert.deepEqual(firstC3.continue, {chapter:"C3", move:"join-report-log", label:"Continue Chapter 3: line up the notebook and the tally sheet"});
+  assert.deepEqual(firstC3.continue, {chapter:"C3", move:"join-report-log", label:"Continue Chapter 3: line up the notebook and Toto's typed table"});
   assert.deepEqual(joinedC3.continue, {chapter:"C3", move:"filter-disagreement", label:"Continue Chapter 3: find the tray that disagrees"});
   assert.equal(firstC3.cards[2].playable, true);
   assert.match(firstC3.cards[2].status, /Ready/i);
@@ -495,10 +498,27 @@ test("returning players see today's evidence title, not the one an older build s
   ]});
   const model = client.dashboardModel(state);
   const titles = model.evidence.map(item => item.title);
-  assert.ok(titles.includes("The B09 jars, found"), "C1 evidence uses today's title");
+  assert.ok(titles.includes("The six B09 jars, found in the notebook"), "C1 evidence uses today's title");
   assert.ok(titles.includes("Which stories still fit"), "C6 evidence uses today's title");
   assert.ok(!titles.includes("B09 report records recovered"));
   assert.ok(!titles.includes("Compatible candidate models retained"));
+});
+
+// S5 (2026-09-27 adversary review): a v0.2.3 save titled these "Simulation event named" and
+// "Simulation event frequency calculated" (both banned insider phrases); C5 renamed them (v0.2.4,
+// web/chapter5.js persistAccepted) but EVIDENCE_TITLES had no C5 entries, so a returning player's
+// Case Board still showed the old titles.
+test("returning players see today's C5 evidence titles, not v0.2.3's simulation-event titles", () => {
+  const state = Object.assign(courseState.emptyCourseState(), {evidence:[
+    {chapter:"C5", move_id:"event-mask", title:"Simulation event named", row_count:1000, provenance:"historical-browser"},
+    {chapter:"C5", move_id:"event-frequency", title:"Simulation event frequency calculated", row_count:1000, provenance:"historical-browser"}
+  ]});
+  const model = client.dashboardModel(state);
+  const titles = model.evidence.map(item => item.title);
+  assert.ok(titles.includes("Marked the rounds"), "C5 event-mask evidence uses today's title");
+  assert.ok(titles.includes("Worked out how often"), "C5 event-frequency evidence uses today's title");
+  assert.ok(!titles.includes("Simulation event named"));
+  assert.ok(!titles.includes("Simulation event frequency calculated"));
 });
 
 function validC1Evidence() {

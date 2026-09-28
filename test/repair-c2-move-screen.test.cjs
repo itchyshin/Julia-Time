@@ -52,7 +52,7 @@ test("C2 flow: the move screen says each run starts fresh from jars and must end
   assert.match(client.freshRunNote("counts"), /groups again/i);
   assert.match(client.freshRunNote("rates"), /counts again/i);
   const html = read("chapter2.html");
-  const returnBox = html.slice(html.indexOf('<p class="return"><strong>Return:</strong>'), html.indexOf('<details class="source-notebook"'));
+  const returnBox = html.slice(html.indexOf('<p class="return"><strong>Required result:</strong>'), html.indexOf('<details class="source-notebook"'));
   assert.match(returnBox, /id="fresh-run"/, "the note sits in the visible Return box, not in a closed panel");
   assert.doesNotMatch(returnBox, /<details/);
   assert.ok(returnBox.includes('<span id="fresh-run">' + client.freshRunNote("group") + "</span>"), "the first paint matches the group move's note");

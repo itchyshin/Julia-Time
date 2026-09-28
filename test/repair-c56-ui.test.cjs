@@ -36,11 +36,11 @@ function c5Result(move, overrides) {
     status:"ok", pass:false, progress_eligible:false, value_repr:"", result_data:null
   }, overrides || {});
 }
-const C6_COLUMNS = ["model", "p", "lower", "upper"];
+const C6_COLUMNS = ["story", "p", "lower", "upper"];
 const C6_ROWS = [
-  {model:"Vanishing", p:0.1, lower:0, upper:2},
-  {model:"Coin flip", p:0.5, lower:1, upper:5},
-  {model:"Thriving", p:0.8, lower:4, upper:6}
+  {story:"Vanishing", p:0.1, lower:0, upper:2},
+  {story:"Coin flip", p:0.5, lower:1, upper:5},
+  {story:"Thriving", p:0.8, lower:4, upper:6}
 ];
 function c6Pending(request_id) {
   let state = c6.beginInfo(c6.createState(), "c6-info");
@@ -132,11 +132,15 @@ test("UI-03: C5 and C6 never call a checked result an unrun draft", () => {
 
 // ---- UI-11 ----
 test("UI-11: the C5/C6 full-answer button never shares its label with a hint-ladder step", () => {
-  const answerLabel = html => html.match(/id="answer"[^>]*>([^<]+)</)[1].trim();
+  // Night round 2 (r2-bugs.md finding 2): the second "Skip to the full answer" (#answer) is gone;
+  // #show-full-answer is the one full-answer button, and the ladder's last level is "Show the whole line".
+  const answerLabel = html => html.match(/id="show-full-answer"[^>]*>([^<]+)</)[1].trim();
   const a5 = answerLabel(web("chapter5.html"));
   const a6 = answerLabel(web("chapter6.html"));
-  assert.equal(a5, "Skip to the full answer", "C5's shortcut button stays distinct from the ladder's own full-answer stage button");
-  assert.equal(a6, "Skip to the full answer", "C6's shortcut button stays distinct from the ladder's own full-answer stage button");
+  assert.equal(a5, "Show the full answer");
+  assert.equal(a6, "Show the full answer");
+  assert.doesNotMatch(web("chapter5.html"), /id="answer"/);
+  assert.doesNotMatch(web("chapter6.html"), /id="answer"/);
   for (const move of c5.MOVES) {
     for (let index = 0; c5.helpStage(move, index); index++) assert.notEqual(c5.helpStage(move, index).button, a5, `${move} stage ${index}`);
   }
@@ -153,11 +157,11 @@ test("UI-11: C5 and C6 keep earlier hints on screen when the next hint opens", (
   assert.ok(three[0].includes(mask.concept));
   assert.ok(three[1].includes(mask.shape));
   assert.match(three[2], /placeholders/);
-  assert.match(three[3], /Complete runnable answer is shown/);
+  assert.match(three[3], /The complete runnable answer is shown/);
   const all = c5.visibleHints("event-frequency", 3);
   assert.equal(all.length, 4);
   assert.ok(all[0].includes(c5.COPY["event-frequency"].concept));
-  assert.match(all[3], /Complete runnable answer is shown/);
+  assert.match(all[3], /The complete runnable answer is shown/);
   assert.ok(!all.some(line => line.includes(c5.COPY["event-frequency"].solution)), "the full answer stays in its reference panel");
 
   assert.deepEqual(c6.visibleHints(0), ["Open a small hint only if you need it."]);
@@ -168,7 +172,7 @@ test("UI-11: C5 and C6 keep earlier hints on screen when the next hint opens", (
   assert.equal(c6All[2], c6.COPY.shape_note);
   assert.ok(c6All[3].includes(c6.COPY.range_rule));
   assert.ok(c6All[4].includes(c6.COPY.selection));
-  assert.match(c6All[5], /Complete runnable answer is shown/);
+  assert.match(c6All[5], /The complete runnable answer is shown/);
   assert.ok(!c6All.some(line => line.includes(c6.COPY.solution)));
 
   assert.match(web("chapter5.js"), /visibleHints\(state\.activeMove,\s*hint\)/, "C5 renders the accumulated list");
@@ -213,7 +217,7 @@ test("UI-12: C5 keeps Julia's actual returned value; a plain number is a valid s
   // pair with the fields swapped) is what should get the shape complaint now.
   for (const repr of ["(Bool[0, 0, 1], 0.5)", "6-element BitVector:\n 0\n 0\n 1"]) {
     const other = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {value_repr:repr}));
-    assert.match(other.runFailure.feedback, /one of the shapes this move needs/i, repr);
+    assert.match(other.runFailure.feedback, /this step needs one number/i, repr);
   }
   const pair = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {value_repr:"(events = Bool[0, 0, 1, 1, 1, 1], frequency = 0.5)"}));
   assert.equal(pair.runFailure.feedback, shared, "a labelled pair with other values gets the shared step only");
@@ -279,14 +283,14 @@ test("UI-15: C6 shows the recheck sentence once, in the closing, not again in th
   const end = source.indexOf("\n    function drawVisual", start);
   assert.ok(start >= 0 && end > start);
   assert.doesNotMatch(source.slice(start, end), /Still open.*recheck/i);
-  assert.equal((source.match(/Still open: the recheck of three jars\./g) || []).length, 1);
+  assert.equal((source.match(/Still open: the recheck\. Only looking at the jars again can settle this\./g) || []).length, 1);
 });
 
 // ---- UI-17 ----
 test("UI-17: the C5 scene offers the Case Board and its Case 5 of 6 location, like C6", () => {
   const html = web("chapter5.html");
   const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
-  assert.match(header, /<nav class="course-location" aria-label="Course location"><a id="case-board-scene" href="course\/index\.html">Case Board<\/a><p>Chapter 5 of 6 · Too good to be true\?<\/p><\/nav>/);
+  assert.match(header, /<nav class="course-location" aria-label="Course location"><a id="case-board-scene" href="course\/index\.html">Case Board<\/a><p>Chapter 5 of 6 · What would plain chance give\?<\/p><\/nav>/);
   assert.ok(html.indexOf('id="case-board-scene"') < html.indexOf('id="scene"'), "visible before and after the scene");
   const source = web("chapter5.js");
   assert.match(source, /sceneBoard:\$\("case-board-scene"\)/);

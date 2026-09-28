@@ -30,6 +30,7 @@ test("C2: `counts` carried from step 2 gets named coaching", () => {
 test("C5: `events` carried from move 1 gets named coaching in move 2", () => {
   const line = chapter5.recoveryLead("event-frequency", {status:"error", message:"UndefVarError: `events` not defined"}, null);
 
-  assert.match(line, /`events`/);
+  assert.match(line, /events is not defined/);
+  assert.doesNotMatch(line, /`/, "plain text shows no literal backticks (r8-rc #4)");
   assert.match(line, /each run starts fresh/i);
 });

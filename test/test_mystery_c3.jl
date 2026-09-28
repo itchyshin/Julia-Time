@@ -77,7 +77,7 @@ end
         @test first_info["activity_id"] === nothing
         @test first_info["simulation_id"] === nothing
         @test first_info["title"] == "Put each tray's two records side by side"
-        @test first_info["question"] == "How do we put each tray's notebook count next to its tally-sheet box?"
+        @test first_info["question"] == "How do we put each tray's notebook count next to its row in Toto's typed copy?"
         @test [input["id"] for input in first_info["inputs"]] == ["tray_counts", "tally_sheet"]
         @test !any(input -> input["id"] == "joined", first_info["inputs"])
         @test input_by_id(first_info, "tray_counts")["columns"] == ["tray_id", "notebook_detected"]
@@ -117,7 +117,7 @@ end
         @test second_info["mode"] == "challenge"
         @test second_info["activity_id"] === nothing
         @test second_info["simulation_id"] === nothing
-        @test second_info["title"] == "Keep the tray where the notebook and the sheet disagree"
+        @test second_info["title"] == "Keep the tray where the notebook and Toto's typed copy disagree"
         @test second_info["question"] == "On which tray do the two counts differ?"
         @test [input["id"] for input in second_info["inputs"]] == ["joined"]
         @test !any(input -> input["id"] in ("tray_counts", "tally_sheet"), second_info["inputs"])
@@ -226,7 +226,7 @@ end
             @test !occursin(r"\bC[1-6]\b", text)
         end
         failed = JuliaTime._mystery_c3_explanation("join-report-log", false)
-        @test startswith(failed["case"], "Nothing found yet")
+        @test isempty(failed["case"])  # round 3: the boilerplate line is gone
     end
 
     # B10 (simulated playtest P03/P27, verified 2026-09-24): the checkers compare values only, so a
@@ -238,8 +238,8 @@ end
         filter_text = JuliaTime._mystery_c3_explanation("filter-disagreement", true)
         practice_text = JuliaTime._mystery_c3_explanation("join-report-log", nothing;
                                                           mode="demonstration")
-        @test startswith(join_text["julia"], "The returned table")
-        @test startswith(filter_text["julia"], "The returned row")
+        @test startswith(join_text["julia"], "Your table is right")
+        @test startswith(filter_text["julia"], "Your row is right")
         @test occursin("leftjoin", join_text["julia"]) && occursin("on=", join_text["julia"])
         # Ravi's playtest: leftjoin passed but the checker only explained leftjoin's syntax, with
         # no reason to prefer it over innerjoin. Add the one-line reason it keeps every tray, even
@@ -248,7 +248,7 @@ end
         @test occursin(".!=", filter_text["julia"])
         claims = r"matched each report row|checked the two count columns|kept the returned record|matched the separate practice rows|now matched safely"
         for text in (join_text["julia"], filter_text["julia"], practice_text["julia"])
-            @test occursin("taught way", lowercase(text))
+            @test occursin("the way this game teaches", lowercase(text))
             @test !occursin(claims, text)
             @test !occursin('—', text)
         end
@@ -257,8 +257,8 @@ end
         # No limit line for a successful join (bible section 5, C3 step 1 "What this shows").
         @test join_text["limit"] == ""
         # The does-not-establish limit lines stay for step 2 and practice.
-        @test occursin("recheck of the jars will tell us more", filter_text["limit"])
-        @test occursin("does not show whether the notebook and the sheet disagree", practice_text["limit"])
+        @test occursin("can we trust the notebook? Plan a fair recheck of its jars", filter_text["limit"])
+        @test occursin("does not show whether the notebook and Toto's typed copy disagree", practice_text["limit"])
     end
 
     @testset "C3 challenge runs protect each active input and echo exact identities" begin
@@ -285,7 +285,7 @@ end
             @test length(joined["rows"]) == 3
             @test joined["result_data"]["kind"] == "table"
             @test !haskey(joined, "evidence")
-            @test occursin("notebook count and its sheet box", lowercase(joined["explanation"]["case"]))
+            @test occursin("notebook count and toto's typed count", lowercase(joined["explanation"]["case"]))
             @test !occursin("t-c", lowercase(joined["explanation"]["case"]))
 
             discrepancy = JuliaTime.handle_message(c3_run_request(
@@ -302,8 +302,10 @@ end
             @test discrepancy["rows"][1]["tray_id"] == "T-C"
             @test haskey(discrepancy, "evidence")
             @test occursin("blank box", lowercase(discrepancy["evidence"]["title"]))
-            @test occursin("claim 1", lowercase(discrepancy["evidence"]["claim"]))
-            @test occursin("recheck of the jars will tell us more", discrepancy["explanation"]["limit"])
+            # Story spine (docs/design/06-story-spine.md, approved 2026-09-27): "Claim 1" is renamed
+            # to the part name, so the case's middle stretch (Chapters 1-3) has a name of its own.
+            @test occursin("part 1", lowercase(discrepancy["evidence"]["claim"]))
+            @test occursin("can we trust the notebook? Plan a fair recheck of its jars", discrepancy["explanation"]["limit"])
 
             # B10: other routes to the same values are accepted; the explanation must not claim
             # that the taught leftjoin or .!= ran.
@@ -312,7 +314,7 @@ end
                 other = JuliaTime.handle_message(c3_run_request(move_id, code;
                     request_id="c3-b10-" * move_id))
                 @test other["pass"] == true
-                @test occursin("taught way", lowercase(other["explanation"]["julia"]))
+                @test occursin("the way this game teaches", lowercase(other["explanation"]["julia"]))
                 @test !occursin(r"matched each report row|checked the two count columns",
                                 other["explanation"]["julia"])
             end

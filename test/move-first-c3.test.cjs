@@ -62,7 +62,7 @@ test("C3: the small hints sit first inside the help panel; the bridge card stays
   // (#bridge-card, see the test above), then the shared help panel with small hints first inside it.
   const editor = html.indexOf('id="code"');
   const jtHelp = html.indexOf('<details class="jt-help">');
-  const hintLadder = html.indexOf('<details class="help">');
+  const hintLadder = html.indexOf('<div class="help hint-ladder">');
   const summaryEnd = html.indexOf('</summary>', jtHelp) + '</summary>'.length;
   const answerReference = html.indexOf('id="answer-before-editor"');
   assert.ok(answerReference > -1 && answerReference < editor, "the reference-answer area stays before the editor");

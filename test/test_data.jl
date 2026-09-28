@@ -1,4 +1,4 @@
-@testset "water fleas" begin
+@testset "water springtails" begin
     df = water_fleas()
 
     @test nrow(df) == 48

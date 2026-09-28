@@ -55,7 +55,7 @@ test("C6 renders a Case file section from these six rows plus the existing reche
   assert.doesNotMatch(source.slice(start, end), FORBIDDEN);
 
   // Keep the closing contract: the bible's plain closing title and the Case Board link.
-  assert.match(source, /Both claims checked/);
+  assert.match(source, /Three parts, one answer/);
   assert.match(source, /Review the Case Board/);
 });
 

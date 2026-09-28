@@ -11,12 +11,12 @@
   const CASE_ID = "missing-fleas-v1";
   const CHAPTER = "C6";
   const MOVE = "compatible-models";
-  const COLUMNS = ["model", "p", "lower", "upper"];
+  const COLUMNS = ["story", "p", "lower", "upper"];
   const FILE_URL_RECOVERY_MESSAGE = "This page was opened directly. Start run.jl, then open http://127.0.0.1:8000 to run Chapter 6.";
   const INFO_DEADLINE_MS = 5000;
   const RUN_DEADLINE_MS = 7000;
   const COPY = {
-    concept: "A story fits when 5 is between its low end and its high end, both ends included. Check each end separately, then keep the rows that pass both. Coming from R? In R you'd reach for dplyr's filter with two conditions; Julia makes two true/false lists and combines them. Julia's .& combines them row by row, the same way R's & does; both languages save && for a single true-or-false answer, not a whole column.",
+    concept: "A story fits when 5 is between its low end and its high end, both ends included. Check each end separately, then keep the rows that pass both. Coming from R? In R you would use dplyr's filter with two conditions; Julia makes two true-or-false lists and combines them. Julia's .& combines them row by row, the same way R's & does; both languages use && only for a single true-or-false answer, not a whole column.",
     shape: "fits_low  = table.lower .<= target\nfits_high = target .<= table.upper\ntable[fits_low .& fits_high, :]",
     // B9 (simulated playtest, P21/P43): name the template placeholders and map them, as in C3.
     shape_note: "table and target are placeholders, not names in this case. In this case, table is stories and target is observed_count. .& keeps a row only when both are true.",
@@ -34,7 +34,20 @@
   // section 3.1: "candidate_models" became "stories"). Keyed on Julia's own UndefVarError, matching
   // C3's oldNameCoaching pattern, so the coaching leads with the actual cause.
   const RENAMED_NAMES = Object.freeze({candidate_models:"stories"});
+  // Night round 1 (2026-09-27, r1-bugs.md bug 2): the sandbox refuses a run that rebinds or edits a
+  // supplied input (src/sandbox.jl protected_bindings and each chapter's guarded code), so the checker
+  // can compare against the untouched case data. That guard stays; this line gives its real reason,
+  // keyed on the sandbox's own text, instead of unrelated advice. It never shows the finished line.
+  function protectedInputCoaching(message) {
+    const found = String(message && message.status === "error" && message.message || "").match(/The supplied (\w+) (binding|records|values) changed/);
+    if (!found) return "";
+    const name = found[1];
+    const how = found[2] === "binding" ? "gives " + name + " a new value (" + name + " = …)" : "changes " + name + ", by giving it a new value or by editing it";
+    return "Your code " + how + ". This step needs " + name + " kept exactly as it was supplied, so the check stopped. Your idea may still be right: leave " + name + " as it is and let the last line return your result, or give the result a new name, such as result = …, and end with result.";
+  }
   function recoveryLead(message) {
+    const guarded = protectedInputCoaching(message);
+    if (guarded) return guarded;
     // Owner playtest (2026-09-26): a practice-only name typed into the case gets a plain pointer to the real inputs.
     const practice = String(message && message.message || "").match(/UndefVarError: `(practice_pass|practice_stays|practice_fails)` not defined/);
     if (practice) return practice[1] + " is a name from the practice example, not this case. In the case, use stories and observed_count.";
@@ -44,21 +57,49 @@
     if (/non-boolean \(BitVector\) used in boolean context/.test(text)) return "Julia needed a single true or false here, which is what && and || expect, but each dotted comparison gives one value per row. Use .& to keep a row only when both checks are true.";
     if (/no method matching isless\([^)]*Vector/.test(text)) return "Julia cannot compare a whole column with one number using a comparison without a dot, such as <=. Put a dot before the comparison, as in .<=, so Julia compares every row.";
     if (/no method matching &\(::BitVector, ::BitVector\)/.test(text)) return "A plain & cannot combine two columns of true-or-false values. Put a dot before it, as in .&, so Julia combines them row by row.";
+    // Night playtest (2026-09-26, claude-eyes.md, aiko.md): a plain & written on one line, before
+    // the two comparisons are split into fits_low/fits_high, is a precedence trap: & binds tighter
+    // than .<=, so Julia tries to combine a number with a whole column first and errors. Checked
+    // live: stories.lower .<= observed_count & stories.upper .>= observed_count raises "no method
+    // matching &(::Int64, ::Vector{Int64})".
+    // Audit 2026-09-27 (design rule 2): this used to print the finished row rule with the case's
+    // own names; it now names the idea with placeholders, not stories/observed_count.
+    if (/no method matching &\(::(?!BitVector)/.test(text)) return "In R, & works row by row. In Julia, as in pandas, a plain & is done before a comparison such as .<=, so Julia tries to combine the wrong values first and fails. Add a dot: .&, and wrap each comparison in brackets, as in (a .<= b) .& (c .<= d).";
+    // Sam playtest (2026-09-26, sam.md): Python's and is not a Julia keyword; it parses as a bare
+    // identifier, so the ParseError points at the trailing comma rather than at and itself. Checked
+    // live: Julia's own message reports "unexpected comma in array expression" for this shape.
+    if (/\band\b/.test(text) && /unexpected comma/i.test(text)) return "Julia has no and: use .& between two true/false lists instead, and wrap each comparison in brackets, as in (a .<= b) .& (c .<= d).";
     return "";
   }
+  // v0.2.5 night (fixer I1): the server's "coaching" line names the mistake it read from the code
+  // (src/mystery_c2.jl .. mystery_c6.jl). It is "" when there is none, and never used on a passing run.
+  function serverCoaching(message) {
+    return message && message.pass !== true && typeof message.coaching === "string" ? message.coaching.trim() : "";
+  }
   function challengeRecovery(message) {
+    // With the server's line, the generic line and the page's own guess are dropped.
+    const coaching = serverCoaching(message);
+    if (coaching) return coaching + (message.status === "error" ? " Change your code, then run again, or open Stuck? Hints below." : " Your draft is still here. Change it and run again, or open Stuck? Hints below.");
     // repair5-5 (2026-09-24 walk-through): name the labelled Required result line and the Help me start
     // control, which the page really shows; no element is labelled as a "cue".
+    // r3 (2026-09-27): that inner fold is gone, so the line names the Stuck? Hints section itself.
     // repair6-4 (2026-09-24 browser check): an error run returned no result, so it gets its own step.
+    // Replay notes (2026-09-27): an error run's shown outcome already says "Your code is still
+    // here" (runOutcomeStatus); this line used to add "Your draft is still here" right after it, so
+    // the same idea appeared twice in one message. The error branch below drops that lead-in.
     const shared = message && message.status === "error"
-      ? "Your draft is still here. Use the Original Julia error below to decide what to change, or open Help me start in Stuck? Hints below, then run again."
-      : "That result did not meet the stated check. Your draft is still here. Compare it with the Required result line near the top of the page, or open Help me start in Stuck? Hints below, then revise it and run again.";
+      ? "Use the Original Julia error below to decide what to change, or open Stuck? Hints below, then run again."
+      : "That result did not meet the stated check. Your draft is still here. Compare it with the Required result line near the top of the page, or open Stuck? Hints below, then revise it and run again.";
     const lead = recoveryLead(message);
     return lead ? `${lead} ${shared}` : shared;
   }
   function id(prefix) { return (prefix || "c6") + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9); }
   function validAttempt(value) { return /^[a-z0-9-]{1,80}$/.test(value || ""); }
   // The door to the ending: only once every Case file row says "What we know so far" (docs/design/03-ending.md).
+  // Round 8 (r8-audit #1): the stories box already says this sentence, so the result's limit
+  // paragraph leaves it out and keeps only the rest of the server's limit line.
+  const BOX_LIMIT = "Fitting is not proof: two stories still fit.";
+  function resultLimitText(limit) { const line = limit == null ? "" : String(limit); return line.startsWith(BOX_LIMIT) ? line.slice(BOX_LIMIT.length).trim() : line; }
   function endingHref(rows, attempt) {
     return completionLine(rows).startsWith("Case closed") ? "course/ending.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : "") : null;
   }
@@ -102,10 +143,10 @@
   }
   function finiteNumber(value) { return typeof value === "number" && Number.isFinite(value); }
   function validCandidateRow(row, n_trials) {
-    return Boolean(row && typeof row.model === "string" && row.model.trim() && finiteNumber(row.p) && row.p >= 0 && row.p <= 1 && Number.isInteger(row.lower) && Number.isInteger(row.upper) && row.lower >= 0 && row.lower <= row.upper && row.upper <= n_trials);
+    return Boolean(row && typeof row.story === "string" && row.story.trim() && finiteNumber(row.p) && row.p >= 0 && row.p <= 1 && Number.isInteger(row.lower) && Number.isInteger(row.upper) && row.lower >= 0 && row.lower <= row.upper && row.upper <= n_trials);
   }
   function sameRow(actual, expected) {
-    return Boolean(actual && expected && actual.model === expected.model && actual.p === expected.p && actual.lower === expected.lower && actual.upper === expected.upper);
+    return Boolean(actual && expected && actual.story === expected.story && actual.p === expected.p && actual.lower === expected.lower && actual.upper === expected.upper);
   }
   function validInfo(message) {
     const input = message && Array.isArray(message.inputs) && message.inputs.length === 1 ? message.inputs[0] : null;
@@ -115,17 +156,17 @@
       Number.isInteger(trials) && trials > 0 &&
       Number.isInteger(message.observed_count) && message.observed_count >= 0 && message.observed_count <= trials &&
       Array.isArray(input.rows) && input.rows.length >= 2 && input.rows.every(row => validCandidateRow(row, trials)) &&
-      new Set(input.rows.map(row => row.model)).size === input.rows.length
+      new Set(input.rows.map(row => row.story)).size === input.rows.length
     );
   }
   function candidateModelCards(metadata) {
     if (!validInfo(metadata)) return [];
-    return metadata.inputs[0].rows.map(row => ({ model: row.model, p: row.p }));
+    return metadata.inputs[0].rows.map(row => ({ story: row.story, p: row.p }));
   }
   // repair6-5 (2026-09-24 browser check): a card shows p separately only when its name does not already.
   function cardProbabilityLabel(card) {
     const label = `p = ${card.p}`;
-    return String(card.model).includes(label) ? "" : label;
+    return String(card.story).includes(label) ? "" : label;
   }
   function applyCaseInfo(state, message) {
     if (!state.infoRequest || !message || message.type !== "case" || !same(message, state.infoRequest) || !validInfo(message)) return state;
@@ -136,9 +177,17 @@
   }
   // `pending` is kept (not nulled) on expiry so a correct result arriving late for this same
   // request is still applied rather than discarded (B1); `isRunPending` makes the run retryable.
+  // Night round 2 (r2-bugs.md finding 1): a server timeout carries its own feedback naming the
+  // cause (the code ran over the time limit; a loop that never ends is the usual cause). Show that
+  // line. The client's own deadline (expireRun) keeps its "took too long" text.
+  const TIMEOUT_FALLBACK = "Julia stopped your code because it ran too long. A loop that never ends is the usual cause.";
+  function serverTimeoutText(message) {
+    const feedback = message && typeof message.feedback === "string" ? message.feedback.trim() : "";
+    return (feedback || TIMEOUT_FALLBACK) + " Change your code, then run again.";
+  }
   function expireRun(state, request_id) {
     if (!state.pending || state.pending.request_id !== request_id) return state;
-    return Object.assign({}, state, { expired: true, statusMessage: null, runFailure: { status: "timeout", message: "This check took too long. Your draft is still here; check it, then run again." } });
+    return Object.assign({}, state, { expired: true, statusMessage: null, runFailure: { status: "timeout", message: "This check took too long. Check your code, then run again." } });
   }
   function isRunPending(state) { return Boolean(state.pending) && !state.expired; }
   function applyRunStatus(state, message) {
@@ -165,7 +214,7 @@
     if (!state.pending || !message || message.type !== "case_result" || !same(message, state.pending)) return state;
     const accepted = message.status === "ok" && message.pass === true && message.progress_eligible === true && validResult(state.metadata, message);
     const runFailure = accepted ? null : message.status === "timeout"
-      ? { status: "timeout", message: "This check took too long. Your draft is still here; check it, then run again." }
+      ? { status: "timeout", message: serverTimeoutText(message) }
       : { status: "rejected", run_status: message.status, message: challengeRecovery(message), original_error: message.status === "error" ? String(message.message || message.feedback || "") : "" };
     return Object.assign({}, state, { pending: null, expired: false, statusMessage: null, result: message, evidence: accepted ? { move_id: MOVE, result_data: message.result_data } : null, runFailure });
   }
@@ -175,18 +224,18 @@
   }
   function enterFileUrlRecovery(state) { return Object.assign({}, disconnect(state), { fileUrlRecovery: true }); }
   function connectionStatusText(state) {
-    return state.fileUrlRecovery ? FILE_URL_RECOVERY_MESSAGE : state.runFailure ? "Your code is ready to revise." : state.metadataFailure ? state.metadataFailure : isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.connection === "idle" ? "Open the story board to load the stories." : state.connection === "connected" ? (state.metadata ? "Lab file ready" : "Loading the story board…") : "Connecting to the lab…";
+    return state.fileUrlRecovery ? FILE_URL_RECOVERY_MESSAGE : state.runFailure ? "Your code is ready to revise." : state.metadataFailure ? state.metadataFailure : isRunPending(state) ? (state.statusMessage || "Checking your Julia result…") : state.connection === "idle" ? "Open the story board to load the stories." : state.connection === "connected" ? (state.metadata ? "Julia is ready" : "Loading the story board…") : "Connecting to the lab…";
   }
   function draftNotice(hasCode, restored) {
-    if (!hasCode) return "This editor starts empty. Write your own Julia result.";
-    return restored ? "Restored your saved draft: it is your earlier typing, not supplied code." : "This is your own unrun draft for this move.";
+    if (!hasCode) return "This editor starts empty. Write your own Julia code.";
+    return restored ? "Restored your saved draft: it is your earlier typing, not supplied code." : "This is your own unrun draft for this step.";
   }
   // UI-03 (2026-09-24 audit): after a run the caption says what Julia did with this code, as C3 and
   // C4 do. It says "unrun draft" again only once the learner edits the code.
   function draftStatus(message) {
     if (!message || message.status === "timeout") return "This code was not accepted; your draft is still here to check and run again.";
     if (message.status === "error") return "Julia could not run this code; your draft is still here to revise and run again.";
-    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "Julia checked this code just now and accepted it; you can change it and run again.";
+    if (message.status === "ok" && message.pass === true && message.progress_eligible === true) return "Julia checked this code just now and accepted it. You can change it and run again.";
     if (message.status === "ok") return "Julia ran this code, but the returned result does not yet meet the stated requirement.";
     return "This code was not accepted; your draft is still here to check and run again.";
   }
@@ -208,34 +257,38 @@
   function learningScaffold(metadata) {
     const observed = metadata.observed_count;
     return {
-      why: "Chapter 5 asked whether the B09 count was surprising under one small story. Here, we compare the story board's usual ranges: which stories could still give the count we actually observed?",
-      observation: `The observed B09 count is ${observed}. In each row, p is that story's chance that one jar shows fleas. The lower and upper values are the usual range of six-jar counts for that story, not every count it could possibly give. A range that includes ${observed} does not make that story true; it only means this observation does not rule the story out.`,
+      why: "Chapter 5 showed that 5 of 6 is not unusual under a plain 50:50 guess. Here we test the report's claim: which stories could give the count we actually observed?",
+      observation: `The observed B09 count is ${observed}. In each row, p is that story's chance that one jar shows springtails. The lower and upper values are the usual range of six-jar counts for that story, not every count it could possibly give. A range that includes ${observed} does not make that story true; it only means this observation does not rule the story out.`,
       practice_stays: "Different practice story: its displayed range is 1 to 4 and its practice observation is 3. 1 ≤ 3 ≤ 4 is true, so that practice row stays.",
       practice_fails: "Different practice story: its displayed range is 0 to 2 and its practice observation is 3. 0 ≤ 3 ≤ 2 is false, so that practice row is left out.",
-      bridge: "That was practice data. Now make the same yes/no check on the named stories table above. If the symbols are new, open Help me start in Stuck? Hints: it introduces .lower and .upper, .<=, .&, and [rows, :] before the full answer."
+      bridge: "That was practice data. Now make the same true-or-false check on the named stories table above. If the symbols are new, open Stuck? Hints: it introduces .lower and .upper, .<=, .&, and [rows, :] before the full answer."
     };
   }
 
-  function caseStatus(metadata) {
+  // Night round 1 (r1-audit.md): every chapter is playable from the Case Board, so "Part 1 done" is
+  // said only once Chapter 3 is solved in this attempt. Otherwise the line says which chapter
+  // settles it, the order-free wording of story bible v2.1 change 4.
+  function caseStatus(metadata, part1Done) {
     if (!validInfo(metadata)) return null;
     return {
-      established:`So far: the notebook and the tally sheet disagree for tray T-C: the notebook has 1, the tally sheet's box was left blank. The observed B09 count is ${metadata.observed_count}.`,
-      unknown:"Still unknown: fitting is not proof, two stories still fit.",
-      why_now:"Why this move now: the report says vanishing. See which stories could give 5 of 6."
+      established:`${part1Done ? "Part 1 done: the report's 0 was a blank box, not an empty tray." : "Chapter 3 settles Part 1: whether the report's 0 is real."} Part 2 done for today: under a plain 50:50 guess, ${metadata.observed_count} of ${metadata.n_trials} is not unusual, and a fair recheck is planned. Part 3 now: does the notebook's ${metadata.observed_count} of ${metadata.n_trials} look like springtails dying out?`,
+      unknown:"Still unknown: which stories could give 5. Fitting will not prove one; it can only rule some out.",
+      why_now:"Why now: the report says dying out. See which stories could give 5 of 6."
     };
   }
 
   // docs/design/05-story-bible.md (v2, approved), "In-page case summary after C6": the plain-voice
-  // replacement for this block, consistent with the ending finale (both claims checked, the fleas
+  // replacement for this block, consistent with the ending finale (both claims checked, the springtails
   // never shown missing, the recheck still open).
   function caseClosure(metadata, resultData) {
     if (!validInfo(metadata) || !validResult(metadata, {result_data:resultData})) return null;
     return {
-      title:"Both claims checked",
+      title:"Three parts, one answer",
       findings:[
-        "Claim 1, “T-C has no fleas”: the notebook shows fleas in T-C. The 0 was a blank box on the tally sheet.",
-        "Claim 2, “the fleas are vanishing”: 5 of 6 is not suspicious, and the vanishing story almost never gives it.",
-        "Still open: the recheck of three jars."
+        "Part 1 · Check the report: the 0 for T-C was a blank box on the tally sheet, not an empty tray.",
+        "Part 2 · Check the notebook: under a plain 50:50 guess, 5 of 6 is not unusual, and a fair recheck of three jars is planned.",
+        "Part 3 · Test the claim: dying out almost never gives 5 of 6.",
+        "Still open: the recheck. Only looking at the jars again can settle this."
       ]
     };
   }
@@ -248,7 +301,7 @@
   // below, so this line points there instead of repeating it, and only when Chapter 6 is saved.
   function boardUpdateLine(rows) {
     const row = Array.isArray(rows) ? rows.find(item => item && item.chapter === "C6") : null;
-    return row && row.label === "What we know so far" ? "Case Board updated: your Chapter 6 finding is now the last line of the Case file below." : "";
+    return row && row.label === "What we know so far" ? "Case Board updated: your Chapter 6 finding is now the last line of the case file below." : "";
   }
 
   // The first line of the ending: the whole case is solved only when all six Case file rows say "What we know so far".
@@ -262,8 +315,8 @@
   }
   function rangePracticeStep(stage) {
     return [
-      { label:"Check the lower bounds", result:"Both practice rows pass the lower-bound check: 1 ≤ 3 and 0 ≤ 3 are true.", next:"Now check the upper bounds →" },
-      { label:"Check the upper bounds", result:"Only the first practice row passes the upper-bound check: 3 ≤ 4 is true, but 3 ≤ 2 is false.", next:"Combine both checks →" },
+      { label:"Check the low ends", result:"Both practice rows pass the low-end check: 1 ≤ 3 and 0 ≤ 3 are true.", next:"Now check the high ends →" },
+      { label:"Check the high ends", result:"Only the first practice row passes the high-end check: 3 ≤ 4 is true, but 3 ≤ 2 is false.", next:"Combine both checks →" },
       { label:"Combine both checks", result:"Both checks must be true. The 1–4 practice range stays; the 0–2 range is left out.", next:null }
     ][Math.max(0, Math.min(2, Number.isInteger(stage) ? stage : 0))];
   }
@@ -271,11 +324,15 @@
   // UI-11 (2026-09-24 audit): an opened hint stays on screen when the next one opens, as in C1-C4.
   // The full answer itself stays in its reference panel above the editor, never in this list.
   function visibleHints(hint) {
-    const stages = [[COPY.concept], [`Code shape: ${COPY.shape}`, COPY.shape_note], [`Build the row rule: ${COPY.range_rule}`], [`Select rows: ${COPY.selection}`], ["Complete runnable answer is shown in the code panel above your editor."]];
+    // r3 (2026-09-27): one ladder in every chapter (idea, code shape, whole line). The row-rule and
+    // row-selection lines belong to the code-shape level and open with it.
+    const stages = [[COPY.concept], [`Code shape: ${COPY.shape}`, COPY.shape_note, `Build the row rule: ${COPY.range_rule}`, `Select rows: ${COPY.selection}`], ["The complete runnable answer is shown in the code panel above your editor."]];
     const count = Math.max(0, Math.min(stages.length, Number.isInteger(hint) ? hint : 0));
     return count === 0 ? ["Open a small hint only if you need it."] : stages.slice(0, count).flat();
   }
 
+  const HINT_LEVELS = 3;
+  function hintButtonLabel(hint) { return hint >= HINT_LEVELS ? "All help shown" : ["Show the idea", "Show the code shape", "Show the whole line"][Math.max(0, hint)]; }
   function preEditorBridgeVisible(hintLevel) { return Number.isInteger(hintLevel) && hintLevel >= 2; }
   // repair5-1 (2026-09-24 walk-through): the lead promises two checks, so both are listed, in the
   // row-rule hint's placeholders. Only the lower one is also shown with case names (2026-09-09).
@@ -293,7 +350,7 @@
 
   function init() {
     const $ = id => document.getElementById(id);
-    const el = { syntax: $("syntax"), showFullAnswer: $("show-full-answer"), scene: $("scene"), work: $("work"), start: $("start"), back: $("back"), board: $("case-board"), sceneBoard: $("case-board-scene"), sceneTitle: $("scene-title"), title: $("move-title"), reconnect: $("reconnect"), status: $("status"), observed: $("observed"), modelCards: $("candidate-model-cards"), data: $("data"), scaffold: $("learning-scaffold"), caseStatus: $("case-status"), preEditorBridge: $("pre-editor-bridge"), answerReference: $("answer-before-editor"), code: $("code"), draft: $("draft-note"), run: $("run"), result: $("result"), visual: $("visual"), hint: $("hint"), nextHint: $("next-hint"), answer: $("answer"), bridgeCard: $("bridge-card") };
+    const el = { sceneEnding: $("scene-ending"), solvedEnding: $("solved-ending"), syntax: $("syntax"), showFullAnswer: $("show-full-answer"), scene: $("scene"), work: $("work"), start: $("start"), back: $("back"), board: $("case-board"), sceneBoard: $("case-board-scene"), sceneTitle: $("scene-title"), title: $("move-title"), reconnect: $("reconnect"), status: $("status"), observed: $("observed"), modelCards: $("candidate-model-cards"), data: $("data"), scaffold: $("learning-scaffold"), caseStatus: $("case-status"), preEditorBridge: $("pre-editor-bridge"), answerReference: $("answer-before-editor"), code: $("code"), draft: $("draft-note"), run: $("run"), result: $("result"), visual: $("visual"), hint: $("hint"), nextHint: $("next-hint"), bridgeCard: $("bridge-card") };
     const bridges = typeof window !== "undefined" ? window.JuliaTimeBridges : null;
     let submittedCode = "";
     if (!el.work) return;
@@ -327,7 +384,7 @@
       el.modelCards.replaceChildren();
       if (!state.metadata) {
         const item = document.createElement("li");
-        item.textContent = "The story board will appear when the lab file loads.";
+        item.textContent = "The story board will appear when Julia loads.";
         el.modelCards.append(item);
         return;
       }
@@ -336,7 +393,7 @@
       // needs to name the model (plus its p when the name does not already state it), one line.
       candidateModelCards(state.metadata).forEach(card => {
         const item = document.createElement("li"), name = document.createElement("strong"), label = cardProbabilityLabel(card);
-        name.textContent = card.model;
+        name.textContent = card.story;
         item.append(name);
         if (label) { const probability = document.createElement("code"); probability.textContent = label; item.append(" · ", probability); }
         el.modelCards.append(item);
@@ -350,7 +407,7 @@
       }
       const label = document.createElement("p"), name = document.createElement("code");
       label.className = "data-label"; name.textContent = state.metadata.inputs[0].id; label.append("Julia name: ", name);
-      const caption = document.createElement("p"); caption.textContent = "Simulated data made for this game: no real jars, no real fleas.";
+      const caption = document.createElement("p"); caption.textContent = "Simulated data made for this game: no real jars, no real springtails.";
       const table = document.createElement("table"), head = document.createElement("thead"), body = document.createElement("tbody"), header = document.createElement("tr");
       state.metadata.inputs[0].columns.forEach(column => { const th = document.createElement("th"); th.textContent = column; header.append(th); });
       head.append(header);
@@ -384,20 +441,21 @@
     function drawCaseStatus() {
       if (!el.caseStatus) return;
       el.caseStatus.replaceChildren();
-      const status = caseStatus(state.metadata);
+      const status = caseStatus(state.metadata, acceptedMoveKeys().includes("C3/filter-disagreement"));
       if (!status) return;
-      const eyebrow = document.createElement("p"), title = document.createElement("h2"), established = document.createElement("p");
+      const eyebrow = document.createElement("p"), established = document.createElement("p");
       const details = document.createElement("details"), summary = document.createElement("summary"), unknown = document.createElement("p"), why = document.createElement("p");
       eyebrow.className = "eyebrow"; eyebrow.textContent = "Case status before you write";
-      title.textContent = "Why this move now";
       established.textContent = status.established;
       // The limit stays visible: every step says what it does not establish (spec; 2026-09-25 review).
-      // Only the "why now" reasoning sits one click away.
-      summary.textContent = "Why this move now";
+      // Only the "why now" reasoning sits one click away. Repair (2026-09-27 playtest): the outer
+      // heading used to repeat this same summary text word for word, reading as an empty duplicate
+      // heading (docs/dev-log/playtest/2026-09-26-night/claude-eyes.md, Chapter 6). One label only.
+      summary.textContent = "Why now";
       unknown.textContent = status.unknown;
       why.textContent = status.why_now;
       details.append(summary, why);
-      el.caseStatus.append(eyebrow, title, established, unknown, details);
+      el.caseStatus.append(eyebrow, established, unknown, details);
     }
     function acceptedMoveKeys() {
       try { return course && course.acceptedMoves ? course.acceptedMoves(course.readCourseState(storage, attempt)).map(move => move.key) : []; } catch (_) { return []; }
@@ -426,16 +484,16 @@
       const rows = caseFileRows(acceptedMoveKeys());
       const section = document.createElement("section"), title = document.createElement("h2"), intro = document.createElement("p"), list = document.createElement("ul"), limit = document.createElement("p"), claim = document.createElement("p"), closing = document.createElement("section"), closingTitle = document.createElement("h3"), closingFindings = document.createElement("ul"), review = document.createElement("a"), speed = document.createElement("a"), boardUpdate = document.createElement("p");
       title.textContent = "Stories that fit 5 of 6"; intro.textContent = "Your Julia result kept these rows because their usual range includes the notebook\u2019s 5:";
-      state.evidence.result_data.rows.forEach(row => { const item = document.createElement("li"); item.textContent = `${row.model}: ${row.lower} ≤ ${state.metadata.observed_count} ≤ ${row.upper}`; list.append(item); });
+      state.evidence.result_data.rows.forEach(row => { const item = document.createElement("li"); item.textContent = `${row.story}: ${row.lower} ≤ ${state.metadata.observed_count} ≤ ${row.upper}`; list.append(item); });
       limit.className = "limit"; limit.textContent = "Fitting is not proof: two stories still fit.";
-      claim.className = "claim-stamp"; claim.textContent = "Claim 2, “the fleas are vanishing”: not supported.";
+      claim.className = "claim-stamp"; claim.textContent = "Part 3 done: “dying out” was never shown.";
       closingTitle.textContent = closure.title;
       const completion = document.createElement("p"); completion.className = "case-completion" + (completionLine(rows).startsWith("Case closed") ? " case-completion--solved" : ""); completion.textContent = completionLine(rows);
       closure.findings.forEach(finding => { const item = document.createElement("li"); item.textContent = finding; closingFindings.append(item); });
-      review.href = boardUrl(location.search); review.textContent = "Review the Case Board →";
-      speed.href = "course/speed-lab.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); speed.textContent = "Optional: open the comparison laboratory →";
+      review.href = boardUrl(location.search); review.className = "quiet finale-link"; review.textContent = "Review the Case Board →";
+      speed.href = "course/speed-lab.html" + (validAttempt(attempt) ? "?attempt=" + encodeURIComponent(attempt) : ""); speed.className = "quiet finale-link"; speed.textContent = "Optional: open the speed lab →";
       boardUpdate.className = "board-update"; boardUpdate.textContent = boardUpdateLine(rows);
-      closing.append(completion, closingTitle, closingFindings, review, document.createTextNode(" "), speed, boardUpdate); section.append(title, intro, list, limit, claim, closing);
+      /* r5 (2026-09-27): the two finale links are separate button-sized links on a wrapping row, not one run-together line. */ const links = document.createElement("div"); links.className = "controls finale-links"; links.append(review, speed); closing.append(completion, closingTitle, closingFindings, links, boardUpdate); section.append(title, intro, list, limit, claim, closing);
       const endingUrl = endingHref(rows, attempt);
       if (endingUrl) { const ending = document.createElement("a"); ending.className = "ending-link"; ending.href = endingUrl; ending.textContent = "See how the case ends →"; completion.after(ending); }
       if (rows.length) section.append(buildCaseFileSection(rows));
@@ -457,20 +515,27 @@
       }
       if (el.draft) el.draft.textContent = draftCaption();
       el.status.textContent = connectionStatusText(state);
-      el.run.disabled = state.connection !== "connected" || !state.metadata || isRunPending(state);
+      holdRun(el.run, state.connection !== "connected" || !state.metadata, isRunPending(state));
       el.reconnect.hidden = !shouldShowReconnect(state);
       // short-scroll (2026-09-25): the rule (lower <= observed_count <= upper) is already the
       // required-result line just above; this only needs to name the observed count.
-      el.observed.textContent = state.metadata ? `Observed B09 count: ${state.metadata.observed_count}.` : state.metadataFailure ? "The story board is unavailable; your saved draft is safe." : "The observed B09 count will appear when the lab file loads.";
+      el.observed.textContent = state.metadata ? `Observed B09 count: ${state.metadata.observed_count}.` : state.metadataFailure ? "The story board is unavailable; your saved draft is safe." : "The observed B09 count will appear when Julia loads.";
       if (el.answerReference) {
-        if (hint >= 5) { const label = document.createElement("p"), code = document.createElement("pre"); label.textContent = "Reference code answer: runnable Julia. Run this code in your editor to see Julia’s actual returned value below Run. It does not enter your editor or count as a saved answer."; code.className = "complete-answer-code"; code.textContent = COPY.solution; el.answerReference.replaceChildren(label, code); el.answerReference.hidden = false; }
+        if (hint >= HINT_LEVELS) { const label = document.createElement("p"), code = document.createElement("pre"); label.textContent = "Reference code answer: type or paste it into your editor and press Run this step to see what Julia returns. It does not count as a saved answer until Julia checks it."; code.className = "complete-answer-code"; code.textContent = COPY.solution; el.answerReference.replaceChildren(label, code); el.answerReference.hidden = false; }
         else { el.answerReference.replaceChildren(); el.answerReference.hidden = true; }
       }
       renderHints(visibleHints(hint));
-      el.nextHint.textContent = hint >= 5 ? "All shown" : hint === 0 ? "Show the idea" : hint === 1 ? "Show the code shape" : hint === 2 ? "Show the row rule" : hint === 3 ? "Show row selection" : "Show the full answer";
-      el.nextHint.disabled = hint >= 5;
+      el.nextHint.textContent = hintButtonLabel(hint);
+      el.nextHint.disabled = hint >= HINT_LEVELS;
+      if (el.showFullAnswer) el.showFullAnswer.hidden = hint >= HINT_LEVELS;
       if (bridges) bridges.renderCard(el.bridgeCard, "C6/"+MOVE, state.evidence ? submittedCode : "");
       drawModelCards(); drawTable(); drawScaffold(); drawCaseStatus(); drawVisual();
+      // Round 6 (r6-rc #5) and round 7 (r7-bugs #2): once the case can close, the ending stays
+      // beside Run, on a first solve and on return. The closing block below keeps a second link.
+      const endingUrl = endingHref(caseFileRows(acceptedMoveKeys()), attempt);
+      if (el.solvedEnding) { el.solvedEnding.hidden = !endingUrl; if (endingUrl) el.solvedEnding.href = endingUrl; }
+      // Round 8 (r8-rc #3): a solved chapter also offers the ending on its story scene.
+      if (el.sceneEnding) { el.sceneEnding.hidden = !endingUrl; if (endingUrl) el.sceneEnding.href = endingUrl; }
     }
     function persist() { restoredDraft = false; try { if (course && course.writeChallengeDraft) course.writeChallengeDraft(storage, attempt, CHAPTER, MOVE, el.code.value); } catch (_) {} }
     function record(message) {
@@ -480,7 +545,7 @@
     function showResult(message) {
       el.result.replaceChildren(); const outcome = document.createElement("p"); outcome.className = "run-outcome"; outcome.textContent = runOutcomeStatus(message, saveOk); el.result.append(outcome); const p = document.createElement("p"); p.textContent = text(message.message || message.feedback || "Julia returned a result."); el.result.append(p);
       if (message.original_error) { const details = document.createElement("details"), summary = document.createElement("summary"), original = document.createElement("pre"); summary.textContent = "Original Julia error"; original.textContent = text(message.original_error); details.append(summary, original); el.result.append(details); }
-      if (message.explanation) { const explanation = document.createElement("p"); explanation.textContent = `Julia: ${text(message.explanation.julia)} Case: ${text(message.explanation.case)} Limit: ${text(message.explanation.limit)}`; el.result.append(explanation); }
+      if (message.explanation) { const accepted = message.status === "ok" && message.pass === true; /* Round 8 (r8-audit #1): one paragraph per line, no labels, as in C1-C4; the stories box keeps the first limit sentence. */ (accepted ? [message.explanation.julia, message.explanation.case, resultLimitText(message.explanation.limit)] : [message.explanation.julia]).map(text).filter(Boolean).forEach(line => { const item = document.createElement("p"); item.textContent = line; el.result.append(item); }); }
       if (message.status === "ok" && message.result_data && Array.isArray(message.result_data.columns) && Array.isArray(message.result_data.rows)) {
         const heading = document.createElement("h3"), table = document.createElement("table"), head = document.createElement("thead"), body = document.createElement("tbody"), header = document.createElement("tr");
         heading.textContent = "Julia returned this table";
@@ -513,20 +578,25 @@
       socket.onclose = () => { clearInfoTimer(); clearRunTimer(); state = disconnect(state); render(); if (plan.retry && !timer) timer = setTimeout(() => { timer = null; connect(); }, 1500); };
     }
     function focusElement(element) { if (element) element.focus(); }
+    // r5 (2026-09-27): while Julia runs, Run stays focusable and reads as busy (aria-disabled), so keyboard focus is not dropped to the page.
+    function holdRun(button, blocked, busy) { if (!button) return; button.disabled = blocked; if (busy && !blocked) button.setAttribute("aria-disabled", "true"); else button.removeAttribute("aria-disabled"); }
+    // r5 (2026-09-27): on first load the skip link's target sits in the hidden work area; open it as the start button does.
+    const skip = document.querySelector("a.skip"); if (skip) skip.addEventListener("click", event => { if (!el.work.hidden) return; event.preventDefault(); el.start.click(); });
     el.start.addEventListener("click", () => { el.scene.hidden = true; el.work.hidden = false; connect(); focusElement(el.title); });
     el.back.addEventListener("click", () => { clearRunTimer(); el.work.hidden = true; el.scene.hidden = false; focusElement(el.sceneTitle); });
     el.reconnect.addEventListener("click", connect);
     el.code.addEventListener("input", () => { clearRunTimer(); lastRun = null; persist(); if (el.draft) el.draft.textContent = draftCaption(); });
-    el.run.addEventListener("click", () => { persist(); submittedCode = el.code.value; state = beginRun(state, id("c6-run")); if (state.pending) { const requestId = state.pending.request_id; el.result.replaceChildren(); el.visual.replaceChildren(); send(runMessage(el.code.value, requestId)); armRunDeadline(requestId); render(); } });
+    el.run.addEventListener("click", () => { if (isRunPending(state)) return; persist(); submittedCode = el.code.value; state = beginRun(state, id("c6-run")); if (state.pending) { const requestId = state.pending.request_id; el.result.replaceChildren(); el.visual.replaceChildren(); send(runMessage(el.code.value, requestId)); armRunDeadline(requestId); render(); } });
     el.code.addEventListener("keydown", event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); el.run.click(); } });
-    el.nextHint.addEventListener("click", () => { hint = Math.min(5, hint + 1); render(); });
+    // r4 (2026-09-27): the ladder button (now disabled) or the full-answer button (now hidden) had focus, so focus moves to the answer.
+    function focusShown(target) { if (!target || target.hidden) return; target.tabIndex = -1; target.focus({preventScroll:true}); target.scrollIntoView({block:"nearest"}); }
+    el.nextHint.addEventListener("click", () => { hint = Math.min(HINT_LEVELS, hint + 1); render(); if (hint >= HINT_LEVELS) focusShown(el.answerReference); });
     // Owner playtest (2026-09-26): the full answer is one visible click away, as in Chapters 2-4; it reuses the
-    // hint ladder's own reference display (shown at hint 5) and never enters the editor.
-    if (el.showFullAnswer) el.showFullAnswer.addEventListener("click", () => { hint = 5; render(); if (el.answerReference) el.answerReference.scrollIntoView({block:"nearest"}); });
-    el.answer.addEventListener("click", () => { hint = 5; render(); });
+    // hint ladder's own reference display (shown at the last hint level) and never enters the editor.
+    if (el.showFullAnswer) el.showFullAnswer.addEventListener("click", () => { hint = HINT_LEVELS; render(); focusShown(el.answerReference); });
     window.addEventListener("pagehide", () => { clearInfoTimer(); clearRunTimer(); if (socket) socket.close(); });
     render();
   }
 
-  return { CASE_ID, CHAPTER, MOVE, COPY, completionLine, endingHref, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, initialEditorText, challengeRecovery, beginInfo, failCaseInfo, expireInfo, candidateModelCards, applyCaseInfo, beginRun, expireRun, isRunPending, applyRunStatus, applyCaseResult, disconnect, connectionPlan, enterFileUrlRecovery, connectionStatusText, draftNotice, draftStatus, runOutcomeStatus, shouldShowReconnect, infoMessage, runMessage, boardUrl, learningScaffold, caseStatus, caseClosure, cardProbabilityLabel, caseFileRows, boardUpdateLine, rangePracticeStep, visibleHints, preEditorBridge, preEditorBridgeVisible, init };
+  return { resultLimitText, CASE_ID, CHAPTER, MOVE, COPY, HINT_LEVELS, hintButtonLabel, completionLine, endingHref, INFO_DEADLINE_MS, RUN_DEADLINE_MS, createState, initialEditorText, challengeRecovery, beginInfo, failCaseInfo, expireInfo, candidateModelCards, applyCaseInfo, beginRun, expireRun, isRunPending, applyRunStatus, applyCaseResult, disconnect, connectionPlan, enterFileUrlRecovery, connectionStatusText, draftNotice, draftStatus, runOutcomeStatus, shouldShowReconnect, infoMessage, runMessage, boardUrl, learningScaffold, caseStatus, caseClosure, cardProbabilityLabel, caseFileRows, boardUpdateLine, rangePracticeStep, visibleHints, preEditorBridge, preEditorBridgeVisible, init };
 });

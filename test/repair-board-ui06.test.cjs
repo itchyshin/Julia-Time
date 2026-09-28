@@ -61,7 +61,7 @@ test("a finished course is reviewed, not continued, after Chapter 6 saves its ow
     playWholeCourse(storage, attempt);
     const model = client.dashboardModel(client.loadCourseState(storage, attempt));
 
-    assert.match(model.caseThread.whyNext, /^Both claims are checked\./);
+    assert.match(model.caseThread.whyNext, /^All three parts are done\./); // three parts, 2026-09-27
     assert.doesNotMatch(model.continue.label, /^Continue/);
     assert.equal(model.continue.label, "Review Chapter 6: keep the stories that fit");
   }

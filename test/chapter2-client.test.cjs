@@ -19,7 +19,7 @@ test("C2 exposes one named Case Board route and a plain-language location", () =
   assert.equal(client.caseBoardUrl("?attempt=field-7"), "course/index.html?attempt=field-7");
   assert.equal(client.caseBoardUrl("?attempt=../../bad"), "course/index.html");
   assert.equal(client.caseLocation("group"), "Chapter 2 of 6 · Put each tray’s jars together");
-  assert.equal(client.caseLocation("counts"), "Chapter 2 of 6 · Count jars and jars with fleas");
+  assert.equal(client.caseLocation("counts"), "Chapter 2 of 6 · Count jars and jars with springtails");
   assert.equal(client.caseLocation("rates"), "Chapter 2 of 6 · Work out each tray’s share");
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
   assert.match(html,/id="case-board"/);
@@ -115,8 +115,8 @@ test("C2 offers a closed worked groupby example on separate data inside the opti
 
 test("C2 separates a plain build plan from real named inputs and runnable answers", () => {
   assert.equal(typeof client.lessonCopy,"function");
-  assert.match(client.lessonCopy("group").teaching, /compare like with like/i);
-  assert.match(client.lessonCopy("counts").teaching,/how many jars, and how many had fleas/i);
+  assert.match(client.lessonCopy("group").teaching, /compare trays fairly/i);
+  assert.match(client.lessonCopy("counts").teaching,/how many jars, and how many had springtails/i);
   assert.match(client.lessonCopy("rates").teaching,/compare trays of any size/i);
   assert.doesNotMatch(client.lessonCopy("rates").shape,/\b(?:group_column|count_rows|boolean_column)\b/);
   const html = require("node:fs").readFileSync(require("node:path").join(__dirname,"../web/chapter2.html"),"utf8");
@@ -128,7 +128,11 @@ test("C2 separates a plain build plan from real named inputs and runnable answer
 
 test("C2 states the investigative reason for each coding move without supplying case code", () => {
   assert.equal(typeof client.casePurpose, "function");
-  assert.match(client.casePurpose("group"), /compare like with like/i);
+  // Night playtest 2026-09-26, item 5: this used to repeat the teaching line word for word
+  // ("Put jars from the same tray together, so we compare like with like."); it now says a
+  // different, case-specific thing.
+  assert.match(client.casePurpose("group"), /every tray/i);
+  assert.notEqual(client.casePurpose("group"), client.lessonCopy("group").teaching);
   assert.match(client.casePurpose("counts"), /T-C has one/i);
   assert.match(client.casePurpose("rates"), /small count/i);
   assert.doesNotMatch(client.casePurpose("rates"), /summary\.detected_n|jars\[/);
@@ -156,7 +160,8 @@ test("C2 gives its compound summary moves an optional named-code rehearsal", () 
   assert.ok(scaffold > -1 && scaffold > editor);
   const jtHelp = html.indexOf('class="jt-help"');
   assert.ok(jtHelp > -1 && jtHelp < scaffold, "the composition scaffold lives inside the jt-help details");
-  assert.match(html, /practice only[\s\S]*does not run Julia[\s\S]*write into your editor/i);
+  // r3 (2026-09-27): the pieces are the whole answer, so the fold says so.
+  assert.match(html, /the full answer in pieces[\s\S]*does not run Julia[\s\S]*write into your editor/i);
 });
 
 test("saved summaries reject empty duplicate impossible and inconsistent rows", () => {

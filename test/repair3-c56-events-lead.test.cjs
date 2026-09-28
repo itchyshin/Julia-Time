@@ -39,7 +39,7 @@ function rejected(move, value_repr, feedback) {
 const NO_ANSWER = /sim_counts\s*\.>=|observed_count|sum\(events\)|length\(events\)/;
 
 // Measured: each of these came back with status ok, pass false and server feedback
-// "The events field needs one Boolean value for every simulated trial."
+// "The events field needs one true-or-false value for every round."
 const EVENTS_NOT_A_MASK = [
   "(events = 113, frequency = 0.113)",
   "(events = true, frequency = 0.113)",
@@ -50,14 +50,16 @@ const EVENTS_NOT_A_MASK = [
 test("R1: an events field that is not a true-or-false vector gets a lead keyed on the returned value", () => {
   const shared = c5.challengeRecovery("event-frequency");
   for (const repr of EVENTS_NOT_A_MASK) {
-    const failure = rejected("event-frequency", repr, "The events field needs one Boolean value for every simulated trial.");
+    const failure = rejected("event-frequency", repr, "The events field needs one true-or-false value for every round.");
     assert.notEqual(failure.feedback, shared, repr);
     assert.match(failure.feedback, /events/, repr);
     assert.match(failure.feedback, /true-or-false/, repr);
-    assert.match(failure.feedback, /every simulation/, repr);
+    assert.match(failure.feedback, /every round/, repr);
     assert.match(failure.feedback, /not a count/i, repr);
     assert.match(failure.feedback, /Step 1/, repr);
-    assert.ok(failure.feedback.endsWith(shared), `${repr}: the lead sits in front of the unchanged shared step`);
+    // Round 7 (r7-r-struggling #8): a specific lead drops the fixed "did not meet the stated check".
+    assert.ok(failure.feedback.endsWith(" Your draft is still here. Change it and run again, or open Stuck? Hints below."), `${repr}: the lead ends as a coaching line does`);
+    assert.doesNotMatch(failure.feedback, /did not meet the stated check/, repr);
     assert.doesNotMatch(failure.feedback, NO_ANSWER, `${repr}: no answer leak`);
     assert.doesNotMatch(failure.feedback, EM_DASH, repr);
     assert.equal(failure.value_repr, repr, "Julia's actual returned value still reaches the page verbatim");
@@ -86,7 +88,10 @@ test("R1: the lead stays on Move 2, needs a returned pair, and never forwards th
   // so this specific error now gets its own named coaching (the fresh-start beginner trap) instead
   // of falling through to the shared step alone.
   const error = c5.applyCaseResult(c5Pending("event-frequency"), c5Result("event-frequency", {status:"error", message:"UndefVarError: `events` not defined", value_repr:""}));
-  assert.match(error.runFailure.feedback, /`events` was made in step 1/);
+  // Audit 2026-09-27 (design rule 2): this lead used to spell out the finished step-2 code line;
+  // it now says only what is missing, in words, and must not leak it either.
+  assert.match(error.runFailure.feedback, /Nothing from Step 1 is kept between runs, so events is not defined here/);
+  assert.doesNotMatch(error.runFailure.feedback, NO_ANSWER, "the fresh-start coaching no longer leaks the step 2 code");
   assert.ok(error.runFailure.feedback.endsWith(c5.challengeRecovery("event-frequency", {status:"error"})));
 
   // Other server messages print the answer. The page must not pass any of them through.

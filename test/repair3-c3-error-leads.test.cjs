@@ -20,7 +20,7 @@ const SHARED_COLUMN_NOT_FOUND = {status:"error", message:"Something went wrong r
 
 // Repair 4 (review of repair 3): a name-level line is followed by a short neutral line, not by the
 // move's dot/comma checklist, which names a mistake the learner did not make.
-const NEXT = "Your draft is still here; change that line and run again.";
+const NEXT = "Change that line and run again.";
 function leadOf(move, message) {
   const recovery = client.recoveryCopy(move);
   const text = client.errorRecovery(move, message);

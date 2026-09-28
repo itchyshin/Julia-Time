@@ -26,7 +26,7 @@ test("a plain-number result shows exactly the number, never a fabricated named t
 test("a named-tuple result still shows the named tuple, with a thousands separator", () => {
   const data = {kind: "event-frequency", length: 1000, matching: 113, trials: 1000, frequency: 0.113, preview: [true, false, true]};
   const text = c5.juliaReturnedText(data);
-  assert.match(text, /^\(events = Bool\[true, false, true, …\], frequency = 0\.113\)/);
+  assert.match(text, /^\(events = Bool\[1, 0, 1, …\], frequency = 0\.113\)/);
   assert.match(text, /113 matching rounds of 1,000 rounds/);
 });
 
@@ -42,4 +42,12 @@ test("splitJuliaReturned separates what Julia returned from the game's own count
 
 test("splitJuliaReturned has no note when Julia's own text carries no second line", () => {
   assert.deepEqual(c5.splitJuliaReturned("0.113"), {returned:"0.113", note:null});
+});
+
+test("C5 shows Julia's own display for a fraction answer, not a converted decimal (night round 4)", () => {
+  const data = {kind:"frequency-number", frequency:0.113, returned:"113//1000", matching:113, trials:1000};
+  const {returned} = c5.splitJuliaReturned(c5.juliaReturnedText(data));
+  assert.equal(returned, "113//1000");
+  const plain = {kind:"frequency-number", frequency:0.113, matching:113, trials:1000};
+  assert.equal(c5.splitJuliaReturned(c5.juliaReturnedText(plain)).returned, "0.113");
 });

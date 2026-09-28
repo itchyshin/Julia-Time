@@ -23,7 +23,9 @@ test("C3 expires only its current case run and keeps prior evidence", () => {
   assert.equal(client.isRunPending(recovered), false);
   assert.deepEqual(recovered.evidence, {move_id:"join-report-log"});
   assert.equal(recovered.result.status, "timeout");
-  assert.match(recovered.result.message, /draft is still here/i);
+  // The outcome line above the result says "Your code is still here" once (still-here-once.test.cjs).
+  assert.match(recovered.result.message, /Check your code, then run again/);
+  assert.match(client.runOutcomeStatus(recovered.result), /code is still here/i);
   assert.equal(client.RUN_DEADLINE_MS, 7000);
 });
 

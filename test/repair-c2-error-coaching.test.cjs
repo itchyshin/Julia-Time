@@ -9,7 +9,7 @@ const assert = require("node:assert/strict");
 const client = require("../web/chapter2.js");
 
 const GENERIC = "Julia did not produce the requested result for this move.";
-const EXPLANATION = {julia:"Return the requested grouped value or DataFrame for this step.", case:"No tray comparison is established until the returned result matches all recorded B09 trays."};
+const EXPLANATION = {julia:"Return the requested result for this step.", case:"No tray comparison is established until the returned result matches all recorded B09 trays."};
 
 function errorResult(step, message) {
   return {type:"case_result", chapter:"C2", step, status:"error", pass:false, message, feedback:GENERIC, explanation:EXPLANATION};
@@ -66,14 +66,17 @@ test("C2 counts: dplyr-style name = value and sum(:detected) are coached toward 
   assertNoAnswerLine(groupsFirst);
 });
 
-test("C2 puts the error-specific line in front of the existing recovery copy, which stays", () => {
+// Replay notes (2026-09-27): the error-specific line used to be followed by the chapter's generic
+// recovery copy and explanation, reading as one wrong message after the right one. resultText now
+// shows the specific coaching alone, the same rule C1's challengeRecovery already applies.
+test("C2 shows the error-specific line alone, not followed by the generic recovery copy", () => {
   for (const result of [MISSING_COLON, DPLYR_COMBINE, PLAIN_SLASH]) {
     const text = client.resultText(result);
     const coaching = client.c2ErrorNextStep(result);
     assert.ok(coaching, "a coaching line exists for " + result.step);
-    assert.ok(text.startsWith(coaching), "coaching comes first: " + text);
-    assert.ok(text.includes(GENERIC), "the chapter's existing recovery copy still follows");
-    assert.ok(text.includes(EXPLANATION.julia));
+    // Round 7 (r7-bugs #9): the line is followed only by the shared coaching ending.
+    assert.equal(text, coaching + " Change your code, then run again, or open Stuck? Hints below.", "coaching stands alone: " + text);
+    assert.doesNotMatch(text, new RegExp(GENERIC.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "the generic recovery copy does not follow");
   }
 });
 
@@ -95,4 +98,45 @@ test("C2 counts: nrow called directly on the groups is coached toward combine's 
   const line = client.c2ErrorNextStep(message);
   assert.match(line, /nrow => :n/);
   assert.match(line, /combine/i);
+});
+
+// Night playtest 2026-09-26 (docs/dev-log/playtest/2026-09-26-night/README.md item 4): R's %>%
+// reaches the sandbox as a raw parse error with no word about the pipe, and a pandas-style method
+// call after a dot (jars.groupby(...)) reads as a missing column named after the method, which
+// looks like a typo rather than a habit.
+const PIPE_PARSE_ERROR = errorResult("group", "Julia couldn't parse this line. Look for a missing bracket, a missing comma, or a missing end keyword.\n\nParseError:\n# Error @ none:1:7\njars %>% group_by(tray_id)\n#     ╙ ── not a unary operator\n");
+const GROUPBY_METHOD_CALL = errorResult("group", "Something went wrong running this line.\n\nArgumentError: column name :groupby not found in the data frame");
+
+test("C2 names Julia's pipe when a learner writes R's %>%", () => {
+  const line = client.c2ErrorNextStep(PIPE_PARSE_ERROR);
+  assert.match(line, /%>%/);
+  assert.match(line, /\|>/);
+  assert.match(line, /groupby\(jars, :tray_id\)/);
+});
+
+test("C2 explains a pandas-style dot-call (jars.groupby(...)) as a function, not a missing column", () => {
+  const line = client.c2ErrorNextStep(GROUPBY_METHOD_CALL);
+  assert.match(line, /groupby is a function in Julia/);
+  assert.doesNotMatch(line, /typo/i);
+});
+
+// B1 (2026-09-27 adversary review): the coaching for a pandas-style jars.sample(...) call named
+// sample(jars, 3), which raises MethodError: no method matching sample(::DataFrame, ::Int64) in the
+// real sandbox (StatsBase's sample needs an AbstractArray). Fixed to sample(jars.jar_id, 3;
+// replace=false), verified to run on the game's own B09 fixture (six jar_id rows) with
+// `julia --startup-file=no --project=. -e 'using DataFrames, StatsBase; ...'`.
+const SAMPLE_METHOD_CALL = errorResult("group", "Something went wrong running this line.\n\nArgumentError: column name :sample not found in the data frame");
+const MEAN_METHOD_CALL = errorResult("group", "Something went wrong running this line.\n\nArgumentError: column name :mean not found in the data frame");
+
+test("C2 names a working sample(...) call, not the pandas-shaped one that errors", () => {
+  const line = client.c2ErrorNextStep(SAMPLE_METHOD_CALL);
+  assert.match(line, /sample is a function in Julia/);
+  assert.match(line, /sample\(jars\.jar_id, 3; replace=false\)/);
+  assert.doesNotMatch(line, /sample\(jars, 3\)/);
+});
+
+test("C2 names a working mean(...) call for the pandas-style jars.mean()", () => {
+  const line = client.c2ErrorNextStep(MEAN_METHOD_CALL);
+  assert.match(line, /mean is a function in Julia/);
+  assert.match(line, /mean\(jars\.detected\)/);
 });

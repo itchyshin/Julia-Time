@@ -3,13 +3,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
-const COLUMNS = ["model", "p", "lower", "upper"];
+const COLUMNS = ["story", "p", "lower", "upper"];
 const ROWS = [
   // This is the server-owned teaching fixture.  The browser must not reject a
   // legitimate case just because it duplicated an old range by hand.
-  {model:"Vanishing", p:0.1, lower:0, upper:2},
-  {model:"Coin flip", p:0.5, lower:1, upper:5},
-  {model:"Thriving", p:0.8, lower:4, upper:6}
+  {story:"Vanishing", p:0.1, lower:0, upper:2},
+  {story:"Coin flip", p:0.5, lower:1, upper:5},
+  {story:"Thriving", p:0.8, lower:4, upper:6}
 ];
 const COMPATIBLE = [ROWS[1], ROWS[2]];
 
@@ -70,19 +70,19 @@ test("C6 prepares the inclusive-range decision before the editor and derives can
   assert.ok(contextStart >= 0, "the model context should be present");
   assert.ok(contextStart < html.indexOf('id="editor-title"'), "the model context should prepare the learner before the editor");
   const context = html.slice(contextStart, html.indexOf('class="editor"', contextStart));
-  assert.match(context, /story.*chance that one jar shows fleas/i);
+  assert.match(context, /story.*chance that one jar shows springtails/i);
   assert.match(context, /usual range/i);
   assert.match(context, /exactly on either edge stays in/i);
 
   const changed = info("c6-changed");
   changed.inputs[0].rows = [
-    { model: "Rare recorded detection", p: 0.2, lower: 0, upper: 3 },
-    { model: "Common recorded detection", p: 0.9, lower: 4, upper: 6 }
+    { story: "Rare recorded detection", p: 0.2, lower: 0, upper: 3 },
+    { story: "Common recorded detection", p: 0.9, lower: 4, upper: 6 }
   ];
   const cards = c6.candidateModelCards(changed);
   assert.deepEqual(cards, [
-    { model: "Rare recorded detection", p: 0.2 },
-    { model: "Common recorded detection", p: 0.9 }
+    { story: "Rare recorded detection", p: 0.2 },
+    { story: "Common recorded detection", p: 0.9 }
   ]);
 });
 
@@ -93,7 +93,7 @@ test("C6 has an accepted-result-only closing route rather than leaving the learn
   const activeVisual = source.slice(nestedVisualStart, nestedVisualEnd);
   assert.match(activeVisual, /caseClosure\(state\.metadata, state\.evidence\.result_data\)/);
   assert.match(activeVisual, /Review the Case Board/);
-  assert.match(activeVisual, /Optional: open the comparison laboratory/);
+  assert.match(activeVisual, /Optional: open the speed lab/);
   assert.match(activeVisual, /fitting is not proof/i);
 });
 
@@ -103,8 +103,9 @@ test("C6 stamps Claim 2 as not supported, matching the server's claim field, rig
   const nestedVisualEnd = source.indexOf("function render(){", nestedVisualStart);
   const activeVisual = source.slice(nestedVisualStart, nestedVisualEnd);
   const limitIndex = activeVisual.indexOf("Fitting is not proof");
-  const claimIndex = activeVisual.indexOf("Claim 2");
-  assert.ok(limitIndex >= 0 && claimIndex > limitIndex, "the Claim 2 stamp follows the limit line");
+  // Story spine (docs/design/06-story-spine.md, 2026-09-27): the case is told in three parts, not two claims.
+  const claimIndex = activeVisual.indexOf("Part 3 done");
+  assert.ok(limitIndex >= 0 && claimIndex > limitIndex, "the Part 3 stamp follows the limit line");
   assert.match(activeVisual, /claim\.className\s*=\s*"claim-stamp"/);
   assert.match(activeVisual, /section\.append\(title, intro, list, limit, claim, closing\)/);
   const clientClaim = activeVisual.match(/claim\.textContent = "([^"]*)"/)[1];
@@ -119,10 +120,12 @@ test("C6 stamps Claim 2 as not supported, matching the server's claim field, rig
 test("C6 turns a checked compatible-range result into a bounded case conclusion", () => {
   const c6 = require("../web/chapter6.js");
   const closure = c6.caseClosure(info(), {kind:"table", columns:COLUMNS, rows:COMPATIBLE});
-  assert.equal(closure.title, "Both claims checked");
-  assert.match(closure.findings[0], /Claim 1.*T-C has no fleas.*blank box/i);
-  assert.match(closure.findings[1], /Claim 2.*vanishing.*not suspicious/i);
-  assert.match(closure.findings[2], /Still open.*recheck.*three jars/i);
+  // Story spine (docs/design/06-story-spine.md, 2026-09-27): the case is told in three parts, not two claims.
+  assert.equal(closure.title, "Three parts, one answer");
+  assert.match(closure.findings[0], /Part 1 · Check the report.*blank box/i);
+  assert.match(closure.findings[1], /Part 2 · Check the notebook.*not unusual.*recheck of three jars/i);
+  assert.match(closure.findings[2], /Part 3 · Test the claim.*dying out almost never/i);
+  assert.match(closure.findings[3], /Still open: the recheck/i);
   assert.equal(c6.caseClosure(info(), {kind:"table", columns:COLUMNS, rows:[ROWS[0]]}), null);
 });
 
@@ -186,14 +189,50 @@ test("C6 coaches a returning player whose draft still uses candidate_models", ()
   const c6 = require("../web/chapter6.js");
   const recovery = c6.challengeRecovery({status:"error", message:"UndefVarError: `candidate_models` not defined"});
   assert.match(recovery, /This name changed: use stories instead of candidate_models\./);
-  assert.match(recovery, /draft is still here/i);
+  // Replay notes (2026-09-27): the shown outcome above an error already says "Your code is still
+  // here" (runOutcomeStatus), so challengeRecovery no longer repeats "Your draft is still here".
+  assert.doesNotMatch(recovery, /draft is still here/i);
+  assert.match(recovery, /Original Julia error below/i);
+});
+
+// Night playtest (2026-09-26, claude-eyes.md and aiko.md): a plain & between two comparisons on
+// one line (as R writes it) is a precedence trap, not a BitVector-combining mistake: `&` binds
+// tighter than `.<=`, so Julia tries to combine a scalar with a vector first and errors. Verified
+// live: `stories.lower .<= observed_count & stories.upper .>= observed_count` raises
+// "MethodError: no method matching &(::Int64, ::Vector{Int64})".
+test("C6 coaches the plain & precedence trap (one line, not yet split into fits_low/fits_high)", () => {
+  const c6 = require("../web/chapter6.js");
+  const recovery = c6.challengeRecovery({status:"error", message:"MethodError: no method matching &(::Int64, ::Vector{Int64})\nClosest candidates are:"});
+  assert.match(recovery, /In R, & works row by row\. In Julia, as in pandas, a plain & is done before a comparison/);
+  assert.match(recovery, /\.&/);
+  assert.match(recovery, /wrap each comparison in brackets/);
+});
+
+// Sam playtest (2026-09-26, sam.md): Python's `and` between two dotted comparisons is not a Julia
+// keyword; it parses as a bare identifier, and the ParseError points at the trailing comma instead
+// of at `and`. Verified live: Julia's own message reports "unexpected comma in array expression".
+test("C6 coaches Python's and, which Julia points at the comma rather than the keyword itself", () => {
+  const c6 = require("../web/chapter6.js");
+  const recovery = c6.challengeRecovery({status:"error", message:"ParseError:\n# Error @ none:1:82\nstories[(stories.lower .<= observed_count) and (observed_count .<= stories.upper), :]\n#  unexpected comma in array expression"});
+  assert.match(recovery, /Julia has no and/);
+  assert.match(recovery, /\.&/);
+  // S2 (2026-09-27 adversary review): the natural edit for "and" without brackets,
+  // stories[stories.lower .<= observed_count .& stories.upper .>= observed_count, :], runs without
+  // error (.& binds tighter than .<=) and silently returns only Coin flip, not Coin flip and
+  // Thriving (verified against mystery_c6_candidates() with observed_count=5). The bracket example
+  // must be named here, the same as the plain-& coaching just above.
+  // Audit 2026-09-27 (design rule 2): the example used to be the finished row rule with the case's
+  // own names (stories/observed_count); it now uses placeholders only, the same idea kept.
+  assert.match(recovery, /wrap each comparison in brackets/);
+  assert.match(recovery, /\(a \.<= b\) \.& \(c \.<= d\)/);
+  assert.doesNotMatch(recovery, /stories\.(lower|upper)|observed_count/);
 });
 
 test("C6 turns a rejected run into a syntax-specific next step without leaking its answer", () => {
   const c6 = require("../web/chapter6.js");
   const recovery = c6.challengeRecovery();
   assert.match(recovery, /draft is still here/i);
-  assert.match(recovery, /Required result line near the top of the page, or open Help me start in Stuck\? Hints below/);
+  assert.match(recovery, /Required result line near the top of the page, or open Stuck\? Hints below/);
   assert.doesNotMatch(recovery, /both comparisons/i);
   assert.match(recovery, /run again/i);
   assert.doesNotMatch(recovery, /stories/);
@@ -217,13 +256,13 @@ test("C6 puts a generic two-check code shape before the empty editor", () => {
 test("C6 gives learners a tangible lower-bound, upper-bound, then combined-rule practice before case code", () => {
   const c6 = require("../web/chapter6.js");
   assert.deepEqual(c6.rangePracticeStep(0), {
-    label:"Check the lower bounds",
-    result:"Both practice rows pass the lower-bound check: 1 ≤ 3 and 0 ≤ 3 are true.",
-    next:"Now check the upper bounds →"
+    label:"Check the low ends",
+    result:"Both practice rows pass the low-end check: 1 ≤ 3 and 0 ≤ 3 are true.",
+    next:"Now check the high ends →"
   });
   assert.deepEqual(c6.rangePracticeStep(1), {
-    label:"Check the upper bounds",
-    result:"Only the first practice row passes the upper-bound check: 3 ≤ 4 is true, but 3 ≤ 2 is false.",
+    label:"Check the high ends",
+    result:"Only the first practice row passes the high-end check: 3 ≤ 4 is true, but 3 ≤ 2 is false.",
     next:"Combine both checks →"
   });
   assert.deepEqual(c6.rangePracticeStep(2), {
@@ -244,7 +283,7 @@ test("C6 rejects malformed candidate metadata without duplicating server ranges"
     Object.assign(info(), {inputs:[Object.assign({}, info().inputs[0], {columns:[...COLUMNS, "extra"]})]}),
     Object.assign(info(), {inputs:[Object.assign({}, info().inputs[0], {rows:[Object.assign({}, ROWS[0], {p:"0.1"}), ROWS[1], ROWS[2]]})]}),
     Object.assign(info(), {inputs:[Object.assign({}, info().inputs[0], {rows:[Object.assign({}, ROWS[0], {lower:3, upper:2}), ROWS[1], ROWS[2]]})]}),
-    Object.assign(info(), {inputs:[Object.assign({}, info().inputs[0], {rows:[Object.assign({}, ROWS[0], {model:""}), ROWS[1], ROWS[2]]})]}),
+    Object.assign(info(), {inputs:[Object.assign({}, info().inputs[0], {rows:[Object.assign({}, ROWS[0], {story:""}), ROWS[1], ROWS[2]]})]}),
     Object.assign(info(), {observed_count:7}),
     Object.assign(info(), {observed_count:1.5}),
     Object.assign(info(), {chapter:"C5"})
@@ -269,8 +308,8 @@ test("C6 accepts the server-owned candidate ranges instead of a duplicated brows
 test("C6 accepts a structurally valid server-owned candidate table with changed ranges", () => {
   const c6 = require("../web/chapter6.js");
   const serverOwnedRows = [
-    {model:"Rare story", p:0.2, lower:0, upper:3},
-    {model:"Common story", p:0.6, lower:2, upper:6}
+    {story:"Rare story", p:0.2, lower:0, upper:3},
+    {story:"Common story", p:0.6, lower:2, upper:6}
   ];
   const message = Object.assign(info("c6-server-owned"), {
     observed_count:4,
@@ -291,9 +330,9 @@ test("C6 keeps the Case Board visible and makes the returned-data learning scaff
   // collapsed "Stuck? Help and practice" details after the editor rather than before the textarea.
   assert.ok(html.indexOf('id="learning-scaffold"') > html.indexOf('id="code"'));
   const scaffold = c6.learningScaffold(info());
-  assert.match(scaffold.why, /compare the story board.s usual ranges/i);
+  assert.match(scaffold.why, /test the report.s claim: which stories could give the count/i); // story spine 2026-09-27
   assert.match(scaffold.observation, /observed B09 count is 5/i);
-  assert.match(scaffold.observation, /chance that one jar shows fleas/i);
+  assert.match(scaffold.observation, /chance that one jar shows springtails/i);
   assert.match(scaffold.observation, /six-jar counts/i);
   assert.match(scaffold.observation, /not every count.*possibly give/i);
   assert.match(scaffold.observation, /not.*story true/i);
@@ -301,7 +340,7 @@ test("C6 keeps the Case Board visible and makes the returned-data learning scaff
   assert.match(scaffold.practice_fails, /practice story.*0 ≤ 3 ≤ 2/i);
   assert.doesNotMatch(scaffold.practice_stays, /Candidate p|B09|5/);
   assert.doesNotMatch(scaffold.practice_fails, /Candidate p|B09|5/);
-  assert.match(scaffold.bridge, /Help me start/i);
+  assert.match(scaffold.bridge, /open Stuck\? Hints/i);
   assert.doesNotMatch(scaffold.bridge, /stories\[/);
 });
 
@@ -309,24 +348,42 @@ test("C6 puts a cautious case-status bridge before the empty challenge without s
   const c6 = require("../web/chapter6.js");
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   const source = fs.readFileSync(require.resolve("../web/chapter6.js"), "utf8");
-  const status = c6.caseStatus(info());
-  assert.match(status.established, /notebook and the tally sheet disagree.*T-C/i);
-  assert.match(status.established, /notebook has 1, the tally sheet.s box was left blank/i);
-  assert.match(status.established, /observed B09 count is 5/i);
-  assert.match(status.unknown, /fitting is not proof/i);
+  // Night round 1: "Part 1 done" only once Chapter 3 is solved (second argument); see f4-chapters-2-6.test.cjs.
+  const status = c6.caseStatus(info(), true);
+  // Replay notes (2026-09-27): "Claim 1 is settled" asserted C3's finding even when C3 was skipped
+  // (all six chapters are playable from the Case Board). "Chapter 3 settles Claim 1" holds in any
+  // order, matching chapter5.js's status line.
+  assert.match(status.established, /Part 1 done/i);
+  assert.match(status.established, /blank box, not an empty tray/i);
+  assert.match(status.established, /Part 3 now/i);
+  // r3 story F4 (2026-09-27): before any run the status must not give away "two stories still fit".
+  assert.equal(status.unknown, "Still unknown: which stories could give 5. Fitting will not prove one; it can only rule some out.");
+  assert.doesNotMatch(status.unknown, /two stories/i);
   assert.match(status.why_now, /could give 5 of 6/i);
   assert.doesNotMatch(status.why_now, /stories\[/);
   assert.ok(html.indexOf('id="case-status"') < html.indexOf('id="editor-title"'));
   assert.match(html, /Case status before you write/i);
-  assert.match(source, /Why this move now/);
+  assert.match(source, /Why now/);
+});
+
+// S4 (2026-09-27 adversary review): the status line typed "6 jars" although metadata.n_trials
+// carries the real jar count, so a different-sized batch would show a wrong number. This test was
+// deleted (replaced with a /Claim 2/ check) when the "Chapter 3 settles" wording landed; restored
+// here, updated to also cover the count, alongside the wording check above.
+test("C6 status line reads the jar count from n_trials, not a typed-in 6", () => {
+  const c6 = require("../web/chapter6.js");
+  const sevenJars = c6.caseStatus(Object.assign(info(), {n_trials: 7, observed_count: 6}));
+  assert.match(sevenJars.established, /Part 2 done for today: under a plain 50:50 guess, 6 of 7 is not unusual/);
+  const sixJars = c6.caseStatus(info());
+  assert.match(sixJars.established, /Part 2 done for today: under a plain 50:50 guess, 5 of 6 is not unusual/);
 });
 
 test("C6 frames compatibility as a cautious case decision with a real next investigation", () => {
   const html = fs.readFileSync("web/chapter6.html", "utf8");
   const source = fs.readFileSync(require.resolve("../web/chapter6.js"), "utf8");
-  assert.match(html, /Which stories could give the notebook.s 5 of 6/i);
+  assert.match(html, /Which of them could give 5\?/i);
   assert.match(source, /fitting is not proof/i);
-  assert.match(source, /Still open.*recheck of three jars/i);
+  assert.match(source, /Still open: the recheck/i);
 });
 
 test("C6 clears previously accepted evidence before and after a matching failed or malformed run", () => {
@@ -369,10 +426,10 @@ test("C6 ignores wrong-identity results and rejects changed, invented, or extra 
 
   for (const result_data of [
     {kind:"table",columns:[...COLUMNS, "extra"],rows:COMPATIBLE},
-    {kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {model:"A different story"})]},
+    {kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {story:"A different story"})]},
     {kind:"table",columns:COLUMNS,rows:[Object.assign({}, ROWS[1], {p:0.6})]},
     {kind:"table",columns:COLUMNS,rows:[ROWS[1], ROWS[1]]},
-    {kind:"table",columns:COLUMNS,rows:[{model:"Invented",p:0.4,lower:0,upper:6}]},
+    {kind:"table",columns:COLUMNS,rows:[{story:"Invented",p:0.4,lower:0,upper:6}]},
     {kind:"table",columns:COLUMNS,rows:[ROWS[0]]}
   ]) {
     let attempt = c6.beginRun(ready(c6), "c6-result");

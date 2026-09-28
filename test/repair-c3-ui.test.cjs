@@ -100,16 +100,18 @@ test("UI-12: an R (dplyr) join name gets a line keyed on Julia's error, before t
   assert.match(leftJoin, /^left_join is an R \(dplyr\) name/);
   assert.match(leftJoin, /leftjoin/);
   assert.match(leftJoin, /on=/);
-  assert.ok(leftJoin.endsWith(" " + recovery), "the existing recovery copy follows the new line");
+  // Round 7 (r7-r-struggling #8): the fixed comma advice no longer follows a named line.
+  assert.ok(leftJoin.endsWith(" Change your code, then run again, or open Stuck? Hints below."), "the coaching ending follows the new line");
+  assert.ok(!leftJoin.includes(recovery), "no fixed comma advice after a named line");
   const byKeyword = client.errorRecovery("join-report-log", BY_ERROR);
   assert.match(byKeyword, /^by= is how R \(dplyr\) names the join column/);
   assert.match(byKeyword, /on=/);
-  assert.ok(byKeyword.endsWith(" " + recovery));
+  assert.ok(byKeyword.endsWith(" Change your code, then run again, or open Stuck? Hints below."));
   const newer = client.errorRecovery("join-report-log", {status:"error", message:"UndefVarError: `left_join` not defined in `Main`\nSuggestion: check for spelling errors or missing imports."});
   assert.match(newer, /^left_join is an R \(dplyr\) name/, "Julia 1.11+ wording is recognised too");
   for (const text of [leftJoin, byKeyword]) {
     assert.doesNotMatch(text, /leftjoin\(tray_counts, tally_sheet, on=:tray_id\)/, "no reference answer");
-    assert.doesNotMatch(text.slice(0, text.length - recovery.length), EM_DASH);
+    assert.doesNotMatch(text, EM_DASH);
   }
 });
 

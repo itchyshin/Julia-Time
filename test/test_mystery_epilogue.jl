@@ -20,7 +20,7 @@ using DataFrames
     @test d["notebook_detected"] == gap.notebook_detected[1]
     @test d["sheet_detected"] == gap.sheet_detected[1]
     @test d["entry_status"] == gap.entry_status[1]
-    # The ending's headline ("the fleas were never shown to be missing") rests on these facts.
+    # The ending's headline ("the springtails were never shown to be missing") rests on these facts.
     # If a fixture change breaks them, rewrite docs/design/03-ending.md and ending-script.js first.
     @test d["sheet_detected"] == 0
     @test d["entry_status"] == "left blank"
@@ -42,17 +42,17 @@ using DataFrames
     @test facts["matching_events"] == count(events)
 
     candidates = JuliaTime.mystery_c6_candidates()
-    compatible = JuliaTime.mystery_c6_expected_compatible().model
-    @test [m["model"] for m in facts["models"]] == candidates.model
-    @test candidates.model == ["Vanishing", "Coin flip", "Thriving"]
+    compatible = JuliaTime.mystery_c6_expected_compatible().story
+    @test [m["model"] for m in facts["models"]] == candidates.story
+    @test candidates.story == ["Dying out", "Coin flip", "Thriving"]
     @test [m["p"] for m in facts["models"]] == candidates.p
     @test [m["lower"] for m in facts["models"]] == candidates.lower
     @test [m["upper"] for m in facts["models"]] == candidates.upper
-    @test [m["compatible"] for m in facts["models"]] == [model in compatible for model in candidates.model]
+    @test [m["compatible"] for m in facts["models"]] == [model in compatible for model in candidates.story]
 end
 
 @testset "Case Board's hard-coded numbers match the fixture (review 2026-09-26, item 9)" begin
-    # course-client.js:180-197 types "5 of the 6", "T-A 2, T-B 2, T-C 1" and "1 time in 9" by hand.
+    # course-client.js:180-197 types "5 of the 6", "T-A 2 of 2 jars, T-B 2 of 2 jars, T-C 1 of 2 jars" and "1 time in 9" by hand.
     # This test pins those strings to mystery_epilogue_facts() so a fixture change cannot drift
     # silently from what the Case Board tells the player.
     facts = JuliaTime.mystery_epilogue_facts()
@@ -60,7 +60,9 @@ end
 
     @test occursin("$(facts["n_detected"]) of the $(facts["n_jars"])", js)
 
-    tray_line = join(("$(t["tray_id"]) $(t["detected_n"])" for t in facts["trays"]), ", ")
+    # Tray counts are written as jars on the Case Board (SETTING-RENAME.md, 2026-09-28).
+    per_tray = facts["n_jars"] ÷ length(facts["trays"])
+    tray_line = join(("$(t["tray_id"]) $(t["detected_n"]) of $(per_tray) jars" for t in facts["trays"]), ", ")
     @test occursin(tray_line, js)
 
     times = round(Int, facts["n_simulations"] / facts["matching_events"])

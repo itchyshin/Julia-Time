@@ -17,7 +17,7 @@ const jtHelpMatch = html.match(/<details class="jt-help">([\s\S]*?)<\/details>\s
 test("C4 has one closed-by-default jt-help details with the exact summary text", () => {
   assert.ok(jtHelpMatch, "a <details class=\"jt-help\"> block exists");
   assert.doesNotMatch(html, /<details class="jt-help"[^>]*\bopen\b/, "jt-help is closed by default");
-  assert.match(jtHelpMatch[1], /<summary>Stuck\? Hints<span>Small hints first, the full answer last\. Your editor stays as you left it\.<\/span><\/summary>/);
+  assert.match(jtHelpMatch[1], /<summary>Stuck\? Hints <span>Small hints first, the full answer last\. Your editor stays as you left it\.<\/span><\/summary>/);
 });
 
 test("C4's jt-help details comes after the #code editor in the document", () => {
@@ -65,7 +65,7 @@ test("C4: the small hints sit first inside the help panel; the bridge card stays
   // (#bridge-card, see the test above), then the shared help panel with small hints first inside it.
   const editor = html.indexOf('id="code"');
   const jtHelp = html.indexOf('<details class="jt-help">');
-  const hintLadder = html.indexOf('<details class="help">');
+  const hintLadder = html.indexOf('<div class="help hint-ladder">');
   const summaryEnd = html.indexOf('</summary>', jtHelp) + '</summary>'.length;
   const answerBeforeEditor = html.indexOf('id="answer-before-editor"');
   assert.ok(answerBeforeEditor >= 0 && answerBeforeEditor < editor, "answer-before-editor stays before the editor");

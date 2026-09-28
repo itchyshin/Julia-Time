@@ -13,7 +13,7 @@
 /* short-scroll (2026-09-25): these plain paragraphs inherit the page's default 1em UA margin (18px
    at this page's 18px base font), stacking up across four consecutive panels; tighten just the ones
    before the editor. */
-#move-card h1, #move-card > p, #model-context > p, #data > p, #case-status > p, #case-status h2 { margin:.3rem 0; }
+#move-card #move-title, #move-card > p, #model-context > p, #data > p, #case-status > p, #case-status h2 { margin:.3rem 0; }
 #move-card .return { padding:8px 14px; margin:8px 0; }
 #model-context ul { margin:.4rem 0; }
 .editor > p:not(.keyboard) { margin:.4rem 0; }
@@ -31,3 +31,8 @@ header .connection{position:static;margin:.15rem 0 .7rem;color:#5d6767}.answer-r
 /* Ending: the door that opens once the case is complete (docs/design/03-ending.md). */
 .ending-link{display:inline-block;margin:.4rem 0 .8rem;background:var(--orange,#ef6e34);color:#143242;border:2px solid var(--orange,#ef6e34);padding:.6rem .9rem;font-weight:800;text-decoration:none}
 .ending-link:hover{filter:brightness(1.08)}
+/* r3 (2026-09-27): hint text keeps its line breaks, so a three-line code shape reads as three lines. */
+.hint-ladder p{white-space:pre-line}
+.hint-ladder .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:.6rem}
+/* r5 (2026-09-27): the two finale links sit apart as button-sized links. */
+.finale-links{margin:.9rem 0}.finale-links a{display:inline-flex;align-items:center;min-height:44px}
