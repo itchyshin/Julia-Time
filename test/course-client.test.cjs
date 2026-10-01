@@ -290,13 +290,13 @@ test("the Case Board keeps one modest mystery thread: question, fact, unknown, a
   ]})).caseThread;
   assert.match(afterC6.established, /never shown to be dying out/i);
   assert.match(afterC6.unknown, /recheck of three jars/i);
-  assert.match(afterC6.whyNext, /all three parts are done/i); // three parts, 2026-09-27
+  assert.match(afterC6.whyNext, /all six chapters are done/i); // 0.5 fix
 
   const onlyC6 = client.dashboardModel(courseState.makeCourseState({moves:[
     {key:"C6/compatible-models", provenance:"historical-browser"}
   ]})).caseThread;
   assert.match(onlyC6.established, /blank box, not an empty tray/i);
-  assert.doesNotMatch(onlyC6.whyNext, /all three parts are done/i);
+  assert.doesNotMatch(onlyC6.whyNext, /all six chapters are done/i);
   assert.match(onlyC6.whyNext, /report is about batch B09/i);
 });
 
@@ -340,11 +340,12 @@ test("six chapter cards expose all six playable mystery chapters without grading
 
 test("Case Board gives every playable chapter card its own labelled safe entry route", () => {
   const boardSource = fs.readFileSync(path.join(__dirname, "../web/course/course-board.js"), "utf8");
-  assert.match(boardSource, /if \(card\.playable\) \{/);
+  // 0.5 (Board walk): each card has a "Lesson" row and a "Case" row; the Case row is the chapter route.
+  const clientSource = fs.readFileSync(path.join(__dirname, "../web/course/course-client.js"), "utf8");
   assert.match(boardSource, /document\.createElement\("a"\)/);
-  assert.match(boardSource, /chapterAction\.href = client\.adapterDestination\(card\.chapter, attempt\) \|\| "chapter\.html"/);
-  assert.match(boardSource, /text\(chapterAction, "Open Chapter " \+ card\.chapter\.slice\(1\) \+ " →"\)/);
-  assert.match(boardSource, /article\.append\(label, title, solved, status, chapterAction\)/);
+  assert.match(clientSource, /caseHref:examDestination\(n, attempt\)/);
+  assert.match(boardSource, /row\.caseDone, "Chapter " \+ row\.n, step\.chapter, row\.caseHref/);
+  assert.match(boardSource, /article\.append\(\.\.\.cells\)/);
 });
 
 test("the optional speed laboratory is outside the six chapters and preserves only valid attempt IDs", () => {
@@ -374,7 +375,10 @@ test("chapter routes preserve a valid attempt across all six playable chapters",
   assert.equal(client.adapterDestination("C4", "field-7", "plan-distinct-recheck"), "chapter.html?chapter=C4&attempt=field-7&move=plan-distinct-recheck");
   const boardSource = fs.readFileSync(path.join(__dirname, "../web/course/course-board.js"), "utf8");
   const routeSource = fs.readFileSync(path.join(__dirname, "../web/course/chapter-route.js"), "utf8");
-  assert.match(boardSource, /adapterDestination\(model\.continue\.chapter, attempt, model\.continue\.move\)/);
+  const clientSource = fs.readFileSync(path.join(__dirname, "../web/course/course-client.js"), "utf8");
+  // 0.5: the Board's walk links go to the chapter exam (examDestination), not the chapter.html adapter.
+  assert.match(clientSource, /caseHref:examDestination\(n, attempt\)/);
+  assert.match(clientSource, /href:examDestination\(row\.n, attempt\)/);
   assert.match(routeSource, /params\.get\("move"\)/);
 });
 

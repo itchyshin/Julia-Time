@@ -1,0 +1,1909 @@
+{
+  "id": "lesson1",
+  "number": 1,
+  "title": "Find the jars",
+  "goal": "Learn to write your first lines of code, in the language Julia, and use them to check one report. No coding experience needed, and mistakes are safe here.",
+  "story": "Toto wrote a report. His boss Itchy wants it checked against the lab notebook. Itchy: \"First, practice on a made-up notebook.\" Momo, who doubts things, will check what you find.",
+  "story_more": "Itchy's lab keeps springtails, tiny relatives of the snow fleas seen on winter snow, in jars of damp leaf litter. This practice notebook is made up for training: twelve jars in two batches, B04 and B05, on trays T-D, T-E and T-F. Each jar has one row: springtails seen or not seen.",
+  "data_label": "Practice data, made up for training. Not the case, so nothing here answers the case.",
+  "setup": "practice1",
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Names and functions",
+      "idea": "function",
+      "story": "The practice notebook is a table named logbook, with 12 jars. A batch is a group started together: six jars are batch B04 and six are batch B05.",
+      "explain": "Type one line of code in the editor, then press Run. Julia shows the answer.\nA name holds something. Here logbook holds the practice notebook.\nA function does a job. length counts the items in a list.",
+      "challenges": [
+        {
+          "id": "l1-r1-c1",
+          "kind": "see",
+          "prompt": "logbook is a name. It holds the practice notebook, a table. Its line is already in the editor. Choose an answer, then press Run.",
+          "starter": "logbook",
+          "solution": "logbook",
+          "labels": [
+            {
+              "part": "logbook",
+              "is": "a name"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "a table with one row per jar",
+              "just the word logbook"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia showed what logbook holds: the notebook, 12 jars in 4 columns. Press Next to go on.",
+            "wrong": "Press Reset to put the line back (logbook), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. Check the spelling and use small letters. The practice notebook is called logbook.",
+                "example": "Jars"
+              }
+            ],
+            "requires": "Run the name logbook on its own."
+          },
+          "new_ideas": [],
+          "new_facts": []
+        },
+        {
+          "id": "l1-r1-c2",
+          "kind": "see",
+          "prompt": "length is a function: a word that does a job. Its input goes in round brackets ( ). Here the input is the list [4, 7, 1], and length counts its items. Choose an answer, then press Run.",
+          "starter": "length([4, 7, 1])",
+          "solution": "length([4, 7, 1])",
+          "labels": [
+            {
+              "part": "length",
+              "is": "function"
+            },
+            {
+              "part": "[4, 7, 1]",
+              "is": "input"
+            },
+            {
+              "part": "3",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "3",
+              "12",
+              "4, 7, 1"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "length"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The result is 3: length counted the three items. A list like [4, 7, 1] is also called a vector.",
+            "wrong": "Press Reset to put the line back (length([4, 7, 1])), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling and use small letters. The function here is length.",
+                "example": "lenght([4, 7, 1])"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put square brackets round the numbers: length([4, 7, 1]). length counts one list, not three separate numbers.",
+                "example": "length(4, 7, 1)"
+              },
+              {
+                "match": "ParseError",
+                "say": "Check the brackets: a round bracket after length, a square bracket for the list, and both closed at the end.",
+                "example": "length([4, 7, 1)"
+              }
+            ],
+            "requires": "Use length, the function that counts."
+          },
+          "new_ideas": [
+            "function"
+          ],
+          "new_facts": [
+            "length counts the items of its input",
+            "square brackets on their own, as in [4, 7, 1], make a list"
+          ],
+          "look_closer": {
+            "text": "A function can take more than one input. Put a comma between them: max(4, 7) gives the larger one, 7.",
+            "code": "max(4, 7)"
+          },
+          "r_note": "`length(c(4, 7, 1))`. Julia makes a list with square brackets, not c().",
+          "py_note": "`len([4, 7, 1])` gives 3. Julia's length does the job of Python's len."
+        },
+        {
+          "id": "l1-r1-f1",
+          "kind": "fix",
+          "prompt": "Toto's line should count the items in the list. Press Run: Julia shows an error. Read it, fix the line, and run again.",
+          "starter": "lenght([4, 7, 1])",
+          "solution": "length([4, 7, 1])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "length"
+            ],
+            "checker": null,
+            "taught": [
+              "length([4, 7, 1])"
+            ]
+          },
+          "feedback": {
+            "pass": "Fixed: length counted the 3 items.",
+            "wrong": "Julia should give 3: check the spelling of the function word, and keep the same list.",
+            "errors": [
+              {
+                "match": "`lenght`",
+                "say": "Julia does not know the word lenght. The letters g and h are the wrong way round: write length.",
+                "example": "lenght([4, 7, 1])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The function here is length: check its spelling.",
+                "example": "Length([4, 7, 1])"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put square brackets round the numbers: length([4, 7, 1]). length counts one list, not three separate numbers.",
+                "example": "length(4, 7, 1)"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: read the error, then fix the mistake.",
+            "requires": "Keep the function word length in your line: only its spelling was wrong.",
+            "taught": "length counts the items of a list, as in length([4, 7, 1])"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r1-c3",
+          "kind": "see",
+          "prompt": "true means yes and counts as 1. false means no and counts as 0. sum adds up a list, so sum counts the yes answers. Choose the number, then press Run.",
+          "starter": "sum([true, false, true])",
+          "solution": "sum([true, false, true])",
+          "labels": [
+            {
+              "part": "sum",
+              "is": "function"
+            },
+            {
+              "part": "[true, false, true]",
+              "is": "input"
+            },
+            {
+              "part": "2",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "2",
+              "3",
+              "true"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "sum"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "sum counted each true as 1: two trues, so 2.",
+            "wrong": "Press Reset to put the line back (sum([true, false, true])), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True and False.",
+                "example": "sum([True, false, true])"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes true and false in small letters, not True and False.",
+                "example": "sum([true, False, true])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Here sum, true and false are words in small letters.",
+                "example": "Sum([true, false, true])"
+              },
+              {
+                "match": "ParseError",
+                "say": "Put a comma between the items: true, false.",
+                "code_has": "true false",
+                "example": "sum([true false, true])"
+              }
+            ],
+            "requires": "Use sum, the function that adds up."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "sum adds a list up, and true counts as 1"
+          ],
+          "r_note": "`sum(c(TRUE, FALSE, TRUE))` gives 2. Julia writes true and false in small letters.",
+          "py_note": "`sum([True, False, True])` gives 2. Julia writes true and false in small letters."
+        },
+        {
+          "id": "l1-r1-c4",
+          "kind": "change",
+          "prompt": "Keep sum. Inside the [ ], replace true, false, true with 4, 7, 1. Then press Run: sum adds them up.",
+          "starter": "sum([true, false, true])",
+          "solution": "sum([4, 7, 1])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "sum"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "sum added the three numbers and gave 12: the same function, a different list.",
+            "wrong": "The answer should be 12. Check that the square brackets hold 4, 7 and 1.",
+            "errors": [
+              {
+                "match": "`c` not defined",
+                "say": "Julia makes a list with square brackets: [4, 7, 1].",
+                "example": "sum(c(4, 7, 1))"
+              },
+              {
+                "match": "`Sum`",
+                "say": "The function is spelled sum, all small letters.",
+                "example": "Sum([4, 7, 1])"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put square brackets round the numbers: sum([4, 7, 1]). sum adds one list, not three separate numbers.",
+                "example": "sum(4, 7, 1)"
+              }
+            ],
+            "unchanged": "You did not change the line. Replace true, false, true with 4, 7, 1.",
+            "requires": "Leave sum in place: the task is to add the numbers up."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r1-c5",
+          "kind": "see",
+          "prompt": "A dot after a name picks one column. logbook.batch_id is the batch_id column: one batch for each jar, top to bottom. Choose what Julia will show, then press Run.",
+          "starter": "logbook.batch_id",
+          "solution": "logbook.batch_id",
+          "labels": [
+            {
+              "part": "logbook",
+              "is": "a name"
+            },
+            {
+              "part": ".batch_id",
+              "is": "a column"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "12 batch names, in a list",
+              "the whole table",
+              "one batch name"
+            ],
+            "answer": 0
+          },
+          "r_note": "`logbook$batch_id`. Julia takes a column with a dot, not a dollar sign.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook.batch_id"
+            ]
+          },
+          "feedback": {
+            "pass": "Julia showed the batch_id column: 12 batch names, six B04 and then six B05.",
+            "wrong": "Press Reset to put the line back (logbook.batch_id), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.batch_id.",
+                "example": "logbook$batch_id"
+              },
+              {
+                "match": "ArgumentError",
+                "say": "That column is not in logbook: the columns are jar_id, batch_id, tray_id and detected.",
+                "example": "logbook.batch"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. Check the spelling and use small letters. The table is logbook.",
+                "example": "Logbook.batch_id"
+              }
+            ],
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "taught": "take a column with a dot, as in logbook.batch_id"
+          },
+          "new_ideas": [],
+          "new_facts": [],
+          "py_note": "`logbook[\"batch_id\"]` or `logbook.batch_id` in pandas. Julia takes a column the second way, with a dot and no quotes.",
+          "data": "logbook"
+        },
+        {
+          "id": "l1-r1-c6",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "practice_jars is the small warm-up table of 4 jars, shown on the left. Its detected column is true where springtails were seen. Replace the blank with detected (you may type the whole line again), then press Run.",
+          "starter": "sum(practice_jars.___)",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars"
+            ],
+            "checker": null,
+            "taught": [
+              "sum(",
+              "practice_jars.detected"
+            ]
+          },
+          "feedback": {
+            "pass": "Counting the trues in detected gave 3: 3 of the 4 practice jars had springtails.",
+            "wrong": "One number, 3, should come back: use the column that is true or false for each jar.",
+            "errors": [
+              {
+                "match": "not iterable",
+                "say": "sum works on one column, not the whole table. Type .detected after practice_jars.",
+                "example": "sum(practice_jars)"
+              },
+              {
+                "match": "`len`",
+                "say": "len is not a Julia function. Use sum, the function you know that adds up the trues, and write the column after a dot.",
+                "example": "len(practice_jars.detected)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: practice_jars.detected.",
+                "example": "sum(practice_jars$detected)"
+              },
+              {
+                "match": "ArgumentError",
+                "say": "That column is not in the table: use jar_id, batch_id, tray_id or detected.",
+                "example": "sum(practice_jars.seen)"
+              },
+              {
+                "match": "MethodError",
+                "say": "sum needs the true or false column, detected; the other columns hold text, not true or false.",
+                "example": "sum(practice_jars.tray_id)"
+              },
+              {
+                "match": "`detected`",
+                "say": "`detected` is a column: write practice_jars.detected, with the table name and a dot in front.",
+                "example": "sum(detected)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The small warm-up table is practice_jars, with an underscore. A column comes after a dot.",
+                "example": "sum(practicejars.detected)"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the true or false column.",
+            "requires": "Use the table practice_jars, and let Julia work the number out.",
+            "taught": "count the trues in a column with sum, as in sum(practice_jars.detected)"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r1-c7",
+          "kind": "checkpoint",
+          "prompt": "Checkpoint: without looking at the example, write one line that counts how many of the 12 jars in logbook (table on the left) had springtails. A wrong answer is safe: a hint follows. Press Run.",
+          "starter": "",
+          "solution": "sum(logbook.detected)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "sum(",
+              "logbook.detected"
+            ]
+          },
+          "hints": [
+            "Whether springtails were seen is one true or false per jar, in one column. A function you already used counts the trues.",
+            "Pattern: sum( table.column ). Put the table and the column in their places."
+          ],
+          "clue": "A name holds something, and sum counts the true answers: 7 of the 12 practice jars had springtails.",
+          "feedback": {
+            "pass": "Counting the trues gave 7: 7 of the 12 jars had springtails.",
+            "wrong": "One number, 7, should come back: count the trues in the column that says whether springtails were seen.",
+            "errors": [
+              {
+                "match": "not iterable",
+                "say": "sum needs one column, not the whole table. Add a dot and the column name after logbook: the true or false column is called detected.",
+                "example": "sum(logbook)"
+              },
+              {
+                "match": "`len`",
+                "say": "len is not a Julia function. Use sum, the function you know that adds up the trues, and write the column after a dot.",
+                "example": "len(logbook.detected)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.detected.",
+                "example": "sum(logbook$tray_id)"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the true or false column is called detected.",
+                "example": "sum(logbook.seen)"
+              },
+              {
+                "match": "MethodError",
+                "say": "Julia cannot count that. Give it the column that is true or false for each jar, not a table or text.",
+                "example": "sum(logbook.batch_id)"
+              },
+              {
+                "match": "`detected`",
+                "say": "`detected` is a column: write logbook.detected, with the table name and a dot in front.",
+                "example": "sum(detected)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook, with a dot between it and its column.",
+                "example": "sum(jar.tray_id)"
+              }
+            ],
+            "requires": "Use the table logbook, not a number you typed.",
+            "taught": "add up the trues of the column that says whether springtails were seen, with sum"
+          },
+          "new_ideas": [],
+          "data": "logbook",
+          "starter_hint": "sum(___.___)"
+        },
+        {
+          "id": "l1-r1-p1",
+          "kind": "play",
+          "prompt": "The line in the editor counts the tray names, one per jar. Try changing tray_id to jar_id, or try sum(logbook.detected), or your own idea. Nothing here is checked, and errors are safe.",
+          "starter": "length(logbook.tray_id)",
+          "new_ideas": [],
+          "feedback": {
+            "errors": [
+              {
+                "match": "::String",
+                "code_has": "sum",
+                "say": "sum adds numbers, but this column holds text. Try the detected column: its true and false values count as 1 and 0.",
+                "example": "sum(logbook.batch_id)"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Rows by position",
+      "idea": "indexing",
+      "story": "Eddie, who keeps the records: \"This is logbook, the practice notebook. The B05 jars are rows 7 to 12 of the table.\"",
+      "remember": {
+        "prompt": "Remember the sum line from Round 1? Here is a new list. What does it give? Click your answer. No Run needed.",
+        "code": "sum([false, true, true, true])",
+        "choices": [
+          "3",
+          "4",
+          "true"
+        ],
+        "answer": 0,
+        "why": "sum counts each true as 1, so three trues give 3."
+      },
+      "explain": "Square brackets pick part of something. This is called indexing.\nFor a list, give one number: logbook.jar_id[7] is item 7.",
+      "challenges": [
+        {
+          "id": "l1-r2-c1",
+          "kind": "see",
+          "prompt": "Square brackets after a name pick by position. logbook.jar_id[7] is the 7th jar id. Which id will it be? Choose, then press Run.",
+          "starter": "logbook.jar_id[7]",
+          "solution": "logbook.jar_id[7]",
+          "labels": [
+            {
+              "part": "logbook.jar_id",
+              "is": "a column"
+            },
+            {
+              "part": "[7]",
+              "is": "a position"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "\"Q-051\"",
+              "\"Q-041\"",
+              "7"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook.jar_id[7]"
+            ]
+          },
+          "feedback": {
+            "pass": "Indexing picked the seventh jar id: Q-051, the first B05 jar.",
+            "wrong": "Press Reset to put the line back (logbook.jar_id[7]), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.jar_id.",
+                "example": "logbook$jar_id"
+              },
+              {
+                "match": "BoundsError",
+                "say": "logbook has 12 rows, so the position must be from 1 to 12.",
+                "example": "logbook.jar_id[13]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. Check the spelling and use small letters. The table is logbook.",
+                "example": "Logbook.jar_id[7]"
+              }
+            ],
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "taught": "pick one item of a column by its position, as in logbook.jar_id[7]"
+          },
+          "new_ideas": [
+            "indexing"
+          ],
+          "new_facts": [
+            "square brackets after a name pick by position"
+          ],
+          "data": "logbook",
+          "py_note": "Python counts from 0, Julia from 1. The first jar id is `logbook.jar_id.iloc[0]` in pandas and logbook.jar_id[1] in Julia.",
+          "r_note": "R also counts from 1, so `logbook$jar_id[7]` is the seventh jar id there too."
+        },
+        {
+          "id": "l1-r2-c2",
+          "kind": "change",
+          "prompt": "Change 7 to the position of the last jar, then press Run. logbook has 12 jars.",
+          "starter": "logbook.jar_id[7]",
+          "solution": "logbook.jar_id[12]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook.jar_id[12]"
+            ]
+          },
+          "feedback": {
+            "pass": "Position 12 gave Q-056, the last jar id in logbook.",
+            "wrong": "The jar id of the last jar should come back: logbook has 12 jars, so check the position number.",
+            "errors": [
+              {
+                "match": "at index [-",
+                "say": "Julia counts from 1, not from 0 as Python does. There is no position 0 or below. The last jar is position 12.",
+                "example": "logbook.jar_id[-1]"
+              },
+              {
+                "match": "at index [0]",
+                "say": "Julia counts from 1, not from 0 as Python does. There is no position 0 or below. The last jar is position 12.",
+                "example": "logbook.jar_id[0]"
+              },
+              {
+                "match": "BoundsError",
+                "say": "logbook has 12 rows, so 13 is outside the list.",
+                "example": "logbook.jar_id[13]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is jar_id: check both spellings.",
+                "example": "jar.jar_id[12]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the jar ids are in jar_id.",
+                "example": "logbook.jarid[12]"
+              }
+            ],
+            "unchanged": "You ran the line unchanged: change the position number to the last row.",
+            "requires": "Keep the table logbook in your line, and pick the jar id from its jar_id column.",
+            "taught": "pick the last jar id by its position number, 12"
+          },
+          "new_ideas": [],
+          "data": "logbook"
+        },
+        {
+          "id": "l1-r2-c3",
+          "kind": "see",
+          "prompt": "A table needs two parts: rows, a comma, then columns. 1:3 means rows 1 to 3. A single colon : means all columns. Choose an answer, then press Run.",
+          "starter": "logbook[1:3, :]",
+          "solution": "logbook[1:3, :]",
+          "labels": [
+            {
+              "part": "logbook",
+              "is": "a name"
+            },
+            {
+              "part": "1:3",
+              "is": "a range of rows"
+            },
+            {
+              "part": ":",
+              "is": "every column"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "the first 3 rows, all columns",
+              "3 columns",
+              "an error"
+            ],
+            "answer": 0
+          },
+          "r_note": "`logbook[1:3, ]` in R, with nothing after the comma. Julia needs a colon there, to keep every column.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook[",
+              "1:3"
+            ]
+          },
+          "feedback": {
+            "pass": "Indexing kept rows 1 to 3 and, with the colon, every column.",
+            "wrong": "Press Reset to put the line back (logbook[1:3, :]), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "DataFrame, ::UnitRange",
+                "say": "A table needs rows, a comma, then the columns. After the comma, type a colon to keep every column: logbook[1:3, :].",
+                "example": "logbook[1:3, ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "BoundsError",
+                "say": "Rows come first, columns second: logbook[1:3, :].",
+                "example": "logbook[:, 1:5]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. Check the spelling and use small letters. The table is logbook.",
+                "example": "Logbook[1:3, :]"
+              }
+            ],
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "taught": "rows, a comma, then columns, as in logbook[1:3, :]"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "a range 1:3 means rows 1 to 3",
+            ": alone means all columns"
+          ],
+          "look_closer": {
+            "text": "Two numbers pick one cell: logbook[2, 3] is row 2, column 3. In a list, end means the last position, as in logbook.jar_id[end].",
+            "code": "logbook[2, 3]"
+          },
+          "data": "logbook",
+          "py_note": "`logbook.iloc[0:3, :]`. Python 0:3 stops before 3; Julia 1:3 includes 3. One cell is `logbook.iloc[1, 2]`. Rows 7 to 12 are `logbook.iloc[6:12]`. The last item is -1 in Python, end in Julia."
+        },
+        {
+          "id": "l1-r2-f1",
+          "kind": "fix",
+          "prompt": "Toto's line should pick rows 1 to 6, the B04 jars, with every column. Press Run: Julia shows an error. Read it, fix the line, and run again.",
+          "starter": "logbook[1:6]",
+          "solution": "logbook[1:6, :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook[",
+              "1:6"
+            ]
+          },
+          "feedback": {
+            "pass": "Fixed: rows 1 to 6 with every column, the six B04 jars.",
+            "wrong": "Six rows and four columns should come back: a table needs rows, a comma, then columns.",
+            "errors": [
+              {
+                "match": "DataFrame, ::UnitRange",
+                "say": "A table needs rows, a comma, then the columns. After the comma, type a colon to keep every column.",
+                "example": "logbook[1:6, ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "BoundsError",
+                "say": "Rows come first: logbook[1:6, :].",
+                "example": "logbook[:, 1:6]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. Check the spelling and use small letters. The table is logbook.",
+                "example": "Logbook[1:6, :]"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: read the error, then fix the line.",
+            "requires": "Keep the table logbook in your line.",
+            "taught": "rows, a comma, then columns inside square brackets"
+          },
+          "new_ideas": [],
+          "data": "logbook"
+        },
+        {
+          "id": "l1-r2-c4",
+          "kind": "complete",
+          "data": "logbook",
+          "prompt": "A range works on one column too. Replace the blank with a range of positions that keeps the first three jar ids. Then press Run.",
+          "starter": "logbook.jar_id[___]",
+          "solution": "logbook.jar_id[1:3]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook.jar_id[",
+              "1:3"
+            ]
+          },
+          "feedback": {
+            "pass": "A range inside the brackets of a column gave three jar ids: Q-041, Q-042 and Q-043.",
+            "wrong": "Three jar ids should come back: write the first and the last position with a colon between them.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "logbook has 12 rows, so the range stays inside 1 to 12.",
+                "example": "logbook.jar_id[11:13]"
+              },
+              {
+                "match": ", 3]",
+                "say": "A list takes one position or one range: write a range with a colon, not a comma.",
+                "example": "logbook.jar_id[1,3]",
+                "code_has": ","
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.jar_id.",
+                "example": "logbook$jar_id"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the jar ids are in jar_id.",
+                "example": "logbook.jarid[1:3]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is jar_id: check both spellings.",
+                "example": "logbok.jar_id[1:3]"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with a range, two positions with a colon between them.",
+            "requires": "Use the table logbook, and pick the jar ids by a range of positions.",
+            "taught": "a range of positions, first:last, inside the square brackets of a column"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r2-c5",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "practice_jars is the small warm-up table, shown on the left. A range is written first:last, like 1:3. Replace the blank with a range that keeps the two T-B jars, rows 3 and 4. Then press Run.",
+          "starter": "practice_jars[___, :]",
+          "solution": "practice_jars[3:4, :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars"
+            ],
+            "checker": null,
+            "taught": [
+              "practice_jars[",
+              "3:4"
+            ]
+          },
+          "feedback": {
+            "pass": "Rows 3 and 4 came back: P-03 and P-04, the two T-B practice jars.",
+            "wrong": "Two rows, P-03 and P-04, should come back: check the first and last row numbers in your range.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "practice_jars has 4 rows, so the range stays inside 1 to 4.",
+                "example": "practice_jars[3:5, :]"
+              },
+              {
+                "match": "DataFrame, ::UnitRange",
+                "say": "A table needs rows, a comma, then the columns: keep the comma and the colon after the range.",
+                "example": "practice_jars[3:4]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "::Int64, ::Int64, ::Colon",
+                "say": "A table has two parts, rows and columns, so a comma between 3 and 4 makes three. Join the two row numbers with a colon.",
+                "example": "practice_jars[3,4, :]",
+                "code_has": ","
+              },
+              {
+                "match": "unexpected comma in array expression",
+                "say": "Join the two row numbers with a colon: a space between them makes two items, not a range.",
+                "example": "practice_jars[3 4, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. This table is practice_jars, with an underscore.",
+                "example": "practicejars[3:4, :]"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with a range, two row numbers with a colon between.",
+            "requires": "Use practice_jars here, not logbook.",
+            "taught": "a range of row numbers, first:last, with a comma and a colon after it"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r2-c6",
+          "kind": "checkpoint",
+          "prompt": "The notebook logbook is on the left. Write one line that gives the jar ids of the six B05 jars by position. They are the last six of the 12. Type it in the empty editor, then press Run.",
+          "starter": "",
+          "solution": "logbook.jar_id[7:12]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "forbids": [
+              "==",
+              "!=",
+              ">",
+              "<",
+              "filter",
+              "subset",
+              "B05"
+            ],
+            "taught": [
+              "logbook.jar_id[",
+              "7:12"
+            ]
+          },
+          "hints": [
+            "The jar ids are in one column of logbook. Take that column, then pick positions inside square brackets.",
+            "Pattern: name.column[first:last]. Use logbook, jar_id, and the first and last B05 positions."
+          ],
+          "clue": "Square brackets pick by position: the six B05 jars are rows 7 to 12 of the practice notebook.",
+          "feedback": {
+            "pass": "Positions 7 to 12 of jar_id: the six B05 jar ids, Q-051 to Q-056.",
+            "wrong": "Six jar ids should come back: check which positions you picked, then which column you took them from.",
+            "requires": "Take the jar ids from the table logbook, not a number or ids you typed.",
+            "errors": [
+              {
+                "match": "`len`",
+                "say": "len is not a Julia function. Here you pick jar ids by position: write the table, a dot, the column, then square brackets with first:last inside.",
+                "example": "len(logbook.jar_id)"
+              },
+              {
+                "match": ", 12]",
+                "say": "A list takes one position or one range: write a range with a colon, 7:12, not 7,12.",
+                "example": "logbook.jar_id[7,12]",
+                "code_has": ","
+              },
+              {
+                "match": "at index [-",
+                "say": "A range is written with a colon between two numbers, not a minus.",
+                "example": "logbook.jar_id[1-2]"
+              },
+              {
+                "match": "BoundsError",
+                "say": "logbook has 12 rows, so a position past 12 is outside the list.",
+                "example": "logbook.jar_id[11:13]"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.jar_id.",
+                "example": "logbook$jar_id"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is jar_id: check both spellings.",
+                "example": "jar.jar_id[1:2]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the jar ids are in jar_id.",
+                "example": "logbook.jarid[1:2]"
+              }
+            ],
+            "forbids": "This line asks for positions: pick the jars by where they sit in logbook.",
+            "taught": "pick the jar ids by position, as a range inside square brackets after the column"
+          },
+          "new_ideas": [],
+          "data": "logbook",
+          "starter_hint": "___.___[___:___]"
+        },
+        {
+          "id": "l1-r2-p1",
+          "kind": "play",
+          "prompt": "Pick other rows, or one jar by position, or use the small warm-up table practice_jars. Nothing here is checked.",
+          "starter": "logbook[2:5, :]",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "Pick rows with a rule",
+      "idea": "dot rule",
+      "story": "Momo, who doubts things: \"If the notebook grows, row numbers change. A question like \"is this B05?\" still finds the right jars.\" Each tray holds two B04 jars and two B05 jars.",
+      "remember": {
+        "prompt": "Remember the table line from Round 2? Here it is again. What did it give? Click your answer. No Run needed.",
+        "code": "logbook[1:3, :]",
+        "choices": [
+          "the first 3 rows, all columns",
+          "3 columns",
+          "one value"
+        ],
+        "answer": 0,
+        "why": "1:3 picks rows 1 to 3, and the colon on its own keeps every column."
+      },
+      "explain": "== asks: is it equal to? The answer is true or false.",
+      "challenges": [
+        {
+          "id": "l1-r3-c0",
+          "kind": "see",
+          "prompt": "The seventh jar is the first B05 jar. Is its batch \"B05\"? Text goes in double quotes. Choose the answer, then press Run.",
+          "starter": "logbook.batch_id[7] == \"B05\"",
+          "solution": "logbook.batch_id[7] == \"B05\"",
+          "labels": [
+            {
+              "part": "logbook.batch_id[7]",
+              "is": "the batch of jar 7"
+            },
+            {
+              "part": "==",
+              "is": "asks: is it equal?"
+            },
+            {
+              "part": "\"B05\"",
+              "is": "the text to compare with"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "true",
+              "false",
+              "7"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "==",
+              "B05"
+            ]
+          },
+          "feedback": {
+            "pass": "The seventh jar is batch B05, so == gave one answer: true.",
+            "wrong": "Press Reset to put the line back (logbook.batch_id[7] == \"B05\"), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "`B05`",
+                "say": "B05 without quotes is read as a name Julia does not know: text needs double quotes, \"B05\".",
+                "example": "logbook.batch_id[7] == B05"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is batch_id: check both spellings.",
+                "example": "jar.batch_id[7] == \"B05\""
+              },
+              {
+                "match": "ParseError",
+                "say": "Julia uses double quotes for text: \"B05\". Single quotes are for one letter.",
+                "example": "logbook.batch_id[7] == 'B05'",
+                "code_has": "'"
+              }
+            ],
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "taught": "== asks is it equal to, and gives one true or false"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "text goes in double quotes",
+            "== asks: is it equal to? One true or false"
+          ],
+          "r_note": "`logbook$batch_id[7] == \"B05\"` is the same in R. Julia takes the column with a dot, not a dollar sign.",
+          "py_note": "`logbook.batch_id.iloc[6] == \"B05\"` in pandas, which counts from 0. Julia counts from 1, so the seventh jar is [7].",
+          "data": "logbook"
+        },
+        {
+          "id": "l1-r3-c1",
+          "kind": "see",
+          "prompt": "Now ask every jar at once. A dot before the equals signs, .==, asks the same question of all 12 jars. Choose how many answers come back, then press Run. Julia prints true as 1 and false as 0 here.",
+          "starter": "logbook.batch_id .== \"B04\"",
+          "solution": "logbook.batch_id .== \"B04\"",
+          "labels": [
+            {
+              "part": "logbook.batch_id",
+              "is": "a column"
+            },
+            {
+              "part": ".==",
+              "is": "asks every jar: is it equal?"
+            },
+            {
+              "part": "\"B04\"",
+              "is": "the text to compare with"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "12 answers, 1 or 0 for each jar",
+              "6 rows of the table",
+              "one answer"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              ".==",
+              "B04"
+            ]
+          },
+          "feedback": {
+            "pass": "Julia answered for every jar: six 1s (true) for B04, then six 0s (false). The dot turned one question into twelve.",
+            "wrong": "Press Reset to put the line back (logbook.batch_id .== \"B04\"), then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.batch_id.",
+                "example": "logbook$batch_id .== \"B04\""
+              },
+              {
+                "match": "`B04`",
+                "say": "B04 without quotes is read as a name Julia does not know: text needs double quotes, \"B04\".",
+                "example": "logbook.batch_id .== B04"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is batch_id: check both spellings.",
+                "example": "jar.batch_id .== \"B04\""
+              },
+              {
+                "match": "ParseError",
+                "say": "Julia uses double quotes for text: \"B04\". Single quotes are for one letter.",
+                "example": "logbook.batch_id .== 'B04'",
+                "code_has": "'"
+              }
+            ],
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "taught": "put a dot before the equals signs, as in logbook.batch_id .== \"B04\""
+          },
+          "new_ideas": [
+            "dot rule"
+          ],
+          "new_facts": [],
+          "py_note": "pandas already compares every item: `logbook.batch_id == \"B04\"`. Julia needs the dot first, so you write .== there.",
+          "data": "logbook",
+          "r_note": "`logbook$batch_id == \"B04\"`. R already compares every item with two equals signs. Julia needs a dot first, so you write .== there."
+        },
+        {
+          "id": "l1-r3-c2",
+          "kind": "change",
+          "prompt": "Change \"B04\" to \"B05\" in the editor, then press Run. Julia shows 12 answers, 1 for true and 0 for false. Look at which positions are 1. A question asked about every row is a rule.",
+          "starter": "logbook.batch_id .== \"B04\"",
+          "solution": "logbook.batch_id .== \"B05\"",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              ".==",
+              "B05"
+            ]
+          },
+          "feedback": {
+            "pass": "Six 1s at positions 7 to 12: the B05 jars, found by a rule.",
+            "wrong": "Twelve answers should come back: check the dot in front of the equals signs, and that the batch is in double quotes.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.batch_id.",
+                "example": "logbook$batch_id .== \"B05\""
+              },
+              {
+                "match": "`B05`",
+                "say": "B05 without quotes is read as a name Julia does not know: text needs double quotes, \"B05\".",
+                "example": "logbook.batch_id .== B05"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is batch_id: check both spellings.",
+                "example": "jar.batch_id .== \"B05\""
+              },
+              {
+                "match": "ParseError",
+                "say": "Julia uses double quotes for text: \"B05\". Single quotes are for one letter.",
+                "example": "logbook.batch_id .== 'B05'",
+                "code_has": "'"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the batches are in batch_id.",
+                "example": "logbook.batchid .== \"B05\""
+              }
+            ],
+            "unchanged": "You ran the line unchanged: change the batch inside the quotes.",
+            "requires": "Keep the table logbook in your line, and ask about the batch.",
+            "taught": "ask every jar with .== and the batch in double quotes"
+          },
+          "new_ideas": [],
+          "data": "logbook"
+        },
+        {
+          "id": "l1-r3-c3",
+          "kind": "see",
+          "prompt": "A rule can go where the rows go, before the comma. Which jars are on tray T-F? Julia keeps each row whose answer is true. The colon keeps all columns. Choose how many rows, then press Run.",
+          "starter": "logbook[logbook.tray_id .== \"T-F\", :]",
+          "solution": "logbook[logbook.tray_id .== \"T-F\", :]",
+          "labels": [
+            {
+              "part": "logbook",
+              "is": "a name"
+            },
+            {
+              "part": "logbook.tray_id .== \"T-F\"",
+              "is": "a rule"
+            },
+            {
+              "part": ":",
+              "is": "every column"
+            }
+          ],
+          "predict": {
+            "question": "How many rows will come back?",
+            "choices": [
+              "4 rows",
+              "12 rows",
+              "2 rows"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook[",
+              ".==",
+              "T-F"
+            ]
+          },
+          "feedback": {
+            "pass": "The rule kept the four T-F rows, two B04 and two B05, with all columns.",
+            "wrong": "Press Reset to put the line back (logbook[logbook.tray_id .== \"T-F\", :]), then press Run. Do not change it.",
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.tray_id.",
+                "example": "logbook[logbook$tray_id .== \"T-F\", :]"
+              },
+              {
+                "match": "invalid row index",
+                "say": "Add the dot: .== asks every jar, while a plain == gives one answer that cannot pick rows.",
+                "example": "logbook[logbook.tray_id == \"T-F\", :]"
+              },
+              {
+                "match": "DataFrame, ::BitVector",
+                "say": "A table needs rows, a comma, then the columns. After the comma, type a colon to keep every column.",
+                "example": "logbook[logbook.tray_id .== \"T-F\", ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-F is read as a subtraction, T minus F. Text needs double quotes: \"T-F\".",
+                "example": "logbook[logbook.tray_id .== T-F, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is tray_id: check both spellings.",
+                "example": "Logbook[logbook.tray_id .== \"T-F\", :]"
+              }
+            ],
+            "taught": "a .== rule before the comma, inside logbook[ ]"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "a true or false rule in the rows keeps the true rows"
+          ],
+          "look_closer": {
+            "text": "The dot works on any function, not only ==. sqrt.([4, 9]) takes the square root of every item. Without the dot, sqrt([4, 9]) is an error.",
+            "code": "sqrt.([4, 9])"
+          },
+          "r_note": "After library(dplyr): `filter(logbook, tray_id == \"T-F\")`. Julia puts the rule inside square brackets, with a dot.",
+          "py_note": "`logbook[logbook.tray_id == \"T-F\"]`. In Julia you write .== with a dot, and end with a comma and a colon to keep every column.",
+          "data": "logbook"
+        },
+        {
+          "id": "l1-r3-f1",
+          "kind": "fix",
+          "data": "practice_jars",
+          "prompt": "Toto's line should keep the T-B jars of practice_jars. Press Run: Julia shows an error. Read it, fix the line, and run again.",
+          "starter": "practice_jars[practice_jars.tray_id == \"T-B\", :]",
+          "solution": "practice_jars[practice_jars.tray_id .== \"T-B\", :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars",
+              "tray_id"
+            ],
+            "checker": null,
+            "taught": [
+              "practice_jars[",
+              ".=="
+            ]
+          },
+          "feedback": {
+            "pass": "Fixed: the rule kept P-03 and P-04, the two T-B practice jars.",
+            "wrong": "Two rows, P-03 and P-04, should come back: check the sign that asks the question of every jar.",
+            "errors": [
+              {
+                "match": "invalid row index",
+                "say": "Julia says a single true or false cannot pick rows. Add the dot: .== asks every jar.",
+                "example": "practice_jars[practice_jars.tray_id == \"T-A\", :]"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Julia found a space it does not allow. .== is one symbol: keep the dot and the two equals signs together, with no space.",
+                "example": "practice_jars[practice_jars.tray_id . == \"T-B\", :]"
+              },
+              {
+                "match": "unexpected comma in array expression",
+                "say": "Julia found a space in the wrong place. .== is one symbol: keep the dot and the two equals signs together, with no space.",
+                "example": "practice_jars[practice_jars.tray_id. == \"T-B\", :]"
+              },
+              {
+                "match": "DataFrame, ::BitVector",
+                "say": "A table needs rows, a comma, then the columns. After the comma, type a colon to keep every column.",
+                "example": "practice_jars[practice_jars.tray_id .== \"T-B\", ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-B is read as a subtraction, T minus B. Text needs double quotes: \"T-B\".",
+                "example": "practice_jars[practice_jars.tray_id .== T-B, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that name. This table is practice_jars, with an underscore.",
+                "example": "practicejars[practicejars.tray_id .== \"T-E\", :]"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: read the error, then fix the line.",
+            "requires": "Use a rule on the tray_id column of practice_jars, not row numbers.",
+            "taught": "a .== rule, with the dot, before the comma"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r3-c5",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "Same small warm-up table. Replace the blank with the column to ask about, so the line keeps the jars whose batch is \"B01\", with all columns. Two rows should come back: P-01 and P-03. Then press Run.",
+          "starter": "practice_jars[practice_jars.___ .== \"B01\", :]",
+          "solution": "practice_jars[practice_jars.batch_id .== \"B01\", :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars",
+              "batch_id"
+            ],
+            "checker": null,
+            "taught": [
+              "practice_jars[",
+              ".==",
+              "batch_id"
+            ]
+          },
+          "feedback": {
+            "pass": "Your rule kept P-01 and P-03, the two B01 practice jars.",
+            "wrong": "Two rows, P-01 and P-03, should come back: check the rule, the column it asks about, and where the comma and colon go.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: practice_jars.batch_id.",
+                "example": "practice_jars[practice_jars$batch_id .== \"B01\", :]"
+              },
+              {
+                "match": "invalid row index",
+                "say": "A plain == gives one answer; .== asks every jar. Also check the column: batch_id.",
+                "example": "practice_jars[practice_jars.batch_id == \"B01\", :]"
+              },
+              {
+                "match": "DataFrame, ::BitVector",
+                "say": "A table needs rows, a comma, then the columns. After the rule, put a comma and a colon.",
+                "example": "practice_jars[practice_jars.batch_id .== \"B01\", ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "`B01`",
+                "say": "B01 without quotes is read as a name Julia does not know: text needs double quotes, \"B01\".",
+                "example": "practice_jars[practice_jars.batch_id .== B01, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The small warm-up table is practice_jars. Its columns are jar_id, batch_id, tray_id and detected.",
+                "example": "practice_jars[practice.batch_id .== \"B01\", :]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: use jar_id, batch_id, tray_id or detected.",
+                "example": "practice_jars[practice_jars.batch .== \"B01\", :]"
+              }
+            ],
+            "requires": "Use a rule on the batch_id column of practice_jars, not row numbers.",
+            "taught": "a .== rule on the batch_id column, before the comma, inside square brackets",
+            "unchanged": "The blank is still there: replace it with the column that holds the batch."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r3-c4",
+          "kind": "see",
+          "data": "logbook",
+          "prompt": "A rule can go inside a column's brackets too. This one keeps the detected values of the B05 jars. Choose what comes back, then press Run.",
+          "starter": "logbook.detected[logbook.batch_id .== \"B05\"]",
+          "solution": "logbook.detected[logbook.batch_id .== \"B05\"]",
+          "labels": [
+            {
+              "part": "logbook.detected",
+              "is": "a column"
+            },
+            {
+              "part": "logbook.batch_id .== \"B05\"",
+              "is": "a rule"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "6 true or false values, one for each B05 jar",
+              "the 6 B05 rows of the table",
+              "one number"
+            ],
+            "answer": 0
+          },
+          "r_note": "`logbook$detected[logbook$batch_id == \"B05\"]`. Same shape in R; Julia adds the dot.",
+          "py_note": "`logbook.detected[logbook.batch_id == \"B05\"]`. Same shape in pandas; Julia adds the dot.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook.detected[",
+              ".=="
+            ]
+          },
+          "feedback": {
+            "pass": "The rule kept the detected values of the six B05 jars: true, true, false, true, true, false.",
+            "wrong": "Press Reset to put the line back, then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.batch_id.",
+                "example": "logbook.detected[logbook$batch_id .== \"B05\"]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the true or false column is called detected.",
+                "example": "logbook.detect[logbook.batch_id .== \"B05\"]"
+              },
+              {
+                "match": "invalid index",
+                "say": "Add the dot: .== asks every jar, while a plain == gives one answer that cannot pick values.",
+                "example": "logbook.detected[logbook.batch_id == \"B05\"]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the columns are detected and batch_id: check the spellings.",
+                "example": "Logbook.detected[logbook.batch_id .== \"B05\"]"
+              }
+            ],
+            "requires": "Run the line in the editor as it is: it starts with logbook.",
+            "taught": "a rule inside the brackets of a column, as in logbook.detected[logbook.batch_id .== \"B05\"]"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "a rule inside the brackets of a column keeps the values where it is true"
+          ]
+        },
+        {
+          "id": "l1-r3-c7",
+          "kind": "complete",
+          "data": "logbook",
+          "prompt": "Count the B05 jars that had springtails. Replace the blank with the function that counts the true answers, then press Run.",
+          "starter": "___(logbook.detected[logbook.batch_id .== \"B05\"])",
+          "solution": "sum(logbook.detected[logbook.batch_id .== \"B05\"])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook",
+              "batch_id"
+            ],
+            "checker": null,
+            "taught": [
+              "sum(",
+              "logbook.detected["
+            ]
+          },
+          "feedback": {
+            "pass": "sum counted the true answers of the B05 jars: 4 of the 6 had springtails.",
+            "wrong": "One number, 4, should come back: the function that counts the true answers goes before the round bracket.",
+            "errors": [
+              {
+                "match": "`len`",
+                "say": "len is not a Julia function. Which function that you already know counts the trues?",
+                "example": "len(logbook.detected[logbook.batch_id .== \"B05\"])"
+              },
+              {
+                "match": "invalid index",
+                "say": "Add the dot: .== asks every jar, while a plain == gives one answer that cannot pick values.",
+                "example": "sum(logbook.detected[logbook.batch_id == \"B05\"])"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the true or false column is called detected.",
+                "example": "sum(logbook.detect[logbook.batch_id .== \"B05\"])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of the function and of the table, logbook.",
+                "example": "sm(logbook.detected[logbook.batch_id .== \"B05\"])"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the function that counts the true answers.",
+            "requires": "Keep the rule on batch_id inside the brackets of logbook.detected.",
+            "taught": "sum counts the true answers of a column picked by a rule"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l1-r3-c8",
+          "kind": "write",
+          "data": "logbook",
+          "prompt": "Now write the whole line yourself: how many of the B04 jars had springtails? Start from the empty editor, then press Run.",
+          "starter": "",
+          "solution": "sum(logbook.detected[logbook.batch_id .== \"B04\"])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook",
+              "batch_id"
+            ],
+            "checker": null,
+            "taught": [
+              "sum(",
+              "logbook.detected[",
+              ".=="
+            ]
+          },
+          "feedback": {
+            "pass": "3 of the 6 B04 jars had springtails: the same line, with a different batch.",
+            "wrong": "One number, 3, should come back: count the true answers of the B04 jars only.",
+            "errors": [
+              {
+                "match": "`len`",
+                "say": "len is not a Julia function. Which function that you already know counts the trues?",
+                "example": "len(logbook.detected)"
+              },
+              {
+                "match": "invalid index",
+                "say": "Add the dot: .== asks every jar, while a plain == gives one answer that cannot pick values.",
+                "example": "sum(logbook.detected[logbook.batch_id == \"B04\"])"
+              },
+              {
+                "match": "`B04`",
+                "say": "B04 without quotes is read as a name Julia does not know: text needs double quotes, \"B04\".",
+                "example": "sum(logbook.detected[logbook.batch_id .== B04])"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.batch_id.",
+                "example": "sum(logbook.detected[logbook$batch_id .== \"B04\"])"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in the table: the true or false column is called detected.",
+                "example": "sum(logbook.detect[logbook.batch_id .== \"B04\"])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the columns are detected and batch_id: check the spellings.",
+                "example": "sum(logbook.detected[logbok.batch_id .== \"B04\"])"
+              }
+            ],
+            "requires": "Take the detected values of the B04 jars with a rule on batch_id, then count them.",
+            "taught": "sum of logbook.detected with the batch rule inside the brackets"
+          },
+          "new_ideas": [],
+          "hints": [
+            "Count the true answers of the B04 jars only: pick the detected values with a rule on batch_id, then count them.",
+            "Pattern: sum( table.column[ table.column .== text ] ). The table is logbook; the text is the batch, in double quotes."
+          ]
+        },
+        {
+          "id": "l1-r3-c6",
+          "kind": "checkpoint",
+          "prompt": "From memory, write one line that gives the full rows of the six B05 jars in logbook. Choose them by a rule on the batch, not by row numbers. Then press Run.",
+          "starter": "",
+          "solution": "logbook[logbook.batch_id .== \"B05\", :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logbook",
+              "batch_id"
+            ],
+            "checker": null,
+            "taught": [
+              "logbook[",
+              ".==",
+              "batch_id"
+            ]
+          },
+          "hints": [
+            "Ask every jar: is its batch \"B05\"? Put that question before the comma.",
+            "Pattern: logbook[ your rule, : ]. The rule is a column, then .==, then text in double quotes."
+          ],
+          "clue": "A dot makes Julia ask every jar. A rule finds the rows in any position: 4 of the 6 B05 jars had springtails.",
+          "feedback": {
+            "pass": "All six B05 jars, found by a rule that works wherever they are in logbook.",
+            "wrong": "Six rows should come back, chosen by a rule on the batch_id column with .==, not by row numbers.",
+            "errors": [
+              {
+                "match": "`len`",
+                "say": "len is not a Julia function. Here you keep the rows that pass a rule.",
+                "example": "len(logbook)"
+              },
+              {
+                "match": "unable to check bounds for indices of type String",
+                "say": "Compare with .==, a dot and two equals signs: .= is not a comparison.",
+                "example": "logbook[logbook.tray_id .= \"T-D\", :]"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Replace the $ with a dot: logbook.batch_id.",
+                "example": "logbook[logbook$tray_id .== \"T-D\", :]"
+              },
+              {
+                "match": "invalid row index",
+                "say": "Add the dot: .== asks every jar, while a plain == gives one answer that cannot pick rows.",
+                "example": "logbook[logbook.tray_id == \"T-D\", :]"
+              },
+              {
+                "match": "DataFrame, ::BitVector",
+                "say": "A table needs rows, a comma, then the columns. After the rule, type a comma and a colon.",
+                "example": "logbook[logbook.tray_id .== \"T-D\", ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "`B0",
+                "say": "A batch name without quotes is read as a word Julia does not know: text needs double quotes, such as \"B05\".",
+                "example": "logbook[logbook.batch_id .== B04, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is logbook and the column is batch_id: check both spellings.",
+                "example": "jar[logbook.tray_id .== \"T-D\", :]"
+              },
+              {
+                "match": "column name :tray not",
+                "say": "That column is not in the table: the columns are jar_id, batch_id, tray_id and detected.",
+                "example": "logbook[logbook.tray .== \"T-D\", :]"
+              }
+            ],
+            "requires": "Pick the jars by a rule on their batch, not by row numbers.",
+            "taught": "a .== rule on the batch_id column before the comma, inside logbook[ ]"
+          },
+          "new_ideas": [],
+          "data": "logbook",
+          "starter_hint": "___[___.___ .== \"___\", :]"
+        },
+        {
+          "id": "l1-r3-p1",
+          "kind": "play",
+          "prompt": "On logbook, try a rule on tray_id, or on detected, such as logbook.detected .== true. Nothing here is checked.",
+          "starter": "logbook[logbook.tray_id .== \"T-F\", :]",
+          "new_ideas": []
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "logbook",
+      "means": "a name that holds the practice notebook, a table.",
+      "r": "logbook",
+      "py": "logbook",
+      "from_round": "r1",
+      "idea": "name",
+      "lesson_only": true
+    },
+    {
+      "julia": "practice_jars",
+      "means": "the small warm-up table of 4 jars, the same in every lesson.",
+      "r": "practice_jars",
+      "py": "practice_jars",
+      "from_round": "r1",
+      "idea": "name",
+      "lesson_only": true
+    },
+    {
+      "julia": "logbook.batch_id",
+      "means": "one column of the table, picked with a dot.",
+      "r": "logbook$batch_id",
+      "py": "logbook[\"batch_id\"]",
+      "from_round": "r1",
+      "idea": "name",
+      "lesson_only": true
+    },
+    {
+      "julia": "length([4, 7, 1])",
+      "means": "the function length counts the items inside its round brackets.",
+      "r": "length(c(4, 7, 1))",
+      "py": "len([4, 7, 1])",
+      "from_round": "r1",
+      "idea": "function"
+    },
+    {
+      "julia": "sum([true, false, true])",
+      "means": "sum adds a list up; each true counts as 1.",
+      "r": "sum(c(TRUE, FALSE, TRUE))",
+      "py": "sum([True, False, True])",
+      "from_round": "r1",
+      "idea": "function"
+    },
+    {
+      "julia": "logbook.jar_id[7]",
+      "means": "square brackets pick item 7 of a list, by its position.",
+      "r": "logbook$jar_id[7]",
+      "py": "logbook.jar_id.iloc[6]",
+      "from_round": "r2",
+      "idea": "indexing",
+      "lesson_only": true
+    },
+    {
+      "julia": "logbook[1:6, :]",
+      "means": "rows 1 to 6 of the table, a comma, then all columns.",
+      "r": "logbook[1:6, ]",
+      "py": "logbook.iloc[0:6, :]",
+      "from_round": "r2",
+      "idea": "indexing",
+      "lesson_only": true
+    },
+    {
+      "julia": "logbook.batch_id .== \"B04\"",
+      "means": "the dot asks about every jar: one true or false for each jar.",
+      "r": "logbook$batch_id == \"B04\"",
+      "py": "logbook.batch_id == \"B04\"",
+      "from_round": "r3",
+      "idea": "dot rule",
+      "lesson_only": true
+    },
+    {
+      "julia": "logbook[logbook.tray_id .== \"T-F\", :]",
+      "means": "a rule before the comma keeps the rows where it is true: the four T-F jars.",
+      "r": "filter(logbook, tray_id == \"T-F\")",
+      "py": "logbook[logbook.tray_id == \"T-F\"]",
+      "from_round": "r3",
+      "idea": "dot rule",
+      "lesson_only": true
+    },
+    {
+      "julia": "logbook.detected[logbook.batch_id .== \"B05\"]",
+      "means": "a rule inside a column's brackets keeps the values where it is true.",
+      "r": "logbook$detected[logbook$batch_id == \"B05\"]",
+      "py": "logbook.detected[logbook.batch_id == \"B05\"]",
+      "from_round": "r3",
+      "idea": "dot rule",
+      "lesson_only": true
+    }
+  ],
+  "close": {
+    "finding": "You found the six B05 jars in the practice notebook. Four had springtails. Momo: \"Good. Now take the same lines to Toto's real report.\"",
+    "can_do": [
+      "Run a function on a list or a column.",
+      "Pick items by their place, and rows by a rule.",
+      "Read an error and fix the line."
+    ],
+    "common_mistake": "Leaving out the dot before ==: a plain == gives one answer, so it cannot pick rows, while .== asks every jar.",
+    "next": "Next: Chapter 1 uses these lines on the case notebook.",
+    "own_work": {
+      "say": "A CSV is a table saved as a file. Put yours beside your code. Install the two packages once. Then change mydata, mydata.csv and site to your own names: the same rule works on your table.",
+      "code": "using Pkg; Pkg.add([\"CSV\", \"DataFrames\"])   # first time only\nusing CSV, DataFrames\nmydata = CSV.read(\"mydata.csv\", DataFrame)\nmydata[mydata.site .== \"A\", :]"
+    }
+  },
+  "glossary": [
+    {
+      "term": "line of code",
+      "means": "one instruction you type in the editor, on one line."
+    },
+    {
+      "term": "editor",
+      "means": "the part of the screen on the right where you type."
+    },
+    {
+      "term": "Run",
+      "means": "the button that makes Julia follow your line and show the answer."
+    },
+    {
+      "term": "Reset",
+      "means": "the button that puts the starting line back in the editor."
+    },
+    {
+      "term": "blank",
+      "means": "the place marked ___ in a starting line. Type your answer there."
+    },
+    {
+      "term": "Next",
+      "means": "the button that takes you to the next task."
+    },
+    {
+      "term": "checkpoint",
+      "means": "the last task of a round, where you write one line yourself."
+    },
+    {
+      "term": "name",
+      "means": "a word that holds something, such as logbook. Coders also call it a variable."
+    },
+    {
+      "term": "function",
+      "means": "a word that does a job on its input, like length or sum."
+    },
+    {
+      "term": "input",
+      "means": "what a function works on, inside its brackets (R calls it an argument)."
+    },
+    {
+      "term": "round bracket",
+      "means": "the marks ( ) that go after a function's word."
+    },
+    {
+      "term": "square bracket",
+      "means": "the marks [ ] that make a list or pick part of something."
+    },
+    {
+      "term": "bracket",
+      "means": "a mark that opens or closes part of a line: ( ) or [ ]."
+    },
+    {
+      "term": "result",
+      "means": "what a line gives back after you press Run."
+    },
+    {
+      "term": "list",
+      "means": "several items in a row, in square brackets, such as [4, 7, 1]. Julia also says vector."
+    },
+    {
+      "term": "item",
+      "means": "one thing in a list."
+    },
+    {
+      "term": "value",
+      "means": "one piece of information, like 3, true or \"B05\"."
+    },
+    {
+      "term": "table",
+      "means": "rows and columns of information, like a spreadsheet. Julia calls it a DataFrame."
+    },
+    {
+      "term": "row",
+      "means": "one line across the table. In logbook, one row is one jar."
+    },
+    {
+      "term": "column",
+      "means": "one kind of detail running down the table, such as tray_id."
+    },
+    {
+      "term": "text",
+      "means": "letters and numbers in double quotes, like \"B05\"."
+    },
+    {
+      "term": "double quotes",
+      "means": "the marks \" \" that go around text, as in \"B05\"."
+    },
+    {
+      "term": "true and false",
+      "means": "two values that mean yes and no. true counts as 1 and false as 0."
+    },
+    {
+      "term": "true or false",
+      "means": "yes or no. Julia counts true as 1 and false as 0."
+    },
+    {
+      "term": "error",
+      "means": "Julia's message when it cannot follow a line. It is safe: nothing breaks, and you can try again."
+    },
+    {
+      "term": "position",
+      "means": "a place in a list, counted from 1. Position 7 is the seventh item."
+    },
+    {
+      "term": "indexing",
+      "means": "picking part of a list or table by its position, with square brackets."
+    },
+    {
+      "term": "range",
+      "means": "a run of positions written first:last, such as 7:12."
+    },
+    {
+      "term": "colon",
+      "means": "the mark : that makes a range. Alone, it means all columns."
+    },
+    {
+      "term": "comma",
+      "means": "the mark , that separates items, or the rows from the columns."
+    },
+    {
+      "term": "dot",
+      "means": "after a name, takes out one column, as in logbook.batch_id. Before ==, it asks about every item."
+    },
+    {
+      "term": "rule",
+      "means": "a question asked about every row, giving true or false for each."
+    },
+    {
+      "term": "==",
+      "means": "asks: is it equal to? It gives one true or false."
+    },
+    {
+      "term": ".==",
+      "means": "asks: is it equal to? for every jar, giving one true or false each."
+    }
+  ],
+  "minutes": 40
+}

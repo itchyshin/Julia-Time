@@ -1,0 +1,311 @@
+{
+  "id": "lesson-engine",
+  "number": 99,
+  "title": "Engine fixture",
+  "goal": "Exercise the lesson engine.",
+  "story": "A tiny fixture lesson used only by the tests.",
+  "setup": "jars",
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Functions",
+      "idea": "function",
+      "explain": "A function is a word that does something. Round brackets follow it.",
+      "challenges": [
+        {
+          "id": "e-r1-c1",
+          "kind": "see",
+          "prompt": "Run the line and read the number.",
+          "starter": "length(practice_jars.jar_id)",
+          "solution": "x = practice_jars",
+          "labels": [
+            {
+              "part": "length",
+              "is": "function"
+            }
+          ],
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "length counted the four jars.",
+            "wrong": "Run the line as written."
+          },
+          "new_ideas": [
+            "function"
+          ],
+          "r_note": "R starts counting at 1 too.",
+          "new_facts": [
+            "length counts the items"
+          ]
+        },
+        {
+          "id": "e-r1-c1b",
+          "kind": "see",
+          "prompt": "Run the line and read the number.",
+          "starter": "nrow(practice_jars)",
+          "solution": "nrow(practice_jars)",
+          "labels": [
+            {
+              "part": "nrow",
+              "is": "function"
+            }
+          ],
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "nrow counted the four rows.",
+            "wrong": "Run the line as written."
+          },
+          "new_facts": [
+            "nrow counts the rows of a table"
+          ]
+        },
+        {
+          "id": "e-r1-c2",
+          "kind": "change",
+          "prompt": "Count the batch names instead of the jar names.",
+          "starter": "length(practice_jars.jar_id)",
+          "solution": "length(practice_jars.batch_id)",
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "batch_id"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Same function, other column.",
+            "wrong": "Change jar_id to batch_id.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of the table name.",
+                "example": "length(practise_jars.batch_id)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "e-r1-c3",
+          "kind": "write",
+          "prompt": "Count the rows of practice_jars with nrow.",
+          "starter": "",
+          "solution": "nrow(practice_jars)",
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "nrow"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "nrow counts rows.",
+            "wrong": "Write nrow(practice_jars)."
+          }
+        },
+        {
+          "id": "e-r1-fix",
+          "kind": "fix",
+          "prompt": "This line should count the batch names. Fix it.",
+          "starter": "length(practice_jars.batch)",
+          "solution": "length(practice_jars.batch_id)",
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed.",
+            "wrong": "Use the column batch_id.",
+            "errors": [
+              {
+                "match": "column name :batch not found",
+                "say": "The column is called batch_id.",
+                "example": "length(practice_jars.batch)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "e-r1-cp",
+          "kind": "checkpoint",
+          "prompt": "Count the tray names in practice_jars.",
+          "starter": "",
+          "solution": "length(practice_jars.tray_id)",
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "length counted the trays.",
+            "wrong": "Count the tray_id column."
+          },
+          "hints": [
+            "Use the function that counts items.",
+            "Put the column tray_id of practice_jars inside its brackets."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Indexing",
+      "idea": "indexing",
+      "remember": {
+        "prompt": "Remember this line? What did it give?",
+        "code": "length(practice_jars.jar_id)",
+        "choices": [
+          "4",
+          "12",
+          "an error"
+        ],
+        "answer": 0,
+        "why": "length counts the four jars."
+      },
+      "explain": "Square brackets pick part of a table. A true or false rule keeps the true rows.",
+      "challenges": [
+        {
+          "id": "e-r2-c1",
+          "kind": "see",
+          "prompt": "Run the line and see the rows it keeps.",
+          "starter": "practice_jars[practice_jars.tray_id .== \"T-B\", :]",
+          "solution": "practice_jars[practice_jars.tray_id .== \"T-B\", :]",
+          "labels": [
+            {
+              "part": "[ ]",
+              "is": "indexing"
+            }
+          ],
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The rule kept the T-B rows.",
+            "wrong": "Run the line as written."
+          },
+          "new_ideas": [
+            "indexing"
+          ],
+          "new_facts": [
+            "`.==` asks every item the same question",
+            "text goes in double quotes"
+          ]
+        },
+        {
+          "id": "e-r2-c2",
+          "kind": "complete",
+          "prompt": "Fill the blank to keep batch B01.",
+          "starter": "practice_jars[practice_jars.batch_id .== \"___\", :]",
+          "solution": "practice_jars[practice_jars.batch_id .== \"B01\", :]",
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Two rows, batch B01.",
+            "wrong": "Fill the blank with B01."
+          }
+        },
+        {
+          "id": "e-r2-c3",
+          "kind": "write",
+          "prompt": "Keep the jars on tray T-A.",
+          "starter": "",
+          "solution": "practice_jars[practice_jars.tray_id .== \"T-A\", :]",
+          "data": "practice_jars",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Tray T-A kept.",
+            "wrong": "Compare tray_id with T-A."
+          }
+        },
+        {
+          "id": "e-r2-cp",
+          "kind": "checkpoint",
+          "prompt": "Write the case line: keep the jars of the case batch.",
+          "starter": "",
+          "solution": "jars[jars.batch_id .== case_batch, :]",
+          "check": {
+            "same_value": false,
+            "requires": [
+              ".==",
+              "batch_id"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Six B09 jars.",
+            "wrong": "Keep the rows where batch_id equals case_batch."
+          },
+          "clue": "The clue text passes through.",
+          "board": "jars",
+          "hints": [
+            "Keep the rows of the case batch with a true or false rule.",
+            "Use the rows position of jars, then a comma and a colon."
+          ]
+        },
+        {
+          "id": "e-play",
+          "kind": "play",
+          "prompt": "Try anything you like here.",
+          "starter": ""
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "length(x)",
+      "means": "counts the items in x",
+      "r": "length(x)",
+      "from_round": "r1",
+      "idea": "function"
+    },
+    {
+      "julia": "nrow(practice_jars)",
+      "means": "counts the rows of a table",
+      "r": "nrow(practice_jars)",
+      "from_round": "r1",
+      "idea": "function"
+    },
+    {
+      "julia": "practice_jars[practice_jars.tray_id .== \"T-B\", :]",
+      "means": "keeps the rows where the rule is true",
+      "r": "practice_jars[practice_jars$tray_id == \"T-B\", ]",
+      "from_round": "r2",
+      "idea": "indexing"
+    }
+  ],
+  "close": {
+    "finding": "You kept the case batch.",
+    "next": "Next: counting.",
+    "own_work": {
+      "say": "Try it on your own table.",
+      "code": "length(mytable.col)"
+    }
+  }
+}

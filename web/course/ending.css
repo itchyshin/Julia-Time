@@ -7,7 +7,7 @@
 .ending-scene h3 { font:1.6rem/1.15 Georgia,serif; margin:.1rem 0 .5rem; }
 .ending-caption { font-size:1.1rem; font-weight:700; margin:.2rem 0 .6rem; }
 .ending-line { margin:.8rem 0; padding:.6rem .9rem; border-left:5px solid var(--orange); background:#fff3e6; font:1.05rem/1.5 Georgia,serif; }
-.ending-code pre { margin:.3rem 0 0; padding:.7rem .9rem; background:var(--ink); color:var(--panel); white-space:pre-wrap; overflow-wrap:anywhere; font:.88rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.ending-code pre { margin:.3rem 0 0; padding:.7rem .9rem; background:var(--ink); color:var(--panel); white-space:pre-wrap; overflow-wrap:anywhere; font:1rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; }
 .ending-controls { display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-top:1.2rem; }
 .ending-progress { margin:0 0 0 auto; color:var(--muted); }
 .ending-in { animation:ending-in .6s ease-out both; }
@@ -20,11 +20,11 @@
 /* r4 bug hunt #8: the typed-table line fades in between the two red lines, so the card fills in top to bottom. */
 .aha-play .aha-note + span:not(.aha-note) { opacity:0; animation:ending-fade .6s 1.55s forwards; }
 @keyframes ending-fade { to { opacity:1; } }
-.ending-finale { margin:1.4rem 0; padding:1.4rem; background:var(--panel); border:1px solid var(--line); border-top:7px solid var(--orange); }
-.stamp { display:inline-block; max-width:100%; box-sizing:border-box; margin:.3rem 0 1.6rem; padding:.4rem .8rem; border:4px solid #b3261e; color:#b3261e; font-size:.85rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; transform:rotate(-2deg); }
+.ending-finale { margin:1.4rem 0; padding:1.4rem; background:var(--panel); border:1px solid var(--line); border-top:7px solid var(--orange); overflow-x:clip; }
+.stamp { display:inline-block; max-width:100%; box-sizing:border-box; margin:.3rem 0 1.6rem; padding:.4rem .8rem; border:4px solid #b3261e; color:#b3261e; font-size:1rem; font-weight:900; letter-spacing:.04em; text-transform:uppercase; transform:rotate(-2deg); transform-origin:left center; }
 .finale-play .stamp { animation:stamp-in .45s cubic-bezier(.2,1.6,.4,1) .3s both; }
-@keyframes stamp-in { from { opacity:0; transform:rotate(-2deg) scale(2.3); } to { opacity:1; transform:rotate(-2deg) scale(1); } }
-.ending-data-label { margin:.6rem 0 0; color:var(--muted); font-size:.9rem; }
+@keyframes stamp-in { from { opacity:0; transform:rotate(-2deg) scale(1.3); } to { opacity:1; transform:rotate(-2deg) scale(1); } }
+.ending-data-label { margin:.6rem 0 0; color:var(--muted); font-size:1rem; }
 #ending-locked h2 { font:clamp(1.6rem,4vw,2.4rem)/1.1 Georgia,serif; margin:.2rem 0 .6rem; }
 .ending-headline:focus { outline:none; }
 .ending-headline { font:clamp(1.9rem,4.5vw,3rem)/1.05 Georgia,serif; margin:.2rem 0 .8rem; }
@@ -33,21 +33,20 @@
 .ending-final-image { display:block; width:100%; max-width:720px; height:auto; margin:1rem 0; border:1px solid var(--line); }
 .credits { margin:1.4rem 0; padding:1.6rem 1rem; text-align:center; background:var(--ink); color:var(--panel); }
 .credits h2 { font:1.5rem Georgia,serif; margin:0 0 .8rem; }
-.credits-label { margin:.9rem 0 .2rem; color:#9fd9cf; font-size:.76rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
+.credits-label { margin:.9rem 0 .2rem; color:#9fd9cf; font-size:1rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
 .credits ul { list-style:none; margin:0; padding:0; }
 .credits li { display:inline-block; margin:.15rem 0; }
 .credits li + li::before { content:"·"; margin:0 .55rem; color:#9fd9cf; }
 .credits code { color:#ffd7c2; font:1rem ui-monospace,SFMono-Regular,Menlo,monospace; }
-.credits-data { margin-top:1.1rem; font-size:.85rem; color:#c9d6d8; }
-/* Credits roll in quickly: a 1.4 s start and .5 s steps left the dark box empty for up to 5 s (r1 novice note 2). */
-.finale-play .credits > * { opacity:0; animation:ending-fade .5s forwards; animation-delay:calc(.2s + var(--i, 0) * .2s); }
+.credits-data { margin-top:1.1rem; font-size:1rem; color:#c9d6d8; }
+/* Round 2: the credits show at once. Fading each line in left the dark box empty for a second or more. */
 .ending-actions { display:flex; flex-wrap:wrap; gap:.7rem; align-items:center; }
 .ending-actions .primary-action { font:inherit; font-weight:800; cursor:pointer; margin-top:0; }
 /* r6-rc #7: .primary-action and .quiet-link carry a top margin in course.css, so Start (intro) and the speed-lab link (finale) sat lower. */
 .ending-controls > *, .ending-actions > * { margin-top:0; }
 @media (max-width:760px) { .ending-scene { grid-template-columns:1fr; } .ending-progress { margin-left:0; } }
 @media (prefers-reduced-motion: reduce) {
-  .ending-in, .aha-play .aha-note, .aha-play .aha-note + span, .finale-play .stamp, .finale-play .credits > * { animation:none !important; opacity:1 !important; }
+  .ending-in, .aha-play .aha-note, .aha-play .aha-note + span, .finale-play .stamp { animation:none !important; opacity:1 !important; }
 }
 @media print {
   .skip, .topbar a, #ending-status, #ending-movie, #ending-locked, .ending-actions { display:none !important; }

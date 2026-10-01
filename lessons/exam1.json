@@ -1,0 +1,159 @@
+{
+  "id": "exam1",
+  "kind": "exam",
+  "chapter": "C1",
+  "number": 1,
+  "title": "The report and the notebook",
+  "goal": "Use Lesson 1 on the case notebook: find the six B09 jars.",
+  "story": "The report names batch B09. Same idea as Lesson 1, new names: the practice table logbook is now jars, the case notebook.",
+  "minutes": 10,
+  "setup": "case1",
+  "dictionary": [
+    {
+      "julia": "jars",
+      "means": "the case notebook (made up for this game): a table of 12 jars with the columns jar_id, batch_id, tray_id and detected. Julia's word: a DataFrame.",
+      "r": "jars",
+      "py": "jars"
+    },
+    {
+      "julia": "case_batch",
+      "means": "a name that holds the batch named in the report",
+      "r": "case_batch",
+      "py": "case_batch"
+    },
+    {
+      "julia": "jars[jars.tray_id .== \"T-C\", :]",
+      "means": "a rule before the comma keeps the rows where it is true: the jars on tray T-C, every column. Julia's word: a boolean mask (logical indexing).",
+      "r": "filter(jars, tray_id == \"T-C\")",
+      "py": "jars[jars.tray_id == \"T-C\"]"
+    },
+    {
+      "julia": "jars.jar_id[jars.tray_id .== \"T-C\"]",
+      "means": "a rule inside a column's brackets keeps the values where it is true: the ids of the jars on tray T-C. Julia's word: a boolean mask on a Vector.",
+      "r": "jars$jar_id[jars$tray_id == \"T-C\"]",
+      "py": "jars.jar_id[jars.tray_id == \"T-C\"]"
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Find the B09 jars",
+      "challenges": [
+        {
+          "id": "x1-select-records",
+          "kind": "checkpoint",
+          "prompt": "Show the six B09 jars from the case notebook (the table jars), with all four columns: jar_id, batch_id, tray_id and detected. The name case_batch holds the batch, B09. Any row order is fine.",
+          "starter": "",
+          "solution": "jars[jars.batch_id .== case_batch, :]",
+          "data": "jars",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam1_select_records"
+          },
+          "hints": [
+            "Rows go before the comma in the square brackets, columns after it. Keep a row when its batch_id matches case_batch."
+          ],
+          "feedback": {
+            "pass": "You kept the six B09 rows. Next: how many of them had springtails?",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "This chapter uses the case notebook, jars. It is the lesson's logbook under a new name.",
+                "code_has": "logbook",
+                "example": "logbook[logbook.batch_id .== case_batch, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "B09 is text, so it needs quotes. Or use case_batch, which already holds it.",
+                "code_has": "B09",
+                "code_lacks": "\"B09\"",
+                "example": "jars[jars.batch_id .== B09, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is jars, and the batch name is case_batch.",
+                "example": "jar"
+              },
+              {
+                "match": "not found",
+                "say": "The four columns of jars are jar_id, batch_id, tray_id and detected. Check the column name after the dot.",
+                "example": "jars[jars.batch .== case_batch, :]"
+              },
+              {
+                "match": "unable to check bounds",
+                "say": "To ask a question of every jar, write .== with two equal signs and a dot. One = would give a name to something.",
+                "example": "jars[jars.batch_id .= case_batch, :]"
+              }
+            ]
+          },
+          "starter_hint": "jars[jars.___ .== ___, :]"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "How many had springtails?",
+      "challenges": [
+        {
+          "id": "x1-twist-count-seen",
+          "kind": "checkpoint",
+          "prompt": "How many of the B09 jars had springtails? Show one number.",
+          "starter": "",
+          "solution": "sum(jars.detected[jars.batch_id .== case_batch])",
+          "data": "jars",
+          "check": {
+            "same_value": true
+          },
+          "hints": [
+            "Take the detected column, keep only the B09 rows, then add up the trues."
+          ],
+          "starter_hint": "sum(jars.___[jars.___ .== ___])",
+          "feedback": {
+            "pass": "5 of the 6 B09 jars had springtails.",
+            "wrong": "Show one number for the B09 jars only. All twelve jars, or a table of rows, is not that number.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "This chapter uses the case notebook, jars. It is the lesson's logbook under a new name.",
+                "code_has": "logbook",
+                "example": "sum(logbook.detected[logbook.batch_id .== case_batch])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "B09 is text, so it needs quotes. Or use case_batch, which already holds it.",
+                "code_has": "B09",
+                "code_lacks": "\"B09\"",
+                "example": "sum(jars.detected[jars.batch_id .== B09])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is jars, and the batch name is case_batch.",
+                "example": "sum(jar.detected)"
+              },
+              {
+                "match": "not found",
+                "say": "The four columns of jars are jar_id, batch_id, tray_id and detected. Check the column name after the dot.",
+                "example": "sum(jars.seen[jars.batch_id .== case_batch])"
+              },
+              {
+                "match": "invalid index: false",
+                "say": "Julia gave one answer for the whole column. Write .== with a dot, so it asks every jar.",
+                "code_lacks": ".==",
+                "example": "sum(jars.detected[jars.batch_id == case_batch])"
+              },
+              {
+                "match": "invalid index: \"",
+                "say": "Inside the square brackets put a true-or-false question about every jar, not a single value.",
+                "example": "jars.detected[case_batch]"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "close": {
+    "finding": "In the notebook, 5 of the 6 B09 jars have springtails.",
+    "next": "Next: Lesson 2 shows how to count by tray."
+  }
+}

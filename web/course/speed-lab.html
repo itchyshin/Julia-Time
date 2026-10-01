@@ -11,7 +11,7 @@
   <a class="skip" href="#speed-lab">Skip to the speed lab</a>
   <header class="shell topbar">
     <div><p class="eyebrow">Julia Time / optional</p><p class="brand">The speed lab</p></div>
-    <a id="return-case-board" class="quiet-link" href="index.html">Return to the Case Board</a>
+    <a id="return-case-board" class="quiet-link" href="index.html">Board</a>
   </header>
   <main id="speed-lab" class="shell guide-main">
     <section class="guide-section" aria-labelledby="speed-title">
@@ -60,7 +60,7 @@
     const run = document.getElementById("run-speed-lab");
     const client = window.JuliaTimeSpeedLab;
     if (!client || !window.WebSocket) {
-      status.textContent = "The speed lab needs a current browser with WebSocket support. Return to the Case Board; the mystery is still playable.";
+      status.textContent = "The speed lab needs a current browser with WebSocket support. Board; the mystery is still playable.";
       check.disabled = true;
       run.disabled = true;
       return;

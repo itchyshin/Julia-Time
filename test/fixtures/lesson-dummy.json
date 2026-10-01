@@ -1,0 +1,326 @@
+{
+  "id": "dummy",
+  "number": 7,
+  "title": "Sort the marbles",
+  "goal": "Learn two tiny moves by checking a bag of marbles.",
+  "story": "A bag of marbles sits on a desk. Someone must count them.",
+  "story_more": "The longer marble story goes here, behind its link.",
+  "setup": "marbles",
+  "rounds": [
+    {
+      "id": "d-r1",
+      "title": "Count things",
+      "idea": "function",
+      "explain": "A function takes something in and gives something back.",
+      "challenges": [
+        {
+          "id": "d-r1-c1",
+          "kind": "see",
+          "prompt": "Run the worked line and read the number.",
+          "starter": "count_marbles(bag)",
+          "solution": "count_marbles(bag)",
+          "labels": [
+            {
+              "part": "count_marbles",
+              "is": "function"
+            },
+            {
+              "part": "bag",
+              "is": "object"
+            }
+          ],
+          "predict": {
+            "question": "What answer will Julia give?",
+            "choices": [
+              "5",
+              "9",
+              "an error"
+            ],
+            "answer": 0
+          },
+          "feedback": {
+            "pass": "It counted the marbles."
+          },
+          "new_ideas": [
+            "function"
+          ],
+          "look_closer": {
+            "text": "Julia can tell you what kind of thing a name holds. Try it and read the answer.",
+            "code": "typeof(bag)"
+          }
+        },
+        {
+          "id": "d-r1-c2",
+          "kind": "change",
+          "prompt": "Count the red bag instead.",
+          "starter": "count_marbles(bag)",
+          "solution": "count_marbles(red_bag)",
+          "feedback": {
+            "pass": "Now it counted the red bag.",
+            "wrong": "Change the name inside the brackets."
+          }
+        },
+        {
+          "id": "d-r1-c3",
+          "kind": "checkpoint",
+          "prompt": "Count the blue bag from memory.",
+          "starter": "",
+          "solution": "count_marbles(blue_bag)",
+          "feedback": {
+            "pass": "You counted the blue bag.",
+            "wrong": "Use the function and the blue bag."
+          },
+          "clue": "The blue bag is the biggest bag.",
+          "hints": [
+            "Think of a function that counts things.",
+            "It has the shape of the first line, with a different bag."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d-r2",
+      "title": "Pick a few",
+      "idea": "indexing",
+      "remember": {
+        "prompt": "Remember the counting line? What did it give?",
+        "code": "count_marbles(bag)",
+        "choices": [
+          "5",
+          "9",
+          "an error"
+        ],
+        "answer": 0,
+        "why": "It counts every marble in the bag."
+      },
+      "explain": "Square brackets pick items by place.",
+      "challenges": [
+        {
+          "id": "d-r2-c1",
+          "kind": "see",
+          "prompt": "Run the worked line and read the marble.",
+          "starter": "bag[2]",
+          "solution": "bag[2]",
+          "labels": [
+            {
+              "part": "bag",
+              "is": "object"
+            },
+            {
+              "part": "[2]",
+              "is": "indexing"
+            }
+          ],
+          "r_note": "In R you write bag[2]; Julia counts from 1 too.",
+          "feedback": {
+            "pass": "It picked the second marble."
+          },
+          "look_closer": {
+            "text": "A bag can be asked how many items it holds. Try it.",
+            "code": "length(bag)"
+          }
+        },
+        {
+          "id": "d-r2-c2",
+          "kind": "write",
+          "prompt": "Pick the third marble.",
+          "starter": "",
+          "solution": "bag[3]",
+          "data": "marble_table",
+          "feedback": {
+            "pass": "That is the third marble.",
+            "wrong": "Use a 3 in the brackets."
+          },
+          "board": "jars"
+        },
+        {
+          "id": "d-r2-c3",
+          "kind": "fix",
+          "prompt": "This line has a typo. Fix it so it picks the second marble.",
+          "starter": "bag(2)",
+          "solution": "bag[2]",
+          "feedback": {
+            "pass": "Square brackets pick by place.",
+            "wrong": "Use square brackets.",
+            "errors": [
+              {
+                "match": "MethodError",
+                "say": "Round brackets call a function; use square brackets."
+              }
+            ]
+          }
+        },
+        {
+          "id": "d-r2-c4",
+          "kind": "checkpoint",
+          "prompt": "Pick the first marble from memory.",
+          "starter": "",
+          "solution": "bag[1]",
+          "feedback": {
+            "pass": "First marble found.",
+            "wrong": "The first place is 1."
+          },
+          "clue": "The green marble sits in place 3.",
+          "hints": [
+            "Square brackets pick by place.",
+            "Put the place number inside the brackets."
+          ]
+        },
+        {
+          "id": "d-r2-c5",
+          "kind": "play",
+          "prompt": "Try anything with the bag.",
+          "starter": "bag"
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "count_marbles(x)",
+      "means": "counts the marbles in x",
+      "r": "length(x)",
+      "from_round": "d-r1",
+      "idea": "function"
+    },
+    {
+      "julia": "x[i]",
+      "means": "picks item number i",
+      "r": "x[i]",
+      "from_round": "d-r2",
+      "idea": "indexing"
+    }
+  ],
+  "close": {
+    "finding": "You counted and picked marbles with two short lines.",
+    "next": "Next lesson: sort the bag.",
+    "own_work": {
+      "say": "In your own script, count and pick the same way.",
+      "code": "n = length(marbles)\nmarbles[1]"
+    },
+    "can_do": [
+      "Count the items in a bag.",
+      "Pick one marble by its place."
+    ],
+    "common_mistake": "Round brackets call a function, square brackets pick an item. Mixing them up is the mistake everyone makes."
+  },
+  "data_values": {
+    "marble_table": {
+      "columns": [
+        "jar_id",
+        "batch_id",
+        "tray_id",
+        "colour"
+      ],
+      "rows": [
+        [
+          "J01",
+          "B08",
+          "T-A",
+          "red"
+        ],
+        [
+          "J02",
+          "B08",
+          "T-A",
+          "blue"
+        ],
+        [
+          "J03",
+          "B08",
+          "T-B",
+          "red"
+        ],
+        [
+          "J04",
+          "B08",
+          "T-B",
+          "blue"
+        ],
+        [
+          "J05",
+          "B08",
+          "T-C",
+          "red"
+        ],
+        [
+          "J06",
+          "B08",
+          "T-C",
+          "blue"
+        ],
+        [
+          "J07",
+          "B09",
+          "T-A",
+          "red"
+        ],
+        [
+          "J08",
+          "B09",
+          "T-A",
+          "blue"
+        ],
+        [
+          "J09",
+          "B09",
+          "T-B",
+          "red"
+        ],
+        [
+          "J10",
+          "B09",
+          "T-B",
+          "blue"
+        ],
+        [
+          "J11",
+          "B09",
+          "T-C",
+          "red"
+        ],
+        [
+          "J12",
+          "B09",
+          "T-C",
+          "blue"
+        ]
+      ]
+    }
+  },
+  "data_label": "The marbles here are made up for practice.",
+  "glossary": [
+    {
+      "term": "function",
+      "means": "a named tool that takes something in and gives something back"
+    },
+    {
+      "term": "bag",
+      "means": "a name for a group of marbles, kept together"
+    },
+    {
+      "term": "square brackets",
+      "means": "the [ ] marks that go after a name to pick from it"
+    },
+    {
+      "term": "marble",
+      "means": "one item in the bag"
+    },
+    {
+      "term": "line",
+      "means": "one row of code that you can run"
+    },
+    {
+      "term": "answer",
+      "means": "what Julia gives back after you press Run"
+    },
+    {
+      "term": "shape",
+      "means": "the way a line is laid out: its parts and their order"
+    },
+    {
+      "term": "name",
+      "means": "a word that holds something, such as bag"
+    }
+  ]
+}

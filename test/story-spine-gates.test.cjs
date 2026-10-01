@@ -74,12 +74,10 @@ test("step-why: every typing step in all six chapters has its why-this-code line
   assert.ok((c5src.match(/\bwhy: "[^"]+"/g) || []).length >= 2, "C5 two steps");
 });
 
-test("part label: every Case Board chapter card names its part", () => {
+test("0.5 fix: no Board card carries a Part label (one vocabulary: Step N)", () => {
   const client = require(path.join(ROOT, "web/course/course-client.js"));
   const courseState = require(path.join(ROOT, "web/course/course-state.js"));
   const model = client.dashboardModel(courseState.emptyCourseState());
-  const want = {C1:"Part 1 · Check the report", C2:"Part 1 · Check the report", C3:"Part 1 · Check the report",
-    C4:"Part 2 · Check the notebook", C5:"Part 2 · Check the notebook", C6:"Part 3 · Test the claim"};
-  for (const card of model.cards) assert.equal(card.part, want[card.chapter], card.chapter);
-  assert.match(read("web/course/course-board.js"), /card\.part/);
+  for (const card of model.cards) assert.equal(card.part, undefined, card.chapter);
+  assert.doesNotMatch(read("web/course/course-board.js"), /card\.part/);
 });

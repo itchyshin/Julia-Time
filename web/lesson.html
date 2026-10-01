@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Julia Time lesson</title>
+<link rel="stylesheet" href="lesson.css">
+<link rel="stylesheet" href="lesson-range.css">
+<link rel="stylesheet" href="lesson-delight.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the lesson</a>
+<div id="app" data-screen="loading">
+  <header id="strip">
+    <a id="brand" href="course/index.html">Julia Time</a>
+    <div id="strip-mid">
+      <div id="strip-info">
+        <p id="strip-text" aria-live="polite"></p>
+        <div id="dots"></div>
+        <span id="line-count"></span>
+        <span id="clues" hidden></span>
+      </div>
+      <span id="conn" aria-live="polite"></span>
+    </div>
+    <span class="nav-right">
+      <span id="switches" class="switches" role="group" aria-label="Notes for R and Python users" hidden>
+        <label class="switch" title="Show the R note under a result, when the step has one. R columns are also in the Cheat sheet and Pocket dictionary."><input id="show-r" type="checkbox" checked> Show R</label>
+        <label class="switch" title="Show the Python note under a result, when the step has one. Python columns are also in the Cheat sheet and Pocket dictionary."><input id="show-py" type="checkbox" checked> Show Python</label>
+      </span>
+      <a id="board-link" class="navlink" href="course/index.html">Board</a>
+      <button id="cheat" type="button" class="navlink" aria-expanded="false" hidden>Cheat sheet</button>
+    </span>
+  </header>
+  <p id="switch-note" class="switch-note" aria-live="polite" hidden></p>
+
+  <main id="main" tabindex="-1">
+    <section id="sheet" class="card sheet" aria-label="Cheat sheet" hidden>
+      <h2>Cheat sheet</h2>
+      <div class="sheet-scroll">
+        <table id="sheet-table" data-r="1" data-py="1"><thead><tr><th scope="col">Julia</th><th scope="col">What it does</th><th scope="col">In R</th><th scope="col">In Python</th></tr></thead><tbody id="sheet-body"></tbody></table>
+      </div>
+    </section>
+
+    <section id="screen-note" class="card narrow" hidden><p id="note">Loading...</p></section>
+
+    <section id="screen-list" class="card narrow" hidden>
+      <h1>Choose a lesson</h1>
+      <ul id="lesson-list"></ul>
+      <div id="list-skills" hidden></div>
+      <p><a id="range-link" href="lesson.html?lesson=range">Target range</a> <span class="muted">Optional practice: write a line that picks the right jars.</span></p>
+    </section>
+
+    <section id="screen-start" class="card narrow" hidden>
+      <p id="start-place" class="place"></p>
+      <h1 id="start-title"></h1>
+      <p id="start-goal" class="goal"></p>
+      <p id="start-story" class="muted"></p>
+      <button id="story-link" type="button" class="linkish" aria-expanded="false">Read the story</button>
+      <div id="story-more" class="muted" hidden></div>
+      <div id="start-promise" class="promise" hidden></div>
+      <p id="start-chapter" class="chapter-line" hidden></p>
+      <p id="start-resume" class="muted" hidden></p>
+      <p class="start-row"><button id="start" type="button" class="primary">Start</button>
+        <button id="restart" type="button" class="quiet" aria-label="Start this lesson again" hidden>Start again</button></p>
+      <p id="fast-row" class="fast-row" hidden><button id="fast-lane" type="button" class="quiet">I know R or Python: try this lesson's checkpoints</button>
+        <span class="muted">Each checkpoint you get right skips its round. Nothing is locked.</span></p>
+    </section>
+
+    <section id="screen-lesson" class="lesson" hidden>
+      <div id="left">
+        <div id="remember" class="warmup" aria-live="polite" tabindex="-1" hidden></div>
+        <p id="kind-label" class="kind" hidden></p>
+        <h1 id="round-title"></h1>
+        <p id="round-story" class="muted" hidden></p>
+        <p id="then-line" class="muted" hidden></p>
+        <p id="explain"></p>
+        <p id="gloss-explain" class="gloss" aria-live="polite" hidden></p>
+        <details id="rule" class="rule" hidden><summary id="rule-sum"></summary><p id="rule-text"></p></details>
+        <p id="prompt" class="prompt" tabindex="-1"></p>
+        <p id="gloss-prompt" class="gloss" aria-live="polite" hidden></p>
+        <p id="gloss-tip" class="muted" hidden></p>
+        <div id="notes" class="notes" hidden></div>
+        <div id="starter-box" class="starter" hidden><p class="cap">A starter line: fill each blank (___).</p><pre id="starter-code"></pre></div>
+        <div id="waves" hidden>
+          <ul id="wave-list" aria-label="Levels"></ul>
+          <p id="locked-line" class="muted" hidden></p>
+        </div>
+        <div id="data" hidden></div>
+        <div id="pinned" class="pinned" hidden>
+          <p id="pinned-cap" class="pinned-cap" hidden></p>
+          <pre id="pinned-code"></pre>
+          <div id="pinned-labels"></div>
+          <div id="pinned-note" class="notes" hidden></div>
+          <div id="look" class="look" hidden>
+            <button id="look-link" type="button" class="linkish" aria-expanded="false" aria-controls="look-box">Look closer</button>
+            <div id="look-box" class="look-box" role="region" aria-label="Look closer" hidden>
+              <p id="look-text"></p>
+              <pre id="look-code"></pre>
+              <div class="look-row">
+                <button id="look-try" type="button" class="quiet">Try it</button>
+                <div id="look-result" hidden></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="right">
+        <div id="predict" hidden></div>
+        <label for="code" id="code-label" class="field-label">Your line of Julia</label>
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" rows="4"></textarea>
+        <div class="buttons">
+          <button id="run" type="button" class="primary" aria-label="Run the code">Run</button>
+          <button id="reset" type="button" class="quiet" aria-label="Reset the editor">Reset</button>
+          <button id="show-line" type="button" class="quiet" aria-label="Show me the line" hidden>Show me the line</button>
+          <button id="starter" type="button" class="quiet" hidden>Show a starter line</button>
+          <button id="wave-hint" type="button" class="quiet" aria-expanded="false" aria-controls="wave-hint-text" hidden>Show a hint</button>
+        </div>
+        <p id="run-hint" class="muted">Ctrl+Enter or Cmd+Enter runs</p>
+        <p id="wave-hint-text" class="hint" hidden></p>
+        <div id="result-wrap" class="result-wrap">
+          <p id="result-label" class="cap" hidden>Result</p>
+          <div id="result" tabindex="0" role="region" aria-label="Result (scrolls if long)" hidden></div>
+          <div id="board" role="img" hidden></div>
+          <p id="play-note" class="muted" hidden></p>
+        </div>
+        <p id="feedback" aria-live="polite"></p>
+        <p id="works-too" class="works-too" aria-live="polite" hidden></p>
+        <p id="gloss-feedback" class="gloss" aria-live="polite" hidden></p>
+        <div id="julia-msg" class="julia-msg" hidden></div>
+        <p id="guess-line" aria-live="polite" hidden></p>
+        <p id="clue" class="clue" hidden></p>
+        <div id="hints" hidden></div>
+        <p id="help-note" class="muted" hidden></p>
+        <p class="next-row"><button id="next" type="button" aria-label="Go to the next task" aria-describedby="next-why" disabled>Next</button>
+          <span id="next-why" class="muted" hidden></span></p>
+        <div id="testout" class="testout" hidden>
+          <button id="testout-btn" type="button" class="quiet" hidden>I know this: try the checkpoint (you can come back)</button>
+          <p id="testout-note" class="muted" aria-live="polite" hidden></p>
+          <button id="testout-leave" type="button" class="linkish" hidden>Back to the round</button>
+        </div>
+      </div>
+      <details id="dict" class="dict" data-r="1" data-py="1" hidden>
+        <summary>Pocket dictionary</summary>
+        <div class="dict-scroll">
+          <table>
+            <thead><tr><th scope="col">Julia</th><th scope="col">What it does</th><th scope="col">In R</th><th scope="col">In Python</th></tr></thead>
+            <tbody id="dict-body"></tbody>
+          </table>
+          <details id="dict-earlier" class="dict-earlier" data-r="1" data-py="1" hidden>
+            <summary id="dict-earlier-sum">From earlier lessons</summary>
+            <table><tbody id="dict-earlier-body"></tbody></table>
+          </details>
+        </div>
+      </details>
+    </section>
+
+    <section id="screen-end" class="card narrow" hidden>
+      <h1 id="end-title">Lesson done</h1>
+      <p id="end-go" class="end-go" hidden></p>
+      <p id="end-finding" class="goal" tabindex="-1"></p>
+      <p id="end-next" class="muted"></p>
+      <div id="end-can-do" hidden></div>
+      <div id="end-clues" hidden></div>
+      <div id="end-skills" hidden></div>
+      <div id="end-mistake" hidden></div>
+      <section id="end-own" class="own-card" aria-labelledby="end-own-h" hidden></section>
+      <details id="end-more" class="end-more">
+        <summary id="end-more-sum">Your lines and notes</summary>
+        <p class="end-tools"><button id="copy-all" type="button" class="quiet">Copy all</button>
+          <button id="print" type="button" class="quiet">Print the pocket dictionary</button></p>
+        <div id="end-lines"></div>
+        <div id="end-skipped" hidden></div>
+        <p class="end-foot"><button id="end-restart" type="button" class="linkish" aria-label="Start this lesson again">Start again</button></p>
+      </details>
+      <p id="end-range"><a href="lesson.html?lesson=range">Target range</a> <span class="muted">Optional practice: write a line that picks the right jars.</span></p>
+      <table id="end-dict" class="print-only" data-r="1" data-py="1" aria-label="Pocket dictionary">
+        <thead><tr><th scope="col">Julia</th><th scope="col">What it does</th><th scope="col">In R</th><th scope="col">In Python</th></tr></thead>
+        <tbody id="end-dict-body"></tbody>
+      </table>
+    </section>
+
+    <section id="screen-range-end" class="card narrow" hidden>
+      <h1>Range cleared</h1>
+      <p id="range-end-say" class="goal" tabindex="-1"></p>
+      <ul id="range-end-lines"></ul>
+      <p id="range-end-more" class="muted" hidden></p>
+      <p><button id="range-end-back" type="button" class="quiet">Back to the levels</button></p>
+      <p><a id="range-end-home" href="course/index.html">Board</a></p>
+    </section>
+  </main>
+  <footer><p id="data-label" class="muted" hidden></p></footer>
+</div>
+<script src="course/course-state.js"></script>
+<script src="julia-text.js"></script>
+<script src="lesson-exam-save.js"></script>
+<script src="lesson-range.js"></script>
+<script src="lesson.js"></script>
+<script src="lesson-delight.js"></script>
+</body>
+</html>

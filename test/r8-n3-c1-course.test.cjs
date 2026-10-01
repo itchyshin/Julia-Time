@@ -59,8 +59,9 @@ test("the optional speed lab has one name on the course pages and the finale", (
 });
 
 test("closed case: no 'Before you play:' reminder, and one C5 'true counts as 1' bullet", () => {
-  assert.match(read("web/course/index.html"), /<aside id="setup-reminder" class="setup-reminder"><strong>Before you play:<\/strong>/);
-  assert.match(read("web/course/course-board.js"), /getElementById\("setup-reminder"\);[^\n]*setupReminder\.hidden = model\.completion\.complete/);
+  // Round 2 (P01): the "Before you play" aside repeated the Julia warning; the one status line under the main button replaces it.
+  assert.doesNotMatch(read("web/course/index.html"), /Before you play/);
+  assert.doesNotMatch(read("web/course/course-board.js"), /setup-reminder/);
   const bridges = require("../web/course/bridges.js");
   const card = (bridges.BRIDGES || bridges.bridges || bridges)["C5/event-frequency"];
   const same = card.differences.filter(line => /true counts as 1/i.test(line));

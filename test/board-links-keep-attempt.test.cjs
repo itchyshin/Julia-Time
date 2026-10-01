@@ -42,6 +42,6 @@ test("without an attempt the links stay plain", () => {
 
 test("the Case Board page names both links so the script can find them", () => {
   const html = fs.readFileSync(path.join(web, "index.html"), "utf8");
-  assert.match(html, /id="watch-intro-link"[^>]*href="intro\.html"[^>]*>Watch the intro/);
+  assert.match(html, /id="watch-intro-link"[^>]*href="intro\.html"[^>]*>New here\? Watch the two-minute intro \(optional\)/);
   assert.match(html, /id="how-to-play-link"[^>]*href="getting-started\.html"[^>]*>How to play/);
 });

@@ -1,0 +1,1384 @@
+{
+  "id": "lesson5",
+  "number": 5,
+  "title": "Plain chance",
+  "goal": "Learn to let Julia deal eight cards at random, over and over, and find how often 6 or more are springtails cards.",
+  "story": "Itchy: \"Start with a guess: what if each jar were a 50:50 coin toss?\" This is practice. Toto deals eight cards, one for each practice jar, again and again, a fresh deal each time.",
+  "story_more": "This is practice, made up for training. The practice notebook shows 6 of 8 jars with springtails. Toto asks: if each jar were a 50:50 coin toss, how often would 6 or more show springtails? He uses eight cards, one for each jar. He counts the springtails cards, deals eight new cards, and does it again, 1,000 times in all. The computer makes the cards, not real jars.",
+  "setup": "practice5",
+  "glossary": [
+    {
+      "term": "code",
+      "means": "the words and symbols you type for Julia to follow."
+    },
+    {
+      "term": "Run",
+      "means": "the button that makes Julia follow your code and show the answer."
+    },
+    {
+      "term": "Reset",
+      "means": "the button that puts the starting code back in the editor."
+    },
+    {
+      "term": "line",
+      "means": "one row of code in the editor. Press Enter to start a new line."
+    },
+    {
+      "term": "guess",
+      "means": "say the answer you expect before you press Run. A wrong guess costs nothing."
+    },
+    {
+      "term": "list",
+      "means": "several things in a row, between [ and ] with commas between them, such as [3, 8, 3]."
+    },
+    {
+      "term": "item",
+      "means": "one thing in a list."
+    },
+    {
+      "term": "square bracket",
+      "means": "the marks [ and ]. They go around a list."
+    },
+    {
+      "term": "round bracket",
+      "means": "the marks ( and ). The things a function works on go between them."
+    },
+    {
+      "term": "comma",
+      "means": "the mark , between one item and the next."
+    },
+    {
+      "term": "function",
+      "means": "a word that does a job on what you give it. sum is a function."
+    },
+    {
+      "term": "value",
+      "means": "one piece of information, such as the number 5 or the word true."
+    },
+    {
+      "term": "name",
+      "means": "a word you give an answer, so later lines can use it. In n = 5, the name is n."
+    },
+    {
+      "term": "true",
+      "means": "a special Julia word meaning yes. Write it in lower case. Here, a springtails card is true."
+    },
+    {
+      "term": "false",
+      "means": "a special Julia word meaning no. Write it in lower case. Here, an empty card is false."
+    },
+    {
+      "term": "Bool",
+      "means": "Julia's word for a value that is true or false. It starts with a capital B."
+    },
+    {
+      "term": "quotes",
+      "means": "the marks \" \" around text. A number inside quotes is text, not a number."
+    },
+    {
+      "term": "text",
+      "means": "letters and words, not numbers. In code, text goes inside quotes."
+    },
+    {
+      "term": "whole number",
+      "means": "a number with no part after the point, such as 0, 1, 2 or 8."
+    },
+    {
+      "term": "blank",
+      "means": "the ___ in the editor. Replace it with your answer."
+    },
+    {
+      "term": "comparison",
+      "means": "a check of two things that gives true or false, such as 5 >= 3."
+    },
+    {
+      "term": ">=",
+      "means": "means 'at least'. 5 >= 5 is true, and so is 6 >= 5."
+    },
+    {
+      "term": "at least",
+      "means": "this number or more. At least 5 means 5, 6, 7 and so on."
+    },
+    {
+      "term": "dot rule",
+      "means": "a dot before a comparison, as in .>=, asks every item in a list the same question."
+    },
+    {
+      "term": "sum",
+      "means": "a function that adds up a list. Each true counts as 1."
+    },
+    {
+      "term": "length",
+      "means": "a function that counts the items in a list."
+    },
+    {
+      "term": "rand",
+      "means": "a function that deals things at random. rand(Bool, 8) deals eight values, each true or false."
+    },
+    {
+      "term": "divide",
+      "means": "share one number out by another. The slash / divides: 6 / 2 is 3."
+    },
+    {
+      "term": "deal",
+      "means": "one go of the card game: eight cards handed out at random, then the springtails cards counted."
+    },
+    {
+      "term": "count",
+      "means": "how many. A deal's count is the number of springtails cards dealt."
+    },
+    {
+      "term": "share",
+      "means": "a part out of the whole, found by dividing. 250 of 1,000 is a share of 0.25."
+    },
+    {
+      "term": "pretend_counts",
+      "means": "the list of Toto's 1,000 practice counts. 'Pretend' means made up by the computer."
+    },
+    {
+      "term": "seen_count",
+      "means": "the count in the practice notebook: 6 jars with springtails. 'Seen' means noticed."
+    },
+    {
+      "term": "Enter",
+      "means": "the key that starts a new line of code."
+    },
+    {
+      "term": "Next",
+      "means": "the button that moves you on."
+    },
+    {
+      "term": "from memory",
+      "means": "without looking at a worked line. Type what you remember."
+    },
+    {
+      "term": "dot",
+      "means": "the small mark . Put it before a sign such as >= to ask every item in a list."
+    },
+    {
+      "term": "capital",
+      "means": "a big letter, like the B in Bool."
+    },
+    {
+      "term": "digit",
+      "means": "one of the figures 0 to 9. Write 4, not the word four."
+    },
+    {
+      "term": "for _ in",
+      "means": "repeat the line once for each number after it. The _ is a name we never use."
+    },
+    {
+      "term": "random",
+      "means": "decided by chance, with nobody choosing. The computer follows a rule that gives results that look random."
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "One batch by chance",
+      "idea": "one batch",
+      "story": "Toto's practice cards: eight cards for eight practice jars. Each card is a springtails card or an empty card.",
+      "explain": "One deal is eight cards dealt at random, by chance. A springtails card is true and an empty card is false. The deal's count is how many springtails cards came up.",
+      "challenges": [
+        {
+          "id": "l5-r1-c1",
+          "kind": "see",
+          "prompt": "Here is a list of four cards. true is a springtails card, false is an empty card. sum adds up the list. Guess what it gives, then press Run.",
+          "starter": "sum([true, false, true, true])",
+          "solution": "sum([true, false, true, true])",
+          "labels": [
+            {
+              "part": "sum",
+              "is": "function"
+            },
+            {
+              "part": "[true, false, true, true]",
+              "is": "inputs"
+            },
+            {
+              "part": "3",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "4",
+              "3",
+              "true"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "true"
+            ],
+            "taught": [
+              "sum("
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "sum counted each true as 1: three springtails cards, so 3.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "`True`",
+                "say": "Julia writes true in small letters, not True.",
+                "example": "sum([True, false, true, true])"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sum([true, False, true, true])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sum, true and false: all in small letters.",
+                "example": "Sum([true, false, true, true])"
+              },
+              {
+                "match": "ParseError",
+                "say": "Check the list: separate the items with commas, and close every [ with ] and every ( with ).",
+                "code_has": "[",
+                "example": "sum([true false, true, true])"
+              },
+              {
+                "match": "MethodError",
+                "say": "Keep the square brackets around the list: sum adds up one list, not four separate values.",
+                "example": "sum(true, false, true, true)"
+              }
+            ],
+            "requires": "Type the list of four cards, with true and false, inside the line.",
+            "taught": "sum adds up the list, and each true counts as 1."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "sum adds up a list, and each true counts as 1",
+            "square brackets on their own make a list"
+          ],
+          "py_note": "`sum([True, False, True, True])` in Python. Python writes True and False with capitals; Julia writes true and false in small letters."
+        },
+        {
+          "id": "l5-r1-c2",
+          "kind": "see",
+          "prompt": "Now Julia deals the cards. rand(Bool, 8) makes eight cards at random. Bool means true or false: true is a springtails card. Guess, then press Run. Press Run again. Do the cards change?",
+          "starter": "rand(Bool, 8)",
+          "solution": "rand(Bool, 8)",
+          "labels": [
+            {
+              "part": "rand",
+              "is": "function"
+            },
+            {
+              "part": "Bool",
+              "is": "inputs"
+            },
+            {
+              "part": "8",
+              "is": "inputs"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "eight values, each true or false",
+              "one number, 8",
+              "the same eight values every time"
+            ],
+            "answer": 0
+          },
+          "r_note": "`sample(c(TRUE, FALSE), 8, replace = TRUE)` in R. Julia's rand(Bool, 8) is shorter.",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand("
+            ],
+            "taught": [
+              "rand(Bool"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia dealt eight cards at random: true is a springtails card, false is an empty card. Press Run again and the cards change, as sample did in Lesson 4.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "`bool`",
+                "say": "Bool is Julia's word for a true or false value. It starts with a capital B.",
+                "example": "rand(bool, 8)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between Bool and the number, like this: rand(Bool, 8).",
+                "code_lacks": ",",
+                "example": "rand(Bool 8)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "rand(Bool, 8"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of rand and Bool. Bool starts with a capital B.",
+                "example": "Rand(Bool, 8)"
+              }
+            ],
+            "requires": "Type rand, then round brackets with Bool, a comma and a number inside.",
+            "taught": "rand(Bool, 8) deals eight cards, each true or false, at random."
+          },
+          "new_ideas": [
+            "one batch"
+          ],
+          "new_facts": [
+            "rand(Bool, 8) deals eight cards at random, each true or false, 50:50",
+            "Bool is Julia's word for true or false, with a capital B"
+          ],
+          "py_note": "`np.random.choice([True, False], 8)` in numpy. `np.random.seed(1)` repeats the same cards; Julia has Random.seed!(1), after using Random. Seeds differ from numpy's."
+        },
+        {
+          "id": "l5-r1-c3",
+          "kind": "change",
+          "prompt": "This practice deal has four cards. In the editor, change the 8 to 4, then press Run.",
+          "starter": "rand(Bool, 8)",
+          "solution": "rand(Bool, 4)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand("
+            ],
+            "taught": [
+              "rand(Bool"
+            ],
+            "checker": "check_lesson5_flips4"
+          },
+          "feedback": {
+            "pass": "Julia dealt four cards: the number after Bool says how many.",
+            "wrong": "The answer should be four cards, each true or false. Your line did not give exactly that.",
+            "errors": [
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between Bool and the number, like this: rand(Bool, 8).",
+                "code_lacks": ",",
+                "example": "rand(Bool 4)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "rand(Bool, 4"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "If you typed a word for the number, write it with digits, like 4. Otherwise check the spelling of rand and Bool.",
+                "example": "rand(Bool, four)"
+              }
+            ],
+            "unchanged": "You pressed Run without changing the line. Change the 8 to 4.",
+            "requires": "Keep the rand call and change only the number of cards.",
+            "taught": "rand(Bool, 4), where the number after Bool says how many cards."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r1-c4",
+          "kind": "complete",
+          "prompt": "This deal has ten cards. sum counts what rand deals, so rand(Bool, ...) goes inside the round brackets of sum. Replace the blank ___ with the number of cards. Then press Run.",
+          "starter": "sum(rand(Bool, ___))",
+          "solution": "sum(rand(Bool, 10))",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand("
+            ],
+            "taught": [
+              "sum(",
+              "rand(Bool"
+            ],
+            "checker": "check_lesson5_count10"
+          },
+          "feedback": {
+            "pass": "sum counted the springtails cards among ten: a whole number from 0 to 10, and different each time you press Run.",
+            "wrong": "The answer should be one whole number from 0 to 10. This deal has ten cards, so put 10 where the blank was.",
+            "errors": [
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between Bool and the number, like this: rand(Bool, 8).",
+                "code_lacks": ",",
+                "example": "sum(rand(Bool 10))"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sum(rand(Bool, 10)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "If you typed a word for the number, write it with digits, like 10. Otherwise check the spelling of sum, rand and Bool.",
+                "example": "sum(rand(Bool, ten))"
+              },
+              {
+                "match": "MethodError",
+                "say": "The number goes inside the round brackets of rand. The whole rand part goes inside the round brackets of sum.",
+                "example": "sum(rand(Bool), 10)"
+              }
+            ],
+            "unchanged": "The ___ is still there: replace it with the number of cards, ten.",
+            "requires": "Your line needs rand to deal the cards, and the number of cards in this practice deal.",
+            "taught": "rand(Bool, 10) inside sum, which adds up the springtails cards."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r1-c5",
+          "kind": "checkpoint",
+          "prompt": "Toto's practice deal. From memory, type one line in the empty editor: deal eight cards at random, each true or false, then count the springtails cards. Press Run.",
+          "starter": "",
+          "solution": "sum(rand(Bool, 8))",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand(",
+              "sum("
+            ],
+            "taught": [
+              "sum(",
+              "rand(Bool"
+            ],
+            "checker": "check_lesson5_count8"
+          },
+          "hints": [
+            "Two functions work together: rand deals the cards and sum counts the trues. The dealing goes inside the round brackets of sum.",
+            "Type sum and an opening round bracket. Inside, type rand and another opening bracket, then the word for true or false, a comma, and the number of cards. Close both brackets."
+          ],
+          "clue": "The practice notebook showed 6 of 8. Toto asks how often a 50:50 guess gives 6 or more.",
+          "feedback": {
+            "pass": "One deal: eight cards dealt at random, the springtails cards counted, a whole number from 0 to 8. Press Run again and it changes.",
+            "wrong": "The answer should be one whole number from 0 to 8: deal eight cards at random, each true or false, then count the springtails cards.",
+            "errors": [
+              {
+                "match": "`bool`",
+                "say": "Bool is Julia's word for a true or false value. It starts with a capital B.",
+                "example": "sum(rand(bool, 8))"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between Bool and the number, like this: rand(Bool, 8).",
+                "code_lacks": ",",
+                "example": "sum(rand(Bool 8))"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sum(rand(Bool, 8)"
+              },
+              {
+                "match": "MethodError",
+                "say": "sum adds up one list. The eight cards are dealt inside the round brackets of rand, and that goes inside the round brackets of sum.",
+                "example": "sum(rand(Bool), 8)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sum, rand and Bool. Bool starts with a capital B.",
+                "example": "Sum(rand(Bool, 8))"
+              }
+            ],
+            "requires": "Your line should deal eight cards at random and count the springtails cards, all in one line.",
+            "taught": "rand deals the eight cards and sum counts the springtails cards, all in one line."
+          },
+          "new_ideas": [],
+          "starter_hint": "sum(rand(___, ___))"
+        },
+        {
+          "id": "l5-r1-p1",
+          "kind": "play",
+          "prompt": "Try anything in the editor. Put sum( in front and ) at the end, change the number of cards, or press Run again. Nothing is checked. Press Next when you are done.",
+          "starter": "rand(Bool, 8)",
+          "new_ideas": []
+        }
+      ],
+      "remember": {
+        "prompt": "Remember Lesson 4? What did this line give?",
+        "code": "sample(1:6, 3; replace=false)",
+        "choices": [
+          "three different numbers from 1 to 6, picked at random",
+          "the numbers 1, 2 and 3",
+          "three numbers from 1 to 6 that may repeat"
+        ],
+        "answer": 0,
+        "why": "sample picks at random, and replace=false means no number comes twice. The cards in this lesson are dealt at random too."
+      }
+    },
+    {
+      "id": "r2",
+      "title": "Many deals at once",
+      "idea": "repeat many times",
+      "story": "Toto dealt the eight cards 1,000 times and wrote down each count. All 1,000 counts are in a list named pretend_counts (pretend means made up by the computer). seen_count is the practice notebook's count, 6.",
+      "remember": {
+        "prompt": "Remember Lesson 1? What did this line give?",
+        "code": "[3, 8, 3] .== 3",
+        "choices": [
+          "the numbers 3 and 3",
+          "one true or false for each item: true, false, true",
+          "the single number 2"
+        ],
+        "answer": 1,
+        "why": "== asks: is it equal to 3? The dot asks every item, so you get one true or false each: true, false, true."
+      },
+      "explain": "for _ in 1:3 means: do it 3 times. The _ is a name we never use. The square brackets [ ] keep every result in a list. Toto did one deal 1,000 times this way.",
+      "challenges": [
+        {
+          "id": "l5-r2-c0",
+          "kind": "see",
+          "prompt": "Here the thing we repeat is just the number 7, three times. The square brackets keep the three results in a list. Guess, then press Run.",
+          "starter": "[7 for _ in 1:3]",
+          "solution": "[7 for _ in 1:3]",
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "7",
+              "a list: 7, 7, 7",
+              "a list: 1, 2, 3"
+            ],
+            "answer": 1
+          },
+          "r_note": "`replicate(3, 7)` does this in R. Julia puts the repeat after the thing to repeat.",
+          "py_note": "`[7 for _ in range(3)]` has the same shape. 1:3 and range(3) both repeat 3 times; only the counted numbers differ, and _ ignores them.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "for"
+            ],
+            "taught": [
+              "for_in1:3"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia did the 7 three times and kept each one in a list: 7, 7, 7.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "Expected `]`",
+                "say": "The [ at the start needs a ] at the end of the line.",
+                "example": "[7 for _ in 1:3"
+              }
+            ],
+            "requires": "Keep the line as it is: a 7 inside square brackets, with for _ in 1:3.",
+            "taught": "for _ in 1:3 repeats what comes before it three times, inside square brackets."
+          },
+          "new_ideas": [
+            "repeat many times"
+          ],
+          "new_facts": [
+            "for _ in 1:3 repeats what comes before it 3 times; the _ is a name we never use",
+            "the square brackets keep every result in a list"
+          ]
+        },
+        {
+          "id": "l5-r2-c0a",
+          "kind": "see",
+          "prompt": "Now the thing we repeat is a deal of ten cards, counted with sum. Three deals give three counts. Guess, then press Run. Press Run again.",
+          "starter": "[sum(rand(Bool, 10)) for _ in 1:3]",
+          "solution": "[sum(rand(Bool, 10)) for _ in 1:3]",
+          "labels": [
+            {
+              "part": "sum(rand(Bool, 10))",
+              "is": "function"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "one number, the total of three deals",
+              "three counts from 0 to 10, and they may differ",
+              "the same count three times, always"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand(",
+              "for"
+            ],
+            "taught": [
+              "for_in1:3"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Three deals gave three counts, each a whole number from 0 to 10. Press Run again and they change.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sum, rand and Bool. Bool starts with a capital B.",
+                "example": "[sum(rand(bool, 10)) for _ in 1:3]"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Every [ needs a ] and every ( needs a ). Add the missing one at the end of the line.",
+                "example": "[sum(rand(Bool, 10) for _ in 1:3]"
+              }
+            ],
+            "requires": "Keep the line as it is: a deal inside square brackets, with for _ in 1:3.",
+            "taught": "for _ in 1:3 repeats the deal three times, inside square brackets."
+          },
+          "new_ideas": [],
+          "new_facts": []
+        },
+        {
+          "id": "l5-r2-c0b",
+          "kind": "complete",
+          "prompt": "Toto dealt 1,000 times. The blank ___ holds the repeat words from the line above. Type them, then press Run. Julia may show only part of a long list.",
+          "starter": "[sum(rand(Bool, 10)) ___ 1:1000]",
+          "solution": "[sum(rand(Bool, 10)) for _ in 1:1000]",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand(",
+              "for",
+              "1:1000"
+            ],
+            "taught": [
+              "for_in1:1000"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia made 1,000 counts, each a whole number from 0 to 10. Toto made his list the same way, but with eight cards in each deal, so his counts run from 0 to 8.",
+            "wrong": "The answer should be a list of 1,000 counts. Check the repeat words that go before 1:1000: for, then _, then in.",
+            "unchanged": "The ___ is still there: type the repeat words from the line above.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sum, rand and Bool. Bool starts with a capital B.",
+                "example": "[sum(rand(bool, 10)) for _ in 1:1000]"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Every [ needs a ] and every ( needs a ). Add the missing one at the end of the line.",
+                "example": "[sum(rand(Bool, 10) for _ in 1:1000]"
+              }
+            ],
+            "requires": "Your line needs the repeat words (for _ in) before 1:1000, with the deal kept as it is.",
+            "taught": "for _ in 1:1000 makes 1,000 deals in one line."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r2-c1",
+          "kind": "see",
+          "prompt": "Toto saved his 1,000 counts as pretend_counts, made from a fixed start (a seed), so the list never changes. Your own deals start fresh each Run. Each count is from 0 to 8. Press Run to see it.",
+          "starter": "pretend_counts",
+          "solution": "pretend_counts",
+          "labels": [
+            {
+              "part": "pretend_counts",
+              "is": "a list of counts"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "one number, the average",
+              "1,000 true or false values",
+              "a list of 1,000 counts"
+            ],
+            "answer": 2
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "pretend_counts"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia showed the list: 1,000 counts, one for each deal, each from 0 to 8.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "The name is pretend_counts, in small letters, with an underscore. Check the spelling.",
+                "example": "Pretend_counts"
+              }
+            ],
+            "requires": "Type the name pretend_counts on its own."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "one list can hold the count from every deal: the same one-deal line, repeated 1,000 times"
+          ],
+          "look_closer": {
+            "text": "Julia shows only part of a long list. first(pretend_counts, 5) gives just the first five counts (R: head(pretend_counts, 5); Python: pretend_counts[:5]). Change the 5 to see more or fewer.",
+            "code": "first(pretend_counts, 5)"
+          }
+        },
+        {
+          "id": "l5-r2-c2",
+          "kind": "see",
+          "prompt": "The symbol >= means 'at least'. With a dot in front, .>= asks every count: is it 4 or more? This is the dot rule from Lesson 1. How many answers will there be? Guess, then press Run.",
+          "starter": "pretend_counts .>= 4",
+          "solution": "pretend_counts .>= 4",
+          "labels": [
+            {
+              "part": "pretend_counts",
+              "is": "a list of counts"
+            },
+            {
+              "part": ".>=",
+              "is": "a sign: is it at least?"
+            },
+            {
+              "part": "4",
+              "is": "a number"
+            }
+          ],
+          "predict": {
+            "question": "How many answers will Julia show?",
+            "choices": [
+              "1,000, one per deal",
+              "1",
+              "4"
+            ],
+            "answer": 0
+          },
+          "r_note": "`pretend_counts >= 4` works on every item in R. Julia needs a dot first, so you write .>= there.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "pretend_counts"
+            ],
+            "taught": [
+              ".>="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia answered for all 1,000 deals: true where the count was 4 or more, false where it was not. 642 of the 1,000 were true.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "::String",
+                "say": "Type the number with no quotes around it. A number in quotes is text, not a number.",
+                "example": "pretend_counts .>= \"4\""
+              },
+              {
+                "match": "isless",
+                "say": "Put a dot before >=. Without the dot, Julia cannot compare a whole list with one number.",
+                "example": "pretend_counts >= 4"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The name is pretend_counts, in small letters, with an underscore. Check the spelling.",
+                "example": "Pretend_counts .>= 4"
+              }
+            ],
+            "requires": "Start from pretend_counts, the list of Toto's counts.",
+            "taught": "pretend_counts .>= 4, where the dot asks every deal and >= means at least."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            ".>= means at least: the dot rule from Lesson 1 asks every count"
+          ],
+          "py_note": "`np.array(pretend_counts) >= 4` works on every item with no dot. A plain Python list fails there. Julia needs a dot for any list, so you write .>= there."
+        },
+        {
+          "id": "l5-r2-c3",
+          "kind": "change",
+          "prompt": "In the editor, change the 4 so that the line asks: did all eight cards come up springtails? Julia shows true or false for each deal. Then press Run.",
+          "starter": "pretend_counts .>= 4",
+          "solution": "pretend_counts .>= 8",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "pretend_counts"
+            ],
+            "taught": [
+              ".>="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Only deals with a count of 8 are true now: all eight cards were springtails cards. Put sum( in front to count them: just 6 of the 1,000 deals.",
+            "wrong": "The answer should be 1,000 answers, true only for deals where all eight cards were springtails cards. Yours differ.",
+            "errors": [
+              {
+                "match": "::String",
+                "say": "Type the number with no quotes around it. A number in quotes is text, not a number.",
+                "example": "pretend_counts .>= \"8\""
+              },
+              {
+                "match": "isless",
+                "say": "Put a dot before >=. Without the dot, Julia cannot compare a whole list with one number.",
+                "example": "pretend_counts >= 8"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The name is pretend_counts, in small letters, with an underscore. Check the spelling.",
+                "example": "Pretend_counts .>= 8"
+              }
+            ],
+            "unchanged": "You pressed Run without changing the line. Change the 4 to ask about deals with all eight springtails cards.",
+            "requires": "Start from pretend_counts, and change only the number.",
+            "taught": "change the 4 to 8 in pretend_counts .>= 8, so only deals with all eight springtails cards are true."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r2-c4",
+          "kind": "write",
+          "prompt": "The editor is empty. Type a line that asks every count in pretend_counts: is it 3 or more? Use the dot and >= from before. Then press Run.",
+          "starter": "",
+          "solution": "pretend_counts .>= 3",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "pretend_counts"
+            ],
+            "taught": [
+              ".>="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia answered for all 1,000 deals: true where the count was 3 or more. 868 of the 1,000 were true.",
+            "wrong": "The answer should be 1,000 answers, true only for deals with 3 or more springtails cards. Check that a count of exactly 3 counts too.",
+            "errors": [
+              {
+                "match": "::String",
+                "say": "Type the number with no quotes around it. A number in quotes is text, not a number.",
+                "example": "pretend_counts .>= \"3\""
+              },
+              {
+                "match": "isless",
+                "say": "Put a dot before >=. Without the dot, Julia cannot compare a whole list with one number.",
+                "example": "pretend_counts >= 3"
+              },
+              {
+                "match": "ParseError",
+                "say": "Julia could not read the line. Check the symbol and remove any extra bracket.",
+                "example": "pretend_counts .>= 3)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The name is pretend_counts, in small letters, with an underscore. Check the spelling.",
+                "example": "Pretend_counts .>= 3"
+              }
+            ],
+            "requires": "Start from pretend_counts, the list of Toto's counts.",
+            "taught": "pretend_counts .>= 3, where the dot asks every deal and >= means at least."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r2-c5",
+          "kind": "checkpoint",
+          "prompt": "Which of Toto's 1,000 deals gave a count at least as big as the notebook's? pretend_counts holds Toto's counts, and seen_count holds the notebook's count, 6. From memory, type one line that asks this for every deal. Press Run.",
+          "starter": "",
+          "solution": "pretend_counts .>= seen_count",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "pretend_counts"
+            ],
+            "taught": [
+              "pretend_counts",
+              ".>=",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Ask every deal the same question with the dot rule: is its count at least the notebook's count?",
+            "Type pretend_counts, then the dotted at-least symbol from the last line, then seen_count."
+          ],
+          "clue": "A dotted comparison gives one true or false for each deal, here 1,000 of them. The next round turns them into one share.",
+          "feedback": {
+            "pass": "Every deal has an answer: true when its count was at least the notebook's 6.",
+            "wrong": "The answer should be 1,000 true or false answers, true only for deals at least as big as the notebook's count. Check the direction of your comparison.",
+            "errors": [
+              {
+                "match": "::String",
+                "say": "`seen_count` is a name, so write it without quote marks: in quotes, \"seen_count\" is just text.",
+                "example": "pretend_counts .>= \"seen_count\""
+              },
+              {
+                "match": "isless",
+                "say": "Put a dot before >=. Without the dot, Julia cannot compare a whole list with one number.",
+                "example": "pretend_counts >= seen_count"
+              },
+              {
+                "match": "ParseError",
+                "say": "Julia could not read the line. Check the symbol and remove any extra bracket.",
+                "example": "pretend_counts .>= seen_count)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of pretend_counts and seen_count. Both have underscores and no capital letters.",
+                "example": "pretend_counts .>= observed"
+              }
+            ],
+            "requires": "Your line should start from Toto's 1,000 counts and compare each with the notebook's count.",
+            "taught": "compare the counts with the name seen_count itself, so the line follows the notebook's count if it changes."
+          },
+          "new_ideas": [],
+          "starter_hint": "pretend_counts .>= ___"
+        },
+        {
+          "id": "l5-r2-p1",
+          "kind": "play",
+          "prompt": "Try anything in the editor. Change the number, or put sum( in front and ) at the end to count the true answers. Nothing is checked. Press Next when you are done.",
+          "starter": "pretend_counts .>= 4",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "A share of the deals",
+      "idea": "a share",
+      "story": "The practice notebook's 6 of 8 stays a count. What we need is a share of Toto's deals: a part of the whole, such as 250 of 1,000. What share of the deals gave 6 or more?",
+      "remember": {
+        "prompt": "Remember Lesson 3? What is stored under the name differ after this line?",
+        "code": "differ = [5, 3, 2] .!= [5, 1, 2]",
+        "choices": [
+          "the numbers 5, 3 and 2",
+          "one true or false for each pair of numbers: false, true, false",
+          "the word differ"
+        ],
+        "answer": 1,
+        "why": "!= means not equal. The line stores one true or false for each pair under the name differ: true where the two numbers are not equal."
+      },
+      "explain": "A share is a part out of the whole. sum counts how many are true. length counts all the items. The slash / divides. One = gives an answer a name, so a later line can use it.",
+      "challenges": [
+        {
+          "id": "l5-r3-c1",
+          "kind": "see",
+          "prompt": "Four cards, two of them springtails cards. Line 1 gives the list the name cards. Line 2 divides the number of trues by the number of cards. Julia shows the answer of the last line. Press Run.",
+          "starter": "cards = [true, false, false, true]\nsum(cards) / length(cards)",
+          "solution": "cards = [true, false, false, true]\nsum(cards) / length(cards)",
+          "labels": [
+            {
+              "part": "cards",
+              "is": "a list of true/false cards"
+            },
+            {
+              "part": "sum(cards)",
+              "is": "function"
+            },
+            {
+              "part": "length(cards)",
+              "is": "function"
+            },
+            {
+              "part": "/",
+              "is": "a sign: divide"
+            },
+            {
+              "part": "0.5",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "2",
+              "0.5",
+              "4"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "sum(",
+              "length("
+            ],
+            "checker": null,
+            "requires_any": [
+              "(",
+              "|>"
+            ]
+          },
+          "feedback": {
+            "pass": "Line 1 named the list. Line 2 divided 2 trues by 4 cards and gave 0.5, the share.",
+            "wrong": "Do not change the lines. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True.",
+                "example": "cards = [True, false, false, true]\nsum(cards) / length(cards)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes true and false in small letters, not False.",
+                "example": "cards = [true, False, false, true]\nsum(cards) / length(cards)"
+              },
+              {
+                "match": "extra tokens after end of expression",
+                "say": "Put each line of code on its own line: press Enter after the first line.",
+                "example": "cards = [true, false, false, true] sum(cards) / length(cards)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Every [ needs a ] and every ( needs a ). Add the missing one at the end of the line.",
+                "example": "cards = [true, false, false, true]\nsum(cards / length(cards)"
+              },
+              {
+                "match": "ParseError",
+                "say": "Check the list: separate the items with commas, and close every [ with ] and every ( with ).",
+                "code_has": "[",
+                "example": "cards = [true false, false, true]\nsum(cards) / length(cards)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Line 1 names the list cards, and line 2 must use the same name. Check the spelling in both lines.",
+                "example": "card = [true, false, false, true]\nsum(cards) / length(cards)"
+              }
+            ],
+            "requires": "Keep the list of four cards, and work the answer out on the second line, not by typing it.",
+            "taught": "sum(cards) counts the trues, and length(cards) counts all the cards; divide one by the other."
+          },
+          "new_ideas": [
+            "a share"
+          ],
+          "new_facts": [
+            "one = gives an answer a name, so a later line can use it",
+            "/ divides: sum(cards) counts the trues, length(cards) counts all the items, and trues divided by items is the share"
+          ],
+          "r_note": "After `cards <- c(TRUE, FALSE, FALSE, TRUE)`: `sum(cards) / length(cards)`, or `mean(cards)`. Julia also has mean, after using Statistics.",
+          "py_note": "`np.mean(cards)` works on a list or an array. Julia's mean needs using Statistics. For many counts, `(np.array(counts) >= 6).mean()` is the share."
+        },
+        {
+          "id": "l5-r3-c2",
+          "kind": "change",
+          "prompt": "In the editor, change one false to true, so that three of the four cards are springtails cards. Press Run and look at the answer.",
+          "starter": "cards = [true, false, false, true]\nsum(cards) / length(cards)",
+          "solution": "cards = [true, true, false, true]\nsum(cards) / length(cards)",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "sum(",
+              "length("
+            ],
+            "checker": null,
+            "requires_any": [
+              "(",
+              "|>"
+            ]
+          },
+          "feedback": {
+            "pass": "Three trues out of four cards: 3 divided by 4 is 0.75.",
+            "wrong": "The answer should be 0.75, with three of the four cards true. Change one false to true.",
+            "errors": [
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True.",
+                "example": "cards = [true, True, false, true]\nsum(cards) / length(cards)"
+              },
+              {
+                "match": "extra tokens after end of expression",
+                "say": "Put each line of code on its own line: press Enter after the first line.",
+                "example": "cards = [true, true, false, true] sum(cards) / length(cards)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Every [ needs a ] and every ( needs a ). Add the missing one at the end of the line.",
+                "example": "cards = [true, true, false, true]\nsum(cards) / length(cards"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The list is named cards, and both lines must use that name. Check the spelling in both lines.",
+                "example": "cards = [true, true, false, true]\nsum(card) / length(cards)"
+              }
+            ],
+            "unchanged": "You pressed Run without changing anything. Change one false to true in the list.",
+            "requires": "Keep four cards, three of them true, and work the share out with functions, not by typing it.",
+            "taught": "sum(cards) counts the trues, and length(cards) counts all the cards; divide one by the other."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r3-c3",
+          "kind": "complete",
+          "prompt": "Line 1 asks each deal: 3 or more springtails cards? It names the answers events. Replace the blank ___ with the function that counts all the items in events. Then press Run.",
+          "starter": "events = pretend_counts .>= 3\nsum(events) / ___",
+          "solution": "events = pretend_counts .>= 3\nsum(events) / length(events)",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "length("
+            ],
+            "checker": null,
+            "requires_any": [
+              "(",
+              "|>"
+            ]
+          },
+          "feedback": {
+            "pass": "3 or more springtails cards came up in 868 of the 1,000 deals: a share of 0.868.",
+            "wrong": "The answer should be 0.868. sum(events) counts the trues, so the blank must count every deal, true or false.",
+            "errors": [
+              {
+                "match": "extra tokens after end of expression",
+                "say": "Put each line of code on its own line: press Enter after the first line.",
+                "example": "events = pretend_counts .>= 3 sum(events) / length(events)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "example": "events = pretend_counts .>= 3\nsum(events) / length(events"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Line 1 names the answers events, and line 2 must use the same name. Check the spelling of events, sum and length.",
+                "example": "events = pretend_counts .>= 3\nsum(events) / length(bi)"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put what you want counted inside round brackets after length, like length(events).",
+                "example": "events = pretend_counts .>= 3\nsum(events) / length"
+              }
+            ],
+            "unchanged": "The ___ is still there: replace it with the function that counts all the deals.",
+            "requires": "Your lines should work the share out with a function, not a typed number.",
+            "taught": "sum(events) divided by length(events), so the share works for any number of deals."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l5-r3-c3b",
+          "kind": "see",
+          "prompt": "Now the whole test, dealt fresh. Line 1 sets the cards. Line 2 makes 1,000 new deals and counts each. Line 3 asks: 6 or more? Line 4 gives the share. Press Run, then Run again.",
+          "starter": "n_cards = 8\ncounts = [sum(rand(Bool, n_cards)) for _ in 1:1000]\nevents = counts .>= 6\nsum(events) / length(events)",
+          "solution": "n_cards = 8\ncounts = [sum(rand(Bool, n_cards)) for _ in 1:1000]\nevents = counts .>= 6\nsum(events) / length(events)",
+          "predict": {
+            "question": "Will the share be exactly the same on every Run?",
+            "choices": [
+              "Yes, exactly the same every Run",
+              "No: a little different each Run",
+              "An error message"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": false,
+            "requires": [
+              "rand(",
+              "for",
+              "1:1000"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fresh deals gave a share close to the exact answer, 0.1445. It changes a little each Run, because every deal is new. Try 1:1000000 for a million deals.",
+            "wrong": "Do not change the lines. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of n_cards, counts, events, sum, length and rand.",
+                "example": "n_cards = 8\ncounts = [sum(rnd(Bool, n_cards)) for _ in 1:1000]\nevents = counts .>= 6\nsum(events) / length(events)"
+              }
+            ]
+          },
+          "new_ideas": [],
+          "new_facts": []
+        },
+        {
+          "id": "l5-r3-c4",
+          "kind": "checkpoint",
+          "prompt": "From memory. Line 1: ask every count in pretend_counts if it is at least seen_count (the notebook's 6), and name the answers, such as events. Press Enter. Line 2: the share of trues among all the deals. Press Run.",
+          "starter": "",
+          "solution": "events = pretend_counts .>= seen_count\nsum(events) / length(events)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "pretend_counts"
+            ],
+            "taught": [
+              "seen_count",
+              "sum(",
+              "length("
+            ],
+            "checker": null,
+            "requires_any": [
+              "(",
+              "|>"
+            ]
+          },
+          "hints": [
+            "Two lines. First ask every deal the question and give the answers a name. Then turn the answers into one share.",
+            "Line 1: your chosen name, then =, then your line from the last deal. Line 2: sum of that name, then /, then the function that counts all the items."
+          ],
+          "clue": "A share turns 1,000 yes-or-no answers into one number. On these fixed deals it is 0.161; fresh deals would differ slightly.",
+          "feedback": {
+            "pass": "161 of the 1,000 deals gave 6 or more: a share of 0.161.",
+            "wrong": "Not the right share yet. A deal equal to seen_count counts too, so use .>=, not .>. Divide the number of trues by the number of deals. Give a decimal such as 0.25, with no rounding and no percent.",
+            "errors": [
+              {
+                "match": "extra tokens after end of expression",
+                "say": "Put each line of code on its own line: press Enter after the first line.",
+                "example": "events = pretend_counts .>= seen_count sum(events) / length(events)"
+              },
+              {
+                "match": "::String",
+                "say": "`seen_count` is a name, so write it without quote marks: in quotes, \"seen_count\" is just text.",
+                "example": "events = pretend_counts .>= \"seen_count\"\nsum(events) / length(events)"
+              },
+              {
+                "match": "isless",
+                "say": "Put a dot before >=. Without the dot, Julia cannot compare a whole list with one number.",
+                "example": "events = pretend_counts >= seen_count\nsum(events) / length(events)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "example": "events = pretend_counts .>= seen_count\nsum(events) / length(events"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Line 2 must use the name you gave in line 1. Check the spelling of pretend_counts and seen_count too.",
+                "example": "events = pretend_counts .>= seen_count\nsum(events) / length(event)"
+              },
+              {
+                "match": "MethodError",
+                "say": "A function needs round brackets after its name: check that sum and length each have a pair.",
+                "example": "events = pretend_counts .>= seen_count\nsum(events) / length"
+              }
+            ],
+            "requires": "Your lines should start from the 1,000 counts, compare every deal with the notebook's count, then give the share of all the deals, not a typed number.",
+            "taught": "divide the number of true deals by the number of all the deals, using sum and length."
+          },
+          "new_ideas": [],
+          "starter_hint": "events = pretend_counts .>= ___\nsum(events) / length(___)"
+        },
+        {
+          "id": "l5-r3-p1",
+          "kind": "play",
+          "prompt": "Try anything in the editor. Change the number in line 1, or type seen_count in its place, and watch the share change. Nothing is checked. Press Finish to end the lesson.",
+          "starter": "events = pretend_counts .>= 4\nsum(events) / length(events)",
+          "new_ideas": []
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "rand(Bool, 8)",
+      "means": "deals eight cards at random: each is true or false, 50:50.",
+      "r": "sample(c(TRUE, FALSE), 8, replace = TRUE)",
+      "py": "np.random.choice([True, False], 8)",
+      "from_round": "r1",
+      "idea": "one batch"
+    },
+    {
+      "julia": "sum([true, false, true, true])",
+      "means": "adds up a list; each true counts as 1, so 3.",
+      "r": "sum(c(TRUE, FALSE, TRUE, TRUE))",
+      "py": "sum([True, False, True, True])",
+      "from_round": "r1",
+      "idea": "one batch"
+    },
+    {
+      "julia": "sample(1:10, 3; replace=false)",
+      "means": "picks 3 different numbers from 1 to 10 at random; you get new numbers each time you press Run.",
+      "r": "sample(1:10, 3)",
+      "py": "np.random.choice(range(1, 11), 3, replace=False)",
+      "from_round": "r1",
+      "idea": "chance"
+    },
+    {
+      "julia": "sum(practice_jars.detected)",
+      "means": "adds up the detected column of the practice_jars table; each true counts as 1, so 3. This dot picks a column.",
+      "r": "sum(practice_jars$detected)",
+      "py": "practice_jars[\"detected\"].sum()",
+      "from_round": "r1",
+      "idea": "function",
+      "lesson_only": true
+    },
+    {
+      "julia": "[4, 7, 1] .== 7",
+      "means": "asks each item: is it equal to 7? Gives false, true, false.",
+      "r": "c(4, 7, 1) == 7",
+      "py": "np.array([4, 7, 1]) == 7",
+      "from_round": "r2",
+      "idea": "dot rule"
+    },
+    {
+      "julia": "[2, 4, 7] .>= 4",
+      "means": "asks each item: is it 4 or more? Gives false, true, true.",
+      "r": "c(2, 4, 7) >= 4",
+      "py": "np.array([2, 4, 7]) >= 4",
+      "from_round": "r2",
+      "idea": "repeat many times"
+    },
+    {
+      "julia": "[sum(rand(Bool, 10)) for _ in 1:3]",
+      "means": "repeats the deal 3 times and keeps the 3 counts in a list.",
+      "r": "replicate(3, sum(sample(c(TRUE, FALSE), 10, replace = TRUE)))",
+      "py": "[np.random.choice([True, False], 10).sum() for _ in range(3)]",
+      "from_round": "r2",
+      "idea": "repeat many times"
+    },
+    {
+      "julia": "first(pretend_counts, 5)",
+      "means": "the first 5 of Toto's 1,000 counts (Julia shows only part of a long list)",
+      "r": "head(pretend_counts, 5)",
+      "py": "pretend_counts[:5]",
+      "from_round": "r2",
+      "idea": "repeat many times",
+      "lesson_only": true
+    },
+    {
+      "julia": "length([4, 7, 1])",
+      "means": "counts the items in the list: 3.",
+      "r": "length(c(4, 7, 1))",
+      "py": "len([4, 7, 1])",
+      "from_round": "r3",
+      "idea": "function"
+    },
+    {
+      "julia": "differ = [2, 2, 1] .!= [2, 2, 0]",
+      "means": "!= means not equal, so this gives false, false, true. The = gives the answers the name differ, for later lines to use.",
+      "r": "differ <- c(2, 2, 1) != c(2, 2, 0)",
+      "py": "differ = np.array([2, 2, 1]) != np.array([2, 2, 0])",
+      "from_round": "r3",
+      "idea": "naming"
+    },
+    {
+      "julia": "share = sum([true, false]) / length([true, false])",
+      "means": "divides the number of trues (1) by the number of items (2) to get 0.5, the share.",
+      "r": "share <- sum(c(TRUE, FALSE)) / length(c(TRUE, FALSE))",
+      "py": "share = sum([True, False]) / len([True, False])",
+      "from_round": "r3",
+      "idea": "a share"
+    }
+  ],
+  "close": {
+    "finding": "Under a 50:50 guess, 6 or more springtails cards came up in 161 of 1,000 deals, a share of 0.161. The exact answer is about 0.145; your own 1,000 deals will land nearby.",
+    "next": "Next: Chapter 5 uses these lines on the case notebook.",
+    "own_work": {
+      "title": "In your own work",
+      "say": "You ran this above. In your work, change the 8 cards, the 6 and the 1:1000 deals. 1:1000 includes 1000, unlike Python's range(1000). _ is a name we never use. A binomial formula is a shortcut; dealing shows the idea.",
+      "code": "counts = [sum(rand(Bool, 8)) for _ in 1:1000]\nevents = counts .>= 6\nsum(events) / length(events)"
+    },
+    "can_do": [
+      "Make Julia deal random cards and count the springtails cards.",
+      "Compare all 1,000 counts at once with a dot.",
+      "Find how often a 50:50 guess matches a result, as a share."
+    ],
+    "common_mistake": "Writing >= without the dot. Julia cannot compare a whole list with one number, unlike numpy and R."
+  },
+  "minutes": 28
+}

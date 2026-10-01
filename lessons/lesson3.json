@@ -1,0 +1,1273 @@
+{
+  "id": "lesson3",
+  "number": 3,
+  "title": "Compare records",
+  "goal": "Learn to compare two columns of counts, use the answers to pick from another column, and join two tables.",
+  "story": "Eddie: \"Here is a practice check, made up for training. The practice notebook and the computer copy should match, shelf by shelf. Let's compare them.\"",
+  "story_more": "In this practice check there are five shelves. The practice notebook counts, shelf by shelf, how many jars had springtails. A helper typed the counts into the computer. The data are made up for training.",
+  "setup": "practice3",
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Columns in the same order",
+      "idea": "lined-up columns pick from each other",
+      "story": "Eddie keeps every column in the same order: the trays in counts, then the shelves S-1 to S-5 on the desk.",
+      "explain": "Counts keeps its columns in tray order, desk in shelf order, S-1 to S-5.\nSo position 4 of each column is the fourth row: shelf S-4.\nTrue or false answers from one column can pick items from another.",
+      "challenges": [
+        {
+          "id": "l3-r1-c0",
+          "kind": "write",
+          "recall": true,
+          "data": "counts",
+          "prompt": "Remember Lesson 2? The table counts has one row for each tray, with the columns n and detected_n. Type the line that adds a column rate: jars with springtails divided by all the jars. Then press Run.",
+          "starter": "",
+          "solution": "counts.rate = counts.detected_n ./ counts.n",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "counts.rate",
+              "./"
+            ],
+            "taught": [
+              "counts.rate",
+              "./"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The rate column is added: jars with springtails divided by all the jars, tray by tray. That is Lesson 2's line, from memory.",
+            "wrong": "Three rates should come back, one for each tray. Check that the new column is counts.rate, and that detected_n is divided by n.",
+            "requires": "Divide the column detected_n by the column n, item by item, and put the answer in counts.rate.",
+            "errors": [
+              {
+                "match": "pass a vector as a column",
+                "say": "To divide item by item, put a dot before the /, like this: ./",
+                "example": "counts.rate = counts.detected_n / counts.n"
+              },
+              {
+                "match": "`n`",
+                "say": "`n` is a column: write counts.n, with the table name and a dot in front.",
+                "example": "counts.rate = counts.detected_n ./ n"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called counts, in small letters: check the spelling.",
+                "example": "Counts.rate = counts.detected_n ./ counts.n"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r1-c1",
+          "kind": "see",
+          "prompt": "The table desk on the left has three columns: shelves, logged, keyed. desk.keyed[4] takes item 4 of the keyed column. Its line is in the editor. Choose an answer, then press Run.",
+          "starter": "desk.keyed[4]",
+          "solution": "desk.keyed[4]",
+          "labels": [
+            {
+              "part": "desk.keyed",
+              "is": "a column"
+            },
+            {
+              "part": "[4]",
+              "is": "picks by position"
+            },
+            {
+              "part": "22",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show as the answer?",
+            "choices": [
+              "22",
+              "4",
+              "the whole column"
+            ],
+            "answer": 0
+          },
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "keyed"
+            ],
+            "taught": [
+              "desk.keyed[4]"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia took item 4 of desk.keyed: 22, the computer copy's number for shelf S-4.",
+            "wrong": "You only run this code as it is. Press Reset to bring back desk.keyed[4], then press Run.",
+            "requires": "Use the keyed column of desk, and pick an item from it.",
+            "taught": "pick item 4 of a column with square brackets, as in desk.keyed[4]",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "Each column has 5 items, so the position is 1 to 5.",
+                "example": "desk.keyed[6]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.keyed[4]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.Keyed[4]"
+              }
+            ]
+          },
+          "new_ideas": [
+            "lined-up columns pick from each other"
+          ],
+          "new_facts": [
+            "square brackets after a column pick an item by its position"
+          ],
+          "py_note": "`desk.keyed.iloc[3]` in pandas, which counts from 0. Julia counts from 1, so item 4 is desk.keyed[4].",
+          "r_note": "`desk$keyed[4]`. R counts from 1 too. Julia takes a column with a dot, not a dollar sign."
+        },
+        {
+          "id": "l3-r1-c2",
+          "kind": "change",
+          "prompt": "desk.keyed[4] showed the computer copy's number for shelf S-4. Now get the practice notebook's number for the same shelf. Change keyed to logged, keep [4], then Run.",
+          "starter": "desk.keyed[4]",
+          "solution": "desk.logged[4]",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logged"
+            ],
+            "taught": [
+              "desk.logged[4]"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Item 4 of desk.logged is 2: the notebook says 2 for shelf S-4, and the computer copy says 22.",
+            "wrong": "Use the same position, 4, in the other column: keep [4] and change only the column name.",
+            "unchanged": "You ran the line unchanged: change keyed to logged.",
+            "requires": "Use the logged column of desk, not a number you typed.",
+            "taught": "keep [4] and change only the column, as in desk.logged[4]",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "Each column has 5 items, so the position is 1 to 5.",
+                "example": "desk.logged[6]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.logged[4]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.Logged[4]"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r1-c6",
+          "kind": "see",
+          "data": "desk",
+          "prompt": "Now a question for every shelf. desk.logged .== 2 asks at each position: is it 2? You get one true or false for each shelf, in shelf order. Choose an answer, then press Run.",
+          "starter": "desk.logged .== 2",
+          "solution": "desk.logged .== 2",
+          "labels": [
+            {
+              "part": "desk.logged",
+              "is": "a column"
+            },
+            {
+              "part": ".==",
+              "is": "a sign: is it equal?"
+            },
+            {
+              "part": "true, false, false, true, false",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "true, false, false, true, false",
+              "2, 1, 0, 2, 1",
+              "a single true"
+            ],
+            "answer": 0
+          },
+          "r_note": "`desk$logged == 2`. R already compares every item. Julia needs a dot first, so you write .== there.",
+          "py_note": "`desk.logged == 2` already compares every item in pandas. Julia needs a dot first, so you write .== there.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logged"
+            ],
+            "taught": [
+              ".=="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia asked every shelf: is the logged number 2? Only S-1 and S-4 are true.",
+            "wrong": "Press Reset to bring back desk.logged .== 2, then press Run. Do not change it.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.logged .== 2"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.Logged .== 2"
+              }
+            ],
+            "requires": "Use the logged column of desk, and ask about the number 2.",
+            "taught": "ask desk.logged .== 2 with a dot: one true or false for each shelf"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            ".== asks at every position: one true or false for each shelf"
+          ]
+        },
+        {
+          "id": "l3-r1-c3",
+          "kind": "see",
+          "prompt": "The true answers pick from desk.shelves, because the columns are in the same order. Its line is in the editor. Choose an answer, then press Run.",
+          "starter": "desk.shelves[desk.logged .== 2]",
+          "solution": "desk.shelves[desk.logged .== 2]",
+          "labels": [
+            {
+              "part": "desk.shelves",
+              "is": "a column"
+            },
+            {
+              "part": "desk.logged .== 2",
+              "is": "true or false for each shelf"
+            },
+            {
+              "part": "S-1, S-4",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show as the answer?",
+            "choices": [
+              "two shelf names, S-1 and S-4",
+              "true, false, false, true, false",
+              "the numbers 2 and 2"
+            ],
+            "answer": 0
+          },
+          "r_note": "`desk$shelves[desk$logged == 2]`. The same pick in R; Julia adds the dot.",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "shelves",
+              "logged"
+            ],
+            "taught": [
+              "desk.shelves[",
+              ".=="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The true answers kept two shelves: S-1 and S-4, where the notebook says 2.",
+            "wrong": "You only run this code as it is. Press Reset to bring back desk.shelves[desk.logged .== 2], then press Run.",
+            "requires": "Pick from the shelves column, using a question about the logged column.",
+            "taught": "ask desk.logged .== 2 inside desk.shelves[ ]",
+            "errors": [
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each shelf.",
+                "example": "desk.shelves[desk.logged == 2]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.shelves[desk.logged .== 2]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.shelf[desk.logged .== 2]"
+              }
+            ]
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "the true answers pick from a lined-up column"
+          ],
+          "py_note": "`desk.shelves[desk.logged == 2]` picks the shelves where the answer is true.",
+          "look_closer": {
+            "text": "Without the dot, == compares the two sides as wholes and gives one answer: false. The dot asks at every position instead.",
+            "code": "desk.logged == 2"
+          }
+        },
+        {
+          "id": "l3-r1-c4",
+          "kind": "complete",
+          "prompt": "Same answers, another column. Replace the blank with keyed, so you see the computer copy's numbers for the same two shelves. Run and compare them with the notebook.",
+          "starter": "desk.___[desk.logged .== 2]",
+          "solution": "desk.keyed[desk.logged .== 2]",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "keyed",
+              "logged"
+            ],
+            "taught": [
+              "desk.keyed["
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The blank was keyed. For shelves S-1 and S-4 the computer copy says 2 and 22, where the notebook says 2 and 2. One number does not match.",
+            "wrong": "You should get two numbers. Check what you put in the blank.",
+            "unchanged": "The blank is still there: replace it with a column name.",
+            "requires": "Pick from a column of desk, using the question about logged.",
+            "taught": "put keyed in the blank, as in desk.keyed[desk.logged .== 2]",
+            "errors": [
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each shelf.",
+                "example": "desk.keyed[desk.logged == 2]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.keyed[desk.logged .== 2]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.keyd[desk.logged .== 2]"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r1-c5",
+          "kind": "checkpoint",
+          "prompt": "The editor is empty and earlier lines are hidden. Write one line that gives the names of the shelves where the computer copy, keyed, says 1. You should get a list of shelf names.",
+          "starter": "",
+          "solution": "desk.shelves[desk.keyed .== 1]",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "shelves",
+              "keyed"
+            ],
+            "taught": [
+              "desk.shelves[",
+              ".=="
+            ],
+            "checker": null,
+            "forbids": [
+              "]=keyed",
+              "]=logged",
+              "]=desk.keyed",
+              "]=desk.logged"
+            ]
+          },
+          "feedback": {
+            "pass": "Julia showed two shelves, S-2 and S-5: the shelves where keyed says 1.",
+            "wrong": "You should get a list of shelf names. Check the question inside your square brackets.",
+            "requires": "Pick from the shelf names, and ask the question about the computer copy.",
+            "forbids": "A single = saves an answer and asks nothing. Write a line that asks whether each number is the same.",
+            "taught": "ask desk.keyed .== 1 inside desk.shelves[ ]",
+            "errors": [
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each shelf.",
+                "example": "desk.shelves[desk.keyed == 1]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.shelves[desk.keyed .== 1]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.shelf[desk.keyed .== 1]"
+              }
+            ]
+          },
+          "new_ideas": [],
+          "hints": [
+            "Pick from the shelves column of desk, using true or false answers from another column.",
+            "The pattern: the column you want, square brackets, and inside them the column you ask about, then the sign for \"is it the same?\" and a number. Write desk. before each column."
+          ],
+          "starter_hint": "desk.___[desk.___ .== ___]",
+          "clue": "True or false answers from one column can pick from a lined-up column: S-2 and S-5 are the shelves where keyed says 1."
+        },
+        {
+          "id": "l3-r1-p1",
+          "kind": "play",
+          "prompt": "Pick from the columns of desk with your own question. Nothing here is checked.",
+          "starter": "desk.shelves[desk.logged .== desk.keyed]",
+          "data": "desk",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "The opposite question",
+      "idea": ".!=",
+      "story": "Eddie: \"Find the shelf where the notebook and the computer copy are not the same. One question will show it.\"",
+      "remember": {
+        "prompt": "You ran this line in Round 1. Click what it showed.",
+        "code": "desk.logged[4]",
+        "choices": [
+          "2: the notebook's number for shelf S-4",
+          "4: the position",
+          "true or false for each shelf"
+        ],
+        "answer": 0,
+        "why": "The [4] picked item 4 of the logged column: the notebook's number for shelf S-4."
+      },
+      "explain": "!= means: is not the same as. With a dot, .!= asks it at every position: one true or false for each shelf. True now means the two numbers are different.",
+      "challenges": [
+        {
+          "id": "l3-r2-c1",
+          "kind": "see",
+          "prompt": "This line asks: is this different from that? At every position, one true or false. Its line is in the editor. Choose an answer, then press Run.",
+          "starter": "desk.logged .!= desk.keyed",
+          "solution": "desk.logged .!= desk.keyed",
+          "labels": [
+            {
+              "part": "desk.logged",
+              "is": "a column"
+            },
+            {
+              "part": ".!=",
+              "is": "asks: is it different?"
+            },
+            {
+              "part": "desk.keyed",
+              "is": "a column"
+            },
+            {
+              "part": "false, false, false, true, false",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show? One answer for each shelf, in shelf order.",
+            "choices": [
+              "false, false, false, true, false",
+              "true, true, true, false, true",
+              "true"
+            ],
+            "answer": 0
+          },
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logged",
+              "keyed"
+            ],
+            "taught": [
+              ".!="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Only position 4 is true: for shelf S-4 the notebook and the computer copy are different.",
+            "wrong": "You only run this code as it is. Press Reset to bring back desk.logged .!= desk.keyed, then press Run.",
+            "requires": "Compare the two columns, logged and keyed, in one line.",
+            "taught": "put .!= between the two columns, as in desk.logged .!= desk.keyed",
+            "errors": [
+              {
+                "match": "premature end of input",
+                "say": "Each side of .!= needs a column.",
+                "example": "desk.logged .!="
+              },
+              {
+                "match": "extra tokens",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.logged !.= desk.keyed"
+              },
+              {
+                "match": "no method matching !(",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.logged .=! desk.keyed"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.logged .!= desk.keyed"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.logged .!= desk.keyd"
+              }
+            ]
+          },
+          "new_ideas": [
+            ".!="
+          ],
+          "new_facts": [],
+          "r_note": "`desk$logged != desk$keyed` already works item by item. Julia needs a dot first, so you write .!= there.",
+          "py_note": "`desk.logged != desk.keyed` works item by item in pandas. Julia needs a dot first, so you write .!= there."
+        },
+        {
+          "id": "l3-r2-c2",
+          "kind": "change",
+          "prompt": "The editor has desk.keyed .!= desk.logged. Replace desk.logged with the number 0, so every item of desk.keyed is checked against 0. Which shelves are not 0? Run and see.",
+          "starter": "desk.keyed .!= desk.logged",
+          "solution": "desk.keyed .!= 0",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "keyed"
+            ],
+            "taught": [
+              ".!="
+            ],
+            "forbids": [
+              "logged"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "true, true, false, true, true: only shelf S-3 has a keyed number that is 0.",
+            "wrong": "You should get five answers: check what sits on each side of the sign.",
+            "unchanged": "You ran the line unchanged: keep desk.keyed on the left and put the number 0 on the right of .!=",
+            "requires": "Compare the keyed column with the number 0.",
+            "forbids": "Compare the keyed column with the number 0. Leave logged out of this line.",
+            "taught": "compare desk.keyed with 0 using .!=, as in desk.keyed .!= 0",
+            "errors": [
+              {
+                "match": "premature end of input",
+                "say": "Put a column or a number on each side of .!=",
+                "example": "desk.keyed .!="
+              },
+              {
+                "match": "no method matching !(",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.keyed .=! 0"
+              },
+              {
+                "match": "extra tokens",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.keyed !.= 0"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.keyed .!= 0"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.keyd .!= 0"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r2-f1",
+          "kind": "fix",
+          "prompt": "Toto's line should ask about each shelf. Press Run and look at the answer. Then fix the line.",
+          "starter": "desk.logged != desk.keyed",
+          "solution": "desk.logged .!= desk.keyed",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "logged",
+              "keyed"
+            ],
+            "taught": [
+              ".!="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed: the dot gave one answer for each shelf, and only position 4 is true.",
+            "wrong": "You should get five answers, one for each shelf, not one answer for all.",
+            "unchanged": "Toto's line gives one single answer, true, for all five shelves. You need one answer for each shelf: change the line.",
+            "requires": "Compare the two columns, logged and keyed, so every shelf answers.",
+            "taught": "put a dot in front of !=, as in desk.logged .!= desk.keyed",
+            "errors": [
+              {
+                "match": "premature end of input",
+                "say": "Each side of .!= needs a column.",
+                "example": "desk.logged .!="
+              },
+              {
+                "match": "no method matching !(",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.logged .=! desk.keyed"
+              },
+              {
+                "match": "extra tokens",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.logged !.= desk.keyed"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.logged .!= desk.keyed"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.logged .!= desk.keyd"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r2-c3",
+          "kind": "complete",
+          "prompt": "Use the answers to pick. Replace the blank with the sign that asks, at every position, whether the numbers are different. The line then picks the shelf where the two copies differ. Run and see it.",
+          "starter": "desk.shelves[desk.logged ___ desk.keyed]",
+          "solution": "desk.shelves[desk.logged .!= desk.keyed]",
+          "data": "desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "shelves",
+              "logged",
+              "keyed"
+            ],
+            "taught": [
+              ".!="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The blank was .!=. The true answer kept one shelf name: S-4.",
+            "wrong": "You should get a list with one shelf name. Check the sign in the blank.",
+            "unchanged": "The blank is still there: replace it with the sign that asks: is it different?",
+            "requires": "Keep the shelves, logged and keyed columns on the line.",
+            "taught": "put .!= in the blank, as in desk.shelves[desk.logged .!= desk.keyed]",
+            "errors": [
+              {
+                "match": "no method matching !(",
+                "say": "Type three signs together, in this order: a dot, an exclamation mark, an equals sign: .!=",
+                "example": "desk.shelves[desk.logged .=! desk.keyed]"
+              },
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each shelf.",
+                "example": "desk.shelves[desk.logged != desk.keyed]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called desk: check the spelling and use small letters. A column comes after a dot, as in desk.keyed.",
+                "example": "Desk.shelves[desk.logged .!= desk.keyed]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in desk. The columns are shelves, logged and keyed, in small letters.",
+                "example": "desk.shelves[desk.logged .!= desk.keyd]"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r2-c4",
+          "kind": "checkpoint",
+          "prompt": "The table form_desk is desk with one more column, entry: the helper's note for each shelf. Write one line that gives the note for the shelf where logged and keyed differ. Julia shows it as a list with one note.",
+          "starter": "",
+          "solution": "form_desk.entry[form_desk.logged .!= form_desk.keyed]",
+          "data": "form_desk",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "entry",
+              "logged",
+              "keyed"
+            ],
+            "taught": [
+              "entry[",
+              ".!="
+            ],
+            "forbids": [
+              "]=keyed",
+              "]=logged",
+              "]=form_desk.keyed",
+              "]=form_desk.logged"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia shows \"key pressed twice\": the helper's note says one key was pressed two times, so 2 became 22.",
+            "wrong": "You should get one note, in a list: what the helper wrote for the one shelf that differs. Check the question inside your square brackets.",
+            "requires": "Pick from the notes, and choose the shelf with a question about the two counts.",
+            "forbids": "A column takes just one thing to pick with. Remove the extra part.",
+            "taught": "put the .!= question inside form_desk.entry[ ]",
+            "errors": [
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each shelf.",
+                "example": "form_desk.entry[form_desk.logged != form_desk.keyed]"
+              },
+              {
+                "match": "of type String",
+                "say": "You can pick from a column by position (like 4) or by true and false answers. A shelf name such as \"S-4\" does not work.",
+                "example": "form_desk.entry[\"S-4\"]"
+              },
+              {
+                "match": "not callable",
+                "say": "Use square brackets [ ] to pick from a column. Round brackets ( ) belong to functions such as sum.",
+                "example": "form_desk.entry(form_desk.logged .!= form_desk.keyed)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The table is called form_desk: check the spelling and use small letters. A column comes after a dot, as in form_desk.entry.",
+                "example": "Form_desk.entry[form_desk.logged .!= form_desk.keyed]"
+              },
+              {
+                "match": "column name",
+                "say": "That column is not in form_desk. The columns are shelves, logged, keyed and entry, in small letters.",
+                "example": "form_desk.entri[form_desk.logged .!= form_desk.keyed]"
+              }
+            ]
+          },
+          "new_ideas": [],
+          "hints": [
+            "Use the same question as before. Only the column you pick from changes: it is the new column of form_desk.",
+            "Write the column to pick from, then [ ], and put the different-question inside the brackets. Write form_desk. before each column."
+          ],
+          "starter_hint": "form_desk.___[form_desk.___ .!= form_desk.___]",
+          "clue": "Ask which numbers differ with .!=, then use the answer to pick the note from a lined-up column."
+        },
+        {
+          "id": "l3-r2-p1",
+          "kind": "play",
+          "prompt": "Pick from the columns of form_desk with your own question. Nothing here is checked.",
+          "starter": "form_desk.entry[form_desk.logged .== form_desk.keyed]",
+          "data": "form_desk",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "Two tables, one shared column",
+      "idea": "join two tables on a shared column",
+      "story": "Eddie: \"The notebook and the computer copy sit in two tables, and the shelves are in different orders. Join them on the shelf number.\"",
+      "remember": {
+        "prompt": "You ran this line in Round 2. Click what it showed.",
+        "code": "desk.logged .!= desk.keyed",
+        "choices": [
+          "true only where the two numbers are different",
+          "true only where the two numbers are the same",
+          "one true or false for the whole column"
+        ],
+        "answer": 0,
+        "why": "The dot asked at every position, and .!= is true where the two numbers differ."
+      },
+      "explain": "The two copies are in two tables, in different shelf orders, so position no longer matches.\nleftjoin joins them by a shared column, here shelf_id.\nIt keeps every row of the first table.",
+      "challenges": [
+        {
+          "id": "l3-r3-c1",
+          "kind": "see",
+          "prompt": "book_table holds the notebook's counts, key_table the computer copy. on= names the shared column. :shelf_id is a column name, with a colon in front. Choose an answer, then press Run.",
+          "starter": "merged = leftjoin(book_table, key_table, on=:shelf_id)",
+          "solution": "merged = leftjoin(book_table, key_table, on=:shelf_id)",
+          "labels": [
+            {
+              "part": "merged",
+              "is": "a name"
+            },
+            {
+              "part": "leftjoin",
+              "is": "function"
+            },
+            {
+              "part": "book_table",
+              "is": "input"
+            },
+            {
+              "part": "key_table",
+              "is": "input"
+            },
+            {
+              "part": ":shelf_id",
+              "is": "the shared column"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show as the answer?",
+            "choices": [
+              "one table with five rows: shelf_id, logged and keyed",
+              "two separate tables, one row each",
+              "a list of five numbers"
+            ],
+            "answer": 0
+          },
+          "data": "book_table",
+          "data_also": "key_table",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "leftjoin"
+            ],
+            "taught": [
+              "leftjoin(",
+              "on="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia matched the rows by shelf_id: one table, one row per shelf, with the notebook's count and the computer copy's count side by side.",
+            "wrong": "You only run this code as it is. Press Reset to bring back merged = leftjoin(book_table, key_table, on=:shelf_id), then press Run.",
+            "errors": [
+              {
+                "match": "unsupported keyword argument",
+                "code_has": "by",
+                "say": "Julia writes on=, not by=: the named input is on=:shelf_id.",
+                "example": "merged = leftjoin(book_table, key_table, by=:shelf_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The tables are book_table and key_table, and the result is merged: check the spelling and use small letters.",
+                "example": "merged = leftjoin(book_tabl, key_table, on=:shelf_id)"
+              }
+            ],
+            "requires": "Join the two tables, book_table and key_table, on their shared column.",
+            "taught": "join the tables with leftjoin, and name the shared column with on=."
+          },
+          "new_ideas": [
+            "join two tables on a shared column"
+          ],
+          "new_facts": [
+            "leftjoin puts two tables side by side, matching rows on a shared column",
+            "= saves the joined table under the name merged, as in Lesson 2"
+          ],
+          "r_note": "After library(dplyr): `left_join(book_table, key_table, by = \"shelf_id\")`. Julia says on=, not by=.",
+          "py_note": "pd.merge(book_table, key_table, on=\"shelf_id\", how=\"left\")"
+        },
+        {
+          "id": "l3-r3-c2",
+          "kind": "complete",
+          "prompt": "The order swaps: key_table comes first this time. on= needs the shared column's name with a colon in front, and both tables have shelf_id. Replace the blank, then Run.",
+          "starter": "merged = leftjoin(key_table, book_table, on=___)",
+          "solution": "merged = leftjoin(key_table, book_table, on=:shelf_id)",
+          "data": "key_table",
+          "data_also": "book_table",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "leftjoin",
+              "key_table"
+            ],
+            "taught": [
+              "merged=",
+              "leftjoin(",
+              "on="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The blank was :shelf_id. The join still gives one row for each shelf, with both counts. The rows may come in a different order, and that is fine.",
+            "wrong": "You should get one table with five rows. Check what you put in the blank.",
+            "errors": [
+              {
+                "match": "unsupported keyword argument",
+                "code_has": "by",
+                "say": "Julia writes on=, not by=: the named input is on=:shelf_id.",
+                "example": "merged = leftjoin(key_table, book_table, by=:shelf_id)"
+              },
+              {
+                "match": "not found in the left data frame",
+                "say": "That column is not in the tables. The shared column is shelf_id, with a colon in front.",
+                "example": "merged = leftjoin(key_table, book_table, on=:shelfid)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The tables are book_table and key_table, and the result is merged: check the spelling and use small letters.",
+                "example": "merged = leftjoin(key_tabl, book_table, on=:shelf_id)"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the shared column's name.",
+            "requires": "Join the two tables on their shared column.",
+            "taught": "name the result merged, as in merged = leftjoin(key_table, book_table, on=:shelf_id), so later lines can use it"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r3-c3",
+          "kind": "see",
+          "prompt": "A rule is a true or false question for each row. [rule, :] keeps the true rows and every column. This rule keeps the shelves where keyed is 1. Choose an answer, then press Run.",
+          "starter": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.keyed .== 1, :]",
+          "solution": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.keyed .== 1, :]",
+          "labels": [
+            {
+              "part": "merged",
+              "is": "a name"
+            },
+            {
+              "part": "merged.keyed .== 1",
+              "is": "true or false for each row"
+            },
+            {
+              "part": ":",
+              "is": "every column"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show as the answer?",
+            "choices": [
+              "two rows, S-2 and S-5, with all three columns",
+              "one row, S-4, with all three columns",
+              "all five rows, with all three columns"
+            ],
+            "answer": 0
+          },
+          "data": "book_table",
+          "data_also": "key_table",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "merged",
+              "keyed"
+            ],
+            "taught": [
+              "merged["
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The rule kept two rows, S-2 and S-5, and every column. The last line works on the joined table, as in Lesson 1.",
+            "wrong": "You only run this code as it is. Press Reset to bring back both lines, then press Run.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The tables are book_table and key_table, and the result is merged: check the spelling and use small letters.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmrged[merged.keyed .== 1, :]"
+              }
+            ],
+            "requires": "Keep both lines: join the tables, then keep rows of merged.",
+            "taught": "join first, then keep rows of merged with a rule and a colon."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "in [rule, :], the : alone means every column, as in Lesson 1"
+          ]
+        },
+        {
+          "id": "l3-r3-c4",
+          "kind": "change",
+          "prompt": "Now compare the two count columns. In the last line, change the rule so it is true where merged.logged is the same as merged.keyed. The rows that agree are kept. Run and see.",
+          "starter": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.keyed .== 1, :]",
+          "solution": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.logged .== merged.keyed, :]",
+          "data": "book_table",
+          "data_also": "key_table",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "merged",
+              "logged",
+              "keyed"
+            ],
+            "taught": [
+              "merged[",
+              ".=="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Four rows agree, and one shelf is left out. The rule compared two columns of the same table.",
+            "wrong": "You should get a table. Check that the rule compares merged.logged with merged.keyed.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The tables are book_table and key_table, and the result is merged: check the spelling and use small letters.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[mrged.logged .== merged.keyed, :]"
+              },
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each row.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.logged == merged.keyed, :]"
+              }
+            ],
+            "unchanged": "You ran the lines unchanged: change the rule in the last line.",
+            "requires": "Keep both lines, and compare merged.logged with merged.keyed.",
+            "taught": "compare the two columns inside the brackets, then keep every column with a colon."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l3-r3-c5",
+          "kind": "checkpoint",
+          "prompt": "The editor is empty. Join key_table onto book_table (book_table first) on their shared column, save the result as merged, then keep only the rows where logged and keyed differ. You should get one row.",
+          "starter": "",
+          "solution": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.logged .!= merged.keyed, :]",
+          "data": "book_table",
+          "data_also": "key_table",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "leftjoin",
+              "merged"
+            ],
+            "taught": [
+              "leftjoin(",
+              ".!="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One row: shelf S-4, where the notebook says 2 and the computer copy says 22.",
+            "wrong": "You should get a table with one row. Check both parts: the join, then the rows you keep.",
+            "requires": "Join the two tables first, then keep only the rows where the two counts differ.",
+            "forbids": "Ask about every row with a dot: one true or false for each row.",
+            "errors": [
+              {
+                "match": "`merged`",
+                "say": "Julia does not know the name merged yet. Put it on in the top line with merged =, and spell it the same in both lines.",
+                "example": "meged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.logged .!= merged.keyed, :]"
+              },
+              {
+                "match": "unsupported keyword argument",
+                "code_has": "by",
+                "say": "Julia writes on=, not by=: the named input is on=:shelf_id.",
+                "example": "merged = leftjoin(book_table, key_table, by=:shelf_id)\nmerged[merged.logged .!= merged.keyed, :]"
+              },
+              {
+                "match": "Missing join argument",
+                "say": "Name the shared column with on=, as in on=:shelf_id.",
+                "example": "merged = leftjoin(book_table, key_table)\nmerged[merged.logged .!= merged.keyed, :]"
+              },
+              {
+                "match": "not found in the left data frame",
+                "say": "That column is not in the tables. The shared column is shelf_id, with a colon in front.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelfid)\nmerged[merged.logged .!= merged.keyed, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The tables are book_table and key_table, and the result is merged: check the spelling and use small letters.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmrged[merged.logged .!= merged.keyed, :]"
+              },
+              {
+                "match": "of type Bool",
+                "say": "Add the dot. Without it, Julia gives one answer for the whole column. The brackets need one true or false for each row.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.logged != merged.keyed, :]"
+              }
+            ],
+            "taught": "join the tables, then keep rows of merged with a .!= rule and a colon."
+          },
+          "new_ideas": [],
+          "hints": [
+            "Two parts. First join the tables and save the result under a name. Then keep the rows where the two counts differ, as you did a moment ago.",
+            "The top line names the result and joins the tables on the shared column. The last line is the name, then [ ], with a rule for each row, a comma and a colon inside."
+          ],
+          "starter_hint": "merged = leftjoin(___, ___, on=___)\nmerged[merged.___ .!= merged.___, :]",
+          "clue": "leftjoin matches two tables on a shared column, so row order does not matter. Join first, then keep the rows that differ."
+        },
+        {
+          "id": "l3-r3-p1",
+          "kind": "play",
+          "prompt": "Join the tables in either order, or keep other rows of merged. Nothing here is checked.",
+          "starter": "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged",
+          "data": "book_table",
+          "data_also": "key_table",
+          "new_ideas": []
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "desk",
+      "means": "the table of this lesson: one row for each shelf, with the columns shelves, logged and keyed.",
+      "r": "desk",
+      "py": "desk",
+      "from_round": "r1",
+      "idea": "lined-up columns pick from each other",
+      "lesson_only": true
+    },
+    {
+      "julia": "[5, 6, 7][3]",
+      "means": "The first [ ] makes a list of three numbers (a table column is a list). The second [3] picks item 3, which is 7.",
+      "r": "c(5, 6, 7)[3]",
+      "py": "[5, 6, 7][2]",
+      "from_round": "r1",
+      "idea": "pick by position"
+    },
+    {
+      "julia": "[2, 2, 1] .== [2, 2, 0]",
+      "means": "true where the two numbers are the same, one answer for each position.",
+      "r": "c(2, 2, 1) == c(2, 2, 0)",
+      "py": "np.array([2, 2, 1]) == np.array([2, 2, 0])",
+      "from_round": "r1",
+      "idea": "ask about every position"
+    },
+    {
+      "julia": "[\"A\", \"B\", \"C\"][[2, 2, 1] .== 2]",
+      "means": "true or false answers from one list keep the items of a lined-up list. Text in quotes, like \"A\", is plain text.",
+      "r": "c(\"A\", \"B\", \"C\")[c(2, 2, 1) == 2]",
+      "py": "np.array([\"A\", \"B\", \"C\"])[np.array([2, 2, 1]) == 2]",
+      "from_round": "r1",
+      "idea": "pick with true or false"
+    },
+    {
+      "julia": "[2, 2, 1] .!= [2, 2, 0]",
+      "means": "true where the two numbers are different: the opposite question, with the dot.",
+      "r": "c(2, 2, 1) != c(2, 2, 0)",
+      "py": "np.array([2, 2, 1]) != np.array([2, 2, 0])",
+      "from_round": "r2",
+      "idea": "ask: is it different?"
+    },
+    {
+      "julia": "[\"A\", \"B\", \"C\"][[2, 2, 1] .!= [2, 2, 0]]",
+      "means": "the different-question picks from a third list in the same order: here \"C\".",
+      "r": "c(\"A\", \"B\", \"C\")[c(2, 2, 1) != c(2, 2, 0)]",
+      "py": "np.array([\"A\", \"B\", \"C\"])[np.array([2, 2, 1]) != np.array([2, 2, 0])]",
+      "from_round": "r2",
+      "idea": "choose from a third list"
+    },
+    {
+      "julia": "leftjoin(DataFrame(id=[1, 2], a=[5, 6]), DataFrame(id=[1, 2], b=[7, 8]), on=:id)",
+      "means": "puts two tables side by side, matching rows on the shared column id. Every row of the first table is kept.",
+      "r": "left_join(data.frame(id=c(1, 2), a=c(5, 6)), data.frame(id=c(1, 2), b=c(7, 8)), by=\"id\")",
+      "py": "pd.merge(pd.DataFrame({\"id\": [1, 2], \"a\": [5, 6]}), pd.DataFrame({\"id\": [1, 2], \"b\": [7, 8]}), on=\"id\", how=\"left\")",
+      "from_round": "r3",
+      "idea": "join two tables"
+    },
+    {
+      "julia": "df = DataFrame(a=[1, 2], b=[1, 3])\ndf[df.a .!= df.b, :]",
+      "means": "keeps the rows where the two columns differ, and every column.",
+      "r": "df <- data.frame(a=c(1, 2), b=c(1, 3))\nfilter(df, a != b)",
+      "py": "df = pd.DataFrame({\"a\": [1, 2], \"b\": [1, 3]})\ndf[df.a != df.b]",
+      "from_round": "r3",
+      "idea": "keep rows that differ"
+    }
+  ],
+  "close": {
+    "finding": "In the practice check, only shelf S-4 is different. The notebook says 2 and the computer copy says 22. The helper's note explains it: one key was pressed twice.",
+    "next": "Next: Chapter 3 checks Toto's typed copy against the case notebook.",
+    "own_work": {
+      "say": "The same idea works on your own table: the last line shows the sites where run1 and run2 differ. Install DataFrames once, then change runs, site, run1 and run2 to your own names.",
+      "code": "using Pkg; Pkg.add(\"DataFrames\")   # first time only\nusing DataFrames\nruns = DataFrame(site=[\"A\", \"B\", \"C\"], run1=[3, 1, 2], run2=[3, 4, 2])\nruns.site[runs.run1 .!= runs.run2]"
+    },
+    "can_do": [
+      "Compare two columns of counts, item by item.",
+      "Use true and false answers to pick from a column.",
+      "Join two tables on a shared column."
+    ],
+    "common_mistake": "Leaving out the dot: != or == then gives one answer for the whole column, not one for each shelf."
+  },
+  "glossary": [
+    {
+      "term": "list",
+      "means": "Items in a fixed order, like a count for each shelf. A column is one. Julia says vector."
+    },
+    {
+      "term": "position",
+      "means": "The place of a thing in a list. Julia counts from 1: the first is 1, the second is 2."
+    },
+    {
+      "term": "table",
+      "means": "A grid of information, with rows going across and columns going down. Julia says DataFrame."
+    },
+    {
+      "term": "column",
+      "means": "One kind of detail running down a table. Each column is a list."
+    },
+    {
+      "term": "row",
+      "means": "One line going across a table. Here, one row for each shelf."
+    },
+    {
+      "term": "Reset",
+      "means": "The button that puts the starting line back."
+    },
+    {
+      "term": "true or false",
+      "means": "The two possible answers to a yes-or-no question: true means yes, false means no."
+    },
+    {
+      "term": "=",
+      "means": "Saves an answer under a name you choose. It does not ask a question."
+    },
+    {
+      "term": ".==",
+      "means": "The dot makes Julia ask: is it the same? at every position. One true or false for each item."
+    },
+    {
+      "term": "!=",
+      "means": "Means: is not the same as. It is an exclamation mark, then an equals sign."
+    },
+    {
+      "term": ".!=",
+      "means": "The dot makes Julia ask: is it different? at every position. One true or false for each item."
+    },
+    {
+      "term": "dot",
+      "means": "The sign . put in front of a sign like == so Julia asks at every position."
+    },
+    {
+      "term": "square brackets",
+      "means": "The signs [ and ]. After a name, they pick things from it."
+    },
+    {
+      "term": "round brackets",
+      "means": "The signs ( and ). After a function name such as leftjoin, they hold what it works on."
+    },
+    {
+      "term": "bracket",
+      "means": "A sign that wraps around something. Each [ needs a ] and each ( needs a )."
+    },
+    {
+      "term": "comma",
+      "means": "The sign , between things. Inside a table's brackets it separates rows from columns."
+    },
+    {
+      "term": "colon",
+      "means": "The sign : . Alone inside a table's brackets, it means every column."
+    },
+    {
+      "term": "pick",
+      "means": "Choose things from a column, using square brackets after its name."
+    },
+    {
+      "term": "join",
+      "means": "Put two tables side by side, matching their rows on a column both tables have."
+    },
+    {
+      "term": "leftjoin",
+      "means": "Joins two tables. It keeps every row of the first and adds columns from the second."
+    },
+    {
+      "term": "on=",
+      "means": "Inside leftjoin, names the shared column that matches the rows. A colon goes in front of the name."
+    },
+    {
+      "term": "small letters",
+      "means": "Letters like a, b and c, not capitals like A, B and C."
+    },
+    {
+      "term": "blank",
+      "means": "The place marked ___ in a starting line. Type your answer there."
+    }
+  ],
+  "minutes": 30
+}

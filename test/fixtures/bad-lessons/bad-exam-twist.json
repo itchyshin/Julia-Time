@@ -1,0 +1,41 @@
+{
+  "id": "exam1",
+  "kind": "exam",
+  "number": 1,
+  "chapter": "C1",
+  "title": "T",
+  "setup": "case1",
+  "rounds": [
+    {
+      "id": "r1",
+      "challenges": [
+        {
+          "id": "x-twist",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "x",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "setup": "practice1",
+      "challenges": [
+        {
+          "id": "x-twist2",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true
+          }
+        }
+      ]
+    }
+  ]
+}

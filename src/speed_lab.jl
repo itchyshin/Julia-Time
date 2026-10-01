@@ -328,7 +328,7 @@ function _speed_lab_availability_reply(identity::AbstractDict, probe::Function, 
         identity...,
         "availability" => "unavailable",
         "reason" => "READINESS_PROBE_FAILED",
-        "message" => "The mystery is complete; this optional comparison is unavailable because its fixed local readiness probe did not finish.",
+        "message" => "This optional comparison is unavailable because its fixed local readiness probe did not finish.",
         "components" => Dict{String,Any}(),
         "parity" => "not_run",
     )
@@ -340,19 +340,19 @@ function _speed_lab_availability_reply(identity::AbstractDict, probe::Function, 
             identity...,
             "availability" => "unavailable",
             "reason" => "READINESS_PROBE_FAILED",
-            "message" => "The mystery is complete; this optional comparison is unavailable because its fixed local readiness probe did not finish.",
+            "message" => "This optional comparison is unavailable because its fixed local readiness probe did not finish.",
             "components" => Dict{String,Any}(),
             "parity" => "not_run",
         )
     end
     reason, message = if !julia_ready
-        "JULIA_UNAVAILABLE", "The mystery is complete; this optional comparison cannot run because Julia is unavailable. Restart the supplied launcher, then check again."
+        "JULIA_UNAVAILABLE", "This optional comparison cannot run because Julia is unavailable. Restart the supplied launcher, then check again."
     elseif !r_ready
-        "R_MISSING", "The mystery is complete; this optional comparison cannot run because Rscript is unavailable. Install R, then check again."
+        "R_MISSING", "This optional comparison cannot run because Rscript is unavailable. Install R, then check again."
     elseif !python_ready
-        "PYTHON_MISSING", "The mystery is complete; this optional comparison cannot run because Python is unavailable. Install Python and NumPy, then check again."
+        "PYTHON_MISSING", "This optional comparison cannot run because Python is unavailable. Install Python and NumPy, then check again."
     elseif !numpy_ready
-        "NUMPY_MISSING", "The mystery is complete; this optional comparison cannot run because NumPy is not available in this Python installation. Install NumPy, then check again."
+        "NUMPY_MISSING", "This optional comparison cannot run because NumPy is not available in this Python installation. Install NumPy, then check again."
     else
         nothing, "Julia, R, and Python/NumPy are available. Checking their fixed shared bootstrap result before any timing is shown."
     end
@@ -369,7 +369,7 @@ function _speed_lab_availability_reply(identity::AbstractDict, probe::Function, 
         else
             parity = "failed"
             reason = "PARITY_FAILED"
-            message = "The mystery is complete; this optional comparison will not time the languages because their fixed bootstrap results did not verify together."
+            message = "This optional comparison will not time the languages because their fixed bootstrap results did not verify together."
         end
     end
     return Dict(
@@ -427,7 +427,7 @@ function speed_lab_run_reply(msg::AbstractDict;
     _speed_lab_measurements_verified(measurements) || return Dict(
         "type" => "benchmark_run", identity...,
         "status" => "unavailable", "reason" => "MEASUREMENT_RECEIPT_FAILED",
-        "message" => "The mystery is complete; this optional comparison did not produce a complete fixed local measurement receipt.",
+        "message" => "This optional comparison did not produce a complete fixed local measurement receipt.",
         "parity" => "verified",
     )
     return Dict(

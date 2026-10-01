@@ -17,7 +17,7 @@
     "C3/filter-disagreement":{chapter:"C3", move:"filter-disagreement", label:"find the tray that disagrees", concepts:["not-equal, row by row, with .!="]},
     "C4/plan-distinct-recheck":{chapter:"C4", move:"plan-distinct-recheck", label:"pick three jars by chance", concepts:["random picks with no repeats"]},
     "C5/event-mask":{chapter:"C5", move:"event-mask", label:"mark the rounds with 5 or more", concepts:["comparing every value with .>="]},
-    "C5/event-frequency":{chapter:"C5", move:"event-frequency", label:"work out how often", concepts:["how often = matches ÷ all rounds"]},
+    "C5/event-frequency":{chapter:"C5", move:"event-frequency", label:"work out how often", concepts:["how often = matches ÷ all card deals"]},
     "C6/compatible-models":{chapter:"C6", move:"compatible-models", label:"keep the stories that fit", concepts:["a range, both ends included", "fitting is not proof"]}
   });
   const ORDERED_KEYS = Object.keys(MOVE_COPY);
@@ -207,12 +207,12 @@
   }
   function caseThread(keys, next) {
     const question = "Toto's report says the springtails are dying out. Are they?";
-    let established = "Nothing checked yet. Start with Chapter 1.";
+    let established = "Nothing checked yet. Start with Lesson 1.";
     let unknown = "What the notebook says about batch B09.";
     const complete = ORDERED_KEYS.every(key => keys.has(key));
     if (complete) {
-      established = "Case closed: the springtails were never shown to be dying out. The report's 0 was a blank box, and a dying-out rate almost never gives 5 of 6.";
-      unknown = "What the recheck of three jars will show.";
+      established = "All six chapters done. The springtails were never shown to be dying out. The report's 0 was a blank box, and a dying-out rate almost never gives 5 of 6.";
+      unknown = "What the recheck of three jars will show. It is the next real step.";
     } else if (keys.has("C6/compatible-models")) {
       established = "The 0 for T-C was a blank box, not an empty tray. And a dying-out rate almost never gives the 5 of 6 jars we saw.";
       unknown = "What the recheck of three jars will show.";
@@ -249,7 +249,7 @@
     };
     const key = next.chapter + "/" + next.move;
     const whyNext = complete
-      ? "All three parts are done. The recheck of three jars is still to come."
+      ? "All six chapters are done; the recheck of three jars is the next real step."
       : why[key] || "See what the case has shown so far, and what is still to find out.";
     return {question, established, unknown, whyNext, hasEstablishedFact: keys.size > 0};
   }
@@ -296,7 +296,7 @@
     C1:["C1/select-records"], C2:["C2/group", "C2/counts", "C2/rates"], C3:["C3/join-report-log", "C3/filter-disagreement"],
     C4:["C4/plan-distinct-recheck"], C5:["C5/event-mask", "C5/event-frequency"], C6:["C6/compatible-models"]
   });
-  const CASE_SOLVED = "Case closed: all 6 chapters complete.";
+  const CASE_SOLVED = "All six chapters done";
   // "Chapter 2", "Chapters 2 and 5", "Chapters 2, 3 and 5"
   function chapterList(chapters) {
     const numbers = chapters.map(chapter => chapter.slice(1));
@@ -315,7 +315,7 @@
     const open = Object.keys(CHAPTER_STEPS).filter(chapter => !CHAPTER_STEPS[chapter].every(key => keys.has(key)));
     const solved = 6 - open.length;
     return {solved, complete:open.length === 0, open, headline:open.length ? "" : CASE_SOLVED,
-      line:open.length ? solved + " of 6 chapters solved. Still open: " + chapterList(open) + "." : "Every step of all six chapters is saved on this computer."};
+      line:open.length ? solved + " of 6 chapters solved. Still open: " + chapterList(open) + "." : "All six chapters done. Your work is saved on this computer. The recheck of three jars is still to do."};
   }
   function dashboardModel(state) {
     const keys = acceptedKeys(state);
@@ -323,15 +323,15 @@
     const resumed = moveFromCursor(state && state.cursor, fallback);
     const next = resumed || fallback;
     const cards = [
-      {chapter:"C1", part:"Part 1 · Check the report", title:"1 · The report and the notebook", playable:true, href:"C1", status:chapterStatus(keys, ["C1/select-records"], "Ready: find the B09 jars")},
-      {chapter:"C2", part:"Part 1 · Check the report", title:"2 · Count by tray", playable:true, href:"C2", status:chapterStatus(keys, ["C2/group", "C2/counts", "C2/rates"], "Ready: count the jars with springtails on each tray")},
-      {chapter:"C3", part:"Part 1 · Check the report", title:"3 · Where did the 0 come from?", playable:true, href:"C3", status:chapterStatus(keys, ["C3/join-report-log", "C3/filter-disagreement"], "Ready: line up the notebook and Toto's typed table")},
-      {chapter:"C4", part:"Part 2 · Check the notebook", title:"4 · Plan a fair recheck", playable:true, href:"C4", status:chapterStatus(keys, ["C4/plan-distinct-recheck"], "Ready: pick three jars to look at again")},
-      {chapter:"C5", part:"Part 2 · Check the notebook", title:"5 · What would plain chance give?", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Ready: play Toto's card game")},
-      {chapter:"C6", part:"Part 3 · Test the claim", title:"6 · Are the springtails dying out?", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Ready: test three stories about the springtails")}
+      {chapter:"C1", title:"1 · The report and the notebook", playable:true, href:"C1", status:chapterStatus(keys, ["C1/select-records"], "Ready: find the B09 jars")},
+      {chapter:"C2", title:"2 · Count by tray", playable:true, href:"C2", status:chapterStatus(keys, ["C2/group", "C2/counts", "C2/rates"], "Ready: count the jars with springtails on each tray")},
+      {chapter:"C3", title:"3 · Where did the 0 come from?", playable:true, href:"C3", status:chapterStatus(keys, ["C3/join-report-log", "C3/filter-disagreement"], "Ready: line up the notebook and Toto's typed table")},
+      {chapter:"C4", title:"4 · Plan a fair recheck", playable:true, href:"C4", status:chapterStatus(keys, ["C4/plan-distinct-recheck"], "Ready: pick three jars to look at again")},
+      {chapter:"C5", title:"5 · What would plain chance give?", playable:true, href:"C5", status:chapterStatus(keys, ["C5/event-mask", "C5/event-frequency"], "Ready: play Toto's card game")},
+      {chapter:"C6", title:"6 · Are the springtails dying out?", playable:true, href:"C6", status:chapterStatus(keys, ["C6/compatible-models"], "Ready: test three stories about the springtails")}
     ];
     const evidenceChapters = new Set(Array.isArray(state && state.evidence) ? state.evidence.map(item => item.chapter) : []);
-    for (const card of cards) card.solvedLabel = solvedLabel(keys, card.chapter, evidenceChapters);
+    for (const card of cards) { card.solvedLabel = solvedLabel(keys, card.chapter, evidenceChapters); card.done = CHAPTER_STEPS[card.chapter].every(key => keys.has(key)); }
     const evidence = Array.isArray(state && state.evidence) ? state.evidence.map(item => ({title:evidenceTitle(item), chapter:item.chapter, move_id:item.move_id, row_count:item.row_count, provenance:item.provenance, line:evidenceLine(item)})) : [];
     // A chapter solved by an earlier build may have no saved result table; say so rather than skip it (2026-09-25).
     for (const chapter of Object.keys(CHAPTER_STEPS)) {
@@ -359,9 +359,102 @@
       draftNotice:draftNames.length ? "Saved draft" + (draftNames.length === 1 ? "" : "s") + " available for " + draftNames.join("; ") + "." : "",
       changedHistoryAction:changedHistory ? "Use the changed save" : "",
       historicalNotice:changedHistory
-        ? "Some older saved data on this computer has changed. Your current work was not touched, and this board will not import the change automatically."
+        ? "Some older saved data on this computer has changed. Your current work was not touched, and nothing was imported. To bring the changed data in, press Use the changed save. To ignore it, just carry on."
         : keys.size ? "Your saved work is on this computer. Open any chapter to run it again." : "Nothing saved on this computer yet."
     };
+  }
+
+  // ---- The course path (0.5): intro, Lesson 1, Chapter 1, Lesson 2, ... Lesson 6, Chapter 6, ending ----------------
+  // Lesson progress is written by web/lesson.js, one key per lesson, and is shared by everyone on this laptop.
+  const LESSON_PREFIX = "julia-time:lesson:v1:";
+  // Set once the player reaches the last scene of the intro movie (web/course/intro.js).
+  const INTRO_SEEN_KEY = "julia-time:intro-seen:v1";
+  // The six steps, as the Board's table shows them: Step N = Lesson N (practice) + Chapter N (the case).
+  // The minutes are one table, kept equal to `minutes` in lessons/lessonN.json and lessons/examN.json by
+  // test/board-minutes.test.cjs; the Board's step times and its "about N hours" are sums of these.
+  const STEPS = Object.freeze([
+    {n:1, lesson:"Find the jars: functions, rows, the dot rule", chapter:"The report and the notebook", lessonMinutes:40, chapterMinutes:10},
+    {n:2, lesson:"Count by tray: name a result, count by group", chapter:"Count by tray", lessonMinutes:35, chapterMinutes:8},
+    {n:3, lesson:"Compare records: two lists, not-equal, join", chapter:"Where did the zero come from?", lessonMinutes:30, chapterMinutes:5},
+    {n:4, lesson:"Recheck fairly: sample, named inputs", chapter:"Plan a fair recheck", lessonMinutes:25, chapterMinutes:5},
+    {n:5, lesson:"Plain chance: simulate, compare, share", chapter:"What would plain chance give?", lessonMinutes:28, chapterMinutes:5},
+    {n:6, lesson:"Test the claim: two rules, brackets", chapter:"Are the springtails dying out?", lessonMinutes:32, chapterMinutes:8}
+  ].map(step => Object.freeze(Object.assign({}, step, {minutes:step.lessonMinutes + step.chapterMinutes}))));
+  // The optional two-minute intro and the ending page add a few minutes to the whole path.
+  const INTRO_MINUTES = 2, ENDING_MINUTES = 5;
+  // "4 hours": the whole path, rounded to the nearest half hour.
+  function timePromise() {
+    const minutes = STEPS.reduce((sum, step) => sum + step.minutes, 0) + INTRO_MINUTES + ENDING_MINUTES;
+    const halves = Math.max(1, Math.round(minutes / 30));
+    const whole = Math.floor(halves / 2), half = halves % 2 === 1;
+    const text = (whole ? String(whole) : "") + (half ? "\u00bd" : "") + " hour" + (halves === 2 ? "" : "s");
+    return {minutes, hours:halves / 2, text};
+  }
+  // Wave n of the target range opens once this lesson (or a higher one) is done. Same order as lessons/range.json;
+  // test/board-walk.test.cjs fails if the two drift apart.
+  const RANGE_UNLOCKS = Object.freeze([1, 1, 1, 2, 2, 3, 4, 5, 6, 6, 6]);
+  const RANGE_DESTINATION = "../lesson.html?lesson=range";
+  function attemptQuery(attempt) { return courseState.attemptId(attempt) ? "&attempt=" + encodeURIComponent(attempt) : ""; }
+  // Every link off the Board keeps the attempt, or coming back shows another attempt's progress.
+  function rangeDestination(attempt) { return RANGE_DESTINATION + attemptQuery(attempt); }
+  function lessonNumberOfKey(key) {
+    if (typeof key !== "string" || !key.startsWith(LESSON_PREFIX)) return null;
+    const m = /^lesson(\d+)$/.exec(key.slice(LESSON_PREFIX.length));
+    return m ? Number(m[1]) : null;
+  }
+  // {done: Set of lesson numbers whose last checkpoint passed, started: any lesson has saved progress}
+  function lessonProgress(storage) {
+    const done = new Set(), skills = [];
+    let started = false, introSeen = false;
+    try { introSeen = Boolean(storage && storage.getItem(INTRO_SEEN_KEY)); } catch (_) { introSeen = false; }
+    try {
+      for (let i = 0; storage && i < storage.length; i++) {
+        const key = storage.key(i), n = lessonNumberOfKey(key);
+        if (n === null) continue;
+        let raw = null;
+        try { raw = JSON.parse(storage.getItem(key)); } catch (_) { raw = null; }
+        if (!raw || typeof raw !== "object") continue;
+        started = true;
+        if (raw.lastCheckpointDone) done.add(n);
+        // What a finished lesson says you can now do (written by web/lesson.js as progress.skill).
+        const skill = raw.skill;
+        if (skill && Array.isArray(skill.can_do)) skills.push({number:n, can_do:skill.can_do.filter(line => typeof line === "string" && line)});
+      }
+    } catch (_) { /* unreadable storage counts as no progress */ }
+    skills.sort((a, b) => a.number - b.number);
+    return {done, started, introSeen, skills};
+  }
+  function wavesOpen(done) {
+    const highest = Math.max(0, ...done);
+    return RANGE_UNLOCKS.filter(n => highest >= n).length;
+  }
+  // The Board's chapter links open the chapter exam on the lesson screen. lesson.js honours ?attempt= and
+  // web/lesson-exam-save.js writes into that attempt's namespace, so the attempt is passed through.
+  function examDestination(n, attempt) {
+    return "../lesson.html?lesson=exam" + n + (courseState.attemptId(attempt) ? "&attempt=" + encodeURIComponent(attempt) : "");
+  }
+  function lessonDestination(n, attempt) { return "../lesson.html?lesson=lesson" + n + attemptQuery(attempt); }
+  // The one main button and the two rows on each chapter card. Nothing here locks anything.
+  function courseWalk(model, lesson, attempt) {
+    // The intro is optional: it never blocks or replaces the main button. "Done" means watched or already playing.
+    const introDone = !model.startWithIntro || lesson.started || Boolean(lesson.introSeen);
+    const fresh = model.startWithIntro && !lesson.started;
+    const rows = model.cards.map((card, i) => {
+      const n = i + 1;
+      return {chapter:card.chapter, n, lessonDone:lesson.done.has(n), caseDone:Boolean(card.done),
+        lessonHref:lessonDestination(n, attempt), caseHref:examDestination(n, attempt)};
+    });
+    let next = null;
+    for (const row of rows) {
+      if (next) break;
+      // Nothing is locked: a chapter solved without its lesson counts for that lesson on the walk.
+      if (!row.lessonDone && !row.caseDone) next = {kind:"lesson", n:row.n, label:fresh && row.n === 1 ? "Start Lesson 1" : "Continue: Lesson " + row.n, href:row.lessonHref};
+      else if (!row.caseDone) {
+        next = {kind:"chapter", n:row.n, label:"Continue: Chapter " + row.n, href:examDestination(row.n, attempt)};
+      }
+    }
+    if (!next) next = {kind:"ending", label:"See how the case ends", href:endingDestination(attempt)};
+    return {introDone, next, rows, waves:{open:wavesOpen(lesson.done), total:RANGE_UNLOCKS.length}};
   }
 
   function acceptReply(pending, reply) {
@@ -370,5 +463,5 @@
     return Boolean(pending && reply && pending.case_id === courseState.CASE_ID && pending.mode === "challenge" && knownMove && reply.type === "case_result" && keys.every(key => typeof pending[key] === "string" && pending[key] && reply[key] === pending[key]));
   }
 
-  return {CHAPTER_STEPS, drawnJars, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
+  return {STEPS, timePromise, INTRO_MINUTES, ENDING_MINUTES, INTRO_SEEN_KEY, RANGE_UNLOCKS, RANGE_DESTINATION, rangeDestination, lessonProgress, wavesOpen, lessonDestination, examDestination, courseWalk, CHAPTER_STEPS, drawnJars, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
 });

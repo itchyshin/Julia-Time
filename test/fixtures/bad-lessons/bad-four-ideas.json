@@ -1,0 +1,96 @@
+{
+  "id": "lesson-bad",
+  "number": 99,
+  "title": "Bad fixture",
+  "setup": "jars",
+  "rounds": [
+    {
+      "id": "r1",
+      "idea": "idea1",
+      "challenges": [
+        {
+          "id": "b1-see",
+          "kind": "see",
+          "prompt": "p",
+          "solution": "length(practice_jars.jar_id)"
+        },
+        {
+          "id": "b1-cp",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "idea": "idea2",
+      "challenges": [
+        {
+          "id": "b2-see",
+          "kind": "see",
+          "prompt": "p",
+          "solution": "length(practice_jars.jar_id)"
+        },
+        {
+          "id": "b2-cp",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "idea": "idea3",
+      "challenges": [
+        {
+          "id": "b3-see",
+          "kind": "see",
+          "prompt": "p",
+          "solution": "length(practice_jars.jar_id)"
+        },
+        {
+          "id": "b3-cp",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "r4",
+      "idea": "idea4",
+      "challenges": [
+        {
+          "id": "b4-see",
+          "kind": "see",
+          "prompt": "p",
+          "solution": "length(practice_jars.jar_id)"
+        },
+        {
+          "id": "b4-cp",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true
+          }
+        }
+      ]
+    }
+  ]
+}

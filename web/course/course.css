@@ -1,4 +1,4 @@
-:root { --ink:#143242; --paper:#f6f0df; --panel:#fffaf0; --teal:#18777a; --orange:#ef6e34; --line:#cdbf9e; --muted:#5f6d70; }
+:root { --ink:#143242; --paper:#f6f0df; --panel:#fffaf0; --teal:#136165; --orange:#ef6e34; --line:#cdbf9e; --muted:#5f6d70; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--paper); color:var(--ink); font:18px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 a { color:inherit; }
@@ -6,10 +6,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline:4px solid
 /* About 44 px of touch area for every toggle on a phone (round 5, 2026-09-27). */
 summary { min-height:44px; padding:10px 0; box-sizing:border-box; }
 .skip { position:absolute; left:-9999px; }
-.skip:focus { left:1rem; top:1rem; z-index:2; background:var(--panel); padding:.6rem; }
+.skip:focus { left:50%; transform:translateX(-50%); top:.6rem; z-index:2; background:var(--panel); padding:.6rem; border:2px solid var(--teal); }
 .shell { width:min(1080px,calc(100% - 2rem)); margin:auto; }
 .topbar { border-bottom:3px solid var(--ink); padding:1.2rem 0 .9rem; display:flex; justify-content:space-between; gap:1rem; align-items:end; }
-.eyebrow { margin:0 0 .2rem; color:var(--teal); font-size:.76rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
+.eyebrow { margin:0 0 .2rem; color:var(--teal); font-size:1rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
 .brand { margin:0; font:clamp(1.5rem,4vw,2.45rem)/1.08 Georgia,serif; }
 .brand em { color:var(--orange); }
 .hero { display:grid; grid-template-columns:1.12fr .88fr; gap:1.3rem; margin:1.5rem 0; background:var(--ink); color:var(--panel); border:1px solid var(--ink); }
@@ -17,17 +17,19 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; }
 .hero h1, .route-card h1 { font:clamp(2rem,5vw,3.4rem)/1.02 Georgia,serif; margin:.2rem 0 .8rem; }
 .hero img { display:block; width:100%; height:100%; min-height:240px; object-fit:cover; object-position:center; }
 .primary-action, .quiet-link { display:inline-block; margin-top:.8rem; border:2px solid currentColor; padding:.65rem .9rem; text-decoration:none; font-weight:800; }
-.primary-action { background:var(--orange); border-color:var(--orange); color:var(--ink); }
+.primary-action { background:var(--orange); border-color:var(--orange); color:#0a1d29; }
 .primary-action:hover { background:#ff8950; }
 .primary-action[aria-disabled="true"] { background:#b8aa8c; border-color:#b8aa8c; color:#3e4b4f; cursor:not-allowed; }
 .board-status, .setup-reminder, .draft-notice { margin:1rem 0; padding:.9rem 1rem; border-left:5px solid var(--teal); background:#e4efeb; }
+.board-status[data-kind="warn"] { border-left:8px solid var(--orange); background:#fff4d6; color:#2b2100; font-weight:600; }
+.board-status[data-kind="warn"] + .changed-history-action { margin-top:-.4rem; }
 .draft-notice:empty { display:none; }
 .changed-history-action { margin:-.35rem 0 1rem; border:2px solid var(--teal); background:var(--panel); color:var(--ink); padding:.55rem .8rem; font:inherit; font-weight:800; cursor:pointer; }
 .changed-history-action:hover { background:#e4efeb; }
 .setup-readiness { margin:1.2rem 0; border-left:5px solid var(--teal); }
 .setup-readiness[aria-busy="true"] { border-left-color:var(--orange); }
 .setup-status { margin:.45rem 0; font-weight:800; }
-.setup-boundary { margin:.5rem 0 0; color:var(--muted); font-size:.95rem; }
+.setup-boundary { margin:.5rem 0 0; color:var(--muted); font-size:1rem; }
 .setup-actions { display:flex; flex-wrap:wrap; gap:.65rem; margin-top:.8rem; }
 .secondary-action { border:2px solid var(--teal); background:var(--panel); color:var(--ink); padding:.55rem .8rem; font:inherit; font-weight:800; cursor:pointer; }
 .secondary-action:hover:not(:disabled) { background:#e4efeb; }
@@ -36,12 +38,12 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; }
 .setup-details summary { cursor:pointer; font-weight:800; }
 .setup-details dl { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6rem; margin:.65rem 0 0; }
 .setup-details dl div { padding:.55rem; background:#f3ebd9; }
-.setup-details dt { color:var(--muted); font-size:.78rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.setup-details dt { color:var(--muted); font-size:1rem; font-weight:800; letter-spacing:.03em; text-transform:uppercase; }
 .setup-details dd { margin:.2rem 0 0; overflow-wrap:anywhere; }
 .case-thread { margin:1.4rem 0; }
 .case-thread dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin:.8rem 0 0; }
 .case-thread dl div { padding:.7rem; border-left:4px solid var(--teal); background:#f3ebd9; }
-.case-thread dt { color:var(--teal); font-size:.78rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.case-thread dt { color:var(--teal); font-size:1rem; font-weight:800; letter-spacing:.03em; text-transform:uppercase; }
 .case-thread dd { margin:.28rem 0 0; }
 .case-established--updated { animation:case-fact-fade .6s ease; }
 @keyframes case-fact-fade { from { background:#fff0d5; } to { background:transparent; } }
@@ -57,7 +59,7 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; }
 .guide-main { padding-bottom:2.6rem; }
 .guide-hero { margin-bottom:2.2rem; }
 .guide-promise { margin:.9rem 0 0; padding:.75rem; border-left:4px solid var(--orange); background:#214858; font-weight:700; }
-.guide-local-note { margin:.8rem 0 0; color:#dce8e2; font-size:.9rem; }
+.guide-local-note { margin:.8rem 0 0; color:#dce8e2; font-size:1rem; }
 .guide-section { margin:2.25rem 0; }
 .guide-section > h2 { font:clamp(1.8rem,4vw,2.65rem)/1.06 Georgia,serif; margin:.2rem 0 .8rem; }
 .guide-section > p { max-width:74ch; }
@@ -70,7 +72,7 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; }
 .guide-steps li::marker, .guide-flow li::marker { color:var(--teal); font-weight:800; }
 .guide-details { max-width:78ch; margin:.75rem 0; padding:.8rem 1rem; border:1px solid var(--line); background:var(--panel); }
 .guide-details summary { cursor:pointer; font-weight:800; }
-.guide-main pre { overflow:auto; margin:1rem 0; padding:1rem; background:#0e2b39; color:#fff8e9; border-left:5px solid var(--orange); font:0.9rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
+.guide-main pre { overflow:auto; margin:1rem 0; padding:1rem; background:#0e2b39; color:#fff8e9; border-left:5px solid var(--orange); font:1rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
 .guide-main code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
 .guide-success { padding:.8rem 1rem; border-left:5px solid var(--teal); background:#e4efeb; font-weight:700; }
 .guide-recovery { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; margin:1rem 0; }
@@ -96,3 +98,106 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; }
 .jar-id { white-space:nowrap; }
 /* r8-rc #7 (2026-09-28): on a phone the speed-lab link wraps; as one box its border stays whole. */
 #speed-lab-link { display:inline-block; }
+
+.course-banner { margin: 0 0 20px; padding: 18px 22px; border: 2px solid currentColor; border-radius: 6px; }
+.course-banner h2 { margin: 2px 0 6px; font-size: 1.6rem; }
+.course-banner p { margin: 0 0 12px; }
+.course-banner .course-banner-note { margin: 12px 0 0; font-size: 1rem; opacity: 1; }
+.chapter-rows { display:flex; flex-wrap:wrap; gap:.5rem; margin:.4rem 0 0; }
+.chapter-row--done { color:var(--teal); font-weight:700; }
+.quiet-note { color:var(--muted); font-size:1rem; margin:.5rem 0; }
+
+/* 0.5 fix, package 1: the landing page. */
+.hero-lede { font:clamp(1.25rem,2.6vw,1.7rem)/1.25 Georgia,serif; margin:0 0 .7rem; color:#ffd9bf; }
+.hero-story { margin:0 0 .8rem; }
+.hero-facts { margin:0 0 .6rem; padding-left:1.1rem; font-size:1rem; }
+.hero-facts li { margin:.25rem 0; }
+.primary-action { font-size:1.15rem; padding:.8rem 1.3rem; }
+.primary-action[aria-disabled="true"] { background:var(--orange); border-color:var(--orange); color:#0a1d29; cursor:wait; opacity:1; }
+.julia-line { margin:0; font-size:1rem; color:#dce8e2; }
+.hero-links { margin:.3rem 0 0; }
+.hero-links .hero-guide-link { margin:.5rem .5rem 0 0; border-width:1px; font-weight:600; font-size:1rem; padding:.45rem .7rem; }
+.steps-section h2 { font:1.9rem/1.1 Georgia,serif; margin:.4rem 0 .4rem; }
+.steps-lede { max-width:74ch; margin:.2rem 0 1rem; }
+.steps-head, .step-row { display:grid; grid-template-columns:5.5rem 1.3fr 1.1fr 5rem; gap:.8rem; align-items:center; }
+.steps-head { padding:0 1.15rem; color:var(--teal); font-size:1rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.steps-table { display:grid; gap:.55rem; margin:.4rem 0 1rem; }
+.step-row { padding:.7rem 1.15rem; }
+.step-row p, .step-row h3 { margin:0; }
+.step-num { font:1.3rem/1.1 Georgia,serif; }
+.step-row .chapter-row { display:inline-block; padding:.3rem .2rem; text-decoration:underline; text-underline-offset:3px; font-weight:600; }
+.step-time { color:var(--muted); }
+.step-row .chapter-row { padding-left:1.5em; }
+.chapter-row::before { content:""; display:inline-block; width:1.5em; margin-left:-1.5em; text-decoration:none; }
+.chapter-row--done::before { content:"\2713" / ""; font-weight:800; color:var(--teal); }
+.range-line { color:var(--muted); font-size:1rem; margin:.6rem 0 0; }
+.range-line a { color:var(--teal); font-weight:700; }
+.also-here { margin:1.2rem 0; }
+.also-here > summary { cursor:pointer; font-weight:800; padding:.8rem 1rem; border:1px solid var(--line); background:var(--panel); }
+.also-here[open] > summary { margin-bottom:1rem; }
+.also-here > .panel { margin-bottom:1rem; }
+#case-thread { margin:1.2rem 0; }
+#case-thread dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin:.8rem 0 0; }
+#case-thread dl div { padding:.7rem; border-left:4px solid var(--teal); background:#f3ebd9; }
+#case-thread dt { color:var(--teal); font-size:1rem; font-weight:800; letter-spacing:.03em; text-transform:uppercase; }
+#case-thread dd { margin:.28rem 0 0; }
+.guide-setup-wrap > summary { cursor:pointer; font-weight:800; }
+@media (max-width:760px) { .steps-head { display:none; } .step-row { grid-template-columns:1fr; gap:.2rem; } #case-thread dl { grid-template-columns:1fr; } }
+
+/* 0.5 fix round 2 (P01, P02, P15, P16): the Julia line, the next step row, minutes, readable text. */
+.sr-only { position:absolute; width:1px; height:1px; margin:-1px; clip:rect(0,0,0,0); overflow:hidden; }
+.topbar-link { margin:0; }
+.julia-row { display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin:.7rem 0 0; }
+.julia-line[data-state="failed"] { font-weight:700; color:#ffe2cf; }
+/* Round 4 (R3-21): a real problem is a boxed notice above Start; Start is grey until Julia is ready. */
+.julia-row[data-state="failed"] { display:block; margin:.8rem 0 .4rem; padding:.9rem 1rem; background:#fff4d6; border-left:6px solid var(--orange); color:#2b2100; }
+.julia-row[data-state="failed"] .julia-line { display:block; margin:0 0 .6rem; color:#2b2100; font-size:1.05rem; font-weight:600; line-height:1.45; }
+.julia-help { color:#0f4f52; font-weight:700; margin-left:.4rem; }
+.julia-row[data-state="failed"] .julia-help { display:inline-block; }
+.primary-action[aria-disabled="true"], .primary-action[aria-disabled="true"]:hover { background:#c9bda1; border-color:#c9bda1; color:#2f3a3e; cursor:not-allowed; }
+.julia-reconnect { background:var(--panel); }
+.hero-how { margin:.2rem 0 .9rem; max-width:62ch; }
+.step-row--next { border-color:var(--orange); box-shadow:4px 4px 0 var(--orange); }
+.step-min { display:block; color:var(--muted); }
+.step-cell { line-height:1.35; }
+.secondary-action:disabled { color:#3f4c4f; background:#e9e1cc; border-color:#6d7b7e; opacity:1; cursor:not-allowed; }
+.primary-action[aria-disabled="true"] { opacity:1; cursor:not-allowed; }
+.primary-action[aria-disabled="false"] { cursor:pointer; }
+.changed-history-action, .secondary-action, .primary-action, .quiet-link { font-size:1rem; }
+.primary-action { font-size:1.15rem; }
+.guide-details summary, .also-here > summary, .setup-details summary { min-height:44px; }
+.guide-recovery dt small { font-size:1rem; font-weight:400; }
+.hero .hero-facts, .hero-copy p { max-width:68ch; }
+code { font-size:1rem; }
+/* Round 2: the Start button, the Julia line and the intro link all sit in the first 1366x768 screen. */
+.topbar { padding:.6rem 0 .5rem; align-items:center; }
+.topbar .quiet-link { padding:.35rem .8rem; }
+.hero { margin:1rem 0; }
+.hero-copy { padding:1.1rem 1.5rem 1.2rem; }
+.hero h1 { font-size:clamp(2rem,4vw,2.7rem); margin:.1rem 0 .4rem; }
+.hero-lede { font-size:clamp(1.2rem,2.2vw,1.45rem); margin:0 0 .5rem; }
+.hero-story { margin:0 0 .5rem; }
+.hero-facts { margin:0 0 .5rem; }
+.hero-facts li { margin:.15rem 0; }
+.hero-how { margin:.2rem 0 .3rem; }
+.primary-action { margin-top:.4rem; }
+.julia-row { margin:.5rem 0 0; }
+.hero-links { margin:0; }
+.hero-links .hero-guide-link { margin-top:.4rem; }
+.brand em { color:#ae4311; }
+.editor-controls { display:flex; flex-wrap:wrap; gap:.65rem; margin:.8rem 0; }
+.editor-controls button { border:2px solid var(--teal); background:var(--panel); color:var(--ink); padding:.55rem .8rem; font:inherit; font-weight:800; cursor:pointer; }
+.editor-controls button:hover:not(:disabled) { background:#e4efeb; }
+.editor-controls button:disabled { color:#3f4c4f; background:#e9e1cc; border-color:#6d7b7e; cursor:not-allowed; }
+.editor-controls button:focus-visible { outline:4px solid var(--orange); outline-offset:3px; }
+
+/* Round 5: a save notice or a Julia problem sits in the hero above Start, and the hero makes room so notice, button and Start fit
+   in the first 768 px (1366x768 and 1024x768). The long "how each step works" paragraph and the Needs bullet wait until it is cleared. */
+.save-notice-slot .board-status { margin:.5rem 0 .3rem; padding:.55rem .8rem; font-size:1rem; line-height:1.4; }
+.save-notice-slot .changed-history-action { margin:0 0 .4rem; }
+.hero[data-notice="on"] .hero-how, .hero[data-julia="problem"] .hero-how,
+.hero[data-notice="on"] .hero-facts li:nth-child(3), .hero[data-julia="problem"] .hero-facts li:nth-child(3) { display:none; }
+.julia-row[data-state="failed"] { margin:.5rem 0 .3rem; padding:.55rem .8rem; }
+.julia-row[data-state="failed"] .julia-line { margin:0 0 .4rem; font-size:1rem; line-height:1.4; }
+.julia-row[data-state="failed"] .julia-reconnect { padding:.35rem .8rem; }
+.julia-start-off { color:#2b2100; font-weight:700; margin-left:.4rem; }

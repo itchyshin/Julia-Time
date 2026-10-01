@@ -146,7 +146,7 @@ end
             @test !occursin("<repo link", lowered_guide)
             @test !occursin("to follow", lowered_guide)
             @test !occursin("git clone", lowered_guide)
-            @test occursin(r"(?i)supplied archive", install_guide)
+            @test occursin("Releases page", install_guide)
             @test occursin("OK: Julia Time is ready", install_guide)
             @test occursin(SETUP_NEXT_ACTION, install_guide)
             @test occursin("1. Julia", install_guide)

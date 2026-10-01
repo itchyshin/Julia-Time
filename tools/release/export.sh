@@ -22,6 +22,7 @@ EXCLUDE_PATHS=(
   "docs/design/"
   "docs/superpowers/"
   "docs/build-plan.md"
+  "docs/showcase/"
   "docs/announcement-install-julia.md"
   "output/"
   "LOOP/"

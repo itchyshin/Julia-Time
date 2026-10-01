@@ -15,11 +15,11 @@ test("the participant Start Here page explains the local game before asking for 
   const readme = read("README.md");
   const install = read("docs/install.md");
 
-  assert.match(guide, /<title>Julia Time.*Start Here/i);
-  assert.match(guide, /<h1[^>]*>[^<]*Start here/i);
-  assert.match(guide, /class="primary-action" href="#setup-heading">Set up Julia Time/i);
+  assert.match(guide, /<title>Julia Time.*How to play/i);
+  assert.match(guide, /<h1[^>]*>[^<]*How to play/i);
+  assert.match(guide, /id="local-case-board" class="primary-action" href="index\.html">Open the Board/);
   assert.match(guide, /Julia is the programming language/i);
-  assert.match(guide, /Julia Time is a local/i);
+  assert.match(guide, /Julia Time is a game that runs on your own computer/i);
   assert.match(guide, /You do not need.*R.*Python/i);
   assert.match(guide, /Julia 1\.10\.x/i);
   assert.match(guide, /Open a terminal in the Julia Time folder/i);
@@ -27,7 +27,7 @@ test("the participant Start Here page explains the local game before asking for 
   assert.match(guide, /launch-macos\.command/i);
   assert.match(guide, /launch-windows\.cmd/i);
   assert.match(guide, /do not need Julia on PATH/i);
-  assert.match(guide, /Only call the game ready when the Case Board says Julia is ready/i);
+  assert.match(guide, /Only call the game ready when the Board says Julia is ready/i);
   assert.match(guide, /Internet is needed to download Julia and for the first course setup/i);
   assert.match(guide, /check_setup\.jl/);
   assert.match(guide, /OK: Julia Time is ready/);
@@ -38,13 +38,12 @@ test("the participant Start Here page explains the local game before asking for 
   assert.match(guide, /\$env:JULIA_NUM_THREADS = "4"[\s\S]*\$env:OPENBLAS_NUM_THREADS = "1"[\s\S]*run\.jl/i);
   assert.match(guide, /127\.0\.0\.1:8000\/course\/index\.html/);
   assert.match(guide, /id="how-to-play"/);
-  assert.match(guide, /Stuck\? Hints/i);
+  assert.match(guide, /Hint 1: the idea/);
   assert.doesNotMatch(guide, /Help me start/i);  // round 3: that fold no longer exists
   assert.match(guide, /final 10 terminal lines/i);
   assert.match(guide, /Pick the block whose title exactly matches your terminal/i);
   assert.doesNotMatch(guide, /<details[^>]*\bopen\b/i, "a platform-specific command must never be the default visible command");
-  assert.match(guide, /all six case chapters are on the Case Board/i);
-  assert.match(guide, /href="http:\/\/127\.0\.0\.1:8000\/course\/index\.html"[^>]*>Open the local Case Board/i);
+  assert.doesNotMatch(guide, /What is playable now|all six chapters are on the Board/i, "the status note is gone");
   assert.match(guide, /static page.*mystery.*own laptop/i);
   assert.match(readme, /\[Start here\]\(web\/course\/getting-started\.html\)/i);
   assert.match(install, /\[Start here\]\(\.\.\/web\/course\/getting-started\.html\)/i);
@@ -70,7 +69,31 @@ test("Open the local Case Board stays on the port the game is running on and kee
 test("the Case Board offers instructions without moving its primary game action", () => {
   const board = read("web/course/index.html");
   assert.match(board, /href="getting-started\.html"[^>]*>How to play/i);
-  assert.match(board, /id="continue-action"[^>]*href="chapter\.html"/);
+  assert.match(board, /id="continue-action"[^>]*href="\.\.\/lesson\.html\?lesson=lesson1"/);
+});
+
+test("How to play describes only features that exist, in player words, with a way home (round 2, P16)", () => {
+  const guide = read("web/course/getting-started.html");
+  const lessonSource = read("web/lesson.html") + read("web/lesson.js");
+  // Every button name the page quotes (in <em>) is a real label in the lesson screen.
+  const quoted = [...guide.matchAll(/<em>([^<]+)<\/em>/g)].map(m => m[1]);
+  for (const name of ["Hint 1: the idea", "Hint 2: the shape of the line", "Show me the line", "Hint: the idea", "Show a starter line"]) {
+    assert.ok(quoted.includes(name), "the page should name " + name);
+  }
+  for (const name of quoted.filter(q => !/^Reconnect$/.test(q))) assert.ok(lessonSource.includes(name), "the lesson screen has no control named '" + name + "'");
+  assert.doesNotMatch(guide, /Show the full answer|Stuck\? Hints|five steps|Help me start/i);
+  assert.doesNotMatch(guide, /<em>Show a hint<\/em>/, "a chapter has no button named Show a hint");
+  assert.match(guide, /five moves/i);
+  assert.match(guide, /Some tasks start with a line for you to change\. Others start empty\./);
+  assert.match(guide, /<header[^>]*>\s*<a id="header-board"[^>]*href="index\.html"/, "a Board link in the header");
+  assert.equal((guide.match(/class="primary-action"/g) || []).length, 1, "one primary button, at the top");
+  assert.doesNotMatch(guide, /href="https?:\/\/(?:127\.0\.0\.1|localhost)/);
+  assert.doesNotMatch(guide, /before the meeting/i);
+  // The setup, download and GitHub text sits inside the closed setup fold.
+  const fold = guide.slice(guide.indexOf('id="setup-wrap"'), guide.indexOf('class="guide-section guide-help"'));
+  assert.match(fold, /github\.com/);
+  assert.match(fold, /julia-1\.10\.12/);
+  assert.doesNotMatch(guide.slice(0, guide.indexOf('id="setup-wrap"')), /github\.com|README|download/i);
 });
 
 test("the repository landing page is a public first door before the learner has Julia Time", () => {

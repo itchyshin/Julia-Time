@@ -89,6 +89,12 @@ function handle_message(msg::Dict; on_status::Function=((_, __) -> nothing))
             chapter == "C5" && return mystery_c5_case_run(msg; on_status=on_status)
             chapter == "C6" && return mystery_c6_case_run(msg; on_status=on_status)
             return Dict("type" => "error", "message" => "Unknown mystery chapter.")
+        elseif type == "lesson_list"
+            return lesson_list_reply(msg)
+        elseif type == "lesson_info"
+            return lesson_info_reply(msg)
+        elseif type == "lesson_run"
+            return lesson_run_reply(msg; on_status=on_status)
         elseif type == "case_epilogue"
             return mystery_epilogue_info(msg)
         elseif type == "case_action"
@@ -401,11 +407,15 @@ window is still running. A free port refuses at once; the 15 s request deadline 
 the first request in a fresh Julia session compiles the HTTP client, yet it still stops a silent
 non-HTTP program from stalling the launcher.
 """
+const JULIA_TIME_BOARD_TITLES = ("<title>Julia Time · Board</title>", "<title>Julia Time · Case Board</title>")
+
 function _serves_julia_time(host::AbstractString, port::Integer)
     try
         response = HTTP.get(_browser_url(host, port); connect_timeout=2, request_timeout=15, retry=false,
                             redirect=false, status_exception=false)
-        return response.status == 200 && occursin("<title>Julia Time · Case Board</title>", String(response.body))
+        body = String(response.body)
+        # 0.5 titles the Board "Julia Time · Board"; the Original (0.2.5) still says "Case Board".
+        return response.status == 200 && any(t -> occursin(t, body), JULIA_TIME_BOARD_TITLES)
     catch
         return false
     end

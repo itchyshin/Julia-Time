@@ -1,0 +1,12 @@
+name: Anything else
+description: An idea, a question, a comment on the trailer or the website, or a kind word.
+title: "Idea: "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What is on your mind?
+      description: Anything about Julia Time, the trailer, the website, or how you use it in a class.
+    validations:
+      required: true

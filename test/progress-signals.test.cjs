@@ -49,7 +49,7 @@ test("Case Board: all ten steps saved says the case is solved", () => {
   solve(storage, ALL);
   const model = board(storage);
   assert.equal(model.completion.complete, true);
-  assert.equal(model.completion.headline, "Case closed: all 6 chapters complete.");
+  assert.equal(model.completion.headline, "All six chapters done");  // round 2 (D4): never "Case closed" while the recheck is open
   assert.deepEqual(model.cards.map(card => card.solvedLabel), Array(6).fill("✓ Solved"));
 });
 
@@ -74,7 +74,7 @@ test("chapter banner: Chapter 1 has no earlier chapters, and a full case says so
   assert.equal(first.earlierLink, null);
   const storage = memoryStorage();
   solve(storage, ALL);
-  assert.match(progress.bannerModel(storage, "", "C6").status, /Case closed: all 6 chapters complete/);
+  assert.match(progress.bannerModel(storage, "", "C6").status, /All six chapters done\. The recheck is still to do/);
 });
 
 test("Chapter 6 ending names the open chapters, or says the case is solved", () => {

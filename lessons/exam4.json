@@ -1,0 +1,110 @@
+{
+  "id": "exam4",
+  "kind": "exam",
+  "chapter": "C4",
+  "number": 4,
+  "title": "Plan a fair recheck",
+  "goal": "Ask Julia to pick three jar ids at random from eligible.jar_id. Every jar must have the same chance, and none may come up twice. Each Run can give different jars; any three different jars are right.",
+  "story": "A two-minute look can miss springtails, so Itchy wants a slow recheck. Two jars went to the freezer for a DNA check, so four can be rechecked. Toto: let chance pick three. Like Lesson 4, but open_jars is now eligible.",
+  "minutes": 5,
+  "setup": "case4",
+  "dictionary": [
+    {
+      "julia": "eligible",
+      "means": "the jars that can still be rechecked: a table with one column, jar_id, and four jars. Julia's word: a DataFrame.",
+      "r": "eligible",
+      "py": "eligible"
+    },
+    {
+      "julia": "eligible.jar_id",
+      "means": "the jar_id column of eligible, taken with a dot: a list of the four jar ids. Julia's word: a column, a Vector inside a DataFrame.",
+      "r": "eligible$jar_id",
+      "py": "eligible.jar_id"
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Pick three different jars by chance",
+      "challenges": [
+        {
+          "id": "x4-plan-distinct-recheck",
+          "kind": "checkpoint",
+          "prompt": "The table eligible lists the four jars that can still be rechecked. Show three of their jar ids, picked at random. Every jar has the same chance and none comes up twice. Any three different jars are right.",
+          "starter": "",
+          "solution": "sample(eligible.jar_id, 3; replace=false)",
+          "data": "eligible",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam4_plan_distinct_recheck"
+          },
+          "hints": [
+            "Draw from the jar_id column, not the whole table, and say that no jar may be drawn twice."
+          ],
+          "feedback": {
+            "pass": "Three different jars, drawn by chance from eligible.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia writes false in small letters: replace=false.",
+                "code_has": "False",
+                "example": "sample(eligible.jar_id, 3; replace=False)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "In this chapter the list is eligible. It is the lesson's open_jars under a new name.",
+                "code_has": "open_jars",
+                "example": "sample(open_jars.jar_id, 3; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The practice table is not in this chapter. Use eligible.",
+                "code_has": "practice_jars",
+                "example": "sample(practice_jars.jar_id, 3; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Write the number 3, not the word three.",
+                "code_has": "three",
+                "example": "sample(eligible.jar_id, three; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample.",
+                "code_lacks": "sample(",
+                "example": "saple(eligible.jar_id, 3; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is eligible, and its column of jar ids is eligible.jar_id.",
+                "example": "sample(eligibl.jar_id, 3; replace=false)"
+              },
+              {
+                "match": "ParseError",
+                "say": "A named input needs an equals sign: replace=false.",
+                "code_has": "replace false",
+                "example": "sample(eligible.jar_id, 3; replace false)"
+              },
+              {
+                "match": "MethodError",
+                "say": "sample needs the list, then a comma, then how many to pick.",
+                "code_lacks": ",",
+                "example": "sample(eligible.jar_id; replace=false)"
+              },
+              {
+                "match": "not found",
+                "say": "The column of jar ids in eligible is jar_id.",
+                "example": "sample(eligible.jar, 3; replace=false)"
+              }
+            ]
+          },
+          "starter_hint": "sample(eligible.___, ___; ___)"
+        }
+      ]
+    }
+  ],
+  "close": {
+    "finding": "A fair recheck is planned: chance will pick three of the eligible jars, so nobody picks favourites. Nobody has looked at the jars yet. The recheck itself is still to do.",
+    "next": "Next: Lesson 5 shows what a 50:50 guess would give."
+  }
+}

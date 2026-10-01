@@ -50,7 +50,7 @@ test("the gate stays shut until every step of all six chapters is saved, and nam
   const storage = memoryStorage();
   let gate = ending.endingGate(storage, "");
   assert.equal(gate.complete, false);
-  assert.equal(gate.line, "The case closes when all six chapters are done. Still to do: Chapters 1, 2, 3, 4, 5 and 6.");
+  assert.equal(gate.line, "The ending opens when all six chapters are done. Still to do: Chapters 1, 2, 3, 4, 5 and 6.");
   solve(storage, ALL.filter(key => key !== "C5/event-frequency"));
   gate = ending.endingGate(storage, "");
   assert.equal(gate.complete, false);
@@ -71,7 +71,7 @@ test("six scenes in chapter order, each caption built from the facts", () => {
   assert.equal(scenes[2].caption, "Tray T-C: the notebook counts 1, and Toto's typed table shows 0. On the paper, the box was left blank.");
   assert.deepEqual(scenes[2].aha, {tray_id:"T-C", reported:1, logged:0, status:"left blank"});
   assert.equal(scenes[3].caption, "You planned a recheck of 3 jars from J-091, J-092, J-094 and J-096. Nobody has looked yet.");
-  assert.equal(scenes[4].caption, "5 of 6 jars had springtails. In 1,000 rounds of Toto's coin-flip cards, 5 or more came up 113 times.");
+  assert.equal(scenes[4].caption, "5 of 6 jars had springtails. In 1,000 card deals with Toto's coin-flip cards, 5 or more springtails cards came up 113 times.");
   assert.equal(scenes[5].caption, "Outside its usual range: Dying out. Still fits: Coin flip and Thriving.");
   for (const scene of scenes) {
     assert.equal(scene.code, null);
@@ -109,7 +109,7 @@ test("the finale: honest reveal, the recheck, and credits from the learner's own
   const finale = ending.buildFinal(FACTS, script, drafts, ["grouping rows by a label"], "Simulated teaching case");
   assert.equal(finale.stamp, script.final.stamp);
   assert.equal(finale.headline, script.final.headline);
-  assert.equal(finale.reveal, "The notebook shows springtails in 5 of 6 B09 jars. Tray T-C's 0 was typed in for a box left blank on the paper tally sheet, not an empty tray. The notebook's 5 of 6 is not unusual under a plain 50:50 guess. And the Dying out story almost never gives 5 of 6.");
+  assert.equal(finale.reveal, "The notebook shows springtails in 5 of 6 B09 jars. Tray T-C's 0 was typed in for a box left blank on the paper tally sheet, not an empty tray. The notebook's 5 of 6 is not unusual under a plain 50:50 guess. And the dying out story almost never gives 5 of 6.");
   assert.equal(finale.answer, script.final.answer.replace("{logged}", "0"));
   assert.match(finale.answer, /^Are the springtails dying out\? Nothing we found says so\./);
   assert.equal(finale.stillOpen, "Still to do: the recheck of 3 jars from J-091, J-092, J-094 and J-096. It is the one check only the jars can give.");
@@ -119,7 +119,7 @@ test("the finale: honest reveal, the recheck, and credits from the learner's own
   assert.equal(finale.dataLabel, "Simulated teaching case");
   assert.equal(finale.image, "../assets/lab-cast.png");
   assert.equal(finale.punSpeaker, "Toto");
-  assert.equal(finale.punSignOff, "Case closed. One box stays blank, and the recheck is still to come.");
+  assert.equal(finale.punSignOff, "One box stays blank, and the recheck is still to come.");
 });
 
 test("featuring ignores comments and look-alike names", () => {
@@ -194,7 +194,7 @@ test("saved code keeps its relative indentation and a character cap", () => {
 
 test("large simulation counts are written with thousands separators", () => {
   const scenes = ending.buildScenes(Object.assign({}, FACTS, {n_simulations:20000, matching_events:2260}), script, {});
-  assert.match(scenes[4].caption, /In 20,000 rounds .* came up 2,260 times\.$/);
+  assert.match(scenes[4].caption, /In 20,000 card deals .* came up 2,260 times\.$/);
 });
 
 // r1 bug 3 (2026-09-27): the ending showed whatever was typed after the answer was accepted

@@ -32,7 +32,7 @@ const FACTS = Object.freeze({batch_id:"B09", n_jars:6, n_detected:5,
 
 // ---- Fix 1: one mechanism for the 0 ----
 test("intro scene 4: Toto typed the tally sheet into the lab's table and typed his report from that table", () => {
-  const scene = intro.scenes[3];
+  const scene = intro.scenes[4];
   assert.match(scene.caption, /typed the tally sheet into the lab's table/);
   assert.match(scene.caption, /types his report from that table/);
   assert.doesNotMatch(scene.caption, /from the sheet alone/);
@@ -40,7 +40,7 @@ test("intro scene 4: Toto typed the tally sheet into the lab's table and typed h
 });
 
 test("intro scene 5 no longer says Toto only had the tally sheet, and Julia is named as a computer language", () => {
-  const scene = intro.scenes[4];
+  const scene = intro.scenes[5];
   assert.doesNotMatch(scene.caption, /only had the tally sheet/);
   assert.match(scene.caption, /Toto had only his typed table/);
   assert.doesNotMatch(scene.caption, /find out with Julia,/);
@@ -48,7 +48,7 @@ test("intro scene 5 no longer says Toto only had the tally sheet, and Julia is n
 });
 
 test("intro scene 1: the player is the fifth person, not one of the four", () => {
-  assert.match(intro.scenes[0].caption, /You are the fifth, and the newest\./);
+  assert.match(intro.scenes[1].caption, /You are the fifth, and the newest\./);
 });
 
 test("the intro never says the paper shows 0 and never reveals the blank", () => {

@@ -77,8 +77,10 @@ test("optional-lab navigation preserves an attempt, while the static setup guide
   assert.match(speed, /id="return-case-board"/);
   assert.match(speed, /index\.html\?attempt=/);
   assert.match(setup, /id="local-case-board"/);
-  assert.match(setup, /href="http:\/\/127\.0\.0\.1:8000\/course\/index\.html"/);
-  // Its one script only points that link at the running game's own port (r1 bug 5); no game client.
+  // Round 2 (P16/P17): the Board link is relative, so it can never open another program on port 8000.
+  assert.match(setup, /id="local-case-board" class="primary-action" href="index\.html"/);
+  assert.doesNotMatch(setup, /href="https?:\/\/(?:127\.0\.0\.1|localhost)/);
+  // Its one script only adds the attempt to the Board links (r1 bug 5); no game client.
   assert.deepEqual(setup.match(/<script\b[^>]*>/gi), ['<script defer src="getting-started.js">']);
 });
 

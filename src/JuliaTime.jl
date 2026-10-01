@@ -55,5 +55,6 @@ include("mystery_c4.jl")
 include("mystery_c5.jl")
 include("mystery_c6.jl")
 include("mystery_epilogue.jl")
+include("lessons.jl")
 
 end # module

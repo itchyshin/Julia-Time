@@ -1,0 +1,157 @@
+{
+  "id": "exam5",
+  "kind": "exam",
+  "chapter": "C5",
+  "number": 5,
+  "title": "What would plain chance give?",
+  "goal": "Mark the card deals that had 5 or more springtails cards, then work out how often that happens. This editor starts each Run fresh, so name what you need again in each task. On your laptop, Julia keeps a name until you close it.",
+  "story": "Toto dealt six cards, 1,000 times, putting each card back so every draw is 50:50. A springtails card is a jar with springtails; an empty card, a jar without. New names: sim_counts for pretend_counts, observed_count for seen_count.",
+  "minutes": 5,
+  "setup": "case5",
+  "dictionary": [
+    {
+      "julia": "sim_counts",
+      "means": "Toto's 1,000 card deals: a list with the number of springtails cards in each deal of six. Julia's word: a Vector.",
+      "r": "sim_counts",
+      "py": "sim_counts"
+    },
+    {
+      "julia": "observed_count",
+      "means": "the notebook's count: 5 jars with springtails out of 6",
+      "r": "observed_count",
+      "py": "observed_count"
+    },
+    {
+      "julia": "first(sim_counts, 5)",
+      "means": "the first 5 of Toto's 1,000 counts (Julia shows only part of a long list)",
+      "r": "head(sim_counts, 5)",
+      "py": "sim_counts[:5]"
+    },
+    {
+      "julia": "length(sim_counts)",
+      "means": "counts the items in the list: one for each deal. Julia's word: a function call.",
+      "r": "length(sim_counts)",
+      "py": "len(sim_counts)"
+    },
+    {
+      "julia": "n_trials",
+      "means": "1,000: the number of card deals in sim_counts.",
+      "r": "n_trials",
+      "py": "n_trials"
+    },
+    {
+      "julia": "n_jars",
+      "means": "6: the number of cards in each deal, one for each jar.",
+      "r": "n_jars",
+      "py": "n_jars"
+    },
+    {
+      "julia": "p_ref",
+      "means": "0.5: the chance a card is a springtails card under the 50:50 guess.",
+      "r": "p_ref",
+      "py": "p_ref"
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Mark the card deals",
+      "challenges": [
+        {
+          "id": "x5-event-mask",
+          "kind": "checkpoint",
+          "prompt": "sim_counts holds the number of springtails cards in each of Toto's 1,000 card deals. observed_count holds the notebook's 5 of 6. Show true or false for each deal: true when it had observed_count or more.",
+          "starter": "",
+          "solution": "sim_counts .>= observed_count",
+          "data": "sim_counts",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam5_event_mask"
+          },
+          "hints": [
+            "Ask every deal the same question: is its count observed_count or more? Show only the true and false marks."
+          ],
+          "feedback": {
+            "pass": "Every deal is marked true or false.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "In this chapter the list is sim_counts. It is the lesson's pretend_counts under a new name.",
+                "code_has": "pretend_counts",
+                "example": "pretend_counts .>= observed_count"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The notebook's 5 is called observed_count here. It is the lesson's seen_count under a new name.",
+                "code_has": "seen_count",
+                "example": "sim_counts .>= seen_count"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The list of 1,000 counts is sim_counts, and the notebook's 5 is observed_count.",
+                "example": "sim_counts .>= observed"
+              }
+            ]
+          },
+          "starter_hint": "sim_counts ___ observed_count"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "How often?",
+      "challenges": [
+        {
+          "id": "x5-event-frequency",
+          "kind": "checkpoint",
+          "prompt": "How often did a deal have observed_count or more springtails cards? Use sim_counts. Name the marks on line 1, then show one number on line 2: the matching deals divided by all the deals.",
+          "starter": "",
+          "solution": "events = sim_counts .>= observed_count\nsum(events) / length(events)",
+          "data": "sim_counts",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam5_event_frequency"
+          },
+          "hints": [
+            "Give the marks a name first, such as events. Then count the trues with sum and divide by the number of deals with length."
+          ],
+          "feedback": {
+            "pass": "Right: the matching deals divided by all the deals.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "This editor starts each Run fresh (on your laptop, Julia keeps a name), so name the marks on line 1 of this task: events = ...",
+                "code_has": "events",
+                "code_lacks": "events =",
+                "example": "sum(events) / length(events)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "In this chapter the list is sim_counts. It is the lesson's pretend_counts under a new name.",
+                "code_has": "pretend_counts",
+                "example": "events = pretend_counts .>= observed_count\nsum(events) / length(events)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The notebook's 5 is called observed_count here. It is the lesson's seen_count under a new name.",
+                "code_has": "seen_count",
+                "example": "events = sim_counts .>= seen_count\nsum(events) / length(events)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The list of 1,000 counts is sim_counts, and the notebook's 5 is observed_count.",
+                "example": "events = sim_counts .>= observed_count\nsum(events) / length(event)"
+              }
+            ]
+          },
+          "starter_hint": "events = ___ .>= ___\nsum(events) / ___(events)"
+        }
+      ]
+    }
+  ],
+  "close": {
+    "finding": "113 of 1,000 card deals gave 5 or more springtails cards out of 6: about 1 time in 9. If each card were a 50:50 toss, 5 of 6 would not be unusual. 50:50 was only a starting guess; healthy jars might do better. The recheck is still the real test. That leaves the report's own guess, dying out.",
+    "next": "Next: Lesson 6 shows how to test a story against the notebook's count."
+  },
+  "banner": "These are Toto's card deals, made up for this game. You write the lines yourself. You can ask for one piece of help: a hint or a starter line."
+}

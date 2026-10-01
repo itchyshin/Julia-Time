@@ -1,0 +1,141 @@
+{
+  "id": "exam6",
+  "kind": "exam",
+  "chapter": "C6",
+  "number": 6,
+  "title": "Are the springtails dying out?",
+  "goal": "Keep every story whose usual range includes 5. A usual range is the low end to the high end that holds 9 in 10 or more of the counts a story gives in six jars, worked out exactly. A fit is not proof: it only shows which stories the notebook's count fits.",
+  "story": "The report says dying out. Which story could give the notebook's 5 of 6? Same idea as Lesson 6, new names: guesses is now stories, and seen_count is now observed_count.",
+  "minutes": 8,
+  "setup": "case6",
+  "dictionary": [
+    {
+      "julia": "stories",
+      "means": "three guesses about the springtails, one row each: story, p (the chance one jar has springtails), lower and upper (the usual range of the count in six jars). Julia's word: a DataFrame.",
+      "r": "stories",
+      "py": "stories"
+    },
+    {
+      "julia": "observed_count",
+      "means": "the notebook's count: 5 jars with springtails out of 6",
+      "r": "observed_count",
+      "py": "observed_count"
+    },
+    {
+      "julia": "stories.story[stories.p .<= 0.5]",
+      "means": "a rule inside a column's brackets keeps the values where it is true: the names of the stories with p of 0.5 or less. Julia's word: a boolean mask on a Vector.",
+      "r": "stories$story[stories$p <= 0.5]",
+      "py": "stories.story[stories.p <= 0.5]"
+    },
+    {
+      "julia": "n_trials",
+      "means": "6: the number of jars in the notebook. Each story's usual range is a count out of these 6.",
+      "r": "n_trials",
+      "py": "n_trials"
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Keep the stories that fit",
+      "challenges": [
+        {
+          "id": "x6-compatible-models",
+          "kind": "checkpoint",
+          "prompt": "The table stories lists three guesses, each with a usual range from lower to upper. Show every story whose range includes the notebook's 5 (the name observed_count), with all four columns: story, p, lower, upper.",
+          "starter": "",
+          "solution": "stories[(stories.lower .<= observed_count) .& (observed_count .<= stories.upper), :]",
+          "data": "stories",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam6_compatible_models"
+          },
+          "hints": [
+            "A story fits when its lower end is at most the count and the count is at most its upper end. Both ends count."
+          ],
+          "feedback": {
+            "pass": "Coin flip and Thriving fit: 5 is inside both usual ranges. Dying out stops before 5.",
+            "errors": [
+              {
+                "match": "no method matching &",
+                "say": "Join two lists of true and false with .& (with a dot), and put each comparison in round brackets.",
+                "example": "stories[(stories.lower .<= observed_count) & (observed_count .<= stories.upper), :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "In this chapter the table is stories. It is the lesson's guesses under a new name.",
+                "code_has": "guesses",
+                "example": "guesses[(guesses.lower .<= observed_count) .& (observed_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The notebook's 5 is called observed_count here. It is the lesson's seen_count under a new name.",
+                "code_has": "seen_count",
+                "example": "stories[(stories.lower .<= seen_count) .& (seen_count .<= stories.upper), :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is stories, and the notebook's 5 is observed_count.",
+                "example": "stories[(stories.lower .<= observed) .& (observed .<= stories.upper), :]"
+              },
+              {
+                "match": "not found",
+                "say": "The columns of stories are story, p, lower and upper.",
+                "example": "stories[(stories.lowr .<= observed_count) .& (observed_count .<= stories.upper), :]"
+              }
+            ]
+          },
+          "starter_hint": "stories[(stories.___ .<= ___) .& (___ .<= stories.___), :]"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Which story does not fit?",
+      "challenges": [
+        {
+          "id": "x6-twist-out",
+          "kind": "checkpoint",
+          "prompt": "Which story's usual range ends at 4 or lower, so 5 lies outside it? Show its row with all four columns.",
+          "starter": "",
+          "solution": "stories[stories.upper .<= 4, :]",
+          "data": "stories",
+          "check": {
+            "same_value": true
+          },
+          "hints": [
+            "Keep the rows whose upper end is at most 4. The rule goes before the comma in the square brackets."
+          ],
+          "starter_hint": "stories[stories.___ .<= ___, :]",
+          "feedback": {
+            "pass": "Dying out: its usual range ends at 2.",
+            "wrong": "Show the whole row, with all four columns, for the one story whose upper end is 4 or lower.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "In this chapter the table is stories. It is the lesson's guesses under a new name.",
+                "code_has": "guesses",
+                "example": "guesses[guesses.upper .<= 4, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is stories, and its columns are story, p, lower and upper.",
+                "example": "storys[storys.upper .<= 4, :]"
+              },
+              {
+                "match": "not found",
+                "say": "The columns of stories are story, p, lower and upper.",
+                "example": "stories[stories.top .<= 4, :]"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "close": {
+    "finding": "Coin flip and Thriving can give 5 of 6: it is inside their usual ranges. Dying out almost never does. So 5 of 6 does not fit the dying out story. A fit is not proof.",
+    "next": "See how the case ends."
+  },
+  "banner": "This is the table of three stories, made up for this game. You write the lines yourself. You can ask for one piece of help: a hint or a starter line."
+}

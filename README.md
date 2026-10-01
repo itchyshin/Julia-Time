@@ -1,5 +1,11 @@
 # Julia Time
 
+**Learn Julia by solving a lab mystery. Real code, real data, and R and Python beside every line.**
+
+[**Download Julia Time**](https://github.com/itchyshin/Julia-Time/releases/latest) ·
+[Watch the trailer (1:44)](https://itchyshin.github.io/Julia-Time/trailer.mp4) ·
+[See the webpage](https://itchyshin.github.io/Julia-Time/)
+
 ![Itchy, Toto, Momo and Eddie around the Missing Fleas notebook](web/assets/lab-cast.png)
 
 **The Case of the Missing Fleas** is a locally run browser game for learning
@@ -20,10 +26,10 @@ a lab computer is fine), plus three things:
 3. an **internet connection for the first setup**.
 
 You do not need a GitHub account or any terminal knowledge.
-You do not need R, Python or NumPy to play; they are only for the optional speed lab
-in step 4. Do **not** install a Julia package called `JuliaTime`.
+Do **not** install R, Python, NumPy, or a Julia package called `JuliaTime`; R,
+Python, and NumPy are only for an optional comparison after the game.
 
-### Three steps, and one optional
+### Three steps
 
 1. **Download and extract.** [**Download Julia Time**](https://github.com/itchyshin/Julia-Time/releases/latest)
    and click the `Julia-Time-<version>.zip` file under *Assets*.
@@ -56,23 +62,6 @@ in step 4. Do **not** install a Julia package called `JuliaTime`.
    The first start prepares Julia's packages (several minutes), then opens the game in
    your browser. Later starts take seconds. Keep the black window (Windows) or Terminal
    window (Mac) open while you play, and press Enter in it when you are done.
-
-4. **Optional, after the game: the speed lab (R and Python with NumPy).** The game
-   does not need these. At the end of the case you can open a speed lab that times the
-   same task in Julia, R and Python on your own computer. To include R and Python:
-   - **Mac:**
-     1. Install R from [CRAN](https://cloud.r-project.org/): choose *Download R for
-        macOS*, then the `.pkg` for your Mac (Apple Silicon or Intel), and open it.
-     2. Install Python 3 from [python.org](https://www.python.org/downloads/macos/)
-        and open the installer.
-     3. Open **Terminal** and run: `python3 -m pip install numpy`
-     4. Check: `python3 -c "import numpy; print('NumPy ready')"` and `Rscript --version`.
-     5. Close Julia Time (press Enter in its Terminal window) and double-click
-        `Play-Julia-Time-Mac.command` again, so the speed lab finds them.
-   - **Windows:** the speed lab cannot yet find R and Python after a normal Windows
-     install; this is fixed in the next version. You can still play the whole game.
-   - **Linux:** install `r-base` and `python3-numpy` with your package manager, then
-     start Julia Time again.
 
 **If the game does not appear**, double-click the same file again: if Julia Time is
 already running, it reopens the game. Still stuck? See
@@ -107,7 +96,15 @@ no-rescue learner sessions. A printable [one-page observer sheet (PDF)](docs/pla
 is ready for the person observing; do not help the player through a sticking
 point; record where their own next action became unclear.
 
+## Still improving
+
+Julia Time is new and still improving. Tell us what to make better: a lesson, a
+message, the target range, even the webpage or the trailer.
+[Make a request](https://github.com/itchyshin/Julia-Time/issues/new/choose) or
+[see what others asked](https://github.com/itchyshin/Julia-Time/issues).
+
 ## Licence
 
 Julia Time, including its code, story text, illustrations, and simulated data,
-is released under the [MIT License](LICENSE).
+is released under the [MIT License](LICENSE). Made by Shinichi Nakagawa's lab,
+University of Alberta.

@@ -13,3 +13,6 @@ LOOP/state/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# release ZIPs built by tools/release/export.sh
+dist/

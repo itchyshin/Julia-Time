@@ -2,54 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="The local Case Board for Julia Time: The Missing Fleas.">
-  <title>Julia Time · Case Board</title><link rel="stylesheet" href="course.css">
+  <meta name="description" content="Julia Time: learn Julia by solving one lab mystery, in six steps.">
+  <title>Julia Time · Board</title><link rel="stylesheet" href="course.css">
 </head>
 <body>
-<a class="skip" href="#case-board">Skip to the Case Board</a>
-<header class="shell topbar"><div><p class="eyebrow">Julia Time / Case files</p><p class="brand">The Case of the <em>Missing Fleas</em></p></div><p>Saved on this computer</p></header>
+<a class="skip" href="#case-board">Skip to the Board</a>
+<header class="shell topbar"><a id="header-how-to-play" class="quiet-link topbar-link" href="getting-started.html">How to play</a><p id="topbar-status">Your progress saves on this computer</p></header>
 <main id="case-board" class="shell">
-  <section class="hero" aria-labelledby="board-title">
-    <div class="hero-copy"><p class="eyebrow">Your Case Board</p><h1 id="board-title">Your next step</h1><p id="case-progress" class="case-progress" role="status"></p><p>Where the case stands, and what to do next. It shows the work saved on this computer. No scores.</p><a id="continue-action" class="primary-action" href="chapter.html" aria-disabled="true">Checking Julia…</a><a id="skip-intro" class="quiet-link hero-guide-link" href="chapter.html" hidden></a><a id="how-to-play-link" class="quiet-link hero-guide-link" href="getting-started.html">How to play</a> <a id="watch-intro-link" class="quiet-link hero-guide-link" href="intro.html">Watch the intro</a></div>
+  <section id="board-hero" class="hero" aria-labelledby="board-title">
+    <div class="hero-copy"><h1 id="board-title">Julia Time</h1><p class="hero-lede">Learn Julia by solving one lab mystery: The Case of the Missing Fleas.</p><p class="hero-story">Toto says the lab's springtails are dying out. The notebook may say otherwise. You find out by typing short lines of Julia, one at a time, and reading what comes back.</p>
+      <ul class="hero-facts">
+        <li><strong>For:</strong> graduate students and researchers. Never coded: start at Step 1. Know R or Python: same path; skip any round you already know.</li>
+        <li><strong>Time:</strong> about <span id="time-promise">4 hours</span> in six steps. <span id="hero-save-sentence">Stop any time; your place is saved here.</span></li>
+        <li><strong>Needs:</strong> Julia and the Julia Time launcher, set up once. Nothing is scored or sent anywhere.</li>
+      </ul>
+      <p class="hero-how">Each step is a practice Lesson, then a Chapter on the real case. In each one you read a short question, type a line of Julia and press Run.</p>
+      <p id="case-progress" class="case-progress" role="status"></p>
+      <div id="save-notice-slot" class="save-notice-slot"></div>
+      <a id="continue-action" class="primary-action" href="../lesson.html?lesson=lesson1">Start Lesson 1</a>
+      <p class="julia-row"><span id="julia-line" class="julia-line" aria-live="polite">Julia is starting…</span> <button id="setup-reconnect" class="secondary-action julia-reconnect" type="button" aria-describedby="julia-line" hidden>Reconnect</button> <a id="julia-help" class="julia-help" href="getting-started.html#setup-wrap" hidden>How to play, setup</a> <span id="julia-start-off" class="julia-start-off" hidden>Start is off until Julia is running.</span></p>
+      <p class="hero-links"><a id="watch-intro-link" class="quiet-link hero-guide-link" href="intro.html">New here? Watch the two-minute intro (optional)</a> <a id="how-to-play-link" class="quiet-link hero-guide-link" href="getting-started.html">How to play</a></p></div>
     <img src="../assets/lab-cast.png" alt="Itchy, Toto, Momo and Eddie gathered around jars and the Missing Fleas notebook.">
   </section>
+  <section aria-labelledby="chapters-heading" class="steps-section"><h2 id="chapters-heading">The six steps</h2><p class="steps-lede">In every round: one new idea, a few lines to change or fix, one line from memory. The chapter then uses the same idea on the real notebook, with a hint if you ask.</p>
+    <div class="steps-head" aria-hidden="true"><span>Step</span><span>Lesson (practice)</span><span>Chapter (the case)</span><span>Time</span></div>
+    <div id="chapter-cards" class="steps-table"></div>
+    <p id="steps-foot" class="quiet-note">Then the ending, <span id="ending-minutes">5</span> minutes. Progress is shared by everyone on this laptop. To start over, use Start again on a lesson.</p>
+    <p id="range-panel" class="range-line"></p></section>
+  <div id="board-status-home">
+  <p id="board-status" class="board-status" aria-live="polite">Loading your saved work…</p>
+  <button id="changed-history-action" class="changed-history-action" type="button" aria-describedby="board-status" hidden>Use the changed save</button>
+  </div>
   <section id="case-thread" class="panel" aria-labelledby="case-thread-heading">
-    <p class="eyebrow">Case summary</p>
     <h2 id="case-thread-heading">The case so far</h2>
     <dl>
       <div><dt>The question</dt><dd id="case-question">Loading the case question…</dd></div>
-      <div><dt>What we know so far</dt><dd id="case-established">Loading saved case history…</dd></div>
-      <div><dt>Still to find out</dt><dd id="case-unknown">Loading…</dd></div>
-      <div><dt>Why this next step</dt><dd id="case-why-next">Loading the next step…</dd></div>
+      <div><dt id="case-established-label">What we know so far</dt><dd id="case-established">Loading saved case history…</dd></div>
+      <div><dt id="case-unknown-label">Still to find out</dt><dd id="case-unknown">Loading…</dd></div>
+      <div><dt id="case-why-next-label">Why this next step</dt><dd id="case-why-next">Loading the next step…</dd></div>
     </dl>
   </section>
-  <section id="setup-readiness" class="setup-readiness panel" aria-labelledby="setup-heading" aria-busy="true">
-    <p class="eyebrow">Check this computer</p>
-    <h2 id="setup-heading">Julia readiness</h2>
-    <p id="setup-status" class="setup-status" aria-live="polite" aria-atomic="true">Connecting to the local Julia lab…</p>
-    <p class="setup-boundary">Each time this page opens, it checks that Julia can run the mystery. It never installs software. R and Python are not needed to start the case, and this first check does not inspect them.</p>
-    <div class="setup-actions">
-      <button id="setup-recheck" class="secondary-action" type="button" aria-describedby="setup-status" disabled>Check Julia again</button>
-      <button id="setup-reconnect" class="secondary-action" type="button" aria-describedby="setup-status" hidden>Reconnect to Julia</button>
+  <details id="also-here" class="also-here">
+    <summary>Also on this computer: Speed lab · What you found · Julia check details</summary>
+    <section id="setup-readiness" class="setup-readiness panel" aria-labelledby="setup-heading" aria-busy="true">
+      <h2 id="setup-heading">Julia check details</h2>
+      <p id="setup-status" class="setup-status" aria-live="polite" aria-atomic="true">Connecting to the local Julia lab…</p>
+      <p class="setup-boundary">Each time this page opens, it checks that Julia can run the mystery. It never installs software. R and Python are not needed to start, and this check does not inspect them.</p>
+      <div class="setup-actions">
+        <button id="setup-recheck" class="secondary-action" type="button" aria-describedby="setup-status" disabled>Check Julia again</button>
+      </div>
+      <details id="setup-details" class="setup-details">
+        <summary>Check details</summary>
+        <dl>
+          <div><dt>Detected version</dt><dd id="setup-version">Not checked yet</dd></div>
+          <div><dt>Checked</dt><dd id="setup-checked-at">Not checked yet</dd></div>
+          <div><dt>Reason code</dt><dd id="setup-reason">Not checked yet</dd></div>
+        </dl>
+      </details>
+    </section>
+    <section id="speed-lab-entry" class="panel" aria-labelledby="speed-lab-heading"><h2 id="speed-lab-heading">The speed lab (optional)</h2><p>Time the same calculation in Julia, R and Python. Not part of the case, no score. It first checks that Julia, R and Python return the same answers before timing that one calculation.</p><a id="speed-lab-link" class="secondary-action" href="speed-lab.html">Open the speed lab</a></section>
+    <div class="lower-grid">
+      <section class="panel" aria-labelledby="evidence-heading"><h2 id="evidence-heading">What you found so far</h2><div id="saved-evidence"></div></section>
+      <section class="panel" aria-labelledby="concepts-heading"><h2 id="concepts-heading">Julia you have used so far</h2><ul id="concept-list"></ul><p id="draft-notice" class="draft-notice"></p></section>
     </div>
-    <details id="setup-details" class="setup-details">
-      <summary>Check details</summary>
-      <dl>
-        <div><dt>Detected version</dt><dd id="setup-version">Not checked yet</dd></div>
-        <div><dt>Checked</dt><dd id="setup-checked-at">Not checked yet</dd></div>
-        <div><dt>Reason code</dt><dd id="setup-reason">Not checked yet</dd></div>
-      </dl>
-    </details>
-  </section>
-  <p id="board-status" class="board-status" aria-live="polite">Loading your saved work…</p>
-  <button id="changed-history-action" class="changed-history-action" type="button" aria-describedby="board-status" hidden>Use the changed save</button>
-  <section aria-labelledby="chapters-heading"><p class="eyebrow">Six chapters, one case</p><h2 id="chapters-heading">The six chapters</h2><div id="chapter-cards" class="chapter-grid"></div></section>
-  <section id="speed-lab-entry" class="panel" aria-labelledby="speed-lab-heading"><p class="eyebrow">Optional: the speed lab</p><h2 id="speed-lab-heading">The speed lab</h2><p>Time the same calculation in Julia, R and Python. Not part of the case, no score.</p><p>It first checks that Julia, R and Python return the same answers before timing that one calculation.</p><a id="speed-lab-link" class="secondary-action" href="speed-lab.html">Open the speed lab</a></section>
-  <div class="lower-grid">
-    <section class="panel" aria-labelledby="evidence-heading"><p class="eyebrow">What you found</p><h2 id="evidence-heading">What you found so far</h2><div id="saved-evidence"></div></section>
-    <section class="panel" aria-labelledby="concepts-heading"><p class="eyebrow">Julia you have used so far</p><h2 id="concepts-heading">Concepts from your saved work</h2><ul id="concept-list"></ul><p id="draft-notice" class="draft-notice"></p></section>
-  </div>
-  <aside id="setup-reminder" class="setup-reminder"><strong>Before you play:</strong> start Julia Time with the supplied local launcher. The game runs on your own computer; this board only checks that Julia answers, and never installs anything.</aside>
+  </details>
 </main>
 <script src="course-state.js"></script><script src="legacy-import.js"></script><script src="course-client.js"></script><script src="intro-script.js"></script><script src="course-board.js"></script><script src="setup-status-client.js"></script><script src="setup-status-board.js"></script><script>(function(){const link=document.getElementById("speed-lab-link"),client=window.JuliaTimeCourseClient,attempt=new URLSearchParams(location.search).get("attempt");if(link&&client)link.href=client.speedLabDestination(attempt);}());</script>
 </body>

@@ -1,0 +1,31 @@
+{
+  "id": "lesson-bad",
+  "number": 99,
+  "title": "Bad fixture",
+  "setup": "jars",
+  "rounds": [
+    {
+      "id": "r1",
+      "idea": "function",
+      "challenges": [
+        {
+          "id": "b-see",
+          "kind": "see",
+          "prompt": "p",
+          "solution": "length(practice_jars.jar_id)",
+          "py_note": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word"
+        },
+        {
+          "id": "b-cp",
+          "kind": "checkpoint",
+          "prompt": "p",
+          "starter": "",
+          "solution": "sum(practice_jars.detected)",
+          "check": {
+            "same_value": true
+          }
+        }
+      ]
+    }
+  ]
+}

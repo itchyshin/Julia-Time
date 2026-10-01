@@ -15,7 +15,7 @@
   "use strict";
 
   const CHAPTERS = ["C1", "C2", "C3", "C4", "C5", "C6"];
-  const CASE_SOLVED = "Case closed: all 6 chapters complete.";
+  const CASE_SOLVED = "All six chapters done. The recheck is still to do.";
 
   function savedKeys(storage, attempt) {
     try { return new Set(courseState.acceptedMoves(courseState.readCourseState(storage, attempt)).map(move => move.key)); } catch (_) { return new Set(); }

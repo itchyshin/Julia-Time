@@ -1,0 +1,56 @@
+/* Julia Time lesson screen: the delight layer (web/lesson-delight.js). Short, soft, and never in the way: no rule here
+   changes a size, moves a button or waits for anything. The classes that start motion are only added when the player
+   has not asked for reduced motion, and the last block switches every animation off as well. */
+:root { --jt-glow: rgba(42, 110, 55, 0.35); --jt-ring: rgba(46, 125, 50, 0.35); }
+
+/* 1. A pass: a real verdict card (round 5, Tufte's spec): a #DDEFD9 card at least 56 px tall with an 8 px rule, a 36 px check and
+   a 20 px bold line, popping in over 450 ms with one 900 ms ring that fades out; Next gets the one ring (round 6: #2E7D32 at 35%, 4 px) and a nudge; the Result box gets none, so rings do not stack. */
+#feedback.ok { position: relative; display: block; min-height: 56px; padding: 16px 18px 16px 66px; border-radius: 10px; border-left: 8px solid #2e7d32; background: #ddefd9;
+  color: #14501a; font-size: 20px; line-height: 1.35; font-weight: 700; }
+#feedback.ok::before {
+  content: "\2713" / ""; position: absolute; left: 16px; top: 14px; display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%; background: #2e7d32; color: #fff; font-size: 22px; font-weight: 700; line-height: 1;
+}
+#feedback.ok code { color: #14501a; background: rgba(255, 255, 255, 0.7); }
+#feedback.jt-win { animation: jt-card 450ms cubic-bezier(.3, 1.4, .5, 1) both, jt-cardring 900ms ease-out; }
+#feedback.jt-win::before { animation: jt-pop 420ms cubic-bezier(.3, 1.5, .5, 1) 60ms both; }
+#next.jt-nudge { animation: jt-nudge 700ms ease-out; }
+@keyframes jt-pop { from { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } to { transform: scale(1); opacity: 1; } }
+@keyframes jt-card { from { opacity: 0; transform: scale(0.96); background-color: #b9dcb1; } to { opacity: 1; transform: none; background-color: #ddefd9; } }
+@keyframes jt-cardring { 0% { box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.35); } 100% { box-shadow: 0 0 0 4px rgba(46, 125, 50, 0); } }
+@keyframes jt-nudge { 0% { transform: scale(1); box-shadow: 0 0 0 4px var(--jt-ring); } 35% { transform: scale(1.04); } 100% { transform: scale(1); box-shadow: 0 0 0 4px rgba(46, 125, 50, 0); } }
+
+/* Round 6 (LS-41): the editor border lights once when "Show me the line" fills it: #1F6F6B, 3 px, about 900 ms. */
+textarea.line-flash { border-color: #1f6f6b; box-shadow: 0 0 0 3px #1f6f6b; animation: jt-lineflash 900ms ease-out; }
+@keyframes jt-lineflash { 0% { box-shadow: 0 0 0 6px rgba(31, 111, 107, .55); } 100% { box-shadow: 0 0 0 3px #1f6f6b; } }
+
+/* 4. A step or screen change fades in. */
+.jt-in { animation: jt-in 220ms ease-out both; }
+@keyframes jt-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+/* 2 and 3. The end page: a character's line, and for a chapter exam the chapter's picture above the finding. */
+#delight-end { margin: 0; }
+#screen-end[data-reveal] #end-finding { font: 20px/1.45 var(--serif); }
+#screen-end[data-reveal] #end-finding::before { content: "The finding"; display: block; margin: 0 0 2px; font: 700 16px/1.3 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.delight-art { margin: 0 0 12px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 1px 0 var(--line); aspect-ratio: 16 / 5; background: var(--accent-soft); }
+.delight-art img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(var(--z, 1)); }
+.delight-say { display: flex; align-items: center; gap: 12px; margin: 8px 0 10px; }
+.delight-say p { margin: 0; font: italic 18px/1.4 var(--serif); }
+.delight-say strong { font-style: normal; font-family: var(--sans); font-size: 16px; color: var(--accent); }
+.delight-face {
+  --face: 64px; --zoom: 6; position: relative; overflow: hidden; flex: none; width: var(--face); height: var(--face); border-radius: 50%; border: 2px solid var(--panel);
+  box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft) url("assets/lab-cast.png") no-repeat;
+  background-size: calc(var(--face) * var(--zoom)) auto;
+  background-position: calc(var(--face) / 2 - var(--fx) * var(--face) * var(--zoom)) calc(var(--face) / 2 - var(--fy) * var(--face) * var(--zoom) * 0.5692);
+}
+/* Eddie's skin is in shadow in the source picture: a soft lift, on a layer over the same crop, so he reads as clearly as Itchy. */
+.delight-face.lift { filter: brightness(1.15) contrast(1.05); }
+/* The finding arrives a beat after the picture, like the next line of a story. */
+#screen-end.jt-reveal .delight-art img { animation: jt-settle 560ms ease-out both; }
+#screen-end.jt-reveal #end-finding { animation: jt-in 260ms ease-out 140ms both; }
+#screen-end.jt-reveal #delight-say { animation: jt-in 220ms ease-out 260ms both; }
+@keyframes jt-settle { from { opacity: 0.15; filter: saturate(0.6); } to { opacity: 1; filter: none; } }
+#delight-sound { font-size: 16px; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media print { #delight-end, #delight-sound { display: none !important; } }

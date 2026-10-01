@@ -1,0 +1,1465 @@
+{
+  "id": "lesson4",
+  "number": 4,
+  "title": "Recheck fairly",
+  "goal": "Learn to make the computer pick three jars at random, by chance. That is fair: every jar has the same chance. Round 2 is where Julia differs most from R.",
+  "story": "Itchy, the lab head, wants a slow look at three of Eddie's five open jars, one afternoon each. The jars are made up. You will let the computer pick the three by luck.",
+  "story_more": "A recheck is a slow, leaf-by-leaf look at a jar, because a quick two-minute look can miss springtails hiding in the leaves. Itchy can only recheck 3 jars, one each afternoon. Five jars are open: Q-071, Q-072, Q-074, Q-077 and Q-078. Eddie, who keeps the records, put them in a table called open_jars. It has one column, jar_id. Toto, the eager one in the lab: \"Let the computer pick 3 at random, so nobody chooses favourites.\" Two jars are left out because there are only three afternoons. A random pick keeps it fair: every jar has the same chance, 3 in 5. The data are made up for practice.",
+  "glossary": [
+    {
+      "term": "line",
+      "means": "one instruction for Julia, written in code."
+    },
+    {
+      "term": "run",
+      "means": "to press the Run button, so Julia does what your line says."
+    },
+    {
+      "term": "table",
+      "means": "facts set out in a grid: one thing on each row, one kind of detail in each column."
+    },
+    {
+      "term": "column",
+      "means": "one kind of detail running down a table, such as jar_id."
+    },
+    {
+      "term": "list",
+      "means": "several things one after another, in order, such as a column of jar ids."
+    },
+    {
+      "term": "function",
+      "means": "a word that does a job on whatever you put inside its round brackets ( )."
+    },
+    {
+      "term": "input",
+      "means": "something you put inside a function's round brackets ( ) for it to work on."
+    },
+    {
+      "term": "named input",
+      "means": "an input with its own name, written name=value after a semicolon, such as replace=false."
+    },
+    {
+      "term": "value",
+      "means": "what an input is set to, such as false in replace=false."
+    },
+    {
+      "term": "semicolon",
+      "means": "the mark ; that goes before a named input."
+    },
+    {
+      "term": "dot",
+      "means": "the mark . that joins a table name and a column name, as in practice_jars.jar_id."
+    },
+    {
+      "term": "comma",
+      "means": "the mark , that keeps two inputs apart."
+    },
+    {
+      "term": "blank",
+      "means": "the ___ in a line. Type your answer in its place."
+    },
+    {
+      "term": "range",
+      "means": "all the whole numbers from one number to another, written like 1:6."
+    },
+    {
+      "term": "whole number",
+      "means": "a number with no decimal part, such as 3."
+    },
+    {
+      "term": "quote marks",
+      "means": "the marks \" \" around text."
+    },
+    {
+      "term": "true or false",
+      "means": "the only two answers to a yes-or-no question. Julia writes them in small letters."
+    },
+    {
+      "term": "random",
+      "means": "decided by luck, not by anyone's choice."
+    },
+    {
+      "term": "fair",
+      "means": "every jar has the same chance to be picked."
+    },
+    {
+      "term": "sample",
+      "means": "the function that picks things at random, like drawing from a bag."
+    },
+    {
+      "term": "replace",
+      "means": "a named input of sample. With false, a picked one is not put back, so it cannot be picked twice."
+    },
+    {
+      "term": "underscore",
+      "means": "the low line _ that joins words in a name, as in jar_id."
+    },
+    {
+      "term": "capital letters",
+      "means": "big letters such as A and B. Julia treats first and First as different words."
+    },
+    {
+      "term": "Reset",
+      "means": "the button under the editor that puts the starting line back."
+    }
+  ],
+  "setup": "practice4",
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Two inputs",
+      "idea": "two inputs",
+      "story": "Eddie, who keeps the lab's records: \"First a look back at Lesson 3. Then I made a table called open_jars: my open jars, the ones still allowed to be picked. It holds five jars.\"",
+      "explain": "A function can have more than one input. Put them inside the round brackets ( ), with a comma between. leftjoin from Lesson 3 had three. first, new today, takes a list, then how many you want.",
+      "challenges": [
+        {
+          "id": "l4-r1-c0",
+          "kind": "write",
+          "recall": true,
+          "data": "book_table",
+          "data_also": "key_table",
+          "prompt": "A look back at Lesson 3: the same two tables, which share shelf_id (S-4 reads 22: a key pressed twice). Type the line that joins them on :shelf_id, a name with a colon in front, and call the result merged.",
+          "starter": "",
+          "solution": "merged = leftjoin(book_table, key_table, on=:shelf_id)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "leftjoin",
+              "shelf_id"
+            ],
+            "taught": [
+              "leftjoin(",
+              "on="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The two tables joined into one, shelf by shelf. That is Lesson 3's line again. In R it is left_join(book_table, key_table, by = \"shelf_id\").",
+            "wrong": "One table with the columns shelf_id, logged and keyed should come back. Check the two table names and the on= part.",
+            "requires": "Use leftjoin with the two tables, then on= and the shared column.",
+            "errors": [
+              {
+                "match": "unsupported keyword argument",
+                "code_has": "by",
+                "say": "Julia writes on=, not by=: the named input is on=:shelf_id.",
+                "example": "merged = leftjoin(book_table, key_table, by=:shelf_id)"
+              },
+              {
+                "match": "Missing join argument",
+                "say": "Name the shared column with on=, as in on=:shelf_id.",
+                "example": "merged = leftjoin(book_table, key_table)"
+              },
+              {
+                "match": "not found in the left data frame",
+                "say": "That column is not in the tables. The shared column is shelf_id, with a colon in front.",
+                "example": "merged = leftjoin(book_table, key_table, on=:shelfid)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The tables are book_table and key_table: check the spelling and use small letters.",
+                "example": "merged = leftjoin(book_tabl, key_table, on=:shelf_id)"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r1-c1",
+          "kind": "see",
+          "data": "practice_jars",
+          "prompt": "first gives the start of a list. It has two inputs: the list, then how many. The list is the jar_id column of practice_jars, the small warm-up table shown below. Guess, then press Run.",
+          "starter": "first(practice_jars.jar_id, 2)",
+          "solution": "first(practice_jars.jar_id, 2)",
+          "labels": [
+            {
+              "part": "first",
+              "is": "function"
+            },
+            {
+              "part": "practice_jars.jar_id, 2",
+              "is": "inputs"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "P-01, P-02 and P-03",
+              "P-01 and P-02",
+              "P-03 and P-04"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              "first"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "first took its two inputs and gave the first 2 jar ids: P-01 and P-02.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: practice_jars.jar_id.",
+                "example": "first(practice_jars$jar_id, 2)"
+              },
+              {
+                "match": "`head`",
+                "say": "Julia uses first, not head, to get the start of a list.",
+                "example": "head(practice_jars.jar_id, 2)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "first(practice_jars.jar_id 2)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "first(practice_jars.jar_id, 2"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. Its columns are jar_id, batch_id, tray_id and detected.",
+                "example": "first(practice_jars.jarid, 2)"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put the list first, then the number.",
+                "example": "first(2, practice_jars.jar_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of first and practice_jars. A column needs a dot between the table and the column: practice_jars.jar_id.",
+                "example": "First(practice_jars.jar_id, 2)"
+              }
+            ],
+            "requires": "Run the line on the warm-up jars, as shown.",
+            "taught": "first with the list, a comma and how many."
+          },
+          "new_ideas": [
+            "two inputs"
+          ],
+          "new_facts": [
+            "first gives the start of a list; the number says how many"
+          ],
+          "r_note": "`head(practice_jars$jar_id, 2)` is the R version. Julia calls it first.",
+          "py_note": "`practice_jars[\"jar_id\"].head(2)` in pandas. Julia's first(list, 2) takes the list, then how many."
+        },
+        {
+          "id": "l4-r1-c3",
+          "kind": "change",
+          "data": "practice_jars",
+          "prompt": "In the editor, change the 2 to 3, so you get three jar ids. Leave the rest as it is. Then press Run.",
+          "starter": "first(practice_jars.jar_id, 2)",
+          "solution": "first(practice_jars.jar_id, 3)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              "first"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "first gave three jar ids: P-01, P-02 and P-03. Only the number changed. The function and the list are the same.",
+            "wrong": "The answer should be three jar ids: P-01, P-02 and P-03. Check the number after the comma.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: practice_jars.jar_id.",
+                "example": "first(practice_jars$jar_id, 3)"
+              },
+              {
+                "match": "`head`",
+                "say": "Julia uses first, not head, to get the start of a list.",
+                "example": "head(practice_jars.jar_id, 3)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "first(practice_jars.jar_id 3)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "first(practice_jars.jar_id, 3"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put the list first, then the number.",
+                "example": "first(3, practice_jars.jar_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of first and practice_jars. A column needs a dot between the table and the column: practice_jars.jar_id.",
+                "example": "First(practice_jars.jar_id, 3)"
+              }
+            ],
+            "unchanged": "The line is unchanged, so it still gives two jar ids. Change the 2 to 3, then press Run.",
+            "requires": "Keep the list of warm-up jars. Only the number changes.",
+            "taught": "first with the list, a comma and the number 3."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r1-c4",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "Replace the blank (___) with the batch_id column of practice_jars. A different column, the same way. Keep the 2, which says how many. Then press Run.",
+          "starter": "first(___, 2)",
+          "solution": "first(practice_jars.batch_id, 2)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              "first",
+              "practice_jars.batch_id"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The blank held a column. first gave the first 2 batch ids, B01 and B02.",
+            "wrong": "The answer should be the batch ids B01 and B02. Did you type the batch_id column in the blank, not the jar_id column from the example?",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: practice_jars.batch_id.",
+                "example": "first(practice_jars$batch_id, 2)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. Its columns are jar_id, batch_id, tray_id and detected.",
+                "example": "first(practice_jars.batchid, 2)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "first(practice_jars.batch_id 2)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "first(practice_jars.batch_id, 2"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The table is practice_jars, with an underscore. A column needs a dot: practice_jars.batch_id.",
+                "example": "first(practicejars.batch_id, 2)"
+              }
+            ],
+            "unchanged": "The blank ___ is still there. Fill it with the batch_id column of practice_jars, then press Run.",
+            "requires": "Fill the blank with a list of batch ids from practice_jars.",
+            "taught": "first with the batch_id column joined by a dot, then a comma and how many."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r1-c5",
+          "kind": "checkpoint",
+          "data": "open_jars",
+          "board": "jars",
+          "prompt": "Eddie's table, open_jars, is shown below. Itchy will recheck the first three jars. In the empty editor, type a line that gives their jar ids as a list, from the jar_id column. Then press Run.",
+          "starter": "",
+          "solution": "first(open_jars.jar_id, 3)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "open_jars"
+            ],
+            "taught": [
+              "first"
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Use the function that gives the start of a list. Write the list as the table name, a dot, then the column name.",
+            "It looks like: function(table.column, number). Use open_jars for the table and jar_id for the column."
+          ],
+          "clue": "Picking the first three is not fair to the others. Toto wants every jar to have the same chance.",
+          "feedback": {
+            "pass": "first gave Q-071, Q-072 and Q-074: the same three each time, and Q-077 and Q-078 are never picked.",
+            "wrong": "The answer should be the first three jar ids, in the table's order. If your line gave a whole table, give one column of it instead.",
+            "errors": [
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: open_jars.jar_id.",
+                "example": "first(open_jars$jar_id, 3)"
+              },
+              {
+                "match": "`head`",
+                "say": "Julia uses first, not head, to get the start of a list.",
+                "example": "head(open_jars.jar_id, 3)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "first(open_jars.jar_id 3)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "first(open_jars.jar_id, 3"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in open_jars. It has one column, jar_id, with an underscore.",
+                "example": "first(open_jars.jarid, 3)"
+              },
+              {
+                "match": "::Float64",
+                "say": "The number of picks must be a whole number like 3, with no decimal point.",
+                "example": "first(open_jars.jar_id, 3.0)"
+              },
+              {
+                "match": "::String",
+                "say": "The number of picks must be a whole number like 3, with no quote marks around it.",
+                "example": "first(open_jars.jar_id, \"3\")"
+              },
+              {
+                "match": "MethodError",
+                "say": "Put the list first, then the number.",
+                "example": "first(3, open_jars.jar_id)"
+              },
+              {
+                "match": "`jars`",
+                "say": "jars is not a table here. The table is open_jars.",
+                "example": "first(jars.jar_id, 3)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of first, open_jars and jar_id. A column needs a dot: open_jars.jar_id.",
+                "example": "First(open_jars.jar_id, 3)"
+              }
+            ],
+            "requires": "Take the jar ids from Eddie's table, open_jars, not from a typed list.",
+            "taught": "first with the jar_id list, a comma and 3, which gives the start of the list."
+          },
+          "new_ideas": [],
+          "starter_hint": "first(___, ___)"
+        },
+        {
+          "id": "l4-r1-p1",
+          "kind": "play",
+          "data": "open_jars",
+          "board": "jars",
+          "prompt": "Play freely. Change the number or the list, then press Run. Nothing is marked. Ask for more than 5: first gives only what the list holds. Press Next when you want to move on.",
+          "starter": "first(open_jars.jar_id, 2)",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "A named input",
+      "idea": "named input",
+      "story": "Toto, the eager one in the lab: \"Let the computer pick three jars at random, so nobody can choose favourites.\"",
+      "remember": {
+        "prompt": "In Round 1 you wrote a line like this. Eddie's table open_jars holds Q-071, Q-072, Q-074, Q-077 and Q-078, in that order. What did the line give?",
+        "code": "first(open_jars.jar_id, 3)",
+        "choices": [
+          "Q-071, Q-072 and Q-074",
+          "Q-074, Q-077 and Q-078",
+          "any three jars, picked at random"
+        ],
+        "answer": 0,
+        "why": "first takes the start of the list, so it gave the same three each time. Q-077 and Q-078 were never picked."
+      },
+      "explain": "sample picks from a list at random, like drawing numbered tickets from a bag. It comes from the StatsBase package: this page loads it for you. A named input, typed after a semicolon (;), will change how it picks.",
+      "challenges": [
+        {
+          "id": "l4-r2-c1",
+          "kind": "see",
+          "prompt": "1:6 is a range: the numbers 1 to 6, like the faces of a die. sample draws 6 of them at random. Guess what will usually appear, then press Run.",
+          "starter": "sample(1:6, 6)",
+          "solution": "sample(1:6, 6)",
+          "labels": [
+            {
+              "part": "sample",
+              "is": "function"
+            },
+            {
+              "part": "1:6, 6",
+              "is": "inputs"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia usually show?",
+            "choices": [
+              "the numbers 1 to 6, each once",
+              "six numbers, and a number may appear more than once",
+              "an error"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": false,
+            "requires": [
+              "sample"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "sample picked six numbers at random. Each number was put back after it was picked, so a number can appear more than once. Press Run again: you may get different numbers.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(1:6 6)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(1:6, 6"
+              },
+              {
+                "match": "MethodError",
+                "say": "sample needs two inputs in this order: a list such as a jar_id column, then a number.",
+                "example": "sample(6, 1:6)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The function is sample, spelled with small letters only.",
+                "example": "Sample(1:6, 6)"
+              }
+            ],
+            "requires": "Use sample: it is the function that picks at random."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "sample picks from a list at random",
+            "1:6 is a range, the numbers 1 to 6"
+          ],
+          "r_note": "R's `sample(1:6, 6)` puts nothing back. The R version of this Julia line is `sample(1:6, 6, replace = TRUE)`.",
+          "py_note": "`np.random.choice(range(1, 7), 6)` is the Python version: it puts numbers back. `random.sample` does not put them back. Julia's 1:6 includes 6; Python needs range(1, 7)."
+        },
+        {
+          "id": "l4-r2-c2",
+          "kind": "see",
+          "prompt": "Find the ; in the line. After it comes a named input: a name, an equals sign, then a value. replace decides whether a picked number is put back. Guess what you will see, then press Run.",
+          "starter": "sample(1:6, 6; replace=false)",
+          "solution": "sample(1:6, 6; replace=false)",
+          "labels": [
+            {
+              "part": "sample",
+              "is": "function"
+            },
+            {
+              "part": "1:6, 6",
+              "is": "inputs"
+            },
+            {
+              "part": "replace=false",
+              "is": "inputs"
+            },
+            {
+              "part": "the 6 numbers",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "six numbers, and a number may appear more than once",
+              "an error",
+              "the numbers 1 to 6, each once, in any order"
+            ],
+            "answer": 2
+          },
+          "check": {
+            "same_value": false,
+            "requires": [
+              "sample",
+              "replace",
+              "false"
+            ],
+            "taught": [
+              ";"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Each number from 1 to 6 came once, in a random order. replace=false stopped a number being put back.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(1:6, 6; replace=FALSE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(1:6, 6; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true in small letters, not True. (Capitals like True are how Python writes it.)",
+                "example": "sample(1:6, 6; replace=True)"
+              },
+              {
+                "match": "TypeError",
+                "say": "replace needs true or false, in small letters, with no quote marks around it.",
+                "example": "sample(1:6, 6; replace=0)"
+              },
+              {
+                "match": "unsupported keyword",
+                "say": "sample does not know that named input. The name is replace, in small letters.",
+                "example": "sample(1:6, 6; Replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(1:6 6; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(1:6, 6; replace=false"
+              },
+              {
+                "match": "Cannot draw more",
+                "say": "You asked for more than the list holds. With replace=false each thing is picked once, so ask for no more than the list holds.",
+                "example": "sample(1:6, 7; replace=false)"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true in small letters: replace=true. (Capitals like TRUE are how R writes it.)",
+                "example": "sample(1:6, 6; replace=TRUE)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "The function is sample, spelled with small letters only.",
+                "example": "Sample(1:6, 6; replace=false)"
+              }
+            ],
+            "requires": "Keep the named input: replace=false goes after the semicolon.",
+            "taught": "a semicolon before replace=false, so the named input stands out."
+          },
+          "new_ideas": [
+            "named input"
+          ],
+          "new_facts": [
+            "a semicolon starts named inputs, written name=value",
+            "replace=false: a picked one is not put back"
+          ],
+          "look_closer": {
+            "text": "You can write replace=false after a comma too. This course uses a semicolon so the named input stands out.",
+            "code": "sample(1:6, 6, replace=false)"
+          },
+          "py_note": "`np.random.choice(range(1, 7), 6, replace=False)` in numpy. Julia writes false in small letters, and replace=false comes after a semicolon (a comma works too).",
+          "r_note": "R's `sample(1:6, 6)` already puts nothing back. Julia's default is the opposite, so here you need replace=false, after a semicolon."
+        },
+        {
+          "id": "l4-r2-c3",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "Use practice_jars, the small warm-up table shown below. Fill the blank (___) after replace= with true or false, so no jar is picked twice. Then press Run. You should get all four jars, once each.",
+          "starter": "sample(practice_jars.jar_id, 4; replace=___)",
+          "solution": "sample(practice_jars.jar_id, 4; replace=false)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              ";",
+              "replace",
+              "false"
+            ],
+            "forbids": [
+              "replace=true"
+            ],
+            "checker": "check_lesson4_practice_4"
+          },
+          "feedback": {
+            "pass": "replace=false means no jar is put back: all four warm-up jars came, each once, in a random order.",
+            "wrong": "The answer should be all four jars, each once. The named input replace decides whether a picked jar is put back.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(practice_jars.jar_id, 4; replace=FALSE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(practice_jars.jar_id, 4; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True. Here you need replace=false.",
+                "example": "sample(practice_jars.jar_id, 4; replace=True)"
+              },
+              {
+                "match": "TypeError",
+                "say": "replace needs true or false, in small letters, with no quote marks around it.",
+                "example": "sample(practice_jars.jar_id, 4; replace=\"false\")"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(practice_jars.jar_id 4; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(practice_jars.jar_id, 4; replace=false"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true and false in small letters. Here you need replace=false, not TRUE.",
+                "example": "sample(practice_jars.jar_id, 4; replace=TRUE)"
+              },
+              {
+                "match": ", ::Bool)",
+                "say": "Write the name too, after a semicolon: replace=false, not just false.",
+                "example": "sample(practice_jars.jar_id, 4, false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample, practice_jars and false, all in small letters.",
+                "example": "sample(practice_jars.jar_id, 4; replace=fals)"
+              }
+            ],
+            "unchanged": "The blank ___ is still there. Fill it with true or false, then press Run.",
+            "requires": "Get the jars from practice_jars. Do not type their ids.",
+            "taught": "sample with replace=false after a semicolon.",
+            "forbids": "replace=true puts each picked jar back, so a jar can come twice. Try the other word."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r2-c4",
+          "kind": "change",
+          "data": "practice_jars",
+          "prompt": "Toto's line is in the editor. It can pick a jar twice. After the 3, add a semicolon, then the named input that stops repeats: replace set to false. Then press Run.",
+          "starter": "sample(practice_jars.jar_id, 3)",
+          "solution": "sample(practice_jars.jar_id, 3; replace=false)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "practice_jars"
+            ],
+            "forbids": [
+              "replace=true"
+            ],
+            "taught": [
+              ";"
+            ],
+            "checker": "check_lesson4_practice_3"
+          },
+          "feedback": {
+            "pass": "The named input stopped repeats: three different warm-up jars, picked at random.",
+            "wrong": "The answer should be three different jars. Check that your line cannot pick a jar twice.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(practice_jars.jar_id, 3; replace=FALSE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(practice_jars.jar_id, 3; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True. Here you need replace=false.",
+                "example": "sample(practice_jars.jar_id, 3; replace=True)"
+              },
+              {
+                "match": "unsupported keyword",
+                "say": "sample does not know that named input. The name is replace, in small letters.",
+                "example": "sample(practice_jars.jar_id, 3; Replace=false)"
+              },
+              {
+                "match": "TypeError",
+                "say": "replace needs true or false, in small letters, with no quote marks around it.",
+                "example": "sample(practice_jars.jar_id, 3; replace=0)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(practice_jars.jar_id 3; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(practice_jars.jar_id, 3; replace=false"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true and false in small letters. Here you need replace=false, not TRUE.",
+                "example": "sample(practice_jars.jar_id, 3; replace=TRUE)"
+              },
+              {
+                "match": ", ::Bool)",
+                "say": "Write the name too, after a semicolon: replace=false, not just false.",
+                "example": "sample(practice_jars.jar_id, 3, false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample and practice_jars. A column needs a dot: practice_jars.jar_id.",
+                "example": "Sample(practice_jars.jar_id, 3; replace=false)"
+              }
+            ],
+            "unchanged": "The line is unchanged, so it can still pick a jar twice. Add the named input after a semicolon, then press Run.",
+            "requires": "Get the jars from practice_jars. Do not type their ids.",
+            "taught": "a semicolon before replace=false, so the named input stands out.",
+            "forbids": "replace=true puts each picked jar back, so a jar can come twice. Try the other word."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r2-c5",
+          "kind": "checkpoint",
+          "data": "practice_jars",
+          "prompt": "No example this time. In the empty editor, write one line that picks two jar ids at random from the jar_id column of practice_jars (shown below), none twice. Julia runs it 8 more times to check. Then press Run.",
+          "starter": "",
+          "solution": "sample(practice_jars.jar_id, 2; replace=false)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              ";",
+              "replace",
+              "false"
+            ],
+            "checker": "check_lesson4_practice_2"
+          },
+          "hints": [
+            "Use sample, the function that picks at random. Its list is the jar_id column of practice_jars, joined with a dot.",
+            "Write the function name, then round brackets holding the list, a comma, the number, a semicolon, and the named input that stops repeats."
+          ],
+          "clue": "Without replace=false, sample can pick one jar twice, so fewer jars get a look. Each afternoon needs a different jar.",
+          "feedback": {
+            "pass": "Two different warm-up jars, picked at random, none twice. Julia ran your line 8 more times, and it held up.",
+            "wrong": "The answer should be two different jars, picked at random. Check that your line gives exactly two, and none twice.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(practice_jars.jar_id, 2; replace=FALSE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(practice_jars.jar_id, 2; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True. Here you need replace=false.",
+                "example": "sample(practice_jars.jar_id, 2; replace=True)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: practice_jars.jar_id.",
+                "example": "sample(practice_jars$jar_id, 2; replace=false)"
+              },
+              {
+                "match": "unsupported keyword",
+                "say": "sample does not know that named input. The name is replace, in small letters.",
+                "example": "sample(practice_jars.jar_id, 2; Replace=false)"
+              },
+              {
+                "match": "TypeError",
+                "say": "replace needs true or false, in small letters, with no quote marks around it.",
+                "example": "sample(practice_jars.jar_id, 2; replace=0)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(practice_jars.jar_id 2; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(practice_jars.jar_id, 2; replace=false"
+              },
+              {
+                "match": "Cannot draw more",
+                "say": "You asked for more than the list holds. With replace=false each thing is picked once, so ask for no more than the list holds.",
+                "example": "sample(practice_jars.jar_id, 5; replace=false)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. Its columns are jar_id, batch_id, tray_id and detected.",
+                "example": "sample(practice_jars.jarid, 2; replace=false)"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true and false in small letters. Here you need replace=false, not TRUE.",
+                "example": "sample(practice_jars.jar_id, 2; replace=TRUE)"
+              },
+              {
+                "match": ", ::Bool)",
+                "say": "Write the name too, after a semicolon: replace=false, not just false.",
+                "example": "sample(practice_jars.jar_id, 2, false)"
+              },
+              {
+                "match": "MethodError",
+                "say": "sample needs two inputs in this order: one column such as jar_id, then a number.",
+                "example": "sample(2, practice_jars.jar_id; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample and practice_jars. A column needs a dot: practice_jars.jar_id.",
+                "example": "Sample(practice_jars.jar_id, 2; replace=false)"
+              }
+            ],
+            "requires": "Pick from the warm-up jars, not from ids you type.",
+            "taught": "sample from the jar_id column with a number, then ; replace=false so no jar comes twice."
+          },
+          "new_ideas": [],
+          "starter_hint": "sample(___, 2; ___)"
+        },
+        {
+          "id": "l4-r2-p1",
+          "kind": "play",
+          "data": "practice_jars",
+          "prompt": "Play freely. Change the list, the number or the named input, then press Run several times to see the picks change. Nothing is marked right or wrong. Press Next when you want to move on.",
+          "starter": "sample(practice_jars.jar_id, 3; replace=false)",
+          "new_ideas": [],
+          "feedback": {
+            "errors": [
+              {
+                "match": "Cannot draw more",
+                "say": "You asked for more than the list holds. With replace=false each thing is picked once, so ask for no more than the list holds.",
+                "example": "sample(1:6, 9; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(1:6 3; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(1:6, 3; replace=false"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. Names like practice_jars and open_jars have an underscore and no capital letters.",
+                "example": "Sample(1:6, 3; replace=false)"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "A fair pick",
+      "idea": "check a random pick",
+      "story": "Momo, the lab's doubter: \"Random picking may leave out a jar. Is that fair?\" Itchy: \"Yes. Every jar has the same chance, and nobody chooses.\"",
+      "remember": {
+        "prompt": "In Round 2 you ran a line like this. 1:6 means the numbers 1 to 6. What can it give?",
+        "code": "sample(1:6, 3; replace=false)",
+        "choices": [
+          "three different numbers from 1 to 6",
+          "the numbers 1, 2 and 3 every time",
+          "three numbers, and one may appear twice"
+        ],
+        "answer": 0,
+        "why": "replace=false means a picked number is not put back, so none appears twice. The picks are at random, so each Run can differ."
+      },
+      "explain": "When picks are random, each Run can give a different answer, so no one answer is right. Instead, check three things: the pick comes from the right list, has the right number of picks, and has none twice.",
+      "challenges": [
+        {
+          "id": "l4-r3-c1",
+          "kind": "see",
+          "data": "practice_jars",
+          "prompt": "First guess: will the order stay the same? Then press Run three times. Each time, look at the order of the four jar ids.",
+          "starter": "sample(practice_jars.jar_id, 4; replace=false)",
+          "solution": "sample(practice_jars.jar_id, 4; replace=false)",
+          "labels": [
+            {
+              "part": "sample",
+              "is": "function"
+            },
+            {
+              "part": "practice_jars.jar_id, 4",
+              "is": "inputs"
+            },
+            {
+              "part": "replace=false",
+              "is": "inputs"
+            }
+          ],
+          "predict": {
+            "question": "What will the second Run give?",
+            "choices": [
+              "the same order every time",
+              "a different order most times",
+              "an error message"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": false,
+            "requires": [
+              "sample"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "All four jars came in some order. Run it again: the order usually changes, but it can repeat by luck. There is no single right order, so check the pick instead.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(practice_jars.jar_id, 4; replace=FALSE)"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true in small letters: replace=true. (Capitals like TRUE are how R writes it.)",
+                "example": "sample(practice_jars.jar_id, 4; replace=TRUE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(practice_jars.jar_id, 4; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true in small letters, not True.",
+                "example": "sample(practice_jars.jar_id, 4; replace=True)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: practice_jars.jar_id.",
+                "example": "sample(practice_jars$jar_id, 4; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(practice_jars.jar_id 4; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(practice_jars.jar_id, 4; replace=false"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample and practice_jars. A column needs a dot: practice_jars.jar_id.",
+                "example": "Sample(practice_jars.jar_id, 4; replace=false)"
+              }
+            ],
+            "requires": "Use sample: it is the function that picks at random."
+          },
+          "new_ideas": [
+            "check a random pick"
+          ],
+          "new_facts": [
+            "a random pick is judged by checks, not by one right answer"
+          ],
+          "r_note": "R's `sample(1:6, 4)` already puts nothing back; Julia needs replace=false.",
+          "py_note": "`practice_jars.jar_id.sample(4)` in pandas. Julia adds replace=false after a semicolon. Python's `random.seed(42)` is Random.seed!(42) in Julia."
+        },
+        {
+          "id": "l4-r3-c2",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "In the editor, fill the blank (___) with the number 2, so Julia picks two jars. Then press Run. Any two different jars are a right answer.",
+          "starter": "sample(practice_jars.jar_id, ___; replace=false)",
+          "solution": "sample(practice_jars.jar_id, 2; replace=false)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              ";",
+              "replace",
+              "false"
+            ],
+            "forbids": [
+              "replace=true"
+            ],
+            "checker": "check_lesson4_practice_2"
+          },
+          "feedback": {
+            "pass": "The blank held the number: two different warm-up jars, picked at random. Run it again and you may get two others.",
+            "wrong": "The answer should be two different jars. Check the number in the blank.",
+            "errors": [
+              {
+                "match": "Cannot draw more",
+                "say": "You asked for more than the list holds. With replace=false each thing is picked once, so ask for no more than the list holds.",
+                "example": "sample(practice_jars.jar_id, 5; replace=false)"
+              },
+              {
+                "match": "::Float64",
+                "say": "The number of picks must be a whole number like 2, with no decimal point.",
+                "example": "sample(practice_jars.jar_id, 2.5; replace=false)"
+              },
+              {
+                "match": "::String",
+                "say": "The number of picks must be a whole number like 2, with no quote marks around it.",
+                "example": "sample(practice_jars.jar_id, \"2\"; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(practice_jars.jar_id 2; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(practice_jars.jar_id, 2; replace=false"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "If you typed a word in the blank, write the number 2 with digits. Otherwise check the spelling of sample and practice_jars.",
+                "example": "sample(practice_jars.jar_id, two; replace=false)"
+              }
+            ],
+            "unchanged": "The blank ___ is still there. Fill it with the number 2, then press Run.",
+            "requires": "Get the jars from practice_jars. Do not type their ids.",
+            "taught": "sample with replace=false after a semicolon.",
+            "forbids": "replace=true puts each picked jar back, so a jar can come twice. Try the other word."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r3-c3",
+          "kind": "write",
+          "data": "practice_jars",
+          "prompt": "Momo wants a warm-up first. In the empty editor, write one line that picks three jars at random from the jar_id column of practice_jars, none twice. Then press Run. Any three different jars are right.",
+          "starter": "",
+          "solution": "sample(practice_jars.jar_id, 3; replace=false)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "practice_jars"
+            ],
+            "taught": [
+              ";",
+              "replace",
+              "false"
+            ],
+            "checker": "check_lesson4_practice_3"
+          },
+          "feedback": {
+            "pass": "Three different warm-up jars, picked at random, and one is left out. Run it again and a different one may be left out.",
+            "wrong": "The answer should be three different jars, picked at random. Check the list, the number and the named input.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(practice_jars.jar_id, 3; replace=FALSE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(practice_jars.jar_id, 3; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True. Here you need replace=false.",
+                "example": "sample(practice_jars.jar_id, 3; replace=True)"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true and false in small letters. Here you need replace=false, not TRUE.",
+                "example": "sample(practice_jars.jar_id, 3; replace=TRUE)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: practice_jars.jar_id.",
+                "example": "sample(practice_jars$jar_id, 3; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(practice_jars.jar_id 3; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(practice_jars.jar_id, 3; replace=false"
+              },
+              {
+                "match": "Cannot draw more",
+                "say": "You asked for more than the list holds. With replace=false each thing is picked once, so ask for no more than the list holds.",
+                "example": "sample(practice_jars.jar_id, 5; replace=false)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. Its columns are jar_id, batch_id, tray_id and detected.",
+                "example": "sample(practice_jars.jarid, 3; replace=false)"
+              },
+              {
+                "match": ", ::Bool)",
+                "say": "Write the name too, after a semicolon: replace=false, not just false.",
+                "example": "sample(practice_jars.jar_id, 3, false)"
+              },
+              {
+                "match": "MethodError",
+                "say": "sample needs two inputs in this order: one column such as jar_id, then a number.",
+                "example": "sample(3, practice_jars.jar_id; replace=false)"
+              },
+              {
+                "match": "`jars`",
+                "say": "jars is not a table here. The small warm-up table is practice_jars.",
+                "example": "sample(jars.jar_id, 3; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample and practice_jars. A column needs a dot: practice_jars.jar_id.",
+                "example": "Sample(practice_jars.jar_id, 3; replace=false)"
+              }
+            ],
+            "requires": "Pick from the warm-up jars, not from ids you type.",
+            "taught": "sample from the jar_id column with a number, then ; replace=false so no jar comes twice."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l4-r3-c4",
+          "kind": "checkpoint",
+          "data": "open_jars",
+          "board": "jars",
+          "prompt": "Now the real question. Eddie's table, open_jars, is shown below. In the empty editor, write one line that picks three jar ids at random from the jar_id column of open_jars, with none twice. Then press Run.",
+          "starter": "",
+          "solution": "sample(open_jars.jar_id, 3; replace=false)",
+          "check": {
+            "same_value": false,
+            "requires": [
+              "open_jars"
+            ],
+            "taught": [
+              ";",
+              "replace",
+              "false"
+            ],
+            "checker": "check_lesson4_case"
+          },
+          "hints": [
+            "You want a fair pick, so let chance choose and keep every jar to one pick. Its list is the jar_id column of open_jars, and 3 says how many.",
+            "It looks like: sample(the list, the number; replace=false). The semicolon ; starts a named input, and replace=false means no jar is put back."
+          ],
+          "clue": "Fair means each jar had the same chance. Your three jars may differ next time; two are always left out.",
+          "feedback": {
+            "pass": "Three different jars from Eddie's table, picked at random. All three checks passed: the right list, three picks, none twice. Julia ran your line 8 more times, and it held up. The order does not matter.",
+            "wrong": "The answer should be three different jars from open_jars, picked at random and not chosen by you.",
+            "errors": [
+              {
+                "match": "`FALSE`",
+                "say": "Julia writes false in small letters: replace=false. (Capitals like FALSE are how R writes it.)",
+                "example": "sample(open_jars.jar_id, 3; replace=FALSE)"
+              },
+              {
+                "match": "`False`",
+                "say": "Julia writes false in small letters, not False.",
+                "example": "sample(open_jars.jar_id, 3; replace=False)"
+              },
+              {
+                "match": "`True`",
+                "say": "Julia writes true and false in small letters, not True. Here you need replace=false.",
+                "example": "sample(open_jars.jar_id, 3; replace=True)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia uses a dot, not $, to get a column: open_jars.jar_id.",
+                "example": "sample(open_jars$jar_id, 3; replace=false)"
+              },
+              {
+                "match": "`head`",
+                "say": "head is not the tool here. Use sample, the function that picks at random.",
+                "example": "head(open_jars.jar_id, 3)"
+              },
+              {
+                "match": "unsupported keyword",
+                "say": "sample does not know that named input. The name is replace, in small letters.",
+                "example": "sample(open_jars.jar_id, 3; Replace=false)"
+              },
+              {
+                "match": "TypeError",
+                "say": "replace needs true or false, in small letters, with no quote marks around it.",
+                "example": "sample(open_jars.jar_id, 3; replace=0)"
+              },
+              {
+                "match": "`TRUE`",
+                "say": "Julia writes true and false in small letters. Here you need replace=false, not TRUE.",
+                "example": "sample(open_jars.jar_id, 3; replace=TRUE)"
+              },
+              {
+                "match": ", ::Bool)",
+                "say": "Write the name too, after a semicolon: replace=false, not just false.",
+                "example": "sample(open_jars.jar_id, 3, false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(open_jars.jar_id 3; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(open_jars.jar_id, 3; replace=false"
+              },
+              {
+                "match": "Cannot draw more",
+                "say": "open_jars has five jars and there is time for three. Ask for three.",
+                "example": "sample(open_jars.jar_id, 6; replace=false)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in open_jars. It has one column, jar_id, with an underscore.",
+                "example": "sample(open_jars.jarid, 3; replace=false)"
+              },
+              {
+                "match": "MethodError",
+                "say": "sample needs two inputs in this order: one column such as jar_id, then a number.",
+                "example": "sample(3, open_jars.jar_id; replace=false)"
+              },
+              {
+                "match": "`jars`",
+                "say": "jars is not a table here. The table is open_jars.",
+                "example": "sample(jars.jar_id, 3; replace=false)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of sample, open_jars and jar_id. A column needs a dot: open_jars.jar_id.",
+                "example": "Sample(open_jars.jar_id, 3; replace=false)"
+              }
+            ],
+            "requires": "Pick from Eddie's table, open_jars, not from ids you type.",
+            "taught": "sample from the jar_id column with 3, then ; replace=false so no jar comes twice."
+          },
+          "new_ideas": [],
+          "starter_hint": "sample(___, 3; ___)"
+        },
+        {
+          "id": "l4-r3-p1",
+          "kind": "play",
+          "data": "open_jars",
+          "board": "jars",
+          "prompt": "Play freely. Change the number 2, or press Run again. The picture of jars shows the ones picked. Nothing is marked right or wrong. Press Finish when you are done.",
+          "starter": "sample(open_jars.jar_id, 2; replace=false)",
+          "new_ideas": [],
+          "feedback": {
+            "errors": [
+              {
+                "match": "Cannot draw more",
+                "say": "open_jars has five jars, so ask for five at most. With replace=false each jar is picked once.",
+                "example": "sample(open_jars.jar_id, 9; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Put a comma between the two inputs, like this: function(list, number).",
+                "code_lacks": ",",
+                "example": "sample(open_jars.jar_id 2; replace=false)"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) at the end of the line.",
+                "code_has": ",",
+                "example": "sample(open_jars.jar_id, 2; replace=false"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. Names like practice_jars and open_jars have an underscore and no capital letters.",
+                "example": "Sample(open_jars.jar_id, 2; replace=false)"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "first(practice_jars.jar_id, 2)",
+      "means": "first has two inputs with a comma between: the list, then a number. It gives the first 2 jar ids.",
+      "r": "head(practice_jars$jar_id, 2)",
+      "py": "practice_jars[\"jar_id\"].head(2)",
+      "from_round": "r1",
+      "idea": "two inputs",
+      "lesson_only": true
+    },
+    {
+      "julia": "sample(practice_jars.jar_id, 2)",
+      "means": "picks 2 things at random, like drawing numbered tickets.",
+      "r": "sample(practice_jars$jar_id, 2, replace = TRUE)",
+      "py": "np.random.choice(practice_jars[\"jar_id\"], 2)",
+      "from_round": "r2",
+      "idea": "named input",
+      "lesson_only": true
+    },
+    {
+      "julia": "sample(1:10, 3; replace=false)",
+      "means": "picks 3 of the numbers 1 to 10 at random. replace=false means no number is picked twice. It goes after the semicolon.",
+      "r": "sample(1:10, 3, replace = FALSE)",
+      "py": "np.random.choice(range(1, 11), 3, replace=False)",
+      "from_round": "r2",
+      "idea": "named input"
+    },
+    {
+      "julia": "sample(1:8, 4; replace=false)",
+      "means": "a random pick can differ each Run: any four different numbers from 1 to 8 are right.",
+      "r": "sample(1:8, 4, replace = FALSE)",
+      "py": "np.random.choice(range(1, 9), 4, replace=False)",
+      "from_round": "r3",
+      "idea": "check a random pick"
+    }
+  ],
+  "close": {
+    "finding": "You let the computer pick three of Eddie's five open jars at random, so every jar had the same chance. Two jars are left out, and that is fair.",
+    "next": "Next: Chapter 4 uses this on the case jars.",
+    "own_work": {
+      "say": "On a laptop, install StatsBase once (first line), then load it each time. A seed is a starting number: after using Random, Random.seed!(42) repeats the same picks, which are not the picks R's set.seed(42) gives. mydata is a placeholder.",
+      "code": "# Install once, the first time only:\nusing Pkg; Pkg.add(\"StatsBase\")\n# Each time you start Julia:\nusing StatsBase, Random\nRandom.seed!(42)\nsample(mydata.id, 3; replace=false)"
+    },
+    "can_do": [
+      "Give a function two inputs, like first(list, 3).",
+      "Pick things at random with sample and replace=false.",
+      "Check a random pick when no one answer is right."
+    ],
+    "common_mistake": "Leaving out replace=false, so sample can pick the same jar twice. Julia's sample puts each pick back unless you stop it."
+  },
+  "minutes": 25
+}

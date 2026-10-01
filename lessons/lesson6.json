@@ -1,0 +1,1649 @@
+{
+  "id": "lesson6",
+  "number": 6,
+  "title": "Test the claim",
+  "goal": "Learn to check a claim: which guesses could give the practice notebook's result, 6 of 8 jars with springtails? Back after a break? The Cheat sheet at the top right has every line from Lessons 1 to 5.",
+  "story": "Itchy has a practice notebook from a second run, made up for training. Momo: \"Six of the eight jars show springtails. Which of the three guesses in the table could still be true?\"",
+  "story_more": "Itchy runs the lab, Momo doubts, Eddie keeps the notebook, and Toto, the eager one, types fast and makes small mistakes. The table is called guesses. Each row is a guess about how often one jar shows springtails: Scarce, 15 jars in 100; Even split, 1 in 2, like tossing a coin; Plentiful, 85 in 100. Its columns are story (the guess's name), p (the chance a jar shows springtails), lower and upper. For eight jars, each guess has a usual range: a low end to a high end that holds 9 in 10 or more of the counts that guess gives. The ranges were worked out exactly, not from pretend deals. A guess fits if 6 is inside its range. A fit is not proof. The data are made up for practice.",
+  "glossary": [
+    {
+      "term": "table",
+      "means": "Rows and columns of facts, like a spreadsheet. Here the table is called guesses."
+    },
+    {
+      "term": "guesses",
+      "means": "The name of the table of the three guesses. Its column story holds their names."
+    },
+    {
+      "term": "story",
+      "means": "a column name in the table guesses. It holds each guess's name."
+    },
+    {
+      "term": "guess",
+      "means": "One idea about how often a jar shows springtails. Each row of the table guesses is one guess."
+    },
+    {
+      "term": "row",
+      "means": "One line across a table. Here, one row is one guess."
+    },
+    {
+      "term": "column",
+      "means": "One kind of detail running down a table, such as lower or upper."
+    },
+    {
+      "term": "list",
+      "means": "Several things in a fixed order, written in [ ] with commas, such as true, false, true."
+    },
+    {
+      "term": "true",
+      "means": "The answer yes to a yes-or-no question. The other answer is false."
+    },
+    {
+      "term": "false",
+      "means": "The answer no to a yes-or-no question. The other answer is true."
+    },
+    {
+      "term": "Pick an answer",
+      "means": "Choose one of the answers shown before you press Run. A wrong pick never blocks you."
+    },
+    {
+      "term": "error",
+      "means": "A message that says Julia could not run your line."
+    },
+    {
+      "term": "name",
+      "means": "A word you choose for something. You set it with =, as in fits_low = ..."
+    },
+    {
+      "term": "dot",
+      "means": "A dot in front of a sign makes Julia do that sign for every row, one by one."
+    },
+    {
+      "term": "rule",
+      "means": "A yes-or-no question asked of every guess. It gives true or false for each guess."
+    },
+    {
+      "term": "usual range",
+      "means": "The range holding 9 in 10 or more of a guess's counts, worked out exactly. Both ends count."
+    },
+    {
+      "term": "fit",
+      "means": "A guess fits when the notebook's count is inside its range. A fit is not proof."
+    },
+    {
+      "term": "round brackets",
+      "means": "Brackets like ( ). Julia does what is inside them first."
+    },
+    {
+      "term": "colon",
+      "means": "The sign : . Alone inside [ ], it means all the columns."
+    },
+    {
+      "term": "share",
+      "means": "The number of true answers divided by all the answers, such as 3 of 4, which is 0.75."
+    },
+    {
+      "term": "keep",
+      "means": "To keep is to leave as it is. Keeping rows means showing only the ones you pick."
+    },
+    {
+      "term": "line",
+      "means": "One line of writing in the editor, ending where you press Enter. Julia reads lines from top to bottom."
+    },
+    {
+      "term": "true-or-false",
+      "means": "Every answer is true or false, nothing else. A true-or-false list holds one such answer for each guess."
+    },
+    {
+      "term": "blank",
+      "means": "The place marked ___ in a starting line, where your answer goes."
+    }
+  ],
+  "setup": "practice6",
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Two rules for one range",
+      "idea": "two rules",
+      "story": "Momo, the lab's doubter: \"A guess fits if 6 is not below its low end and not above its high end. Two questions, so two rules.\" In the table, p is the chance a jar shows springtails.",
+      "explain": "A range runs from a low end to a high end. Check that 6 is inside with one rule per end. The sign .<= asks: is the left number less than or equal to the right one?",
+      "challenges": [
+        {
+          "id": "l6-r1-c0",
+          "kind": "write",
+          "recall": true,
+          "prompt": "A quick look back at Lesson 5. For a share of the pretend deals, line 1 marks those with 6 or more. Type it and name it events. pretend_counts holds each count; seen_count is 6. Then press Run.",
+          "starter": "",
+          "solution": "events = pretend_counts .>= seen_count",
+          "check": {
+            "same_value": true,
+            "requires": [
+              ".>=",
+              "pretend_counts"
+            ],
+            "taught": [
+              "events",
+              ".>=",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia marked every pretend deal: true for 6 or more. That is Lesson 5's line, typed again.",
+            "wrong": "One true or false should come back for each of the 1,000 deals. Check the sign, and that it compares pretend_counts with seen_count.",
+            "requires": "Ask every deal with .>=: is the count 6 or more? Use the name seen_count for the 6.",
+            "errors": [
+              {
+                "match": "isless",
+                "say": "Put a dot before >=. Without the dot, Julia cannot compare a whole list with one number.",
+                "example": "events = pretend_counts >= seen_count"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of pretend_counts and seen_count: each has an underscore.",
+                "example": "events = pretend_counts .>= seen_cout"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r1-c1",
+          "kind": "see",
+          "data": "guesses",
+          "prompt": "Rule one, for the low end. The column lower holds the fewest jars each guess usually gives. seen_count is the practice notebook's 6. Is each lower less than or equal to 6? Pick an answer, then press Run.",
+          "starter": "fits_low = guesses.lower .<= seen_count",
+          "solution": "fits_low = guesses.lower .<= seen_count",
+          "labels": [
+            {
+              "part": "fits_low",
+              "is": "result"
+            },
+            {
+              "part": "guesses.lower",
+              "is": "a column"
+            },
+            {
+              "part": ".<=",
+              "is": "a sign: is it at most?"
+            },
+            {
+              "part": "seen_count",
+              "is": "a number"
+            }
+          ],
+          "predict": {
+            "question": "One answer for each guess, top to bottom. How many will be true?",
+            "choices": [
+              "1",
+              "2",
+              "3"
+            ],
+            "answer": 2
+          },
+          "r_note": "`guesses$lower <= seen_count` in R. R needs no dot. In Julia the dot means: do this for every row.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower"
+            ],
+            "taught": [
+              "fits_low",
+              ".<=",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "All three are true, one for each guess, top to bottom. Every guess has a lower number of 5 or less, so all three pass this rule.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "fits_low = guesses.lower .<= seen_cout"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "fits_low = lower .<= seen_count"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "fits_low = guesses.lower <= seen_count"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "fits_low = guesses.low .<= seen_count"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .=< seen_count"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower <.= seen_count"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower . <= seen_count"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<== seen_count"
+              }
+            ],
+            "requires": "Use the column lower in the line.",
+            "taught": "name the answers fits_low, and ask each guess with .<= whether its lower number is less than or equal to the count."
+          },
+          "new_ideas": [
+            "two rules"
+          ],
+          "new_facts": [
+            ".<= asks each item: is it less than or equal to the number on its right",
+            "= gives the answers a name"
+          ],
+          "py_note": "`guesses[\"lower\"] <= seen_count` in pandas needs no dot either. In Julia the dot makes the sign work on every row of a column."
+        },
+        {
+          "id": "l6-r1-c2",
+          "kind": "see",
+          "data": "guesses",
+          "prompt": "Rule two, for the high end. The column upper holds the most jars each guess usually gives. Is 6 less than or equal to each upper? Write the count first, then the high end. Pick an answer, then press Run.",
+          "starter": "seen_count .<= guesses.upper",
+          "solution": "seen_count .<= guesses.upper",
+          "labels": [
+            {
+              "part": "seen_count",
+              "is": "a number"
+            },
+            {
+              "part": ".<=",
+              "is": "a sign: is it at most?"
+            },
+            {
+              "part": "guesses.upper",
+              "is": "a column"
+            }
+          ],
+          "predict": {
+            "question": "One answer for each guess, top to bottom. How many will be true?",
+            "choices": [
+              "2",
+              "3",
+              "1"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "upper"
+            ],
+            "taught": [
+              ".<=",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Two are true, in table order. Scarce has an upper number of 3, so 6 is above its high end and it fails this rule.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "seen_count .<= gueses.upper"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "seen_count .<= upper"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "seen_count <= guesses.upper"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "seen_count .<= guesses.high"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "seen_count .=< guesses.upper"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "seen_count <.= guesses.upper"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "seen_count . <= guesses.upper"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "seen_count .<== guesses.upper"
+              }
+            ],
+            "requires": "Use the column upper in the line.",
+            "taught": "put the count on the left of .<=, so the smaller number comes first."
+          },
+          "new_ideas": [],
+          "new_facts": [],
+          "py_note": "pandas cannot chain a comparison on a whole column; it raises an error. Use two rules joined with &. Julia can chain with dots (lower .<= x .<= upper), but two named rules are easier to read."
+        },
+        {
+          "id": "l6-r1-c3",
+          "kind": "change",
+          "data": "guesses",
+          "prompt": "Say the notebook had shown 3 jars, not 6. In the editor, replace seen_count with 3. Press Run. Which guess gets false?",
+          "starter": "fits_low = guesses.lower .<= seen_count",
+          "solution": "fits_low = guesses.lower .<= 3",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "3"
+            ],
+            "taught": [
+              "fits_low",
+              ".<="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Plentiful gets false: its lower is 5, and 5 is more than 3.",
+            "wrong": "The answer should be three answers: true, true, false. Replace only seen_count with the number 3.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know one of the words in your line. Write a number with digits (3, not three), and a column as table, dot, column: guesses.lower. A number is written with digits, like 3.",
+                "example": "fits_low = guesses.lower .<= 3 + three"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "fits_low = guesses.lower <= 3"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "fits_low = guesses.low .<= 3"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .=< 3"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower <.= 3"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower . <= 3"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<== 3"
+              }
+            ],
+            "unchanged": "You ran the line as given: replace seen_count with the number 3.",
+            "requires": "Use the column lower and the number 3.",
+            "taught": "keep the name fits_low and the .<= sign, and change only the count."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r1-c4",
+          "kind": "complete",
+          "data": "guesses",
+          "prompt": "Now the high end, for 4 jars. Replace the blank ___ with the name of the column that holds each guess's high end. The column names are above the table. Then press Run.",
+          "starter": "fits_high = 4 .<= guesses.___",
+          "solution": "fits_high = 4 .<= guesses.upper",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "upper",
+              "4"
+            ],
+            "taught": [
+              "fits_high",
+              ".<="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Scarce gets false: its upper is 3, and 4 is more than 3.",
+            "wrong": "The answer should be false, true, true. Fill the blank with the column that holds each guess's high end.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses. A column is written table, dot, column: guesses.lower.",
+                "example": "fits_high = 4 .<= gueses.upper"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "fits_high = 4 <= guesses.upper"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "fits_high = 4 .<= guesses.high"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_high = 4 .=< guesses.upper"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_high = 4 <.= guesses.upper"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_high = 4 . <= guesses.upper"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_high = 4 .<== guesses.upper"
+              }
+            ],
+            "unchanged": "The blank is still there: replace ___ with the name of the column.",
+            "requires": "Use the column upper and the number 4.",
+            "taught": "keep the name fits_high, and write the number on the left of .<=."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r1-f1",
+          "kind": "fix",
+          "data": "guesses",
+          "prompt": "Toto's line should ask every guess: is its lower less than or equal to 6? Press Run to see Julia's error message, then add a dot in front of the sign <=. Press Run again.",
+          "starter": "fits_low = guesses.lower <= seen_count",
+          "solution": "fits_low = guesses.lower .<= seen_count",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower"
+            ],
+            "taught": [
+              "fits_low",
+              ".<=",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed: with the dot, .<= asked every guess, and you got one true or false each.",
+            "wrong": "The answer should be three answers, true or false. Keep the name and the columns, and fix only the sign.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "fits_low = guesses.lower .<= seen_cout"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "fits_low = guesses.lower <= 6"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "fits_low = guesses.low .<= seen_count"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .=< seen_count"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower <.= seen_count"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower . <= seen_count"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<== seen_count"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: the sign needs a dot in front.",
+            "requires": "Use the column lower in the line.",
+            "taught": "keep the name fits_low and put a dot in front of the sign, .<=."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r1-c6",
+          "kind": "checkpoint",
+          "data": "guesses",
+          "prompt": "Say 4 of the 8 jars had springtails. Using the table guesses, type two lines. Line 1: the low-end rule, called fits_low. Line 2: the high-end rule, called fits_high. Use 4, not 6. Then press Run.",
+          "starter": "",
+          "solution": "fits_low = guesses.lower .<= 4\nfits_high = 4 .<= guesses.upper",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "fits_low",
+              "fits_high",
+              ".<="
+            ],
+            "forbids": [
+              "4.<=guesses.lower",
+              "guesses.lower.>=4",
+              "guesses.upper.<=4",
+              "4.>=guesses.upper"
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Each end gets one line. Start each line with its name and an = sign. The low end asks about lower, the high end about upper.",
+            "Line 1 looks like: fits_low = guesses.lower .<= (a number). Line 2 looks like: fits_high = (a number) .<= guesses.upper."
+          ],
+          "clue": "A guess fails when the count is below its low end or above its high end.",
+          "feedback": {
+            "pass": "Julia shows only the last line, fits_high: false, true, true. fits_low, on line 1, is true, true, false. With 4 jars, Scarce fails the high-end rule and Plentiful fails the low-end rule.",
+            "wrong": "Line 2 should show false, true, true, one answer for each guess. Check that it asks about the high end of each guess's range.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses. A column is written table, dot, column: guesses.lower.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 .<= gueses.upper"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses. A column is written table, dot, column: guesses.lower.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 .<= upper"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 <= guesses.upper"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 .<= guesses.high"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 .=< guesses.upper"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 <.= guesses.upper"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 . <= guesses.upper"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "fits_low = guesses.lower .<= 4\nfits_high = 4 .<== guesses.upper"
+              }
+            ],
+            "requires": "Write two rules, one for the low end and one for the high end, and use the number 4.",
+            "forbids": "Check which way each rule points: the low end must be less than or equal to the count, and the count less than or equal to the high end.",
+            "taught": "name each rule, low end first, and ask every guess with .<= (the smaller number on the left)."
+          },
+          "new_ideas": [],
+          "starter_hint": "fits_low = guesses.lower .<= ___\nfits_high = ___ .<= guesses.___"
+        },
+        {
+          "id": "l6-r1-p1",
+          "kind": "play",
+          "prompt": "Try anything. Change the 0.5, or use the column p, the chance that a jar shows springtails. Nothing is marked here. Press Next when you are done.",
+          "starter": "guesses.p .<= 0.5",
+          "new_ideas": [],
+          "data": "guesses"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Both at once",
+      "idea": "both rules",
+      "story": "Eddie, who keeps the notebook: \"A guess fits only if both rules say true. Julia can put two true-or-false lists together, one pair of answers at a time.\"",
+      "remember": {
+        "prompt": "A quick look back. Which rows did this line keep?",
+        "code": "# practice_jars: four practice jars; batch_id says which batch\npractice_jars[practice_jars.batch_id .== \"B01\", :]",
+        "choices": [
+          "the two B01 jars, all columns",
+          "4 true-or-false answers",
+          "one number"
+        ],
+        "answer": 0,
+        "why": "The rule .== gives true for the jars in batch B01. Those true rows are kept, and : keeps all columns."
+      },
+      "explain": "This editor starts each Run fresh, so name the rules again each time (on your laptop, Julia keeps a name until you close it). The sign .& puts two true-or-false lists together: true only where both are true.",
+      "challenges": [
+        {
+          "id": "l6-r2-c1",
+          "kind": "see",
+          "data": "guesses",
+          "prompt": "Lines 1 and 2 name the two rules again. Line 3 joins them with .&: true only where both rules are true. How many guesses get true? Pick an answer, then press Run.",
+          "starter": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low .& fits_high",
+          "solution": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low .& fits_high",
+          "labels": [
+            {
+              "part": "fits_low",
+              "is": "a list of true/false answers"
+            },
+            {
+              "part": ".&",
+              "is": "a sign: and, item by item"
+            },
+            {
+              "part": "fits_high",
+              "is": "a list of true/false answers"
+            }
+          ],
+          "predict": {
+            "question": "How many guesses will get true?",
+            "choices": [
+              "3",
+              "2",
+              "1"
+            ],
+            "answer": 1
+          },
+          "r_note": "`fits_low & fits_high` in R. R needs no dot. In Julia the dot joins the two lists item by item.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "fits_low",
+              "fits_high",
+              ".&",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Two are true: Even split and Plentiful pass both rules. Scarce passes the low rule and fails the high one.",
+            "wrong": "Do not change the lines. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low & fits_high"
+              },
+              {
+                "match": "non-boolean",
+                "say": "&& only takes a single true or false. For whole lists, use .& (one &, with a dot in front).",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low && fits_high"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of fits_low and fits_high: every line must use the same names.",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low .& fits_hi"
+              }
+            ],
+            "requires": "Use the columns lower and upper in the lines.",
+            "taught": "name the two rules, then join their names with .& on the last line."
+          },
+          "new_ideas": [
+            "both rules"
+          ],
+          "new_facts": [
+            ".& is true only where both lists are true"
+          ],
+          "py_note": "`fits_low & fits_high` in pandas, when both are true-or-false columns. Julia adds the dot: .&, which joins the two lists one pair at a time."
+        },
+        {
+          "id": "l6-r2-c3",
+          "kind": "complete",
+          "data": "guesses",
+          "prompt": "low_rule and high_rule are the two rules for 4 jars. Line 3 joins them, but its second name is missing. Replace the blank ___ with the other rule's name. Press Run. Which guess gets true?",
+          "starter": "low_rule = guesses.lower .<= 4\nhigh_rule = 4 .<= guesses.upper\nlow_rule .& ___",
+          "solution": "low_rule = guesses.lower .<= 4\nhigh_rule = 4 .<= guesses.upper\nlow_rule .& high_rule",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "low_rule",
+              "high_rule",
+              ".&"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Only Even split is true: its range, 2 to 6, includes 4. Scarce ends at 3 and Plentiful starts at 5.",
+            "wrong": "The answer should be false, true, false. Fill the blank with the name of the other rule.",
+            "errors": [
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "low_rule = guesses.lower .<= 4\nhigh_rule = 4 .<= guesses.upper\nlow_rule & high_rule"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of low_rule and high_rule: every line must use the same names.",
+                "example": "low_rule = guesses.lower .<= 4\nhigh_rule = 4 .<= guesses.upper\nlow_rule .& hi3"
+              }
+            ],
+            "unchanged": "The blank is still there: replace ___ with the name of the other rule.",
+            "requires": "Keep the two rules on lower and upper, and use the number 4.",
+            "taught": "join the two named rules on the last line: low_rule .& high_rule."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r2-c4",
+          "kind": "change",
+          "data": "guesses",
+          "prompt": "Say all 8 jars had springtails. In lines 1 and 2, change the number 4 to 8. Leave the names alone. Press Run. Which guess gets true?",
+          "starter": "low_rule = guesses.lower .<= 4\nhigh_rule = 4 .<= guesses.upper\nlow_rule .& high_rule",
+          "solution": "low_rule = guesses.lower .<= 8\nhigh_rule = 8 .<= guesses.upper\nlow_rule .& high_rule",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper",
+              "8"
+            ],
+            "taught": [
+              "low_rule",
+              "high_rule",
+              ".&"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Only Plentiful is true: its range, 5 to 8, is the only one that includes 8.",
+            "wrong": "The answer should be false, false, true. Both rules need the 8, one in each of the first two lines.",
+            "errors": [
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "low_rule = guesses.lower .<= 8\nhigh_rule = 8 .<= guesses.upper\nlow_rule & high_rule"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "low_rule = guesses.lower <= 8\nhigh_rule = 8 .<= guesses.upper\nlow_rule .& high_rule"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of low_rule and high_rule: every line must use the same names.",
+                "example": "low_rule = guesses.lower .<= 8\nhigh_rule = 8 .<= guesses.upper\nlow_rule .& hi3"
+              }
+            ],
+            "unchanged": "You ran the lines as given: change both 4s to 8 first.",
+            "requires": "Use the columns lower and upper, and the number 8.",
+            "taught": "keep the names low_rule and high_rule, and join them with .& on the last line."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r2-f1",
+          "kind": "fix",
+          "data": "guesses",
+          "prompt": "Toto joined the rules on line 3 with & and Julia shows an error. Press Run to see it, then add a dot in front of the &. Press Run again.",
+          "starter": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low & fits_high",
+          "solution": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low .& fits_high",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "fits_low",
+              "fits_high",
+              ".&"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed: with the dot, .& joined the two lists item by item.",
+            "wrong": "The answer should be three answers, true or false. Keep both names and fix only the sign.",
+            "errors": [
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low & fits_high # plain"
+              },
+              {
+                "match": "non-boolean",
+                "say": "&& only takes a single true or false. For whole lists, use .& (one &, with a dot in front).",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low && fits_high"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of fits_low and fits_high: every line must use the same names.",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nfits_low .& fits_hi"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: the sign needs a dot in front.",
+            "requires": "Keep the two rules, on lower and upper.",
+            "taught": "keep both names and join them with .&, a dot before the sign."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r2-c2",
+          "kind": "see",
+          "data": "guesses",
+          "prompt": "Line 1 names the high-end rule. In guesses[rows, columns], the rows part takes a true-or-false list and keeps the true rows. A colon alone means all columns. How many rows? Pick an answer, then press Run.",
+          "starter": "fits_high = seen_count .<= guesses.upper\nguesses[fits_high, :]",
+          "solution": "fits_high = seen_count .<= guesses.upper\nguesses[fits_high, :]",
+          "labels": [
+            {
+              "part": "guesses",
+              "is": "a table"
+            },
+            {
+              "part": "fits_high",
+              "is": "indexing"
+            },
+            {
+              "part": ":",
+              "is": "indexing"
+            }
+          ],
+          "predict": {
+            "question": "How many rows will come back?",
+            "choices": [
+              "1",
+              "3",
+              "2"
+            ],
+            "answer": 2
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "upper"
+            ],
+            "taught": [
+              "guesses[",
+              "fits_high",
+              "seen_count"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The rule kept two rows, Even split and Plentiful, with all four columns.",
+            "wrong": "Do not change the lines. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "getindex(::DataFrames.DataFrame",
+                "say": "A table needs two parts inside [ ]: rows, a comma, then columns. End with , : to keep all columns.",
+                "code_lacks": ",",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses[fits_high]"
+              },
+              {
+                "match": "Expected `]`",
+                "say": "The [ after guesses needs a ] at the end of the line.",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses[fits_high, :"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and fits_high: every line must use the same names.",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses[fits_hi, :]"
+              }
+            ],
+            "requires": "Use the column upper, and keep the true rows with guesses[ ].",
+            "taught": "name the high-end rule fits_high, then put that name in the rows part: guesses[fits_high, :]."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "square brackets after a name pick rows or items",
+            ": alone means all columns"
+          ],
+          "py_note": "`guesses[fits_high]` in pandas keeps the true rows. Julia also needs the columns part: guesses[fits_high, :].",
+          "r_note": "After `library(dplyr)`: `filter(guesses, fits_high)`. Julia puts the rule in square brackets, then a comma and a colon."
+        },
+        {
+          "id": "l6-r2-c2b",
+          "kind": "see",
+          "data": "guesses",
+          "prompt": "guesses.story is the column of guess names. A rule in square brackets after it keeps only the names where the rule is true. Which names come back? Pick an answer, then press Run.",
+          "starter": "fits_high = seen_count .<= guesses.upper\nguesses.story[fits_high]",
+          "solution": "fits_high = seen_count .<= guesses.upper\nguesses.story[fits_high]",
+          "labels": [
+            {
+              "part": "guesses.story",
+              "is": "a column"
+            },
+            {
+              "part": "fits_high",
+              "is": "indexing"
+            }
+          ],
+          "predict": {
+            "question": "Which names will come back?",
+            "choices": [
+              "Scarce",
+              "Even split and Plentiful",
+              "all three names"
+            ],
+            "answer": 1
+          },
+          "r_note": "`guesses$story[guesses$p <= 0.5]` in R has the same shape. In Julia the column takes a dot, and so does the sign, as .<= there.",
+          "py_note": "`guesses.story[guesses.p <= 0.5]` in pandas has the same shape. The rule must be a true-or-false column. Julia writes the sign with a dot, as .<= there.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "story"
+            ],
+            "taught": [
+              "guesses.story[",
+              "fits_high"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Two names came back, Even split and Plentiful: the guesses where the rule is true.",
+            "wrong": "Do not change the lines. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses.stories[fits_high]"
+              },
+              {
+                "match": "Expected `]`",
+                "say": "The [ after guesses.story needs a ] at the end of the line.",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses.story[fits_high"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses, fits_high and seen_count. A column is written table, dot, column: guesses.story.",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses.story[fits_hi]"
+              }
+            ],
+            "requires": "Use the column story, and keep the names where the rule is true with guesses.story[ ].",
+            "taught": "put the rule in square brackets after guesses.story: guesses.story[fits_high]."
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "a rule in square brackets after a column keeps the values where it is true"
+          ]
+        },
+        {
+          "id": "l6-r2-c5",
+          "kind": "complete",
+          "data": "guesses",
+          "prompt": "p is the chance a jar shows springtails. Fill the blank (___) so the line gives the names of the guesses whose p is 0.5 or less. Then press Run.",
+          "starter": "guesses.story[guesses.___ .<= 0.5]",
+          "solution": "guesses.story[guesses.p .<= 0.5]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "story"
+            ],
+            "taught": [
+              "guesses.story[",
+              ".<="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Two names came back, Scarce and Even split: their p is 0.5 or less. The rule picked from the story column.",
+            "wrong": "The answer should be Scarce and Even split. Put the column that holds the chance in the blank.",
+            "errors": [
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "guesses.story[guesses.chance .<= 0.5]"
+              },
+              {
+                "match": "isless",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "guesses.story[guesses.p <= 0.5]"
+              },
+              {
+                "match": "Expected `]`",
+                "say": "The [ after guesses.story needs a ] at the end of the line.",
+                "example": "guesses.story[guesses.p .<= 0.5"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of guesses and p, and write a number with digits, like 0.5.",
+                "example": "guesses.story[guesses.p .<= 0.5 + half]"
+              }
+            ],
+            "unchanged": "The blank ___ is still there: replace it with the name of the column that holds the chance.",
+            "requires": "Use guesses.story with a rule in square brackets after it.",
+            "taught": "a rule in square brackets after guesses.story, with the column p in the blank."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r2-c6",
+          "kind": "checkpoint",
+          "data": "guesses",
+          "prompt": "Say 3 of 8 jars had springtails. Type three lines. Lines 1 and 2: the rules fits_low and fits_high, using 3. Line 3: keep the rows of guesses where both are true, all columns. Press Run.",
+          "starter": "",
+          "solution": "fits_low = guesses.lower .<= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low .& fits_high, :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "fits_low",
+              "fits_high",
+              "guesses[",
+              ".&"
+            ],
+            "forbids": [
+              "3.<=guesses.lower",
+              "guesses.lower.>=3",
+              "guesses.upper.<=3",
+              "3.>=guesses.upper"
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Name the low-end rule and the high-end rule first, one line each. Then join the two names so both must be true, and use that to pick rows from the table.",
+            "Line 1: fits_low = a rule. Line 2: fits_high = a rule. Line 3 looks like: guesses[first name .& second name, :], with your two names in place of the words."
+          ],
+          "clue": "The usual ranges are Scarce 0 to 3, Even split 2 to 6 and Plentiful 5 to 8.",
+          "feedback": {
+            "pass": "Two rows came back, Scarce and Even split: 3 sits inside both of their ranges, 0 to 3 and 2 to 6. Plentiful starts at 5.",
+            "wrong": "The answer should be two rows: Scarce and Even split. Check that both rules use 3, and that line 3 keeps the rows where both are true, with every column.",
+            "errors": [
+              {
+                "match": "getindex(::DataFrames.DataFrame",
+                "say": "A table needs two parts inside [ ]: rows, a comma, then columns. End with , : to keep all columns.",
+                "code_lacks": ",",
+                "example": "fits_low = guesses.lower .<= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low .& fits_high]"
+              },
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "fits_low = guesses.lower .<= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low & fits_high, :]"
+              },
+              {
+                "match": "non-boolean",
+                "say": "&& only takes a single true or false. For whole lists, use .& (one &, with a dot in front).",
+                "example": "fits_low = guesses.lower .<= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low && fits_high, :]"
+              },
+              {
+                "match": "Expected `]`",
+                "say": "The [ after guesses needs a ] at the end of the line.",
+                "example": "fits_low = guesses.lower .<= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low .& fits_high, :"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "fits_low = guesses.lower <= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low .& fits_high, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses, fits_low and fits_high: every line must use the same names.",
+                "example": "fits_low = guesses.lower .<= 3\nfits_high = 3 .<= guesses.upper\nguesses[fits_low .& fits_hi, :]"
+              }
+            ],
+            "requires": "Write both rules, one for each end of the range, and use the number 3.",
+            "forbids": "Check which way each rule points: the low end must be less than or equal to the count, and the count less than or equal to the high end.",
+            "taught": "name each rule, join the two names with .& inside guesses[ ], and end with a comma and a colon."
+          },
+          "new_ideas": [],
+          "starter_hint": "fits_low = ___\nfits_high = ___\nguesses[___ .& ___, :]"
+        },
+        {
+          "id": "l6-r2-p1",
+          "kind": "play",
+          "prompt": "Try anything. Use one rule alone, or change the numbers. Nothing is marked here. Press Next when you are done.",
+          "starter": "fits_low = guesses.lower .<= seen_count\nguesses[fits_low, :]",
+          "new_ideas": [],
+          "data": "guesses"
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "Brackets around each rule",
+      "idea": "brackets",
+      "story": "Eddie: \"When both rules sit in one line, Julia reads .& before the comparisons. Round brackets ( ) make Julia do each rule first.\"",
+      "remember": {
+        "prompt": "A quick look back. What did this line give?",
+        "code": "[true, false, true] .& [true, true, false]",
+        "choices": [
+          "true, false, false",
+          "true, true, true",
+          "false, true, false"
+        ],
+        "answer": 0,
+        "why": ".& is true only where both lists are true. Only the first pair is true in both."
+      },
+      "explain": "Without brackets Julia reads .& first. With whole numbers that can still work by luck; with 0.5 it stops with an error. Brackets always work.",
+      "challenges": [
+        {
+          "id": "l6-r3-c1",
+          "kind": "see",
+          "data": "guesses",
+          "prompt": "Both rules on one line, each in round brackets. Julia does each bracket first, then .& joins the two answers. The number is 4. Which guess gets true? Pick an answer, then press Run.",
+          "starter": "(guesses.lower .<= 4) .& (4 .<= guesses.upper)",
+          "solution": "(guesses.lower .<= 4) .& (4 .<= guesses.upper)",
+          "labels": [
+            {
+              "part": "(guesses.lower .<= 4)",
+              "is": "inputs"
+            },
+            {
+              "part": ".&",
+              "is": "a sign: and, item by item"
+            },
+            {
+              "part": "(4 .<= guesses.upper)",
+              "is": "inputs"
+            }
+          ],
+          "predict": {
+            "question": "Which guess will be true?",
+            "choices": [
+              "Scarce",
+              "Even split",
+              "Plentiful"
+            ],
+            "answer": 1
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "(",
+              ".&"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Only the second answer is true, so Even split: 4 is inside its range, 2 to 6.",
+            "wrong": "Do not change the line. Press Reset, then press Run.",
+            "errors": [
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) to close the rule.",
+                "example": "(guesses.lower .<= 4 .& (4 .<= guesses.upper)"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "(guesses.lower <= 4) .& (4 .<= guesses.upper)"
+              },
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "(guesses.lower .<= 4) & (4 .<= guesses.upper)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses. A column is written table, dot, column: guesses.lower.",
+                "example": "(gueses.lower .<= 4) .& (4 .<= guesses.upper)"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "(guesses.low .<= 4) .& (4 .<= guesses.upper)"
+              }
+            ],
+            "requires": "Use the columns lower and upper, with the number 4.",
+            "taught": "put each rule in round brackets, then join the two with .&."
+          },
+          "new_ideas": [
+            "brackets"
+          ],
+          "new_facts": [],
+          "r_note": "`guesses$lower <= 4 & 4 <= guesses$upper` works in R with no brackets. Julia reads .& first, so it needs them.",
+          "py_note": "`(guesses.lower <= 4) & (4 <= guesses.upper)` needs brackets in pandas too. Same shape as Julia, but with & and <= written without dots. Python calls them parentheses."
+        },
+        {
+          "id": "l6-r3-c2",
+          "kind": "complete",
+          "data": "guesses",
+          "prompt": "Type seen_count in both blanks (___). It holds the practice notebook's 6. Then press Run. Which guesses get true?",
+          "starter": "(guesses.lower .<= ___) .& (___ .<= guesses.upper)",
+          "solution": "(guesses.lower .<= seen_count) .& (seen_count .<= guesses.upper)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "seen_count",
+              ".&",
+              "("
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Even split and Plentiful are true: 6 is inside both of their ranges.",
+            "wrong": "The answer should be false, true, true. The same name goes in both blanks.",
+            "errors": [
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) to close the rule.",
+                "example": "(guesses.lower .<= seen_count .& (seen_count .<= guesses.upper)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "(guesses.lower .<= seen_cout) .& (seen_count .<= guesses.upper)"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "(guesses.lower <= seen_count) .& (seen_count .<= guesses.upper)"
+              },
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "(guesses.lower .<= seen_count) & (seen_count .<= guesses.upper)"
+              }
+            ],
+            "unchanged": "The blanks are still there: replace both ___ with seen_count.",
+            "requires": "Keep the two rules, on lower and upper.",
+            "taught": "put seen_count in both blanks, and keep each rule in round brackets joined by .&."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r3-c3",
+          "kind": "change",
+          "data": "guesses",
+          "prompt": "Now keep only the true guess. Wrap the line like this: guesses[ the line , : ]. Press Run. Which guess comes back?",
+          "starter": "(guesses.lower .<= 4) .& (4 .<= guesses.upper)",
+          "solution": "guesses[(guesses.lower .<= 4) .& (4 .<= guesses.upper), :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "guesses[",
+              ".&",
+              "(",
+              ")"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One row came back, Even split: the only guess whose range includes 4.",
+            "wrong": "The answer should be one row, Even split, with all four columns. Keep the line and add guesses[ before it and , :] after it.",
+            "errors": [
+              {
+                "match": "getindex(::DataFrames.DataFrame",
+                "say": "A table needs two parts inside [ ]: rows, a comma, then columns. End with , : to keep all columns.",
+                "code_lacks": ",",
+                "example": "guesses[(guesses.lower .<= 4) .& (4 .<= guesses.upper)]"
+              },
+              {
+                "match": "Expected `]`",
+                "say": "The [ after guesses needs a ] at the end of the line.",
+                "example": "guesses[(guesses.lower .<= 4) .& (4 .<= guesses.upper), :"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses. A column is written table, dot, column: guesses.lower.",
+                "example": "gueses[(guesses.lower .<= 4) .& (4 .<= guesses.upper), :]"
+              },
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "guesses[(guesses.lower .<= 4) & (4 .<= guesses.upper), :]"
+              }
+            ],
+            "unchanged": "You ran the line as given: put it inside guesses[ ] with a comma and a colon after it.",
+            "requires": "Use the columns lower and upper, with the number 4.",
+            "taught": "put each rule in round brackets, so the line works whatever the numbers are."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r3-f1",
+          "kind": "fix",
+          "data": "guesses",
+          "prompt": "p is the chance a jar shows springtails (0.5 is half). Toto keeps the guesses with p from 0.2 to 0.6. His line has no round brackets. Press Run to see the error, then add them.",
+          "starter": "guesses[0.2 .<= guesses.p .& guesses.p .<= 0.6, :]",
+          "solution": "guesses[(0.2 .<= guesses.p) .& (guesses.p .<= 0.6), :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "p"
+            ],
+            "taught": [
+              "(",
+              ".&"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed: one row came back, Even split, the only guess with p from 0.2 to 0.6.",
+            "wrong": "The answer should be one row. Keep both rules, put round brackets around each one, and join them with .&.",
+            "errors": [
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "guesses[(0.2 .<= guesses.p) & (guesses.p .<= 0.6), :]"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "guesses[(0.2 .<= guesses.p) .& (guesses.p <= 0.6), :]"
+              },
+              {
+                "match": "no method matching &(",
+                "say": "Julia joined the two pieces beside .& before it compared anything. Put round brackets around each rule: (rule) .& (rule).",
+                "example": "guesses[0.2 .<= guesses.p .& guesses.p .<= 0.6, :] # run"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "A round bracket is open. Every ( needs a ): add the missing ) to close the rule.",
+                "example": "guesses[(0.2 .<= guesses.p) .& (guesses.p .<= 0.6, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses. A column is written table, dot, column: guesses.p.",
+                "example": "guesses[(0.2 .<= gueses.p) .& (guesses.p .<= 0.6), :]"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: put round brackets around each rule.",
+            "requires": "Keep both of Toto's rules, both on the column p.",
+            "taught": "put each rule in round brackets and join them with .&."
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l6-r3-c5",
+          "kind": "checkpoint",
+          "data": "guesses",
+          "prompt": "The last one. Try it on your own first. From guesses, keep the guesses whose usual range includes the notebook's 6, every column. Type seen_count, not 6. Name the rules first, or use round brackets. Press Run.",
+          "starter": "",
+          "solution": "guesses[(guesses.lower .<= seen_count) .& (seen_count .<= guesses.upper), :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "lower",
+              "upper"
+            ],
+            "taught": [
+              "seen_count",
+              ".&",
+              "guesses["
+            ],
+            "checker": null
+          },
+          "hints": [
+            "A guess fits when both ends pass: its low end is less than or equal to the number, and the number is less than or equal to its high end. Name each rule on its own line, or put each rule in round brackets, then join them so both must be true.",
+            "Line 1: fits_low = a rule. Line 2: fits_high = a rule. Line 3: guesses[first name .& second name, :]. Or write both rules in round brackets inside guesses[ ]. Each rule uses seen_count and one end, lower or upper."
+          ],
+          "clue": "A fit is not proof: a guess that fits could still be wrong, but one that does not fit is in trouble.",
+          "feedback": {
+            "pass": "Even split and Plentiful are kept: 6 sits inside both of their ranges. Scarce is left out.",
+            "wrong": "Not the right rows yet. Check both ends: the low end must be less than or equal to the count, and the count less than or equal to the high end. Keep every column.",
+            "errors": [
+              {
+                "match": "`fits_high` not defined",
+                "say": "fits_high is not named yet. This editor starts each Run fresh, so name both rules in this Run first (on your laptop, Julia keeps names), or write both in round brackets.",
+                "code_lacks": "fits_high =",
+                "example": "fits_low = guesses.lower .<= seen_count\nguesses[fits_low .& fits_high, :]"
+              },
+              {
+                "match": "`fits_low` not defined",
+                "say": "fits_low is not named yet. This editor starts each Run fresh, so name both rules in this Run first (on your laptop, Julia keeps names), or write both in round brackets.",
+                "code_lacks": "fits_low =",
+                "example": "fits_high = seen_count .<= guesses.upper\nguesses[fits_low .& fits_high, :]"
+              },
+              {
+                "match": "Expected `)`",
+                "say": "Every [ needs a ] and every ( needs a ). Add the missing one at the end of the line.",
+                "example": "guesses[(guesses.lower .<= seen_count .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "Expected `]`",
+                "say": "The [ after guesses needs a ] at the end of the line.",
+                "example": "guesses[(guesses.lower .<= seen_count) .& (seen_count .<= guesses.upper), :"
+              },
+              {
+                "match": "getindex(::DataFrames.DataFrame",
+                "say": "A table needs two parts inside [ ]: rows, a comma, then columns. End with , : to keep all columns.",
+                "code_lacks": ",",
+                "example": "guesses[(guesses.lower .<= seen_count) .& (seen_count .<= guesses.upper)]"
+              },
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "guesses[(guesses.lower .<= seen_count) & (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "isless(",
+                "say": "Add a dot before <=. The dot makes Julia ask every guess, one by one.",
+                "example": "guesses[(guesses.lower <= seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "column name",
+                "say": "The table has no column with that name. Its columns are story, p, lower and upper.",
+                "example": "guesses[(guesses.low .<= seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "guesses[(guesses.lower .<= seen_cout) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling of guesses and seen_count. A column is written table, dot, column: guesses.lower.",
+                "example": "guesses[(lower .<= seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "not a unary operator",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "guesses[(guesses.lower .=< seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "invalid identifier",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "guesses[(guesses.lower <.= seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "whitespace is not allowed here",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "guesses[(guesses.lower . <= seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "unexpected `=`",
+                "say": "Check the sign: a dot, then <, then =, with no spaces between them.",
+                "example": "guesses[(guesses.lower .<== seen_count) .& (seen_count .<= guesses.upper), :]"
+              },
+              {
+                "match": "&(::BitVector",
+                "say": "Add a dot before &. The dot makes Julia join the two lists one pair at a time.",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nguesses[fits_low & fits_high, :]"
+              },
+              {
+                "match": "getindex(::DataFrames.DataFrame",
+                "say": "A table needs two parts inside [ ]: rows, a comma, then columns. End with , : to keep all columns.",
+                "code_lacks": ",",
+                "example": "fits_low = guesses.lower .<= seen_count\nfits_high = seen_count .<= guesses.upper\nguesses[fits_low .& fits_high]"
+              }
+            ],
+            "requires": "Write one rule for each end of the range, so both ends are used.",
+            "taught": "use the notebook's count by name, and join the two rules with .&, each in round brackets or named first."
+          },
+          "new_ideas": [],
+          "starter_hint": "guesses[(___ .<= ___) .& (___ .<= ___), :]"
+        },
+        {
+          "id": "l6-r3-p1",
+          "kind": "play",
+          "prompt": "Try anything. Change a number, a column or a rule. Nothing here is checked. Press Finish when you are done.",
+          "starter": "guesses[(guesses.p .<= 0.5) .& (guesses.upper .<= 5), :]",
+          "new_ideas": [],
+          "data": "guesses"
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "practice_jars[practice_jars.tray_id .== \"T-A\", :]",
+      "means": "Lesson 1: keeps only the rows where the rule is true: here the two jars on tray T-A.",
+      "r": "filter(practice_jars, tray_id == \"T-A\")",
+      "py": "practice_jars[practice_jars.tray_id == \"T-A\"]",
+      "from_round": "r1",
+      "idea": "dot rule (Lesson 1)",
+      "lesson_only": true
+    },
+    {
+      "julia": "sum(practice_jars.detected[practice_jars.tray_id .== \"T-B\"])",
+      "means": "Lesson 2: counts the true answers in the list: here 2, for the two jars on tray T-B",
+      "r": "sum(practice_jars$detected[practice_jars$tray_id == \"T-B\"])",
+      "py": "practice_jars.detected[practice_jars.tray_id == \"T-B\"].sum()",
+      "from_round": "r1",
+      "idea": "count (Lesson 2)",
+      "lesson_only": true
+    },
+    {
+      "julia": "differ = practice_jars.tray_id .!= \"T-A\"",
+      "means": "Lesson 3: = gives the answers a name, and .!= asks every jar: is it not on tray T-A?",
+      "r": "differ <- practice_jars$tray_id != \"T-A\"",
+      "py": "differ = practice_jars.tray_id != \"T-A\"",
+      "from_round": "r1",
+      "idea": "naming (Lesson 3)",
+      "lesson_only": true
+    },
+    {
+      "julia": "sample(1:10, 3; replace=false)",
+      "means": "Lesson 4: picks 3 different numbers from 1 to 10 at random. replace=false means none comes twice.",
+      "r": "sample(1:10, 3)",
+      "py": "np.random.choice(range(1, 11), 3, replace=False)",
+      "from_round": "r1",
+      "idea": "random pick (Lesson 4)"
+    },
+    {
+      "julia": "[2, 4, 7] .>= 4",
+      "means": "Lesson 5: .>= asks each item: is it 4 or more? Gives false, true, true.",
+      "r": "c(2, 4, 7) >= 4",
+      "py": "np.array([2, 4, 7]) >= 4",
+      "from_round": "r1",
+      "idea": "dot rule (Lesson 5)"
+    },
+    {
+      "julia": "sum(practice_jars.detected) / length(practice_jars.detected)",
+      "means": "Lesson 5, a share: the number of true answers divided by all the answers, here 3 of 4, which is 0.75",
+      "r": "sum(practice_jars$detected) / length(practice_jars$detected)",
+      "py": "practice_jars.detected.sum() / len(practice_jars)",
+      "from_round": "r1",
+      "idea": "share (Lesson 5)",
+      "lesson_only": true
+    },
+    {
+      "julia": "fits_low = guesses.lower .<= seen_count",
+      "means": "= gives the answers a name. Here: is each guess's lower number less than or equal to 6? All three are true.",
+      "r": "fits_low <- guesses$lower <= seen_count",
+      "py": "fits_low = guesses.lower <= seen_count",
+      "from_round": "r1",
+      "idea": "two rules",
+      "lesson_only": true
+    },
+    {
+      "julia": "seen_count .<= guesses.upper",
+      "means": ".<= means \"less than or equal to\". Is the practice notebook's 6 less than or equal to each guess's upper number? We write the count first, then the high end.",
+      "r": "seen_count <= guesses$upper",
+      "py": "seen_count <= guesses.upper",
+      "from_round": "r1",
+      "idea": "two rules",
+      "lesson_only": true
+    },
+    {
+      "julia": "[true, true, false] .& [false, true, true]",
+      "means": "[ ] with commas makes a list. .& is true only where both lists are true: [false, true, false].",
+      "r": "c(TRUE, TRUE, FALSE) & c(FALSE, TRUE, TRUE)",
+      "py": "np.array([True, True, False]) & np.array([False, True, True])",
+      "from_round": "r2",
+      "idea": "both rules"
+    },
+    {
+      "julia": "guesses[guesses.p .<= 0.5, :]",
+      "means": "guesses is the table, p is the chance that one jar shows springtails, and : keeps all columns. Keeps the guesses with p of 0.5 or less.",
+      "r": "filter(guesses, p <= 0.5)",
+      "py": "guesses[guesses.p <= 0.5]",
+      "from_round": "r2",
+      "idea": "picking rows",
+      "lesson_only": true
+    },
+    {
+      "julia": "guesses.story[guesses.p .<= 0.5]",
+      "means": "a rule inside a column's brackets keeps the names where it is true: Scarce and Even split.",
+      "r": "guesses$story[guesses$p <= 0.5]",
+      "py": "guesses.story[guesses.p <= 0.5]",
+      "from_round": "r2",
+      "idea": "picking rows",
+      "lesson_only": true
+    },
+    {
+      "julia": "practice_jars[(practice_jars.batch_id .== \"B01\") .& (practice_jars.tray_id .== \"T-B\"), :]",
+      "means": "keeps the jars that are in batch B01 and on tray T-B. Each rule sits in round brackets. Result: jar P-03 only.",
+      "r": "filter(practice_jars, batch_id == \"B01\" & tray_id == \"T-B\")",
+      "py": "practice_jars[(practice_jars.batch_id == \"B01\") & (practice_jars.tray_id == \"T-B\")]",
+      "from_round": "r3",
+      "idea": "brackets",
+      "lesson_only": true
+    }
+  ],
+  "close": {
+    "finding": "The practice notebook shows springtails in 6 of 8 jars. Even split and Plentiful both fit. Scarce does not: if springtails were scarce, 6 jars of 8 with springtails would almost never happen. A fit is not proof.",
+    "can_do": [
+      "Check a number against both ends of a range.",
+      "Join two true-or-false rules with .& and keep the rows.",
+      "Put each rule in round brackets so Julia reads it right."
+    ],
+    "common_mistake": "Forgetting the dot in .<= or .&, or the round brackets around each rule. Also check which end each rule points at.",
+    "next": "Next: Chapter 6 uses these rules on the case notebook.",
+    "own_work": {
+      "say": "At the julia> prompt a name you make stays until you close Julia. This editor starts each Run fresh.",
+      "code": "# Type only what follows julia>\n# Install once (the first Pkg.add downloads for a few minutes):\njulia> using Pkg; Pkg.add([\"CSV\", \"DataFrames\"])\n# Each time you start Julia:\njulia> using CSV, DataFrames\njulia> cd(\"folder\")   # the folder that holds mydata.csv\njulia> pwd()   # check where you are\njulia> mydata = CSV.read(\"mydata.csv\", DataFrame)\njulia> seen = 6\n6\njulia> seen + 1\n7\n# mydata and seen are still there. Use them on the next line:\njulia> mydata[(mydata.low .<= seen) .& (seen .<= mydata.high), :]\n# mydata.csv, low and high are placeholders for your own names."
+    }
+  },
+  "minutes": 32
+}

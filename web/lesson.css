@@ -1,0 +1,366 @@
+/* Julia Time lesson screen. Calm and plain; the Board's palette and type (web/course/course.css): paper, navy ink,
+   teal, one orange main button, serif headings.
+   Fix round 2 (gate I12, P15): every text is at least 16px (prompts and explanations 18px, code 16px), every text
+   has contrast of at least 4.5:1 against what it sits on, and nothing is cut off. tools/readable-measure.cjs checks it
+   on every step. Decision D2: the page may scroll for reference (dictionary, notes, full tables); the task, the
+   editor, Run, the verdict and Next always fit in the first 1366x768 screen (tools/lesson-noscroll.cjs). */
+:root {
+  --bg: #f6f0df; --panel: #fffaf0; --ink: #143242; --ink-soft: #3c4a52; --line: #d9ccae;
+  --accent: #16696c; --accent-soft: #e4efeb; --ok: #2a6e37; --bad: #a3352b; --bad-soft: #f8e3dc; --orange: #ef6e34; --warn-soft: #fbefd6;
+  --on-orange: #0b2230;
+  --mono: "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --serif: Georgia, "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--sans); }
+#app { display: flex; flex-direction: column; min-height: 100vh; max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+[hidden] { display: none !important; }
+
+/* The bar on every screen: title (to the Board), where you are, then the two switches, Board and Cheat sheet. */
+#strip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 6px 0; border-bottom: 3px solid var(--ink); min-height: 44px; }
+#brand { font: 700 19px/1.2 var(--serif); color: var(--ink); text-decoration: none; white-space: nowrap; }
+/* The bar's middle: the progress label and Julia's connection status share ONE slot (the status takes its place), so the
+   bar never gains an item, wraps, or pushes the page down (round 4, R3-28). */
+#strip-mid { flex: 1 1 18rem; min-width: 0; min-height: 30px; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; }
+#strip-info, #conn { grid-area: 1 / 1; min-width: 0; }
+#strip-info { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+#strip-mid[data-status="wait"] #strip-info, #strip-mid[data-status="lost"] #strip-info { visibility: hidden; }
+#strip-text { margin: 0; font-weight: 500; color: var(--ink-soft); }
+#line-count { color: var(--ink); white-space: nowrap; }
+.nav-right { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; }
+.navlink { font-weight: 600; color: var(--ink); white-space: nowrap; }
+button.navlink { border: 0; background: none; padding: 2px 0; text-decoration: underline; text-underline-offset: 3px; border-radius: 2px; }
+a.navlink { text-underline-offset: 3px; }
+/* "Show R" and "Show Python": two checkboxes in one outlined pill; a switched-on half is filled (round 4, R3-28). The Sound
+   button is a pill too. Board and Cheat sheet stay plain underlined links, so a toggle never looks like a page. */
+.switches { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid #a89a76; border-radius: 999px; background: var(--panel); }
+.switch { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 9px; border-radius: 999px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.switch.on { background: #cfe3dc; }
+button.navlink.pill { padding: 4px 14px; border: 1px solid #a89a76; border-radius: 999px; background: var(--panel); text-decoration: none; }
+button.navlink.pill[aria-pressed="true"] { background: #cfe3dc; }
+.switch input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+#dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; }
+.dot.on { background: var(--accent); }
+#conn { justify-self: start; padding: 2px 12px; border-radius: 999px; font-weight: 600; line-height: 24px; color: var(--ink); background: var(--accent-soft); border: 1px solid var(--accent); }
+#conn:empty { display: none; }
+#strip-mid[data-status="lost"] #conn { color: var(--bad); background: var(--bad-soft); border-color: var(--bad); }
+
+main { flex: 1; padding: 12px 0 8px; }
+h1 { font: 700 26px/1.2 var(--serif); margin: 0 0 8px; }
+h2 { font: 700 20px/1.3 var(--serif); margin: 18px 0 6px; }
+h3 { font-size: 18px; margin: 14px 0 4px; }
+p { margin: 0 0 10px; }
+.muted { color: var(--ink-soft); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px 24px; }
+.narrow { max-width: 760px; margin: 24px auto; }
+.goal { font-size: 18px; }
+a { color: var(--accent); }
+
+/* Buttons. One filled orange main action; quiet outline buttons; a switched-off button keeps readable words. */
+button { font: inherit; cursor: pointer; border-radius: 6px; padding: 8px 16px; border: 1px solid var(--accent); background: var(--panel); color: var(--accent); }
+button.primary { background: var(--orange); border-color: var(--orange); color: var(--on-orange); font-weight: 700; }
+button.primary:hover:not(:disabled) { background: #ff8950; }
+/* A switched-off button keeps readable words and a solid outline, so a waiting Next is plain to see (round 4, R3-29). */
+button:disabled { cursor: not-allowed; background: #eee7d3; border: 2px solid #8a7d5f; color: var(--ink-soft); }
+button.quiet { border-color: #b8ab8c; color: var(--ink); }
+button.linkish { border: 0; background: none; padding: 2px 0; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+/* Keyboard focus is always plain to see. */
+button:focus-visible, a:focus-visible, textarea:focus-visible, summary:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#prompt:focus-visible, #end-finding:focus-visible, #range-end-say:focus-visible { outline: 2px dashed var(--accent); outline-offset: 4px; }
+
+/* Start card. */
+#screen-start { margin-top: 12px; margin-bottom: 12px; }
+.place { margin: 0 0 4px; font-weight: 700; letter-spacing: .02em; color: var(--accent); }
+.chapter-line { margin: 12px 0; padding: 8px 12px; border-left: 4px solid var(--orange); background: #fbf1da; font-weight: 500; }
+.start-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.fast-row { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+#story-more { margin-top: 6px; }
+#story-more p { margin: 0 0 6px; }
+.promise h2, #end-can-do h2, #end-clues h2 { font-size: 18px; margin: 14px 0 4px; }
+.promise ul, #end-can-do ul, #end-clues ul, #end-skills ul, #list-skills ul { margin: 0 0 8px; padding-left: 22px; }
+#end-skills h2, #list-skills h2, #end-mistake h2 { font-size: 18px; margin: 16px 0 4px; }
+#end-skills h3, #list-skills h3 { font-size: 16px; margin: 8px 0 2px; color: var(--ink-soft); }
+#end-mistake p { margin: 0 0 8px; }
+
+/* Cheat sheet (off a line: the whole dictionary). */
+.sheet { margin: 0 auto 12px; max-width: 1000px; padding: 12px 16px; }
+.sheet h2 { margin-top: 0; }
+
+/* The lesson screen: the task on the left, the editor and its answers on the right, the pocket dictionary below both. */
+.lesson { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 8px 24px; align-items: start; }
+#left, #right { min-width: 0; }
+/* The right column keeps its order, editor, buttons, Result, verdict, Next: a tall result is capped and scrolls inside its own
+   box (round 5, Tufte B), so it never drops below Next. */
+#right { display: flex; flex-direction: column; }
+.lesson > .dict { grid-column: 1 / -1; }
+.kind { margin: 0 0 2px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+#explain, #rule-text { font-size: 18px; white-space: pre-line; } /* each line of a round's explanation on its own line (queue 3) */
+.prompt { font-size: 18px; font-weight: 500; }
+/* The round's idea on later tasks: one short, whole name; open, the text wraps in full. */
+.rule { margin: 0 0 10px; border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 4px 12px; border-radius: 0 4px 4px 0; }
+.rule summary { cursor: pointer; font-weight: 600; }
+.rule p { margin: 6px 0 4px; }
+.notes { margin: 6px 0 10px; }
+.notes .note { margin: 0 0 4px; }
+.notes code, .note code { font: 16px var(--mono); color: var(--ink); background: var(--panel); padding: 1px 5px; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.starter { margin: 0 0 10px; padding: 6px 12px; border: 1px dashed var(--accent); border-radius: 6px; background: var(--panel); }
+.starter pre { margin: 2px 0 0; font: 16px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+/* The worked example: a card, its caption sitting on the top border. */
+.pinned { position: relative; border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--panel); padding: 12px 12px 8px; margin: 14px 0 10px; }
+.pinned pre, #result pre { margin: 0; font: 16px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.pinned-cap { position: absolute; top: -13px; left: 8px; margin: 0; padding: 0 6px; line-height: 24px; color: var(--ink-soft); background: var(--bg); }
+#pinned-labels { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; color: var(--ink-soft); }
+.chip code { font-family: var(--mono); color: var(--ink); }
+.chip.result code { border-bottom: 2px solid var(--accent); }
+#pinned-note { margin: 6px 0 0; }
+.look { margin-top: 6px; }
+.look-box { margin-top: 4px; padding: 4px 12px 6px; border-left: 3px solid var(--line); }
+.look-box p { margin: 0 0 4px; }
+.look-box pre { margin: 0 0 6px; font: 16px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.look-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+#look-try { flex: none; }
+#look-result { flex: 1; min-width: 0; max-height: 30em; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; background: var(--panel); }
+#look-result pre, #look-result .cap { margin: 0; }
+
+/* Tables: the data beside a task and every result table, shown in full up to 12 rows (P14). */
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 3px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--accent-soft); }
+th.rownum, td.rownum { width: 1%; text-align: right; font-weight: normal; color: var(--ink-soft); white-space: nowrap; }
+.mono, td code { font-family: var(--mono); }
+.tbl { max-width: 100%; background: var(--panel); }
+#data { margin-bottom: 10px; }
+#data .tbl { border: 1px solid var(--line); border-radius: 4px; }
+#data th, #data td { padding: 2px 10px; line-height: 1.4; }
+/* An id or a value never breaks at its hyphen. */
+#data td, #result td, #look-result td { white-space: nowrap; }
+.more, .cap { color: var(--ink-soft); margin: 4px 0 0; }
+
+/* The pocket dictionary: full width under the task, closed until opened (the Cheat sheet button opens it). */
+.dict { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 6px; }
+.dict summary { cursor: pointer; font-weight: 700; margin-bottom: 4px; }
+.dict table, .sheet table { table-layout: fixed; width: 100%; }
+/* Column widths are set for each switch state and never left to the content, so they stay put when a row is added or a
+   switch is flipped (round 4, R3-10). */
+:is(.dict, #sheet-table)[data-r="1"][data-py="1"] :is(th, td):nth-child(1) { width: 25%; }
+:is(.dict, #sheet-table)[data-r="1"][data-py="1"] :is(th, td):nth-child(2) { width: 27%; }
+:is(.dict, #sheet-table)[data-r="1"][data-py="1"] :is(th, td):nth-child(n+3) { width: 24%; }
+:is(.dict, #sheet-table):is([data-r="1"][data-py="0"], [data-r="0"][data-py="1"]) :is(th, td):nth-child(1) { width: 32%; }
+:is(.dict, #sheet-table):is([data-r="1"][data-py="0"], [data-r="0"][data-py="1"]) :is(th, td):nth-child(2) { width: 38%; }
+:is(.dict, #sheet-table)[data-r="1"][data-py="0"] :is(th, td):nth-child(3), :is(.dict, #sheet-table)[data-r="0"][data-py="1"] :is(th, td):nth-child(4) { width: 30%; }
+:is(.dict, #sheet-table)[data-r="0"][data-py="0"] :is(th, td):nth-child(1) { width: 40%; }
+:is(.dict, #sheet-table)[data-r="0"][data-py="0"] :is(th, td):nth-child(2) { width: 60%; }
+/* Code cells break after a dot, a $, a comma or a bracket (lesson.js puts a <wbr> there), and inside a word only when
+   one piece is wider than its column. */
+.dict td:not(:nth-child(2)), .sheet td:not(:nth-child(2)) { font-family: var(--mono); overflow-wrap: break-word; }
+/* Round 6: a code cell of the cheat sheet never wraps (sum([true, false, true]) read as two lines); the table takes the width it needs. */
+@media (min-width: 800px) { #sheet-table td:not(:nth-child(2)) { white-space: nowrap; overflow-wrap: normal; } .sheet { max-width: 1200px; } }
+td.mono { white-space: pre-wrap; }
+.dict-earlier summary { cursor: pointer; padding: 4px 8px; color: var(--ink); background: var(--panel); }
+.dict-earlier table { table-layout: fixed; }
+/* The "In R" and "In Python" columns of every dictionary table follow the two switches. */
+[data-r="0"] th:nth-child(3), [data-r="0"] td:nth-child(3), [data-py="0"] th:nth-child(4), [data-py="0"] td:nth-child(4) { display: none; }
+
+/* The editor side: the editor, Run, the verdict and Next first; a long result below them. */
+textarea { width: 100%; font: 16px/1.5 var(--mono); padding: 10px; border: 2px solid #5f7f7c; border-radius: 8px; background: #fff; color: var(--ink); resize: vertical; min-height: 6.2em; }
+.field-label { display: block; margin: 0 0 4px; font: 700 16px/1.3 var(--sans); color: var(--ink-soft); }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 16px; top: 56px; z-index: 3; background: var(--panel); color: var(--ink); padding: 8px 12px; border: 2px solid var(--accent); border-radius: 6px; }
+#run-hint { margin: 0 0 4px; font-size: 16px; }
+main:focus { outline: none; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+#predict { margin-bottom: 8px; }
+#predict p { margin-bottom: 4px; font-weight: 600; }
+.choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice[aria-pressed="true"] { background: var(--accent-soft); border-width: 2px; }
+/* After the answer is known: a tick on the right choice, a cross on a wrong pick (P13). */
+.choice.right { border: 2px solid var(--ok); color: var(--ok); font-weight: 700; }
+.choice.wrong { border: 2px solid var(--bad); color: var(--bad); }
+.choice .mark { font-weight: 700; }
+#feedback { min-height: 1.5em; font-weight: 600; margin-bottom: 8px; }
+#feedback.ok { color: var(--ok); }
+/* Julia's error is an alert: a tinted box with a mark. A wrong answer is a quieter "not yet". */
+#feedback.alert { padding: 6px 10px 6px 36px; border-left: 4px solid var(--bad); background: var(--bad-soft); border-radius: 4px; position: relative; }
+#feedback.alert::before { content: "!"; position: absolute; left: 10px; top: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--bad); color: #fff; font: 700 16px/18px var(--sans); text-align: center; }
+#feedback.notyet { padding: 6px 10px; border-left: 4px solid var(--orange); background: var(--warn-soft); border-radius: 4px; }
+#feedback code, .hint code, .gloss code { font: 16px var(--mono); background: var(--panel); padding: 0 4px; border-radius: 3px; }
+.works-too { margin: -4px 0 8px; color: var(--ink); }
+/* A pass the computer could not save: a warm warning box, not small grey text under a green card (round 4, R3-22). */
+.works-too.warn { margin: 0 0 8px; padding: 10px 12px 10px 40px; position: relative; border-left: 6px solid var(--orange); background: #fff4d6; color: #2b2100; font-weight: 600; border-radius: 0 6px 6px 0; }
+.works-too.warn::before { content: "!"; position: absolute; left: 10px; top: 10px; width: 20px; height: 20px; border-radius: 50%; background: #b25000; color: #fff; font: 700 16px/20px var(--sans); text-align: center; }
+/* The guess line is plain ink: it can sit beside a green success line and must never look like a fault. */
+#guess-line { color: var(--ink); font-weight: 400; }
+.clue { color: var(--ink); padding: 4px 10px; border-left: 4px solid var(--accent); background: var(--panel); }
+#hints { margin-bottom: 8px; }
+.hint { margin: 0 0 6px; }
+.next-row { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+#next:disabled { border-style: solid; }
+.next-row { margin-top: 0; } /* the paragraph above already leaves its own gap (round 5: the bigger pass card must still fit) */
+/* Julia's own message is Julia's, not the game's: closed by default, and open it is a dark monospace card, so it never
+   passes for the game's voice (round 4, R3-19). The first line beside the label shows only while it is closed. */
+.julia-msg { margin: 0 0 8px; }
+.julia-msg summary { cursor: pointer; color: var(--ink); padding: 4px 10px; border-left: 4px solid #b0762c; background: var(--panel); border-radius: 0 4px 4px 0; }
+.julia-msg details[open] > summary { background: #1e2a30; color: #e8eef0; border-left-color: #e0a14e; border-radius: 6px 6px 0 0; }
+.julia-msg details[open] .peek { display: none; }
+.julia-msg pre { margin: 0; padding: 8px 12px 10px; background: #1e2a30; color: #e8eef0; border-radius: 0 0 6px 6px; font: 16px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.julia-msg summary:focus-visible { outline-color: #e0a14e; }
+/* The result: only a result longer than 20 lines scrolls, inside its own box (D2). */
+.result-wrap { margin: 0; }
+#result { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 8px; margin-bottom: 8px; max-height: calc(4 * 24px + 30px); overflow: auto; background: var(--panel); }
+/* Round 6: the box shows whole lines (web/lesson.js snapResult sets the exact height from the real rows) and, under them, an 18 px strip for the soft fade
+   that shows while there is more below, so the fade never washes a whole line. The fade sits at the end of the scrolled content and sticks to the box bottom: no height of its own. */
+#result[data-more]::after { content: ""; display: block; position: sticky; bottom: -8px; height: 18px; margin: -18px -12px 0; background: linear-gradient(rgba(255, 250, 240, 0), var(--panel) 60%); pointer-events: none; }
+#result .tbl { background: none; }
+.nw { white-space: nowrap; }
+/* Round 6 (result fix): a short list as ONE ROW of cells, position above, value below (the row name under that when the screen added one).
+   The same values as Julia's print, re-laid out; the print itself is in the closed fold under it. */
+.strip { display: grid; gap: 4px 2px; margin: 0 0 2px; }
+.strip .cell { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 0; border-radius: 4px; background: #fffdf6; border: 1px solid var(--line); font: 16px/1.4 var(--mono); }
+.shown-cap + .strip { margin-top: -2px; }
+.strip .pos { color: var(--ink-soft); }
+.strip .val { font-weight: 700; }
+.strip .key { color: var(--ink-soft); white-space: nowrap; }
+#result details.exact { margin: 0; }
+#result details.exact > summary { cursor: pointer; color: var(--accent); }
+#result-label { position: relative; z-index: 1; width: max-content; max-width: 100%; margin: 4px 0 -12px 8px; padding: 0 6px; line-height: 24px; background: var(--bg); color: var(--ink-soft); }
+pre.items { white-space: pre-wrap; }
+/* Julia's own print, verbatim; row names added by the screen sit beside it, in a quieter ink (P08). */
+#result pre.shown, #look-result pre.shown { white-space: pre; overflow-wrap: normal; }
+.shown-row { display: flex; gap: 14px; align-items: flex-start; }
+pre.shown-keys { margin: 0; font: 16px/1.5 var(--mono); color: var(--ink-soft); padding-right: 12px; border-right: 2px solid var(--line); white-space: pre; }
+.shown-cap { margin: 0 0 6px; }
+/* The cue sits on the bottom edge of the Result box, so it takes no height of its own (round 5: the capped Result keeps Next in the first screen). */
+.cue { position: relative; width: max-content; margin: -30px 14px 8px auto; padding: 0 10px; line-height: 22px; border-radius: 11px; background: var(--panel); border: 1px solid var(--line); color: var(--accent); pointer-events: none; }
+/* The test-out caption and "Back to the round" share one line, quietly, under Next (round 4, R3-52). */
+.testout { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.testout p { margin: 0; }
+
+/* The warm-up: its own card, alone and centred until the round starts. */
+.warmup { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; color: var(--ink); }
+.warmup .round-done { margin: 0 0 2px; font-size: 22px; }
+.warmup .round-next { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+.warmup .warm { display: block; color: var(--ink); font-size: 18px; margin-bottom: 4px; }
+.warmup .warm-code { margin: 6px 0 8px; padding: 8px 12px; background: var(--bg); border-radius: 4px; font: 16px/1.5 var(--mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.quiz-say { margin: 8px 0 4px; color: var(--ink); font-weight: 600; }
+#skip-warm { margin-top: 6px; }
+.para-gap { display: block; height: 10px; }
+#prompt { margin-top: 14px; }
+.switch-note { margin: 4px 0 0; font-size: 16px; color: #2d5a57; }
+#result:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#feedback.note { padding: 8px 12px; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+.lesson[data-warm="1"] { grid-template-columns: minmax(0, 1fr); max-width: 680px; margin: 28px auto 0; }
+.lesson[data-warm="1"] .warmup { padding: 18px 22px; }
+.lesson[data-warm="1"] .warmup .primary { margin-top: 10px; margin-right: 12px; }
+
+/* Glossary: a word with a dotted underline; its meaning opens under the text, never over the editor. */
+button.term { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; border-radius: 2px; cursor: pointer;
+  text-decoration: underline dotted var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+button.term[aria-expanded="true"] { background: var(--accent-soft); text-decoration-style: solid; }
+.gloss { margin: -4px 0 8px; padding: 3px 10px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-weight: 400; animation: fade 150ms; }
+.gloss-in { display: block; margin: 4px 0 0; }
+#predict .gloss, #hints .gloss { margin: 0 0 6px; }
+.nb { white-space: nowrap; }
+
+/* The jars rack (Lesson 4 checkpoints and the target range). */
+#board { margin-bottom: 8px; }
+/* Round 5 (Tufte B): the result block lends its parts to the column, so the jar board of a lesson line can sit under Next
+   (a tall board never pushes Next down); the range keeps its board where it was. */
+.result-wrap { display: contents; }
+#app:not([data-screen="range"]) #board { order: 9; }
+@media (max-width: 799px) { #app:not([data-screen="range"]) #board { order: 3; } #app[data-screen="range"] #board { order: 2; } }
+.rack { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.grp-label { margin: 0 0 2px; font: 600 16px var(--mono); color: var(--ink-soft); white-space: nowrap; }
+.grp-jars { display: flex; flex-wrap: wrap; gap: 6px; }
+.jar { width: 72px; text-align: center; }
+.jar-body { position: relative; display: block; height: 30px; margin-top: 6px; border: 2px solid #9aa3a0; border-radius: 6px 6px 12px 12px; background: #f4f5f3; color: #fff; font: 700 18px/26px var(--sans); transition: background-color 150ms; }
+.jar-body::before { content: ""; position: absolute; left: 12px; right: 12px; top: -8px; height: 6px; border-radius: 3px 3px 0 0; background: #9aa3a0; }
+.jar.hit .jar-body { background: var(--accent); border-color: var(--accent); }
+.jar.hit .jar-body::before { background: var(--accent); }
+.jar-id { display: block; font: 16px/1.3 var(--mono); color: var(--ink-soft); white-space: nowrap; }
+.jar.hit .jar-id { color: var(--ink); font-weight: 700; }
+.board-summary { margin: 6px 0 0; font-weight: 600; }
+/* Target range: the same rack, with rings for targets. One short fade, nothing else moves. */
+#wave-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+#wave-list button { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; }
+#wave-list button[aria-current="true"] { background: var(--accent-soft); border-width: 2px; }
+.wave-side { color: var(--ink-soft); }
+.jar.target .jar-body, .jar.missed .jar-body { border: 3px solid var(--accent); background: #fff; }
+.jar.target .jar-body::before, .jar.missed .jar-body::before { background: var(--accent); }
+.jar.hit .jar-body { animation: fade 150ms; }
+.jar.miss .jar-body { background: #8c4a42; border-color: #8c4a42; animation: fade 150ms; }
+.jar.miss .jar-body::before { background: #8c4a42; }
+.jar.miss .jar-id { color: var(--bad); font-weight: 700; }
+.jar.target .jar-id, .jar.missed .jar-id { color: var(--ink); font-weight: 700; }
+.range-key { margin: 4px 0 0; color: var(--ink-soft); }
+#range-end-lines { list-style: none; margin: 0 0 12px; padding: 0; }
+#range-end-lines li { margin-bottom: 8px; }
+#range-end-lines pre { margin: 2px 0 0; font: 16px var(--mono); background: var(--bg); padding: 4px 8px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* End page: the main button right under the title; the lines and notes in one closed fold. */
+/* A lesson's end page has a small mark of its own, as the chapter pages have a painting (round 4, R3-52). */
+#screen-end:not([data-reveal]) #end-title { display: flex; align-items: center; gap: 12px; }
+#screen-end:not([data-reveal]) #end-title::before { content: "\2713" / ""; flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ok); color: #fff; font: 700 26px/1 var(--sans); }
+/* "In your own work": a visible card above the fold, not a line inside it (round 4, R3-33). */
+.own-card { margin: 14px 0; padding: 12px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; background: var(--panel); }
+.own-card h2 { margin: 0 0 6px; font-size: 18px; }
+.own-card p { margin: 0 0 8px; }
+.own-steps { margin: 0 0 10px; padding-left: 24px; }
+.own-steps li { margin-bottom: 4px; }
+.own-steps code { font: 16px var(--mono); background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+.end-go { margin: 4px 0 14px; }
+.end-go .primary { font-size: 18px; padding: 10px 20px; }
+.end-more { margin: 12px 0; border-top: 1px solid var(--line); padding-top: 8px; }
+.end-more summary { cursor: pointer; font-weight: 700; }
+.end-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.end-foot { margin: 16px 0 4px; padding-top: 8px; border-top: 1px dashed var(--line); }
+#end-lines h3, #end-skipped h3 { font-size: 18px; margin: 12px 0 4px; }
+#end-lines ol { margin: 0; padding-left: 26px; }
+#end-lines li { margin-bottom: 8px; }
+.line-cap { margin: 0; color: var(--ink-soft); }
+#end-lines pre { margin: 0; font: 16px var(--mono); background: var(--bg); padding: 4px 8px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+#end-skipped ul { margin: 0; padding-left: 22px; }
+#end-skipped li { margin-bottom: 4px; }
+.own-card pre { margin: 0; font: 16px var(--mono); background: var(--bg); padding: 8px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* End screen and print: full width, code columns sized to their text. */
+#end-dict td:not(:nth-child(2)) { white-space: nowrap; font-family: var(--mono); }
+#end-dict { width: 100%; }
+#end-dict td:nth-child(2) { width: 100%; }
+
+footer { padding: 0 0 6px; }
+footer p { margin: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+/* The "Loading..." card waits a moment before it shows, so a quick load never flashes it. */
+#app[data-screen="loading"] #screen-note { animation: fade 150ms 700ms both; }
+.print-only { display: none; }
+@media print {
+  #strip, #print, #end-lines button, #end-next, #end-range, #restart, #end-go, .end-tools, .end-foot { display: none !important; }
+  .end-more > *:not(summary) { display: block !important; }
+  #end-skills, #end-mistake { display: none !important; }
+  body { background: #fff; }
+  .card { border: 0; padding: 0; }
+  .print-only { display: table; margin-top: 12px; }
+}
+/* A narrow window (or a page zoomed to 200 percent): one column in reading order: the task, then the editor, Run, the
+   verdict and Next, then the table and the worked example, then the dictionary. */
+@media (max-width: 799px) {
+  .lesson { display: flex; flex-direction: column; gap: 0; }
+  .lesson > #left, .lesson > #right { display: contents; }
+  :where(.lesson > #left, .lesson > #right) > * { order: 5; }
+  #remember, #kind-label, #round-title, #round-story, #then-line, #explain, #gloss-explain, #rule, #prompt, #gloss-prompt, #gloss-tip, #notes, #starter-box, #waves { order: 1; }
+  #predict, #code-label, #code, .buttons, #run-hint, #wave-hint-text, #result-wrap, #feedback, #julia-msg, #works-too, #gloss-feedback, #guess-line, #clue, #hints, #help-note, .next-row, #result-label, #result, #play-note { order: 2; }
+  #data, #pinned { order: 3; }
+  .lesson > .dict { order: 6; width: 100%; }
+  /* The dictionary as cards: one entry per card, "In R:" and "In Python:" named in the card (round 4, R3-10). */
+  .dict thead, .sheet thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .dict table, .dict tbody, .dict tr, .dict td, .sheet table, .sheet tbody, .sheet tr, .sheet td { display: block; width: auto; }
+  .dict tr, .sheet tr { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .dict td, .sheet td { border: 0; padding: 2px 0; width: auto !important; }
+  .dict td:nth-child(3)::before, .sheet td:nth-child(3)::before { content: "In R: "; font: 700 16px var(--sans); }
+  .dict td:nth-child(4)::before, .sheet td:nth-child(4)::before { content: "In Python: "; font: 700 16px var(--sans); }
+  .dict td:nth-child(3):empty, .dict td:nth-child(4):empty, .sheet td:nth-child(3):empty, .sheet td:nth-child(4):empty { display: none; }
+  [data-r="0"] td:nth-child(3), [data-py="0"] td:nth-child(4) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

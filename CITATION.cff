@@ -13,8 +13,8 @@ authors:
     email: itchyshin@gmail.com
 license: MIT
 repository-code: "https://github.com/itchyshin/Julia-Time"
-version: 0.2.5
-date-released: 2026-09-28
+version: 0.5.0
+date-released: 2026-10-01
 keywords:
   - Julia
   - teaching

@@ -1,4 +1,4 @@
-/* Julia Time: the "Case closed" ending movie (docs/design/03-ending.md).
+/* Julia Time: the ending movie (docs/design/03-ending.md).
    Every number on this page comes from the game server's case_epilogue reply, and every word from
    ending-script.js. The pure functions are exported for the node tests. */
 (function (root, factory) {
@@ -66,7 +66,7 @@
     const model = client.dashboardModel(client.loadCourseState(storage, attempt));
     const done = model.completion.complete;
     return {complete:done, open:model.completion.open, concepts:model.concepts,
-      line:done ? "" : "The case closes when all six chapters are done. Still to do: " + client.chapterList(model.completion.open) + "."};
+      line:done ? "" : "The ending opens when all six chapters are done. Still to do: " + client.chapterList(model.completion.open) + "."};
   }
 
   // The saved code as typed, without blank edges or shared indentation, at most eight lines.
@@ -89,7 +89,7 @@
       ? "You let chance pick " + listText(f.picked_jars) + " from the " + f.eligible_jars.length + " jars that can still be opened. Nobody has looked yet."
       : "You planned a recheck of " + f.recheck_size + " jars from " + listText(f.eligible_jars) + ". Nobody has looked yet.";
     if (chapter === "C5") return f.observed_count + " of " + f.n_per_simulation + " jars had springtails. In " + f.n_simulations.toLocaleString("en-US")
-      + " rounds of Toto's coin-flip cards, " + f.observed_count + " or more came up " + plural(f.matching_events, "time", "times") + ".";
+      + " card deals with Toto's coin-flip cards, " + f.observed_count + " or more springtails cards came up " + plural(f.matching_events, "time", "times") + ".";
     if (chapter === "C6") {
       const out = f.models.filter(m => !m.compatible).map(m => m.model), keep = f.models.filter(m => m.compatible).map(m => m.model);
       return (out.length ? "Outside its usual range: " + listText(out) + ". " : "Every story still fits. ")
@@ -125,7 +125,7 @@
       stamp:script.final.stamp, headline:script.final.headline, answer:String(script.final.answer).replace("{logged}", String(d.sheet_detected)),
       reveal:"The notebook shows springtails in " + facts.n_detected + " of " + facts.n_jars + " " + facts.batch_id + " jars. Tray "
         + d.tray_id + "'s 0 was typed in for a box " + d.entry_status + " on the paper tally sheet, not an empty tray. The notebook's " + facts.n_detected + " of " + facts.n_jars + " is not unusual under a plain 50:50 guess. And the "
-        + (notFitting.length ? listText(notFitting) : "no") + " story almost never gives " + facts.observed_count + " of " + facts.n_per_simulation + ".",
+        + (notFitting.length ? listText(notFitting).toLowerCase() : "no") + " story almost never gives " + facts.observed_count + " of " + facts.n_per_simulation + ".",
       stillOpen:"Still to do: the recheck of " + (facts.picked_jars ? listText(facts.picked_jars) + ", the jars chance picked"
         : facts.recheck_size + " jars from " + listText(facts.eligible_jars)) + ". It is the one check only the jars can give.",
       speaker:script.final.speaker, line:script.final.line, punSpeaker:script.final.punSpeaker, punSignOff:script.final.punSignOff, wellDone:script.final.wellDone,

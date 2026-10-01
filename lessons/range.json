@@ -1,0 +1,669 @@
+{
+  "id": "range",
+  "kind": "range",
+  "title": "Target range",
+  "goal": "Pick the target jars from the practice notebook, the table called logbook. Each level is a small puzzle: write one line that picks exactly the jars asked for. There are no marks, and you can try again as often as you like.",
+  "setup": "practice1",
+  "waves": [
+    {
+      "id": "w1",
+      "title": "The ninth jar",
+      "unlocks_after": "lesson1",
+      "rings": "before",
+      "target": "Pick jar Q-053, the ninth jar in the table called logbook.",
+      "targets": [
+        "Q-053"
+      ],
+      "rule": null,
+      "hint": "A column is a list, and square brackets after it pick an item by its position.",
+      "example": "logbook.jar_id[9]",
+      "nudge": {
+        "when_code": "\\[\\s*9\\s*,",
+        "say": "That also works. The lesson picked from a column, logbook.jar_id[9]."
+      }
+    },
+    {
+      "id": "w2",
+      "title": "A run of jars",
+      "unlocks_after": "lesson1",
+      "rings": "before",
+      "target": "Pick the third, fourth and fifth jars in the table called logbook.",
+      "targets": [
+        "Q-043",
+        "Q-044",
+        "Q-045"
+      ],
+      "rule": null,
+      "hint": "Square brackets also take a run of positions, written start:end.",
+      "example": "logbook[3:5,:]"
+    },
+    {
+      "id": "w3",
+      "title": "One batch",
+      "unlocks_after": "lesson1",
+      "rings": "after",
+      "target": "Pick every jar in batch B04.",
+      "targets": [
+        "Q-041",
+        "Q-042",
+        "Q-043",
+        "Q-044",
+        "Q-045",
+        "Q-046"
+      ],
+      "rule": null,
+      "hint": "Compare a whole column with .== to get a yes or no for every jar, then use those answers in the brackets.",
+      "example": "logbook[logbook.batch_id.==\"B04\",:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      }
+    },
+    {
+      "id": "w4",
+      "title": "A batch, then a tray",
+      "unlocks_after": "lesson2",
+      "rings": "after",
+      "target": "Pick every jar in batch B05 that is on tray T-E.",
+      "targets": [
+        "Q-053",
+        "Q-054"
+      ],
+      "rule": null,
+      "hint": "Keep batch B05 under a name, then ask a second question of that name, the way Lesson 2 kept a batch and then a tray.",
+      "example": "b=logbook[logbook.batch_id.==\"B05\",:];b[b.tray_id.==\"T-E\",:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      }
+    },
+    {
+      "id": "w5",
+      "title": "Seen or not",
+      "unlocks_after": "lesson2",
+      "rings": "after",
+      "target": "Pick every jar where springtails were seen.",
+      "targets": [
+        "Q-041",
+        "Q-043",
+        "Q-044",
+        "Q-051",
+        "Q-052",
+        "Q-054",
+        "Q-055"
+      ],
+      "rule": null,
+      "hint": "One column already holds a yes or no for every jar, so it can be used as it is.",
+      "example": "logbook[logbook.detected,:]",
+      "check": {
+        "requires_any": [
+          "detected",
+          "filter",
+          "==",
+          "!=",
+          "≠"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      }
+    },
+    {
+      "id": "w6",
+      "title": "Not on a tray",
+      "unlocks_after": "lesson3",
+      "rings": "after",
+      "target": "Pick every jar that is not on tray T-D.",
+      "targets": [
+        "Q-043",
+        "Q-044",
+        "Q-045",
+        "Q-046",
+        "Q-053",
+        "Q-054",
+        "Q-055",
+        "Q-056"
+      ],
+      "rule": null,
+      "hint": "The sign .!= is true where two things differ.",
+      "example": "logbook[logbook.tray_id.!=\"T-D\",:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      }
+    },
+    {
+      "id": "w7",
+      "title": "Pick by chance",
+      "unlocks_after": "lesson4",
+      "rings": "after",
+      "target": "Pick 4 different jars where springtails were seen, at random.",
+      "targets": null,
+      "rule": {
+        "count": 4,
+        "distinct": true,
+        "from": [
+          "Q-041",
+          "Q-043",
+          "Q-044",
+          "Q-051",
+          "Q-052",
+          "Q-054",
+          "Q-055"
+        ]
+      },
+      "hint": "Make a list of the seen jars' ids, then let chance pick 4 from it, with no repeats.",
+      "example": "first(shuffle(logbook.jar_id[logbook.detected]),4)",
+      "check": {
+        "requires_any": [
+          "detected"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      },
+      "group_words": "jars where springtails were seen"
+    },
+    {
+      "id": "w8",
+      "title": "Keep, then keep again",
+      "unlocks_after": "lesson5",
+      "rings": "after",
+      "target": "Pick every jar where springtails were seen, except the jars on tray T-D.",
+      "targets": [
+        "Q-043",
+        "Q-044",
+        "Q-054",
+        "Q-055"
+      ],
+      "rule": null,
+      "hint": "Keep the seen jars under a name, then ask a second question of that name.",
+      "example": "d=logbook[logbook.detected,:];d[d.tray_id.!=\"T-D\",:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      }
+    },
+    {
+      "id": "w9",
+      "title": "A batch, minus one jar",
+      "unlocks_after": "lesson6",
+      "rings": "after",
+      "target": "Pick every jar in batch B05 except Q-053.",
+      "targets": [
+        "Q-051",
+        "Q-052",
+        "Q-054",
+        "Q-055",
+        "Q-056"
+      ],
+      "rule": null,
+      "hint": "The sign .& joins two yes-or-no answers, one jar at a time. Ask one question about the batch and one about the jar_id, each in round brackets.",
+      "example": "logbook[(logbook.batch_id.==\"B05\").&(logbook.jar_id.!=\"Q-053\"),:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-051",
+          "Q-052",
+          "Q-054",
+          "Q-055",
+          "Q-056"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: only Q-053 may be named. Ask each jar a question for the rest."
+      }
+    },
+    {
+      "id": "w10",
+      "title": "Flip, then two more",
+      "unlocks_after": "lesson6",
+      "rings": "after",
+      "target": "Pick every jar with no springtails that is not on tray T-E and not in batch B05.",
+      "targets": [
+        "Q-042",
+        "Q-045",
+        "Q-046"
+      ],
+      "rule": null,
+      "hint": "Reverse the seen column so true becomes false, then join it to the other two questions with .&, each in round brackets.",
+      "example": "logbook[.!logbook.detected.&(logbook.tray_id.!=\"T-E\").&(logbook.batch_id.!=\"B05\"),:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      }
+    },
+    {
+      "id": "w11",
+      "title": "The last shelf",
+      "unlocks_after": "lesson6",
+      "rings": "after",
+      "target": "Pick every jar where springtails were seen, not on tray T-E, not on T-F and not in batch B06.",
+      "targets": [
+        "Q-076",
+        "Q-077",
+        "Q-079",
+        "Q-089",
+        "Q-090"
+      ],
+      "rule": null,
+      "hint": "Combine four questions with .&, each in round brackets. A cross shows a jar you did not want, so check which question you left out.",
+      "example": "logbook[logbook.detected.&(logbook.tray_id.!=\"T-E\").&(logbook.tray_id.!=\"T-F\").&(logbook.batch_id.!=\"B06\"),:]",
+      "check": {
+        "requires_any": [
+          "==",
+          "!=",
+          "∈",
+          "∉",
+          "in(",
+          " in ",
+          "occursin",
+          "startswith",
+          "filter",
+          "in.(",
+          "≠",
+          "≥",
+          "≤",
+          "isequal",
+          ".>",
+          ".<"
+        ],
+        "forbids": [
+          "Q-0"
+        ]
+      },
+      "feedback": {
+        "requires": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows.",
+        "forbids": "Aim with a rule this time: ask each jar a question, do not name the jars or count rows."
+      },
+      "boss": true,
+      "story": "The last shelf. Thirty jars from two batches and four trays came in at once. Four questions, one line.",
+      "jars": [
+        {
+          "jar_id": "Q-061",
+          "batch_id": "B06",
+          "tray_id": "T-D",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-062",
+          "batch_id": "B06",
+          "tray_id": "T-D",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-063",
+          "batch_id": "B06",
+          "tray_id": "T-D",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-064",
+          "batch_id": "B06",
+          "tray_id": "T-D",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-065",
+          "batch_id": "B06",
+          "tray_id": "T-E",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-066",
+          "batch_id": "B06",
+          "tray_id": "T-E",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-067",
+          "batch_id": "B06",
+          "tray_id": "T-E",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-068",
+          "batch_id": "B06",
+          "tray_id": "T-E",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-069",
+          "batch_id": "B06",
+          "tray_id": "T-F",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-070",
+          "batch_id": "B06",
+          "tray_id": "T-F",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-071",
+          "batch_id": "B06",
+          "tray_id": "T-F",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-072",
+          "batch_id": "B06",
+          "tray_id": "T-F",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-073",
+          "batch_id": "B06",
+          "tray_id": "T-G",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-074",
+          "batch_id": "B06",
+          "tray_id": "T-G",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-075",
+          "batch_id": "B06",
+          "tray_id": "T-G",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-076",
+          "batch_id": "B07",
+          "tray_id": "T-D",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-077",
+          "batch_id": "B07",
+          "tray_id": "T-D",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-078",
+          "batch_id": "B07",
+          "tray_id": "T-D",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-079",
+          "batch_id": "B07",
+          "tray_id": "T-D",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-080",
+          "batch_id": "B07",
+          "tray_id": "T-E",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-081",
+          "batch_id": "B07",
+          "tray_id": "T-E",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-082",
+          "batch_id": "B07",
+          "tray_id": "T-E",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-083",
+          "batch_id": "B07",
+          "tray_id": "T-E",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-084",
+          "batch_id": "B07",
+          "tray_id": "T-F",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-085",
+          "batch_id": "B07",
+          "tray_id": "T-F",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-086",
+          "batch_id": "B07",
+          "tray_id": "T-F",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-087",
+          "batch_id": "B07",
+          "tray_id": "T-F",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-088",
+          "batch_id": "B07",
+          "tray_id": "T-G",
+          "detected": false
+        },
+        {
+          "jar_id": "Q-089",
+          "batch_id": "B07",
+          "tray_id": "T-G",
+          "detected": true
+        },
+        {
+          "jar_id": "Q-090",
+          "batch_id": "B07",
+          "tray_id": "T-G",
+          "detected": true
+        }
+      ]
+    }
+  ],
+  "columns": [
+    {
+      "name": "jar_id",
+      "example": ""
+    },
+    {
+      "name": "tray_id",
+      "example": ""
+    },
+    {
+      "name": "batch_id",
+      "example": ""
+    },
+    {
+      "name": "detected",
+      "example": "true/false"
+    }
+  ],
+  "missed_rings_after": 3,
+  "groups": [
+    {
+      "title": "Aim by position",
+      "levels": [
+        "w1",
+        "w2"
+      ]
+    },
+    {
+      "title": "Aim by rule",
+      "levels": [
+        "w3",
+        "w4",
+        "w5"
+      ]
+    },
+    {
+      "title": "Flip it",
+      "levels": [
+        "w6"
+      ]
+    },
+    {
+      "title": "Chance",
+      "levels": [
+        "w7"
+      ]
+    },
+    {
+      "title": "Combine rules",
+      "levels": [
+        "w8",
+        "w9",
+        "w10"
+      ]
+    },
+    {
+      "title": "Boss",
+      "levels": [
+        "w11"
+      ],
+      "boss": true
+    }
+  ]
+}

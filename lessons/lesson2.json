@@ -1,0 +1,1843 @@
+{
+  "id": "lesson2",
+  "number": 2,
+  "title": "Count by tray",
+  "goal": "Learn to count the jars with springtails, one tray at a time, then every tray at once, with a rate for each. A tray holds a few jars.",
+  "story": "Eddie, who keeps the lab's records, opens a new practice notebook, ledger: \"Give the 9 jars of batch B05 a name, then count each tray.\"",
+  "story_more": "ledger is a new practice notebook, not the one from Lesson 1, so its numbers differ. It has one row for each jar: 15 jars, 6 of batch B04 and 9 of batch B05. A tray can hold jars of both batches: each tray has 5 jars, 2 from B04 and 3 from B05. In the column detected, true means springtails were seen in that jar. The data are made up for training.",
+  "glossary": [
+    {
+      "term": "table",
+      "means": "information in rows and columns, like a spreadsheet. Julia calls it a DataFrame."
+    },
+    {
+      "term": "row",
+      "means": "one jar's line across the table. The table has one row for each jar."
+    },
+    {
+      "term": "column",
+      "means": "one kind of detail running down the table, such as tray_id or detected."
+    },
+    {
+      "term": "list",
+      "means": "items in one line, in order, such as the numbers 4, 7, 1. A table column is a list."
+    },
+    {
+      "term": "value",
+      "means": "one single piece of information, such as true, 2, or \"T-A\"."
+    },
+    {
+      "term": "name",
+      "means": "a label you choose for a result, so you can use it again. You make it with =."
+    },
+    {
+      "term": "result",
+      "means": "what a line gives back when you press Run."
+    },
+    {
+      "term": "function",
+      "means": "a word like sum or length that does a job on what you put inside its ( )."
+    },
+    {
+      "term": "sum",
+      "means": "a function that counts the true answers in a column of true or false."
+    },
+    {
+      "term": "length",
+      "means": "a function that counts all the items in a column."
+    },
+    {
+      "term": "blank",
+      "means": "the place marked ___ in a starting line. Type your answer there."
+    },
+    {
+      "term": "double quotes",
+      "means": "the marks \" \" put around words, like \"T-A\", so Julia reads them as words and not as a name."
+    },
+    {
+      "term": "true or false",
+      "means": "the two possible answers to a yes-or-no question. Julia counts true as 1 and false as 0."
+    },
+    {
+      "term": "detected",
+      "means": "a column that is true when springtails were seen in the jar, and false when they were not."
+    },
+    {
+      "term": "rule",
+      "means": "a question asked of every jar, such as tray_id .== \"T-A\". It keeps the jars where the answer is true."
+    },
+    {
+      "term": ".==",
+      "means": "asks 'is it equal?' of every item in turn. Without the dot, == asks once about the whole column."
+    },
+    {
+      "term": "square brackets",
+      "means": "the marks [ ]. After a name, they pick some of its rows or items."
+    },
+    {
+      "term": "position",
+      "means": "the place number of an item in a list. Position 1 is the first."
+    },
+    {
+      "term": "error",
+      "means": "a message that says Julia could not run your line. It helps you fix it."
+    },
+    {
+      "term": "hint",
+      "means": "a small help that appears after a run that misses. The first gives the idea, the second the shape."
+    },
+    {
+      "term": "group",
+      "means": "the rows that share one value in a column, such as all the rows of one tray."
+    },
+    {
+      "term": "groupby",
+      "means": "splits a table into groups, one for each value in a column such as :tray_id."
+    },
+    {
+      "term": "combine",
+      "means": "works out one answer for each group, such as a count, and puts the answers in a new table."
+    },
+    {
+      "term": "nrow",
+      "means": "counts the rows in each group."
+    },
+    {
+      "term": "=>",
+      "means": "joins the parts of a pair: what to count, the function to use, and the new column's name."
+    },
+    {
+      "term": ":tray_id",
+      "means": "a column's name with a colon in front. In groupby and combine, the colon points at that column."
+    },
+    {
+      "term": "rate",
+      "means": "how many out of all, found by dividing one count by another."
+    },
+    {
+      "term": "./",
+      "means": "divides item by item. The dot works like the dot in .==."
+    }
+  ],
+  "setup": "practice2",
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Name a tray, then count it",
+      "idea": "= gives a name to a result",
+      "story": "Eddie: \"Name the B05 jars first. Three jars sit on each tray.\" Momo: \"Count how many had springtails, and how many jars there are.\"",
+      "explain": "First, a line from Lesson 1, on the new table ledger. Then one = gives a name to a result (.== asks a question).",
+      "challenges": [
+        {
+          "id": "l2-r1-c0",
+          "kind": "write",
+          "recall": true,
+          "data": "ledger",
+          "prompt": "In the empty editor, type the line that keeps the jars of batch B05, with every column. Then press Run.",
+          "starter": "",
+          "solution": "ledger[ledger.batch_id .== \"B05\", :]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              ".==",
+              "batch_id"
+            ],
+            "taught": [
+              "ledger[",
+              ".=="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The 9 jars of batch B05 came back. That is Lesson 1's line, typed again on a new table.",
+            "wrong": "The 9 jars of batch B05 should come back, with every column. Check the rule inside the square brackets, and the : after the comma.",
+            "requires": "Ask the batch_id column of ledger, with .==, which jars are \"B05\".",
+            "errors": [
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "ledger[ledger.batch_id = \"B05\", :]"
+              },
+              {
+                "match": "invalid row index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "ledger[ledger.batch_id == \"B05\", :]"
+              },
+              {
+                "match": "DataFrame, ::BitVector",
+                "say": "Inside [ ] you need two parts: which jars, a comma, then what to keep. After the comma, type : to keep everything.",
+                "example": "ledger[ledger.batch_id .== \"B05\", ]",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "`B05`",
+                "say": "Without double quotes, B05 is read as a name, not as text. Put text inside double quotes: \"B05\".",
+                "example": "ledger[ledger.batch_id .== B05, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The names here are ledger and batch_id: check the spelling.",
+                "example": "Ledger[ledger.batch_id .== \"B05\", :]"
+              }
+            ]
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "see",
+          "id": "l2-r1-c1",
+          "data": "ledger",
+          "prompt": "This is Lesson 1's line, with a name added. The top line names the B05 jars batch5, with one =. The last line is only the name, so Julia shows what it holds. Choose an answer, then press Run.",
+          "starter": "batch5 = ledger[ledger.batch_id .== \"B05\", :]\nbatch5",
+          "solution": "batch5 = ledger[ledger.batch_id .== \"B05\", :]\nbatch5",
+          "labels": [
+            {
+              "part": "batch5",
+              "is": "a name"
+            },
+            {
+              "part": "=",
+              "is": "gives the name"
+            },
+            {
+              "part": "ledger[ledger.batch_id .== \"B05\", :]",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will the last line show?",
+            "choices": [
+              "the 9 jars of batch B05",
+              "the word batch5",
+              "an error message"
+            ],
+            "answer": 0
+          },
+          "r_note": "After library(dplyr): `batch5 <- filter(ledger, batch_id == \"B05\")`. Julia uses = for names; on a laptop a name stays until you close Julia.",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "ledger[",
+              "\nbatch5"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The 9 jars of batch B05 came back, and now have the name batch5.",
+            "wrong": "You only run this code as written. Press Reset so the editor holds both lines, then press Run.",
+            "errors": [
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "batch5 = ledger[ledger.batch_id = \"B05\", :]\nbatch5"
+              },
+              {
+                "match": "DataFrame, ::BitVector",
+                "say": "Inside [ ] you need two parts: which jars, a comma, then what to keep. After the comma, type : to keep everything.",
+                "example": "batch5 = ledger[ledger.batch_id .== \"B05\", ]\nbatch5",
+                "code_lacks": ":]"
+              },
+              {
+                "match": "invalid row index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "batch5 = ledger[ledger.batch_id == \"B05\", :]\nbatch5"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in ledger.batch_id.",
+                "example": "batch5 = ledger[ledger$batch_id .== \"B05\", :]\nbatch5"
+              },
+              {
+                "match": "`B05`",
+                "say": "Without double quotes, B05 is read as a name, not as text. Put text inside double quotes: \"B05\".",
+                "example": "batch5 = ledger[ledger.batch_id .== B05, :]\nbatch5"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "batch5 = ledger[ledger.batch .== \"B05\", :]\nbatch5"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The names here are ledger, batch_id and batch5: check the spelling.",
+                "example": "batch5 = Jars[ledger.batch_id .== \"B05\", :]\nbatch5"
+              }
+            ],
+            "taught": "the top line puts the name batch5 on the rows that the rule keeps, and the last line shows batch5"
+          },
+          "new_facts": [
+            "square brackets with a .== rule keep the rows where the answer is true",
+            "words go inside double quotes; a colon : after the comma means all columns"
+          ],
+          "new_ideas": [
+            "= gives a name to a result"
+          ],
+          "py_note": "`batch5 = ledger[ledger.batch_id == \"B05\"]`. Julia asks with .== and ends with a comma and a colon. This editor starts each Run fresh; on your laptop a name stays for the whole session."
+        },
+        {
+          "id": "l2-r1-c3",
+          "kind": "complete",
+          "data": "batch5",
+          "prompt": "batch5 is already loaded. The top line names the T-E jars. The last line is only a name, so Julia shows what it holds. Replace the blank with the name the last line uses. Then press Run.",
+          "starter": "___ = batch5[batch5.tray_id .== \"T-E\", :]\ntray",
+          "solution": "tray = batch5[batch5.tray_id .== \"T-E\", :]\ntray",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "taught": [
+              "batch5[",
+              "\ntray"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The name now stands for the three T-E rows: R-054 to R-056.",
+            "wrong": "The three T-E rows should come back: the name on the left of the = must be the one the last line uses.",
+            "errors": [
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "tray = batch5[batch5.tray_id = \"T-E\", :]\ntray"
+              },
+              {
+                "match": "`tray`",
+                "say": "The last line uses the name tray, so the name on the left of the = must be tray, spelled the same.",
+                "example": "trays = batch5[batch5.tray_id .== \"T-E\", :]\ntray"
+              },
+              {
+                "match": "invalid assignment location",
+                "say": "A name has no quotes: write tray, not \"tray\".",
+                "example": "\"tray\" = batch5[batch5.tray_id .== \"T-E\", :]\ntray"
+              }
+            ],
+            "unchanged": "The ___ is still there: replace it with the name that the last line uses.",
+            "requires": "Pick the jars with a rule on tray_id, as in the lines above, not by row numbers, and do not type the answer.",
+            "taught": "the name tray goes on the rows the rule keeps, and the last line shows tray"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l2-r1-f1",
+          "kind": "fix",
+          "data": "batch5",
+          "prompt": "Toto's line should give the T-D jars the name tray, then show them. Press Run: Julia shows a message. Read it, fix the line, and run again.",
+          "starter": "tray <- batch5[batch5.tray_id .== \"T-D\", :]\ntray",
+          "solution": "tray = batch5[batch5.tray_id .== \"T-D\", :]\ntray",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "taught": [
+              "batch5[",
+              "\ntray"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed: the three T-D rows came back. A single = puts a name on them.",
+            "wrong": "The three T-D rows should come back: check what joins the name to the answer.",
+            "errors": [
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "tray = batch5[batch5.tray_id = \"T-D\", :]\ntray"
+              },
+              {
+                "match": "invalid row index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "tray = batch5[batch5.tray_id == \"T-D\", :]\ntray"
+              },
+              {
+                "match": "`tray`",
+                "say": "Julia does not know the name tray yet. Put it on with a single =, and spell the name tray.",
+                "example": "trays = batch5[batch5.tray_id .== \"T-D\", :]\ntray"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: read the message, then fix the line.",
+            "requires": "Pick the jars with a rule on tray_id, as in the lines above, not by row numbers, and do not type the answer.",
+            "taught": "the name tray goes on with a single = in front of the batch5[...] part, and the last line shows tray"
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "see",
+          "id": "l2-r1-c4",
+          "data": "practice_jars",
+          "prompt": "practice_jars is on the left. The top line names its T-A jars tray. The last line makes a list of two numbers: sum counts the jars where detected is true; length counts all jars. Choose an answer, then press Run.",
+          "starter": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[sum(tray.detected), length(tray.detected)]",
+          "solution": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[sum(tray.detected), length(tray.detected)]",
+          "labels": [
+            {
+              "part": "sum(tray.detected)",
+              "is": "function"
+            },
+            {
+              "part": "length(tray.detected)",
+              "is": "function"
+            },
+            {
+              "part": "tray.detected",
+              "is": "input of both"
+            },
+            {
+              "part": "[sum(tray.detected), length(tray.detected)]",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "sum comes first, length second. What will the list show?",
+            "choices": [
+              "[2, 1]",
+              "[1, 1]",
+              "[1, 2]"
+            ],
+            "answer": 2
+          },
+          "check": {
+            "same_value": true,
+            "requires": [
+              "detected"
+            ],
+            "taught": [
+              "sum(tray.detected)",
+              "length(tray.detected)"
+            ],
+            "checker": null
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "sum counts the true answers; length counts all the jars"
+          ],
+          "feedback": {
+            "pass": "sum gave 1 and length gave 2: on T-A, 1 of the 2 practice jars had springtails.",
+            "wrong": "You only run this code as written. Press Reset so the editor holds both lines, then press Run.",
+            "errors": [
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "tray = practice_jars[practice_jars.tray_id = \"T-A\", :]\n[sum(tray.detected), length(tray.detected)]"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in tray.detected.",
+                "example": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[sum(tray$detected), length(tray.detected)]"
+              },
+              {
+                "match": "`tray`",
+                "say": "Julia does not know the name tray yet. Put it on with one = in the same Run, and spell it the same in both lines.",
+                "example": "trays = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[sum(tray.detected), length(tray.detected)]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling: sum, length and the name tray are all in small letters.",
+                "example": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[Sum(tray.detected), length(tray.detected)]"
+              }
+            ],
+            "taught": "sum and length, each on tray.detected, in one list",
+            "requires": "Count from the detected column of the tray, not by typing the two numbers."
+          },
+          "look_closer": {
+            "text": "sum can count because Julia reads true as 1 and false as 0. count does the same job in one word. Try it: the list shows sum first, then count, on the practice T-A jars. They match.",
+            "code": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[sum(tray.detected), count(tray.detected)]"
+          },
+          "r_note": "`c(sum(tray$detected), length(tray$detected))`. Julia makes a list with square brackets, not c().",
+          "py_note": "`[tray.detected.sum(), len(tray.detected)]`. Do not use .count() for this: pandas counts the values that are not missing, true or not."
+        },
+        {
+          "kind": "change",
+          "id": "l2-r1-c5",
+          "data": "practice_jars",
+          "prompt": "The editor holds the lines for practice_jars. In the top line, change \"T-A\" to \"T-B\" (keep the double quotes), then press Run. The list shows two numbers: jars where detected is true, then all jars on the tray.",
+          "starter": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]\n[sum(tray.detected), length(tray.detected)]",
+          "solution": "tray = practice_jars[practice_jars.tray_id .== \"T-B\", :]\n[sum(tray.detected), length(tray.detected)]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id",
+              "practice_jars"
+            ],
+            "taught": [
+              "sum(tray.detected)",
+              "length(tray.detected)"
+            ],
+            "checker": null
+          },
+          "new_ideas": [],
+          "feedback": {
+            "pass": "On T-B both practice jars had springtails: 2 of 2.",
+            "wrong": "Two numbers should come back: change only the tray inside the double quotes.",
+            "unchanged": "You ran the lines unchanged: change the tray in the top line to T-B.",
+            "requires": "Count from practice_jars with a rule on tray_id, as in the lines above, not by typing the two numbers.",
+            "errors": [
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "tray = practice_jars[practice_jars.tray_id = \"T-B\", :]\n[sum(tray.detected), length(tray.detected)]"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-B is read as a subtraction, T minus B. Put text inside double quotes: \"T-B\".",
+                "example": "tray = practice_jars[practice_jars.tray_id .== T-B, :]\n[sum(tray.detected), length(tray.detected)]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling: sum, length and the name tray are all in small letters.",
+                "example": "tray = practice_jars[practice_jars.tray_id .== \"T-B\", :]\n[sum(trays.detected), length(tray.detected)]"
+              }
+            ],
+            "taught": "sum and length, each on tray.detected, for the tray you picked"
+          }
+        },
+        {
+          "id": "l2-r1-c6",
+          "kind": "checkpoint",
+          "data": "batch5",
+          "prompt": "On your own. Use batch5, shown on the left; its columns include tray_id and detected. Goal: how many jars on tray T-F had springtails? You could name the T-F jars tray first. Stuck? Press Run: a miss brings a hint.",
+          "starter": "",
+          "solution": "tray = batch5[batch5.tray_id .== \"T-F\", :]\nsum(tray.detected)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "taught": [
+              "tray.detected",
+              "sum("
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Put a name on the T-F jars with one =, then count the true answers in that name's detected column.",
+            "Use this pattern, replacing each word with a real one: name = table[rule, :], then function(name.column)."
+          ],
+          "feedback": {
+            "pass": "sum counted the true answers: 2 of the 3 jars on T-F had springtails.",
+            "wrong": "One number should come back: the count of jars with springtails on tray T-F only. Check the tray you picked and that you start from batch5.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "The rule and the column must come from the same table: practice_jars has 4 jars and batch5 has 9.",
+                "example": "tray = batch5[practice_jars.tray_id .== \"T-F\", :]\nsum(tray.detected)"
+              },
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "tray = batch5[batch5.tray_id = \"T-F\", :]\nsum(tray.detected)"
+              },
+              {
+                "match": "+(::String",
+                "say": "sum needs a column of true or false. The column tray_id holds text.",
+                "example": "tray = batch5[batch5.tray_id .== \"T-F\", :]\nsum(tray.tray_id)"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in tray.detected.",
+                "example": "tray = batch5[batch5.tray_id .== \"T-F\", :]\nsum(tray$detected)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "tray = batch5[batch5.tray_id .== \"T-F\", :]\nsum(tray.seen)"
+              },
+              {
+                "match": "invalid row index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "tray = batch5[batch5.tray_id == \"T-F\", :]\nsum(tray.detected)"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-F is read as a subtraction, T minus F. Put text inside double quotes: \"T-F\".",
+                "example": "tray = batch5[batch5.tray_id .== T-F, :]\nsum(tray.detected)"
+              },
+              {
+                "match": "`tray`",
+                "say": "Julia does not know the name tray yet. Put it on with one = in the same Run, and spell it the same in both lines.",
+                "example": "trays = batch5[batch5.tray_id .== \"T-F\", :]\nsum(tray.detected)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The names here are batch5, tray_id and detected: check the spelling.",
+                "example": "tray = batch5[batch5.tray_id .== \"T-F\", :]\nsum(trays.detected)"
+              }
+            ],
+            "requires": "Not yet: pick the T-F jars with a rule that asks about their tray, not by row numbers, and do not type the answer.",
+            "taught": "give the T-F jars the name tray with =, then sum the true answers in tray.detected"
+          },
+          "new_ideas": [],
+          "starter_hint": "___ = batch5[batch5.tray_id .== ___, :]\nsum(___.___)",
+          "clue": "In this editor a name holds a result for one Run. Pick a tray with a rule, name it, then sum its detected column."
+        },
+        {
+          "id": "l2-r1-p1",
+          "kind": "play",
+          "data": "batch5",
+          "prompt": "Try another tray, or use sum or length on a column such as tray.detected. Julia shows only the answer of the last line. Nothing here is checked.",
+          "starter": "tray = batch5[batch5.tray_id .== \"T-D\", :]\ntray",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Count in one line",
+      "idea": "one position or rule in a column's brackets",
+      "story": "Itchy: \"One line per tray is enough.\"",
+      "remember": {
+        "prompt": "Remember Lesson 1? A position in square brackets picks one item. Here batch5 is the 9 jars of batch B05, with jar_id R-051 to R-059, top to bottom. What did this line give?",
+        "code": "batch5.jar_id[3]",
+        "choices": [
+          "\"R-053\"",
+          "3",
+          "the third column"
+        ],
+        "answer": 0,
+        "why": "Square brackets after a column pick by position: item 3 of jar_id is R-053."
+      },
+      "explain": "A column is a list of items.\nInside its square brackets, give one thing: a position like [3], or a rule.\nA rule keeps the items where the answer is true.",
+      "challenges": [
+        {
+          "kind": "see",
+          "id": "l2-r2-c1",
+          "data": "batch5",
+          "prompt": "The editor holds a rule that keeps only tray T-D's part of the detected column of batch5. Choose what Julia shows, then press Run.",
+          "starter": "batch5.detected[batch5.tray_id .== \"T-D\"]",
+          "solution": "batch5.detected[batch5.tray_id .== \"T-D\"]",
+          "labels": [
+            {
+              "part": "batch5.detected",
+              "is": "a column"
+            },
+            {
+              "part": "[ ]",
+              "is": "picks with a rule"
+            },
+            {
+              "part": ".==",
+              "is": "a sign: is it equal?"
+            },
+            {
+              "part": "batch5.detected[batch5.tray_id .== \"T-D\"]",
+              "is": "result"
+            }
+          ],
+          "predict": {
+            "question": "What will Julia show?",
+            "choices": [
+              "a list of 9 values",
+              "the number 2",
+              "a list of 3 true or false values"
+            ],
+            "answer": 2
+          },
+          "r_note": "`batch5$detected[batch5$tray_id == \"T-D\"]`. Julia uses a dot to reach a column, and .== to ask whether items are equal.",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "taught": [
+              "batch5.detected["
+            ],
+            "checker": null,
+            "forbids": [
+              ".detected[batch5.tray_id.==\"T-D\",:]"
+            ]
+          },
+          "feedback": {
+            "pass": "The rule kept T-D's three detected values: true, true and false.",
+            "wrong": "You only run this code as written. Press Reset so the editor says batch5.detected[batch5.tray_id .== \"T-D\"], then press Run. A column takes only the rule inside [ ]: no comma, no colon.",
+            "requires": "Keep the rule on tray_id inside the square brackets: press Reset, then Run.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "The rule and the column must come from the same table: practice_jars has 4 jars and batch5 has 9.",
+                "example": "batch5.detected[practice_jars.tray_id .== \"T-D\"]"
+              },
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "batch5.detected[batch5.tray_id = \"T-D\"]"
+              },
+              {
+                "match": "invalid index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "batch5.detected[batch5.tray_id == \"T-D\"]"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in batch5.tray_id.",
+                "example": "batch5.detected[batch5$tray_id .== \"T-D\"]"
+              },
+              {
+                "match": "`detected` not defined",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in batch5.detected.",
+                "example": "batch5$detected[batch5.tray_id .== \"T-D\"]"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-D is read as a subtraction, T minus D. Put text inside double quotes: \"T-D\".",
+                "example": "batch5.detected[batch5.tray_id .== T-D]"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "batch5.detected[batch5.tray .== \"T-D\"]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The names here are batch5, tray_id and detected: check the spelling.",
+                "example": "B05.detected[batch5.tray_id .== \"T-D\"]"
+              }
+            ],
+            "taught": "the rule goes inside the square brackets of batch5.detected"
+          },
+          "new_ideas": [
+            "one position or rule in a column's brackets"
+          ],
+          "new_facts": [
+            "a rule in a column's brackets keeps the values where it is true"
+          ],
+          "py_note": "`batch5.detected[batch5.tray_id == \"T-D\"]` works in pandas. Julia asks with .==, not ==."
+        },
+        {
+          "id": "l2-r2-c2",
+          "kind": "change",
+          "data": "batch5",
+          "prompt": "The editor holds the line for batch5. Change \"T-D\" to \"T-F\" (keep the double quotes), then press Run. Read the detected values that come back.",
+          "starter": "batch5.detected[batch5.tray_id .== \"T-D\"]",
+          "solution": "batch5.detected[batch5.tray_id .== \"T-F\"]",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id",
+              "T-F"
+            ],
+            "taught": [
+              "batch5.detected["
+            ],
+            "checker": null,
+            "forbids": [
+              ".detected[batch5.tray_id.==\"T-F\",:]"
+            ]
+          },
+          "feedback": {
+            "pass": "T-F keeps three detected values: true, true and false, so 2 of its 3 jars had springtails.",
+            "wrong": "Three values should come back: change only the tray inside the double quotes. A column takes only the rule inside [ ]: no comma, no colon.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "The rule and the column must come from the same table: practice_jars has 4 jars and batch5 has 9.",
+                "example": "batch5.detected[practice_jars.tray_id .== \"T-F\"]"
+              },
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "batch5.detected[batch5.tray_id = \"T-F\"]"
+              },
+              {
+                "match": "invalid index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "batch5.detected[batch5.tray_id == \"T-F\"]"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-F is read as a subtraction, T minus F. Put text inside double quotes: \"T-F\".",
+                "example": "batch5.detected[batch5.tray_id .== T-F]"
+              }
+            ],
+            "unchanged": "You ran the line unchanged: change the tray inside the double quotes to T-F.",
+            "requires": "Keep the rule on tray_id inside the square brackets, and change only the tray.",
+            "taught": "the rule goes inside the square brackets of batch5.detected"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l2-r2-c3",
+          "kind": "complete",
+          "data": "practice_jars",
+          "prompt": "This counts the true values in one line, on practice_jars. Replace the blank with a rule for tray T-A on the tray_id column, like the rule in the task before, but on practice_jars, not batch5. Then press Run.",
+          "starter": "sum(practice_jars.detected[___])",
+          "solution": "sum(practice_jars.detected[practice_jars.tray_id .== \"T-A\"])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "taught": [
+              ".==",
+              "sum(practice_jars.detected["
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One line, no name: sum counted 1 practice jar with springtails on T-A.",
+            "wrong": "One number should come back: the rule must keep only the tray T-A jars of practice_jars.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "The rule and the column must come from the same table: practice_jars has 4 jars and batch5 has 9.",
+                "example": "sum(practice_jars.detected[batch5.tray_id .== \"T-A\"])"
+              },
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "sum(practice_jars.detected[practice_jars.tray_id = \"T-A\"])"
+              },
+              {
+                "match": "invalid index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "sum(practice_jars.detected[practice_jars.tray_id == \"T-A\"])"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-A is read as a subtraction, T minus A. Put text inside double quotes: \"T-A\".",
+                "example": "sum(practice_jars.detected[practice_jars.tray_id .== T-A])"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "sum(practice_jars.detected[practice_jars.tray .== \"T-A\"])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The names here are practice_jars, tray_id and detected: check the spelling.",
+                "example": "sum(practice_jar.detected[practice_jars.tray_id .== \"T-A\"])"
+              }
+            ],
+            "unchanged": "The ___ is still there: replace it with a rule that keeps tray T-A.",
+            "requires": "Put a rule on tray_id, with .==, in the place of the ___, rather than row numbers.",
+            "taught": "a .== rule for T-A inside the square brackets of practice_jars.detected, counted with sum"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l2-r2-f1",
+          "kind": "fix",
+          "data": "practice_jars",
+          "prompt": "Toto's line should count the jars with springtails on T-B in practice_jars. Press Run: Julia shows an error. Read it, fix the line, and run again.",
+          "starter": "sum(practice_jars.detected[practice_jars.tray_id == \"T-B\"])",
+          "solution": "sum(practice_jars.detected[practice_jars.tray_id .== \"T-B\"])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id",
+              "practice_jars"
+            ],
+            "taught": [
+              ".=="
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Fixed: .== asked every practice jar, and sum counted 2 on T-B.",
+            "wrong": "One number, 2, should come back: check the two equals signs.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "The rule and the column must come from the same table: practice_jars has 4 jars and batch5 has 9.",
+                "example": "sum(practice_jars.detected[batch5.tray_id .== \"T-B\"])"
+              },
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "sum(practice_jars.detected[practice_jars.tray_id = \"T-B\"])"
+              },
+              {
+                "match": "invalid index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "sum(practice_jars.detected[practice_jars.tray_id == \"T-A\"])"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-B is read as a subtraction, T minus B. Put text inside double quotes: \"T-B\".",
+                "example": "sum(practice_jars.detected[practice_jars.tray_id .== T-B])"
+              }
+            ],
+            "unchanged": "You ran Toto's line as it is: read the error, then fix the line.",
+            "requires": "Keep the rule on tray_id and keep practice_jars, and make it ask every practice jar with the dot.",
+            "taught": "a dot in front of the two equals signs, so every practice jar answers"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l2-r2-c6",
+          "kind": "checkpoint",
+          "data": "batch5",
+          "prompt": "On your own, from memory. Goal: how many jars on tray T-E had springtails? Answer in one line. The table is batch5; its columns include tray_id and detected. Stuck? Press Run: a miss brings a hint.",
+          "starter": "",
+          "solution": "sum(batch5.detected[batch5.tray_id .== \"T-E\"])",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "tray_id"
+            ],
+            "taught": [
+              "sum(",
+              "batch5.detected[",
+              ".=="
+            ],
+            "checker": null
+          },
+          "hints": [
+            "First pick the detected values of tray T-E with a rule in square brackets, then count the true ones.",
+            "Use this pattern, replacing each word with a real one: function(table.column[rule]), all on one line."
+          ],
+          "feedback": {
+            "pass": "One line gave T-E's count: 1 of its 3 jars had springtails.",
+            "wrong": "One number should come back: check that you start from batch5, that only tray T-E is picked, and that you count only the jars with springtails.",
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "The rule and the column must come from the same table: practice_jars has 4 jars and batch5 has 9.",
+                "example": "sum(batch5.detected[practice_jars.tray_id .== \"T-E\"])"
+              },
+              {
+                "match": "invalid keyword argument name",
+                "say": "To ask 'is it equal?', type .== (a dot and two equals signs). One = only puts a name on something.",
+                "example": "sum(batch5.detected[batch5.tray_id = \"T-E\"])"
+              },
+              {
+                "match": "invalid index",
+                "say": "Put a dot before ==. With the dot, Julia asks every jar 'is it equal?'. Without it, Julia asks just once, about everything together.",
+                "example": "sum(batch5.detected[batch5.tray_id == \"T-E\"])"
+              },
+              {
+                "match": "unable to check bounds for indices of type String",
+                "say": "Compare with .==, a dot and two equals signs: .= is not a comparison.",
+                "example": "sum(batch5.detected[batch5.tray_id .= \"T-E\"])"
+              },
+              {
+                "match": "+(::String",
+                "say": "sum needs a column of true or false. The column tray_id holds text.",
+                "example": "sum(batch5.tray_id[batch5.tray_id .== \"T-E\"])"
+              },
+              {
+                "match": "`T`",
+                "say": "Without double quotes, a tray name such as T-E is read as a subtraction, T minus E. Put text inside double quotes: \"T-E\".",
+                "example": "sum(batch5.detected[batch5.tray_id .== T-E])"
+              },
+              {
+                "match": "`$`",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in batch5.tray_id.",
+                "example": "sum(batch5.detected[batch5$tray_id .== \"T-E\"])"
+              },
+              {
+                "match": "`detected` not defined",
+                "say": "Julia does not use $ for columns. Use a dot: table.column, as in batch5.detected.",
+                "example": "sum(batch5$detected[batch5.tray_id .== \"T-E\"])"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "sum(batch5.detected[batch5.tray .== \"T-E\"])"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. The names here are batch5, tray_id and detected: check the spelling.",
+                "example": "sum(jar.detected[batch5.tray_id .== \"T-E\"])"
+              }
+            ],
+            "requires": "Not yet: pick the T-E jars with a rule that asks about their tray, not by row numbers, and do not type the answer.",
+            "taught": "sum of batch5.detected with the T-E rule inside the square brackets, all in one line"
+          },
+          "new_ideas": [],
+          "starter_hint": "sum(___.___[___.___ .== ___])",
+          "clue": "A rule inside a column's square brackets keeps the values where it is true, so one line can count a tray."
+        },
+        {
+          "id": "l2-r2-p1",
+          "kind": "play",
+          "data": "batch5",
+          "prompt": "Try another tray, length instead of sum, or the whole detected column, batch5.detected. Julia shows only the last line's answer. Nothing here is checked.",
+          "starter": "sum(batch5.detected[batch5.tray_id .== \"T-D\"])",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "Count by group",
+      "idea": "count by group",
+      "story": "Momo: \"Now count every tray at once, in one line.\"",
+      "remember": {
+        "prompt": "Remember Round 2? A rule in a column's square brackets keeps the values where it is true. What did this line give?",
+        "code": "batch5.detected[batch5.tray_id .== \"T-D\"]",
+        "choices": [
+          "a list of 3 true or false values",
+          "the number 2",
+          "a list of 9 values"
+        ],
+        "answer": 0,
+        "why": "The rule keeps the three detected values of T-D: true, true and false."
+      },
+      "explain": "groupby splits a table into groups, one for each tray.\ncombine then gives one answer for each group, in a new table.",
+      "challenges": [
+        {
+          "id": "l2-r3-c0",
+          "kind": "see",
+          "data": "practice_jars",
+          "prompt": "groupby splits practice_jars into groups, one for each tray. :tray_id names the column to split by. Choose how many groups, then press Run.",
+          "starter": "groupby(practice_jars, :tray_id)",
+          "solution": "groupby(practice_jars, :tray_id)",
+          "labels": [
+            {
+              "part": "groupby(practice_jars, :tray_id)",
+              "is": "one group for each tray"
+            }
+          ],
+          "predict": {
+            "question": "How many groups will Julia show?",
+            "choices": [
+              "2, one for each tray",
+              "4, one for each jar",
+              "1, the whole table"
+            ],
+            "answer": 0
+          },
+          "r_note": "After library(dplyr): `group_by(practice_jars, tray_id)`. Julia names the column with a colon in front.",
+          "py_note": "`practice_jars.groupby(\"tray_id\")`. Julia names the column with a colon, :tray_id; pandas uses the string \"tray_id\".",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "groupby("
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Julia says GroupedDataFrame with 2 groups. It prints the first group and the last group: each holds one tray's rows.",
+            "wrong": "You only run this code as written. Press Reset so the editor holds the line, then press Run.",
+            "errors": [
+              {
+                "match": "`tray_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "groupby(practice_jars, tray_id)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "groupby(practice_jars, :trayid)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling: groupby and practice_jars are in small letters.",
+                "example": "grupby(practice_jars, :tray_id)"
+              }
+            ],
+            "taught": "groupby splits the rows into one group for each tray"
+          },
+          "new_ideas": [
+            "count by group"
+          ],
+          "new_facts": [
+            "groupby splits the table into one group for each tray"
+          ]
+        },
+        {
+          "id": "l2-r3-c7",
+          "kind": "complete",
+          "data": "ledger",
+          "prompt": "Now the ledger, split by batch. Replace the blank with the column to split by, with a colon in front, as in :tray_id above. Then press Run.",
+          "starter": "groupby(ledger, ___)",
+          "solution": "groupby(ledger, :batch_id)",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "groupby"
+            ],
+            "taught": [
+              "groupby(",
+              ":batch_id"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Two groups, one for each batch: B04 has 6 jars and B05 has 9.",
+            "wrong": "Two groups should come back, one for each batch: the blank stands for the column to split by.",
+            "errors": [
+              {
+                "match": "`batch_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "groupby(ledger, batch_id)"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "groupby(ledger, :batch)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling: groupby and ledger are in small letters.",
+                "example": "groupby(leger, :batch_id)"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the column to split by, with a colon in front.",
+            "requires": "Keep the groupby part: split the ledger by the column you name.",
+            "taught": "groupby splits the ledger by the column you name, with a colon in front"
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "see",
+          "id": "l2-r3-c1",
+          "data": "practice_jars",
+          "prompt": "combine works out an answer for each group and puts the answers in a new table. The pair nrow => :n means: count the rows as n. The last line shows the table. Choose how many rows, then press Run.",
+          "starter": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n)\ncounts",
+          "solution": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n)\ncounts",
+          "labels": [
+            {
+              "part": "groupby(practice_jars, :tray_id)",
+              "is": "one group for each tray"
+            },
+            {
+              "part": "nrow => :n",
+              "is": "count the rows as n"
+            }
+          ],
+          "predict": {
+            "question": "How many rows will the table counts have?",
+            "choices": [
+              "4, one for each jar",
+              "1, only the total",
+              "2, one for each tray"
+            ],
+            "answer": 2
+          },
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "combine(groupby(",
+              "nrow=>:n"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One row for each tray: n counts its jars.",
+            "wrong": "You only run this code as written. Press Reset so the editor holds both lines, then press Run.",
+            "errors": [
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => n)\ncounts"
+              },
+              {
+                "match": "`tray_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, tray_id), nrow => :n)\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and nrow: they are all in small letters.",
+                "example": "counts = Combine(groupby(practice_jars, :tray_id), nrow => :n)\ncounts"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "counts = combine(groupby(practice_jars, :trayid), nrow => :n)\ncounts"
+              },
+              {
+                "match": "matching nrow()",
+                "say": "nrow has no round brackets here: write nrow => :n, a pair that says what to count and its new name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow() => :n)\ncounts"
+              }
+            ],
+            "taught": "groupby splits the rows by tray, and combine counts each group with nrow => :n"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "combine works out one answer for each group, in a new table",
+            "a pair reads: what to count => its new name"
+          ],
+          "py_note": "`practice_jars.groupby(\"tray_id\").size().reset_index(name=\"n\")`.",
+          "r_note": "`practice_jars %>% group_by(tray_id) %>% summarise(n = n())`. combine is summarise, and nrow is n()."
+        },
+        {
+          "kind": "complete",
+          "id": "l2-r3-c2",
+          "data": "ledger",
+          "prompt": "Now count the ledger by batch. Replace the blank with the column to split by, with a colon in front. Then press Run.",
+          "starter": "counts = combine(groupby(ledger, ___), nrow => :n)\ncounts",
+          "solution": "counts = combine(groupby(ledger, :batch_id), nrow => :n)\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "groupby"
+            ],
+            "taught": [
+              "combine(groupby(",
+              "nrow=>:n"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One row for each batch: B04 has 6 jars and B05 has 9.",
+            "wrong": "One row for each batch should come back, with n: the blank stands for the column to split by.",
+            "errors": [
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :batch_id), nrow => n)\ncounts"
+              },
+              {
+                "match": "`batch_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, batch_id), nrow => :n)\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and nrow: they are all in small letters.",
+                "example": "counts = Combine(groupby(ledger, :batch_id), nrow => :n)\ncounts"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "counts = combine(groupby(ledger, :batch), nrow => :n)\ncounts"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the column to split by, with a colon in front.",
+            "requires": "Keep the groupby and combine parts: split the ledger by batch, then count each batch.",
+            "taught": "groupby splits the ledger by the column you name, with a colon in front"
+          },
+          "new_ideas": []
+        },
+        {
+          "id": "l2-r3-c6",
+          "kind": "see",
+          "data": "practice_jars",
+          "prompt": "A pair can also sum a column. :detected => sum => :detected_n reads column => function => new name. Here sum adds the true answers of each tray. Choose detected_n for the two trays, then press Run.",
+          "starter": "counts = combine(groupby(practice_jars, :tray_id), :detected => sum => :detected_n)\ncounts",
+          "solution": "counts = combine(groupby(practice_jars, :tray_id), :detected => sum => :detected_n)\ncounts",
+          "labels": [
+            {
+              "part": ":detected => sum => :detected_n",
+              "is": "sum detected as detected_n"
+            }
+          ],
+          "predict": {
+            "question": "What will detected_n show for T-A and T-B?",
+            "choices": [
+              "1 and 2",
+              "2 and 2",
+              "4 and 4"
+            ],
+            "answer": 0
+          },
+          "r_note": "`practice_jars %>% group_by(tray_id) %>% summarise(detected_n = sum(detected))`.",
+          "py_note": "`practice_jars.groupby(\"tray_id\").agg(detected_n=(\"detected\", \"sum\"))`. Julia writes column => function => new name.",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "combine(groupby(",
+              ":detected=>sum=>:detected_n"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "detected_n counts the jars with springtails on each tray: 1 of 2 on T-A, 2 of 2 on T-B.",
+            "wrong": "You only run this code as written. Press Reset so the editor holds both lines, then press Run.",
+            "errors": [
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), :detected => sum => detected_n)\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "iterate(::Symbol)",
+                "say": "In a pair, sum has no round brackets and comes between two names: column => function => new name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), sum(:detected) => :detected_n)\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and sum: they are all in small letters.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), :detected => Sum => :detected_n)\ncounts"
+              }
+            ],
+            "taught": "a pair :column => sum => :name adds up one column for each group"
+          },
+          "new_ideas": [],
+          "new_facts": [
+            "a pair :column => sum => :name adds up one column for each group"
+          ]
+        },
+        {
+          "kind": "complete",
+          "id": "l2-r3-c3",
+          "data": "practice_jars",
+          "prompt": "Now both pairs in one combine, with a comma between them. Replace the blank with the pair that counts the jars and calls the new column n. Then press Run.",
+          "starter": "counts = combine(groupby(practice_jars, :tray_id), ___, :detected => sum => :detected_n)\ncounts",
+          "solution": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "combine(groupby(",
+              "nrow=>:n",
+              ":detected=>sum=>:detected_n"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One row for each tray: n counts its jars and detected_n counts those with springtails: 1 of 2 on T-A, 2 of 2 on T-B.",
+            "wrong": "Two columns should come back, named n and detected_n: the blank is the pair that counts the jars and calls the new column n.",
+            "errors": [
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => detected_n)\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "matching nrow()",
+                "say": "nrow has no round brackets here: write nrow => :n, a pair that says what to count and its new name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow() => :n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby, nrow and sum: they are all in small letters.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), Nrow => :n, :detected => sum => :detected_n)\ncounts"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the pair that counts the jars.",
+            "requires": "Keep the groupby and combine parts, and both pairs.",
+            "taught": "the pair nrow => :n counts the jars, and the pair with sum adds up detected, in one combine"
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "complete",
+          "id": "l2-r3-c4",
+          "data": "ledger",
+          "prompt": "Now the ledger, split by batch, with both pairs. Replace the blank with the column to sum, with a colon in front, as in the pair above. Then press Run.",
+          "starter": "counts = combine(groupby(ledger, :batch_id), nrow => :n, ___ => sum => :detected_n)\ncounts",
+          "solution": "counts = combine(groupby(ledger, :batch_id), nrow => :n, :detected => sum => :detected_n)\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "groupby"
+            ],
+            "taught": [
+              "combine(groupby(",
+              "nrow=>:n",
+              ":detected=>sum=>:detected_n"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "One row for each batch: B04 has 6 jars and 4 with springtails, B05 has 9 and 5.",
+            "wrong": "One row for each batch should come back, with n and detected_n: the blank stands for the column to sum.",
+            "errors": [
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :batch_id), nrow => n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :batch_id), nrow => :n, :detected => sum => detected_n)\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :batch_id), nrow => :n, detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby, nrow and sum: they are all in small letters.",
+                "example": "counts = Combine(groupby(ledger, :batch_id), nrow => :n, :detected => sum => :detected_n)\ncounts"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the column to sum.",
+            "requires": "Keep the groupby and combine parts: split the ledger by batch, then count each batch.",
+            "taught": "the pair :detected => sum => :detected_n adds up the detected column into a new column"
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "checkpoint",
+          "id": "l2-r3-c5",
+          "data": "batch5",
+          "prompt": "On your own, with batch5. Goal: one row for each tray, with columns n (all its jars) and detected_n (jars with springtails). End with the table's name so Julia shows it. Stuck? Press Run: a miss brings a hint.",
+          "starter": "",
+          "solution": "counts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "groupby",
+              "tray_id"
+            ],
+            "taught": [
+              "combine(groupby(",
+              "nrow=>:n",
+              ":detected=>sum=>:detected_n"
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Split batch5 by tray with groupby, then combine each group with two parts: one pair that counts the rows, and one that sums a column.",
+            "Pattern, with real words in place of each word: name = combine(groupby(table, :column), nrow => :n, :column2 => sum => :new). Then show the name."
+          ],
+          "feedback": {
+            "pass": "One row for each tray, with n and detected_n: 2 of 3, 1 of 3 and 2 of 3.",
+            "wrong": "One table should come back, with a row for each tray and the columns n and detected_n. End with the table's name on its own line.",
+            "requires": "Not yet: build the table from batch5 with one row for each tray, and do not type the answer.",
+            "errors": [
+              {
+                "match": "`counts`",
+                "say": "Julia does not know the name counts yet. This editor starts each Run fresh, so make it in this Run with counts =, and spell it the same in every line.",
+                "example": "conts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "`tray_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => detected_n)\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => :n, detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby, nrow and sum: they are all in small letters.",
+                "example": "counts = Combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "iterate(::Symbol)",
+                "say": "In a pair, sum has no round brackets and comes between two names: column => function => new name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => :n, sum(:detected) => :detected_n)\ncounts"
+              },
+              {
+                "match": "matching nrow()",
+                "say": "nrow has no round brackets here: write nrow => :n, a pair that says what to count and its new name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow() => :n, :detected => sum => :detected_n)\ncounts"
+              },
+              {
+                "match": "column name",
+                "say": "That column name is not in the table. The columns are jar_id, batch_id, tray_id and detected.",
+                "example": "counts = combine(groupby(batch5, :trayid), nrow => :n, :detected => sum => :detected_n)\ncounts"
+              }
+            ],
+            "taught": "split by tray with groupby, then combine with nrow and sum pairs, and show the name"
+          },
+          "new_ideas": [],
+          "starter_hint": "counts = combine(groupby(batch5, ___), nrow => ___, ___ => sum => ___)\ncounts",
+          "clue": "groupby splits, combine counts each group: n is all its jars, detected_n is the jars with springtails."
+        },
+        {
+          "id": "l2-r3-p1",
+          "kind": "play",
+          "data": "ledger",
+          "prompt": "Split the ledger by tray_id instead, or count something else. In the ledger a tray holds jars of both batches. Julia shows only the last line's answer. Nothing here is checked.",
+          "starter": "counts = combine(groupby(ledger, :batch_id), nrow => :n)\ncounts",
+          "new_ideas": []
+        }
+      ]
+    },
+    {
+      "id": "r4",
+      "title": "Add a rate column",
+      "idea": "a new column with ./",
+      "story": "Momo: \"A count alone can mislead. Out of how many?\"",
+      "remember": {
+        "prompt": "Remember Round 3? Here batch5 is the 9 jars of batch B05. What did this line give?",
+        "code": "combine(groupby(batch5, :tray_id), nrow => :n)",
+        "choices": [
+          "one row for each tray, with the number of its jars",
+          "one row for each jar",
+          "the number 9"
+        ],
+        "answer": 0,
+        "why": "groupby made one group for each tray, and nrow counted the jars in each group: 3 jars on each tray."
+      },
+      "explain": "counts.rate = adds a new column named rate.\n./ divides item by item: detected_n by n, tray by tray.\nA rate is detected_n divided by n: a number from 0 to 1.",
+      "challenges": [
+        {
+          "kind": "see",
+          "id": "l2-r4-c1",
+          "data": "practice_jars",
+          "prompt": "The middle line adds a rate column: detected_n divided by n, tray by tray. The dot in ./ works item by item, like the dot in .==. Choose an answer, then press Run.",
+          "starter": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "solution": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "labels": [
+            {
+              "part": "counts.rate",
+              "is": "a new column"
+            },
+            {
+              "part": "./",
+              "is": "divides item by item"
+            }
+          ],
+          "predict": {
+            "question": "Which rates will the last line show?",
+            "choices": [
+              "0.5 and 1.0",
+              "1 and 2",
+              "2 and 2"
+            ],
+            "answer": 0
+          },
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "counts.rate=",
+              "./"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Each rate is detected_n divided by n: 0.5 on T-A (1 of 2) and 1.0 on T-B (2 of 2). Julia prints a whole rate as 1.0.",
+            "wrong": "You only run this code as written. Press Reset so the editor holds all three lines, then press Run.",
+            "errors": [
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`tray_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "pass a vector as a column",
+                "say": "To divide item by item, put a dot before the /, like this: ./",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n / counts.n\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and nrow: they are all in small letters.",
+                "example": "counts = Combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              }
+            ],
+            "taught": "the middle line adds the rate column, and ./ divides detected_n by n tray by tray"
+          },
+          "new_ideas": [
+            "a new column with ./"
+          ],
+          "new_facts": [
+            "counts.rate = adds a new column named rate",
+            "./ divides item by item, like .== asks item by item"
+          ],
+          "r_note": "`mutate(counts, rate = detected_n / n)`. dplyr divides item by item with /. Julia needs a dot first, so you write ./ there.",
+          "py_note": "`counts[\"rate\"] = counts.detected_n / counts.n`. pandas divides item by item without a dot. Julia needs a dot first, so you write ./ there."
+        },
+        {
+          "kind": "complete",
+          "id": "l2-r4-c2",
+          "data": "practice_jars",
+          "prompt": "The middle line divides detected_n by n, tray by tray. Replace the blank so every tray gets its rate, then press Run.",
+          "starter": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ___ counts.n\ncounts",
+          "solution": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [],
+            "taught": [
+              "combine(groupby(",
+              "counts.rate=",
+              "./"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "The blank was ./ : the rate is 0.5 on T-A and 1.0 on T-B.",
+            "wrong": "Two rates should come back, one for each tray: check the sign in the blank.",
+            "errors": [
+              {
+                "match": "pass a vector as a column",
+                "say": "To divide item by item, put a dot before the /, like this: ./",
+                "example": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n / counts.n\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and nrow: they are all in small letters.",
+                "example": "counts = Combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              }
+            ],
+            "unchanged": "The blank is still there: replace it with the sign that divides every tray at once.",
+            "requires": "Keep the three lines: count each tray, add the rate, show the table.",
+            "taught": "the dot before the / divides item by item, as in ./"
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "change",
+          "id": "l2-r4-c3",
+          "data": "ledger",
+          "prompt": "The ledger, with 15 jars, is on the left. In the top line, change practice_jars to ledger and keep the other lines, then press Run. Read the rate for each tray.",
+          "starter": "counts = combine(groupby(practice_jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "solution": "counts = combine(groupby(ledger, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "ledger"
+            ],
+            "taught": [
+              "combine(groupby(",
+              "counts.rate=",
+              "./"
+            ],
+            "checker": null
+          },
+          "feedback": {
+            "pass": "Each tray of the ledger holds 5 jars, from both batches, so the rates are 0.8, 0.4 and 0.6.",
+            "wrong": "Three rows should come back, one for each tray: change only the table name in the top line.",
+            "errors": [
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :tray_id), nrow => n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`tray_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :tray_id), nrow => :n, :detected => sum => detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(ledger, :tray_id), nrow => :n, detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "pass a vector as a column",
+                "say": "To divide item by item, put a dot before the /, like this: ./",
+                "example": "counts = combine(groupby(ledger, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n / counts.n\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and nrow: they are all in small letters.",
+                "example": "counts = Combine(groupby(ledger, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              }
+            ],
+            "unchanged": "You ran the lines unchanged: change the table name in the top line to ledger.",
+            "requires": "Use the table ledger in the top line, and keep the other lines.",
+            "taught": "the same three lines on the ledger: count each tray, add the rate, show the table"
+          },
+          "new_ideas": []
+        },
+        {
+          "kind": "checkpoint",
+          "id": "l2-r4-c4",
+          "data": "batch5",
+          "prompt": "On your own, with batch5. Goal: one row for each tray, with columns n (all its jars), detected_n (jars with springtails) and rate (detected_n divided by n). End with the table's name. Stuck? Press Run: a miss brings a hint.",
+          "starter": "",
+          "solution": "counts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "check": {
+            "same_value": true,
+            "requires": [
+              "groupby",
+              "tray_id"
+            ],
+            "taught": [
+              "combine(groupby(",
+              "nrow=>:n",
+              "counts.rate=",
+              "./"
+            ],
+            "checker": null
+          },
+          "hints": [
+            "Two parts. This editor starts each Run fresh, so first build the counts table again, as in Round 3. Then add the rate line and show the table.",
+            "Pattern: name = combine(...) as before. Next line: name.newcolumn = name.column ./ name.column. Last line: the name on its own."
+          ],
+          "feedback": {
+            "pass": "One row for each tray, with n, detected_n and rate: 2 of 3, 1 of 3 and 2 of 3.",
+            "wrong": "One table should come back, with a row for each tray and the columns n, detected_n and rate. End with the table's name on its own line.",
+            "errors": [
+              {
+                "match": "`counts`",
+                "say": "Julia does not know the name counts yet. This editor starts each Run fresh, so make it in this Run with counts =, and spell it the same in every line.",
+                "example": "conts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`tray_id`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`detected_n`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "`detected`",
+                "say": "A column name needs a colon in front, like :tray_id or :n. Without the colon, Julia looks for a name.",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => :n, detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "pass a vector as a column",
+                "say": "To divide item by item, put a dot before the /, like this: ./",
+                "example": "counts = combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n / counts.n\ncounts"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know that word. Check the spelling of combine, groupby and nrow: they are all in small letters.",
+                "example": "counts = Combine(groupby(batch5, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts"
+              }
+            ],
+            "requires": "Not yet: build the table from batch5 with one row for each tray, and do not type the answer.",
+            "taught": "build the counts table, add the rate line with ./, then show the name"
+          },
+          "new_ideas": [],
+          "starter_hint": "counts = combine(groupby(batch5, :tray_id), ___)\ncounts.rate = ___ ./ ___\ncounts",
+          "clue": "A rate is detected_n ./ n: how many out of all. The dot divides every tray at once."
+        },
+        {
+          "id": "l2-r4-p1",
+          "kind": "play",
+          "data": "ledger",
+          "prompt": "Try the same three lines on the ledger split by batch_id, or use another table. Julia shows only the last line's answer. Nothing here is checked.",
+          "starter": "counts = combine(groupby(ledger, :batch_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "new_ideas": []
+        }
+      ]
+    }
+  ],
+  "dictionary": [
+    {
+      "julia": "ledger",
+      "means": "the practice notebook of this lesson: a table of 15 jars.",
+      "r": "ledger",
+      "py": "ledger",
+      "from_round": "r1",
+      "idea": "= gives a name to a result",
+      "lesson_only": true
+    },
+    {
+      "julia": "batch5",
+      "means": "the 9 jars of batch B05, under a name. You make it with = in Round 1; the game keeps it ready after that.",
+      "r": "batch5",
+      "py": "batch5",
+      "from_round": "r1",
+      "idea": "= gives a name to a result",
+      "lesson_only": true
+    },
+    {
+      "julia": "tray = practice_jars[practice_jars.tray_id .== \"T-A\", :]",
+      "means": "gives the name tray to the practice jars on tray T-A.",
+      "r": "tray <- filter(practice_jars, tray_id == \"T-A\")",
+      "py": "tray = practice_jars[practice_jars.tray_id == \"T-A\"]",
+      "from_round": "r1",
+      "idea": "= names a result",
+      "lesson_only": true
+    },
+    {
+      "julia": "sum(tray.detected)",
+      "means": "counts the jars with springtails: the true answers in the detected column.",
+      "r": "sum(tray$detected)",
+      "py": "tray.detected.sum()",
+      "from_round": "r1",
+      "idea": "function"
+    },
+    {
+      "julia": "length(tray.detected)",
+      "means": "Counts all the jars the name holds.",
+      "r": "length(tray$detected)",
+      "py": "len(tray.detected)",
+      "from_round": "r1",
+      "idea": "function"
+    },
+    {
+      "julia": "practice_jars.detected[practice_jars.tray_id .== \"T-A\"]",
+      "means": "the detected values of tray T-A: true or false for each jar.",
+      "r": "practice_jars$detected[practice_jars$tray_id == \"T-A\"]",
+      "py": "practice_jars.detected[practice_jars.tray_id == \"T-A\"]",
+      "from_round": "r2",
+      "idea": "a list has one position",
+      "lesson_only": true
+    },
+    {
+      "julia": "combine(groupby(practice_jars, :tray_id), nrow => :n)",
+      "means": "splits the practice jars into one group for each tray, then counts each group: one row for each tray, with n, the number of its jars. A colon in front names a column.",
+      "r": "summarise(group_by(practice_jars, tray_id), n = n())",
+      "py": "practice_jars.groupby(\"tray_id\").size().reset_index(name=\"n\")",
+      "from_round": "r3",
+      "idea": "count by group",
+      "lesson_only": true
+    },
+    {
+      "julia": "combine(groupby(practice_jars, :tray_id), :detected => sum => :detected_n)",
+      "means": "one row for each practice tray, with detected_n, its jars with springtails. A pair reads: column => function => new name.",
+      "r": "summarise(group_by(practice_jars, tray_id), detected_n = sum(detected))",
+      "py": "practice_jars.groupby(\"tray_id\").agg(detected_n=(\"detected\", \"sum\")).reset_index()",
+      "from_round": "r3",
+      "idea": "count by group",
+      "lesson_only": true
+    },
+    {
+      "julia": "[1, 2] ./ [2, 2]",
+      "means": "divides item by item: 1 by 2, then 2 by 2. This is how a rate is made.",
+      "r": "c(1, 2) / c(2, 2)",
+      "py": "np.array([1, 2]) / np.array([2, 2])",
+      "from_round": "r4",
+      "idea": "a new column with ./"
+    }
+  ],
+  "close": {
+    "finding": "You counted a whole batch in a few lines: n, detected_n and a rate for every tray at once. The same lines work on any table.",
+    "next": "Next: Chapter 2 counts the case jars tray by tray.",
+    "can_do": [
+      "Give a result a name with = and use it again.",
+      "Count one tray's jars with springtails in one line.",
+      "Count every tray at once and add a rate."
+    ],
+    "common_mistake": "Forgetting the dot in .== and ./. Without it, Julia gives one answer for the whole column, or stops with an error.",
+    "own_work": {
+      "say": "Use your own table the same way: count each site's rows, and the rows where the species was present, with groupby and combine. Install DataFrames once. Change mydata, site and present to your own names.",
+      "code": "using Pkg; Pkg.add(\"DataFrames\")   # first time only\nusing DataFrames\ncounts = combine(groupby(mydata, :site), nrow => :n, :present => sum => :present_n)\ncounts"
+    }
+  },
+  "minutes": 35
+}

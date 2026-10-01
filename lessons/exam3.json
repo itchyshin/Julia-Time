@@ -1,0 +1,161 @@
+{
+  "id": "exam3",
+  "kind": "exam",
+  "chapter": "C3",
+  "number": 3,
+  "title": "Where did the 0 come from?",
+  "goal": "Put the notebook's counts and Toto's typed copy side by side. Then keep the tray where the two counts are different.",
+  "story": "Next job: compare the notebook counts with Toto's typed copy of the tally sheet. Same idea as Lesson 3, new names: the two tables are tray_counts and tally_sheet.",
+  "minutes": 5,
+  "setup": "case3",
+  "dictionary": [
+    {
+      "julia": "tray_counts",
+      "means": "The notebook's count for each tray, a table with the columns tray_id and notebook_detected. Julia's word: a DataFrame.",
+      "r": "tray_counts",
+      "py": "tray_counts"
+    },
+    {
+      "julia": "tally_sheet",
+      "means": "Toto's typed copy of the tally sheet, a table with the columns tray_id, sheet_detected and entry_status. Julia's word: a DataFrame.",
+      "r": "tally_sheet",
+      "py": "tally_sheet"
+    },
+    {
+      "julia": "joined",
+      "means": "The two tables side by side, with the columns tray_id, notebook_detected, sheet_detected and entry_status. Julia's word: a join of two DataFrames.",
+      "r": "joined",
+      "py": "joined"
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Put each tray's two records side by side",
+      "challenges": [
+        {
+          "id": "x3-join-report-log",
+          "kind": "checkpoint",
+          "prompt": "The notebook's counts are in tray_counts. Toto's typed copy of the tally sheet is in tally_sheet. Join them by tray_id: show one row for each tray in tray_counts, with the columns of both tables.",
+          "starter": "",
+          "solution": "leftjoin(tray_counts, tally_sheet, on=:tray_id)",
+          "data": "tray_counts",
+          "data_also": "tally_sheet",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam3_join_report_log"
+          },
+          "hints": [
+            "The two tables share one column. Name it after on=, with a colon in front. The table you name first keeps all its rows."
+          ],
+          "feedback": {
+            "pass": "Each tray now has its notebook count and Toto's typed count in one row.",
+            "errors": [
+              {
+                "match": "Missing join argument",
+                "say": "leftjoin needs to know which column the two tables share. Add on= and that column's name.",
+                "example": "leftjoin(tray_counts, tally_sheet)"
+              },
+              {
+                "match": "by::",
+                "say": "leftjoin takes on=, not by=. Write on= and the column both tables share.",
+                "example": "leftjoin(tray_counts, tally_sheet, by=:tray_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "In Julia the function is leftjoin, with no underscore, and it takes on=, not by=.",
+                "code_has": "left_join",
+                "example": "left_join(tray_counts, tally_sheet, by=\"tray_id\")"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "A column name needs a colon in front, like :tray_id.",
+                "code_has": "tray_id",
+                "code_lacks": ":tray_id",
+                "example": "leftjoin(tray_counts, tally_sheet, on=tray_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The function is leftjoin, and the two tables are tray_counts and tally_sheet.",
+                "example": "letjoin(tray_counts, tally_sheet, on=:tray_id)"
+              },
+              {
+                "match": "join function for data frames is not supported",
+                "say": "Julia has no join on its own here. Use leftjoin.",
+                "example": "join(tray_counts, tally_sheet, on=:tray_id)"
+              },
+              {
+                "match": "not found",
+                "say": "Both tables share one column. Its name is tray_id.",
+                "example": "leftjoin(tray_counts, tally_sheet, on=:tray)"
+              }
+            ]
+          },
+          "starter_hint": "leftjoin(___, ___, on=___)"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Keep the tray where the counts differ",
+      "setup": "case3_joined",
+      "challenges": [
+        {
+          "id": "x3-filter-disagreement",
+          "kind": "checkpoint",
+          "prompt": "The table joined is your join from Task 1, kept ready for this task. Show only the row where notebook_detected and sheet_detected are different. Keep all columns.",
+          "starter": "",
+          "solution": "joined[joined.notebook_detected .!= joined.sheet_detected, :]",
+          "data": "joined",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam3_filter_disagreement"
+          },
+          "hints": [
+            "Compare the two count columns with .!= (not equal, with a dot). That question goes before the comma."
+          ],
+          "feedback": {
+            "pass": "Only one tray has two different counts: T-C.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "The table joined is already made for this task, so you do not join again. Start from joined.",
+                "code_has": "leftjoin",
+                "example": "leftjoin(tray_counts, tally_sheet, on=:tray_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Write a column after the table name with a dot, like joined.sheet_detected.",
+                "code_has": "sheet_detected",
+                "code_lacks": "joined.sheet_detected",
+                "example": "joined[joined.notebook_detected .!= sheet_detected, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Write a column after the table name with a dot, like joined.notebook_detected.",
+                "code_has": "notebook_detected",
+                "code_lacks": "joined.notebook_detected",
+                "example": "joined[notebook_detected .!= joined.sheet_detected, :]"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is joined.",
+                "example": "joinde[joined.notebook_detected .!= joined.sheet_detected, :]"
+              },
+              {
+                "match": "not found",
+                "say": "The columns of joined are tray_id, notebook_detected, sheet_detected and entry_status.",
+                "example": "joined[joined.notebook .!= joined.sheet_detected, :]"
+              }
+            ]
+          },
+          "starter_hint": "joined[joined.___ .!= joined.___, :]"
+        }
+      ]
+    }
+  ],
+  "close": {
+    "finding": "The notebook says 1 for tray T-C. On the tally sheet its box was left blank, and Toto typed a 0 for it in his table. That 0 is not a count: nobody filled in that box. So the report's 0 is not evidence of a dead tray.",
+    "next": "Next: Lesson 4 shows how to plan a fair recheck."
+  }
+}

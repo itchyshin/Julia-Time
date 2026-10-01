@@ -1,0 +1,37 @@
+name: Something did not work
+description: A step failed, a message confused you, or something looked wrong.
+title: "Problem: "
+labels: ["problem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sorry about that, and thank you for telling us. The more you can say, the faster we can fix it.
+  - type: textarea
+    id: typed
+    attributes:
+      label: What you typed or clicked
+      description: Copy the line of code, or say which button or file you used.
+    validations:
+      required: true
+  - type: textarea
+    id: saw
+    attributes:
+      label: What you saw
+      description: Paste the message, or describe it. A screenshot is welcome.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Your computer
+      description: For example, Mac with Apple Silicon, Mac with Intel, Windows 11.
+    validations:
+      required: true
+  - type: input
+    id: julia
+    attributes:
+      label: Your Julia version
+      description: Type `julia --version` in a terminal. If you are not sure, say so.
+    validations:
+      required: true

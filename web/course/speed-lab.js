@@ -107,7 +107,7 @@
   function expirePending(state, requestId) {
     const current = plainRecord(state) ? state : createState();
     if (!validRequestId(requestId) || !plainRecord(current.pending) || current.pending.request_id !== requestId) return current;
-    return recoverPending(current, "The local lab did not reply. Check again or return to the Case Board; the mystery does not need this optional comparison.", "REPLY_TIMEOUT");
+    return recoverPending(current, "The local lab did not reply. Check again or return to the Board; the mystery does not need this optional comparison.", "REPLY_TIMEOUT");
   }
 
   function canRunBenchmark(state) {

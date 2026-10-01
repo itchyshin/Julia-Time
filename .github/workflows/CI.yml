@@ -27,9 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # Bound the whole job: a hung launch smoke (e.g. a blocking browser-open or stdin probe) must
     # fail loudly within 30 minutes, not run for hours on a paid macOS/Windows runner.
-    # 90 (was 50): 0.2.5 added about 600 checks, and GitHub's Windows runner hit 50 minutes
-    # during the last Case Board step on 2026-09-28 (run 36430153748) with every test passing.
-    timeout-minutes: 90
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
@@ -156,7 +154,7 @@ jobs:
           - { os: macos-latest, archive: branch, folder: "Downloads", julia_on_path: none }
           - { os: macos-latest, archive: branch, folder: "Downloads", julia_on_path: newer }
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 45
     env:
       JULIA_LTS: "1.10.12"
       JULIATIME_NO_BROWSER: "1"
@@ -277,9 +275,7 @@ jobs:
           set -u
           tail -f /dev/null | zsh "$COURSE/tools/setup/launch-macos.command" > "$RUNNER_TEMP/launch.log" 2>&1 &
           ready=0
-          # 400 polls (about 20 minutes, was 10): a slow macOS runner did not finish the one-time
-          # package setup within 10 minutes on 2026-09-28 (run 36430153748), with no error.
-          for i in $(seq 1 400); do
+          for i in $(seq 1 200); do
             curl -sf http://127.0.0.1:8000/course/index.html >/dev/null 2>&1 && { ready=1; break; }
             sleep 3
           done

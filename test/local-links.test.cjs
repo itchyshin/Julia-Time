@@ -47,3 +47,19 @@ test("every local HTML href and source resolves inside the distributed web folde
   }
   assert.deepEqual(unresolved, [], "a learner must never meet a dead local link or asset");
 });
+
+test("no 0.5 course page links to the Original's pages or to port 8000 (round 2, P17)", () => {
+  const courseDir = path.join(webRoot, "course");
+  const strays = [];
+  for (const name of fs.readdirSync(courseDir).filter(f => f.endsWith(".html") && f !== "chapter.html")) {   // chapter.html is the protected legacy adapter
+    const html = fs.readFileSync(path.join(courseDir, name), "utf8");
+    for (const match of html.matchAll(/\bhref\s*=\s*(["'])(.*?)\1/gi)) {
+      if (/^\/?$|^\.\.\/?$|\.\.\/index\.html|(?:^|\/)chapter[1-6]\.html|:8000/.test(match[2])) strays.push(name + " → " + match[2]);
+    }
+  }
+  assert.deepEqual(strays, []);
+  for (const name of ["setup-status-board.js", "intro.js", "course-board.js", "getting-started.js"]) {
+    const source = fs.readFileSync(path.join(courseDir, name), "utf8");
+    assert.doesNotMatch(source, /open http:\/\/127\.0\.0\.1:8000\/["'.]|"\.\.\/index\.html"/, name);
+  }
+});

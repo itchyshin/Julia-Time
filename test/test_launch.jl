@@ -1,6 +1,12 @@
 # Launcher port choice (`launch`): a busy port 8000 must not end the session. Pure decisions run
 # always, with the server, the "is this Julia Time?" probe and the browser opener injected.
 
+@testset "launch: the probe knows the Board's real title" begin
+    # A renamed Board title once made a second double-click start a second server (30 Sep 2026).
+    board = read(joinpath(@__DIR__, "..", "web", "course", "index.html"), String)
+    @test any(t -> occursin(t, board), JuliaTime.JULIA_TIME_BOARD_TITLES)
+end
+
 @testset "launch: port choice" begin
     busy = ErrorException("IOError: listen: address already in use (EADDRINUSE)")
 

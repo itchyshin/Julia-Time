@@ -13,7 +13,7 @@
   "use strict";
 
   // index runs 0..count-1: the currently shown scene. There is no separate finale step; the last
-  // scene itself carries the "Start Chapter 1" button.
+  // scene itself carries the "Start Lesson 1" button.
   function createPlayer(count) { return {index:0, count}; }
   function playerStep(player, action) {
     const last = player.count - 1;
@@ -33,9 +33,15 @@
     return null;
   }
 
-  function chapter1Destination(attempt) {
-    const dest = client && typeof client.adapterDestination === "function" ? client.adapterDestination("C1", attempt) : null;
-    return dest || "../index.html";
+  // 0.5: the intro leads to Lesson 1; Chapter 1 follows on the Board. It keeps the attempt, or the lesson would
+  // open another attempt's saved progress.
+  function lessonOneDestination(attempt) { return "../lesson.html?lesson=lesson1" + (courseState.attemptId(attempt) ? "&attempt=" + encodeURIComponent(attempt) : ""); }
+  // "{time}" in a caption is the whole path's length, added up on the Board from the lesson and chapter minutes.
+  function captionText(scene) { return String(scene.caption).replace("{time}", client ? client.timePromise().text : "a few hours"); }
+
+  // The Board marks the intro done once the player has reached its last scene.
+  function markSeen(win) {
+    try { if (win.localStorage && client) win.localStorage.setItem(client.INTRO_SEEN_KEY, "1"); } catch (_) { /* storage unavailable */ }
   }
 
   function text(node, value) { if (node) node.textContent = value || ""; }
@@ -46,7 +52,7 @@
     image.src = scene.image; image.alt = scene.alt;
     eyebrow.className = "eyebrow"; text(eyebrow, "Scene " + number + " of " + words.scenes.length);
     text(title, scene.title);
-    caption.className = "ending-caption"; text(caption, scene.caption);
+    caption.className = "ending-caption"; text(caption, captionText(scene));
     body.append(eyebrow, title, caption);
     if (scene.line) {
       const line = doc.createElement("blockquote");
@@ -60,14 +66,16 @@
   function render(doc, win, attempt) {
     const $ = id => doc.getElementById(id);
     const reduced = Boolean(win.matchMedia && win.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    text($("intro-heading"), words.heading);
     text($("intro-back"), words.buttons.back);
     text($("intro-skip"), words.buttons.skip);
-    const startHref = chapter1Destination(attempt);
+    text($("intro-start"), words.buttons.start);
+    const startHref = lessonOneDestination(attempt);
     $("intro-skip").href = startHref;
     let player = createPlayer(words.scenes.length), shown = -1;
     function draw(animate) {
       const scene = words.scenes[player.index];
+      // The road map is not "How it began"; the story scenes are.
+      text($("intro-heading"), scene.heading || words.heading);
       if (player.index !== shown || !animate) {
         $("intro-stage").replaceChildren(sceneNode(doc, scene, player.index + 1, animate)); shown = player.index;
         text($("intro-progress"), sceneAnnouncement(player.index + 1, player.count, scene.title));
@@ -78,7 +86,7 @@
       $("intro-next").hidden = atLast;
       $("intro-start").hidden = !atLast;
       $("intro-skip").hidden = atLast; // on the last scene Start and Skip go to the same place
-      if (atLast) $("intro-start").href = startHref;
+      if (atLast) { $("intro-start").href = startHref; markSeen(win); }
       const handoff = focusHandoff(focused, player.index, player.count);
       if (handoff) $(handoff).focus();
       // A taller or shorter scene can push the focused control off a phone screen; bring it back,
@@ -106,5 +114,5 @@
   }
 
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", init);
-  return {createPlayer, playerStep, sceneAnnouncement, focusHandoff, chapter1Destination, init};
+  return {createPlayer, playerStep, sceneAnnouncement, focusHandoff, lessonOneDestination, captionText, init};
 });

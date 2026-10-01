@@ -1,0 +1,220 @@
+{
+  "id": "exam2",
+  "kind": "exam",
+  "chapter": "C2",
+  "number": 2,
+  "title": "Count by tray",
+  "goal": "Group the B09 jars by tray and count the jars on each tray. Then work out each tray's rate: jars with springtails out of all its jars. This editor starts each Run fresh, so build what you need again in each task. On your laptop, Julia keeps a name until you close it.",
+  "story": "The report says T-C has 0 jars with springtails. What does the notebook say for each tray? Same idea as Lesson 2, new name: practice_jars is now jars, the six B09 jars.",
+  "minutes": 8,
+  "setup": "case2",
+  "dictionary": [
+    {
+      "julia": "jars",
+      "means": "the six B09 jars of the case notebook (made up for this game), with the columns jar_id, batch_id, tray_id and detected. Julia's word: a DataFrame.",
+      "r": "jars",
+      "py": "jars"
+    },
+    {
+      "julia": "combine(groupby(jars, :detected), nrow => :n)",
+      "means": "splits the jars into one group for each value of detected, true or false, and counts each group. A colon in front names a column. Julia's word: groupby and combine.",
+      "r": "summarise(group_by(jars, detected), n = n())",
+      "py": "jars.groupby(\"detected\").size().reset_index(name=\"n\")"
+    },
+    {
+      "julia": "detected_n = sum(jars.detected)",
+      "means": "The = gives the answer a name. This editor starts each Run fresh, so name it again in the same Run. On your laptop, Julia keeps a name until you close it. Julia's word: assigning a variable.",
+      "r": "detected_n <- sum(jars$detected)",
+      "py": "detected_n = jars.detected.sum()"
+    }
+  ],
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "Put each tray's jars together",
+      "challenges": [
+        {
+          "id": "x2-group",
+          "kind": "checkpoint",
+          "prompt": "Use groupby to put the B09 jars into groups, one group for each tray. The table jars holds the six B09 jars.",
+          "starter": "",
+          "solution": "groupby(jars, :tray_id)",
+          "data": "jars",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam2_group"
+          },
+          "hints": [
+            "Name the table first, then the column to group by: the one that says which tray a jar is on."
+          ],
+          "feedback": {
+            "pass": "One group per tray, and no jar lost.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "A column name needs a colon in front, like :tray_id.",
+                "code_has": "tray_id",
+                "code_lacks": ":tray_id",
+                "example": "groupby(jars, tray_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "In Julia the function is groupby, with no underscore.",
+                "code_has": "group_by",
+                "example": "group_by(jars, :tray_id)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The function is groupby and the table is jars.",
+                "example": "grupby(jars, :tray_id)"
+              },
+              {
+                "match": "not found",
+                "say": "The four columns of jars are jar_id, batch_id, tray_id and detected. Check the column name.",
+                "example": "groupby(jars, :tray)"
+              },
+              {
+                "match": "no method matching groupby",
+                "say": "groupby needs two things: the table, a comma, then the column to group by.",
+                "example": "groupby(:tray_id)",
+                "code_lacks": ","
+              }
+            ]
+          },
+          "starter_hint": "groupby(___, ___)"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "title": "Count jars and jars with springtails",
+      "challenges": [
+        {
+          "id": "x2-counts",
+          "kind": "checkpoint",
+          "prompt": "Show one row per tray with three columns: tray_id, n (jars on the tray) and detected_n (jars with springtails). Give the table the name counts.",
+          "starter": "",
+          "solution": "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts",
+          "data": "jars",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam2_counts"
+          },
+          "hints": [
+            "Inside combine each group gets one row. Count its rows with nrow and add up its detected values with sum."
+          ],
+          "feedback": {
+            "pass": "One row per tray, with both counts.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "A new column name needs a colon in front, like :detected_n.",
+                "code_has": "=> detected_n",
+                "code_lacks": ":detected_n",
+                "example": "combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => detected_n)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "A new column name needs a colon in front, like :n.",
+                "code_has": "=> n",
+                "code_lacks": ":n",
+                "example": "combine(groupby(jars, :tray_id), nrow => n, :detected => sum => :detected_n)"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is jars, and the functions are combine, groupby, nrow and sum.",
+                "example": "comine(groupby(jars, :tray_id), nrow => :n)"
+              },
+              {
+                "match": "not found",
+                "say": "nrow is a function, so it has no colon in front. Write nrow => :n.",
+                "code_has": ":nrow",
+                "example": "combine(groupby(jars, :tray_id), :nrow => :n, :detected => sum => :detected_n)"
+              },
+              {
+                "match": "not found",
+                "say": "The four columns of jars are jar_id, batch_id, tray_id and detected. Check the column name.",
+                "example": "combine(groupby(jars, :tray), nrow => :n)"
+              },
+              {
+                "match": "iterate(::Symbol)",
+                "say": "A pair reads :column => function => :new_name, with no brackets after the function.",
+                "example": "combine(groupby(jars, :tray_id), nrow => :n, sum(:detected) => :detected_n)"
+              },
+              {
+                "match": "no method matching nrow()",
+                "say": "Write nrow with no brackets after it: nrow => :n.",
+                "code_has": "nrow(",
+                "example": "combine(groupby(jars, :tray_id), nrow() => :n)"
+              },
+              {
+                "match": "duplicate output column name",
+                "say": "Give each new column its own name: :n for the jars on the tray, :detected_n for the jars with springtails.",
+                "example": "combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :n)"
+              }
+            ]
+          },
+          "starter_hint": "counts = combine(groupby(___, ___), nrow => ___, ___ => sum => ___)\ncounts"
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "title": "Work out each tray's share",
+      "challenges": [
+        {
+          "id": "x2-rates",
+          "kind": "checkpoint",
+          "prompt": "This editor starts each Run fresh, so build the counts table again in this task. Then add a column rate: detected_n divided by n, a number from 0 to 1 for each tray. Show counts.",
+          "starter": "",
+          "solution": "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n ./ counts.n\ncounts",
+          "data": "jars",
+          "check": {
+            "same_value": false,
+            "checker": "check_exam2_rates"
+          },
+          "hints": [
+            "Divide one column by the other with ./ (with the dot), so each tray is divided by its own n."
+          ],
+          "feedback": {
+            "pass": "Each tray now has its rate. Julia prints 1.0 when every jar on a tray had springtails.",
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "The table counts must be built in this task, because this editor starts each Run fresh (on your laptop, Julia would keep it). Spell the name the same on the line that makes it and on the lines that use it.",
+                "code_has": "counts",
+                "code_lacks": "counts =",
+                "example": "counts.rate = counts.detected_n ./ counts.n"
+              },
+              {
+                "match": "UndefVarError",
+                "say": "Check the spelling. The table is counts, with the columns tray_id, n and detected_n.",
+                "example": "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncouns.rate = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "only allowed to pass a vector",
+                "say": "To divide one column by another, write ./ with a dot, so each tray is divided by its own count.",
+                "example": "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected_n / counts.n\ncounts"
+              },
+              {
+                "match": "df[column]",
+                "say": "Make the new column with a dot after the table name: counts.rate = ...",
+                "example": "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts[:rate] = counts.detected_n ./ counts.n\ncounts"
+              },
+              {
+                "match": "not found",
+                "say": "The columns of counts are tray_id, n and detected_n, plus rate once you add it. Check the column name after the dot.",
+                "example": "counts = combine(groupby(jars, :tray_id), nrow => :n, :detected => sum => :detected_n)\ncounts.rate = counts.detected ./ counts.n\ncounts"
+              }
+            ]
+          },
+          "starter_hint": "counts = combine(groupby(___, ___), ___)\ncounts.rate = ___ ./ ___\ncounts"
+        }
+      ]
+    }
+  ],
+  "close": {
+    "finding": "Every tray has springtails. T-A and T-B have a rate of 1.0 (every jar). T-C has 0.5: one jar of two. The report's 0 for T-C does not match the notebook.",
+    "next": "Next: Lesson 3 shows how to compare two records of the same trays."
+  }
+}

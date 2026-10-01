@@ -1,0 +1,140 @@
+{
+  "id": "range",
+  "kind": "range",
+  "title": "Target range dummy",
+  "goal": "How clean can your aim get? Hit only the ringed jars.",
+  "setup": "jars",
+  "jars": [
+    {
+      "batch_id": "B08",
+      "jar_id": "J-081",
+      "tray_id": "T-A"
+    },
+    {
+      "batch_id": "B08",
+      "jar_id": "J-082",
+      "tray_id": "T-A"
+    },
+    {
+      "batch_id": "B08",
+      "jar_id": "J-083",
+      "tray_id": "T-B"
+    },
+    {
+      "batch_id": "B08",
+      "jar_id": "J-084",
+      "tray_id": "T-B"
+    },
+    {
+      "batch_id": "B08",
+      "jar_id": "J-085",
+      "tray_id": "T-C"
+    },
+    {
+      "batch_id": "B08",
+      "jar_id": "J-086",
+      "tray_id": "T-C"
+    },
+    {
+      "batch_id": "B09",
+      "jar_id": "J-091",
+      "tray_id": "T-A"
+    },
+    {
+      "batch_id": "B09",
+      "jar_id": "J-092",
+      "tray_id": "T-A"
+    },
+    {
+      "batch_id": "B09",
+      "jar_id": "J-093",
+      "tray_id": "T-B"
+    },
+    {
+      "batch_id": "B09",
+      "jar_id": "J-094",
+      "tray_id": "T-B"
+    },
+    {
+      "batch_id": "B09",
+      "jar_id": "J-095",
+      "tray_id": "T-C"
+    },
+    {
+      "batch_id": "B09",
+      "jar_id": "J-096",
+      "tray_id": "T-C"
+    }
+  ],
+  "waves": [
+    {
+      "id": "w1",
+      "unlocks_after": "lesson1",
+      "target": "Hit jar J-091, the first jar of batch B09.",
+      "targets": [
+        "J-091"
+      ],
+      "rule": null,
+      "hint": "Square brackets pick one item by its place.",
+      "example": "jars.jar_id[7]",
+      "rings": "before"
+    },
+    {
+      "id": "w2",
+      "unlocks_after": "lesson1",
+      "target": "Hit the third, fourth and fifth jars.",
+      "targets": [
+        "J-083",
+        "J-084",
+        "J-085"
+      ],
+      "rule": null,
+      "hint": "Rows 3 to 5 are written 3:5.",
+      "example": "jars[3:5, :]",
+      "rings": "before"
+    },
+    {
+      "id": "w3",
+      "unlocks_after": "lesson2",
+      "target": "Hit the first two jars.",
+      "targets": [
+        "J-081",
+        "J-082"
+      ],
+      "rule": null,
+      "hint": "Use 1:2.",
+      "example": "jars[1:2, :]",
+      "rings": "after"
+    },
+    {
+      "id": "w4",
+      "unlocks_after": "lesson4",
+      "target": "Hit any 2 different jars from the first three of batch B09.",
+      "targets": null,
+      "rule": {
+        "count": 2,
+        "distinct": true,
+        "from": [
+          "J-091",
+          "J-092",
+          "J-093"
+        ]
+      },
+      "hint": "Pick by chance and do not repeat.",
+      "example": "sample(jars.jar_id[7:9], 2; replace=false)",
+      "rings": "after"
+    },
+    {
+      "id": "w5",
+      "unlocks_after": "lesson6",
+      "target": "Hit the last jar.",
+      "targets": [
+        "J-096"
+      ],
+      "rule": null,
+      "hint": "The last jar is number 12.",
+      "example": "jars.jar_id[12]",
+      "rings": "after"
+    }
+  ]
+}

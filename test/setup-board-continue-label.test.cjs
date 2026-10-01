@@ -11,9 +11,10 @@ test("Julia readiness gates the dashboard Continue action without replacing its 
 
   // Once the case is complete the label becomes "See how the case ends →" (docs/design/03-ending.md);
   // otherwise it stays the computed next-move label, unchanged from before the ending existed.
-  assert.match(board, /const readyLabel\s*=\s*\(model\.completion\.complete\s*\?\s*"See how the case ends"\s*:\s*model\.continue\.label\)\s*\+\s*" →"/);
+  // 0.5: the label is the walk's next step ("Train: Lesson N", "Solve: Chapter N", "See how the case ends").
+  assert.match(board, /const readyLabel\s*=\s*next\.label;/);
   assert.match(board, /continueAction\.dataset\.readyLabel\s*=\s*readyLabel/);
-  assert.match(setup, /continueAction\.dataset\.readyLabel\s*\|\|\s*"Start Chapter 1 →"/);
+  assert.match(setup, /continueAction\.dataset\.readyLabel\s*\|\|\s*"Start Lesson 1"/);
   assert.doesNotMatch(setup, /text\(continueAction, awaitingPong \? "Checking Julia…" : client\.storyActionLabel\(state\)\)/);
 });
 

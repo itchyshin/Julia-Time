@@ -1,4 +1,4 @@
-/* Julia Time: "The same step in R and Python" — one shared card of case-real R/Python bridges.
+/* Julia Time: "The same step in R and Python": one shared card of case-real R/Python bridges.
  * This module holds only data plus DOM-building helpers; it never runs R or Python and never
  * invents a result (see AGENTS.md rule 3). Each entry's r/python line is hand-checked against
  * this case's real fixture with Rscript (dplyr) and python3 (pandas); test/bridge-parity.test.cjs
@@ -133,7 +133,7 @@
   function bridgeFor(key) { return knownMove(key) ? BRIDGES[key] : null; }
 
   // Pure data model for a card: {key, julia, r, python, differences}. Returns null when the move
-  // is unknown or the learner's own accepted code is missing — the card must never show a
+  // is unknown or the learner's own accepted code is missing: the card must never show a
   // reference answer in place of the learner's code (AGENTS.md: reference answers never enter the
   // learner's editor, and by the same principle they never masquerade as "Your Julia" here).
   function buildCard(key, juliaCode) {

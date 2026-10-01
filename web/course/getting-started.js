@@ -1,6 +1,6 @@
-/* Julia Time: the one script on the Start Here page. It only fixes the "Open the local Case Board" link.
-   Served by the running game (any port 8000-8009), the link stays on this same address and keeps the
-   attempt; opened from the folder or shared as a static page, it keeps the usual address in the HTML. */
+/* Julia Time: the one script on the How to play page. It only adds the attempt to its Board links.
+   Served by the running game, the links stay on this same address (they are relative); opened from the
+   folder or shared as a static page, they keep the plain relative address in the HTML. */
 (function (root) {
   "use strict";
   function boardHref(loc) {
@@ -10,7 +10,9 @@
   }
   if (typeof module === "object" && module.exports) module.exports = {boardHref};
   if (root && root.document) root.document.addEventListener("DOMContentLoaded", function () {
-    const link = root.document.getElementById("local-case-board"), href = boardHref(root.location);
-    if (link && href) link.href = href;
+    const href = boardHref(root.location);
+    if (!href) return;
+    // Every Board link on this page (header, top button, foot button) keeps the attempt.
+    for (const link of root.document.querySelectorAll("#header-board, #local-case-board, [data-board-link]")) link.href = href;
   });
 })(typeof window !== "undefined" ? window : null);

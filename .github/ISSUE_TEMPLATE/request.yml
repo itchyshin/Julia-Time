@@ -1,0 +1,23 @@
+name: I want a feature or a lesson
+description: Something you would like Julia Time to teach or do.
+title: "Request: "
+labels: ["request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for telling us. A few plain words are enough.
+  - type: textarea
+    id: want
+    attributes:
+      label: What would you like?
+      description: A lesson, a feature, a topic, a kind of data. Whatever comes to mind.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help you?
+      description: What are you trying to learn or teach? (Optional)
+    validations:
+      required: false

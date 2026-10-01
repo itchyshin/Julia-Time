@@ -1,0 +1,214 @@
+/* Julia Time: the target range. Owned by the range builder (fix round 2, 30 Sep); loaded after lesson.css (lesson.html links
+   it, and web/lesson-range.js adds the link if the page does not). Everything is scoped to the range screen so no lesson
+   screen changes. All range text is at least 16px and at least 4.5:1 against its background. The motion is three short
+   beats, each driven by the result of the player's line: the sweep (jars the line keeps light up, the rest fade), then
+   the fill (a wobble, left to right) and the wrong-pick shake. Under prefers-reduced-motion the script adds no animation
+   class at all, and the blanket rule in lesson.css keeps the rest still: the jars simply show the result. */
+
+#app[data-screen="range"] { font-size: 16px; }
+#app[data-screen="range"] #strip-text, #app[data-screen="range"] #line-count, #app[data-screen="range"] #conn,
+#app[data-screen="range"] .navlink, #app[data-screen="range"] .small, #app[data-screen="range"] #data-label,
+#app[data-screen="range"] .kind, #app[data-screen="range"] .hint, #app[data-screen="range"] .works-too,
+#app[data-screen="range"] .julia-msg, #app[data-screen="range"] .julia-msg pre, #app[data-screen="range"] textarea { font-size: 16px; }
+
+/* the main button: the Board's orange, a little lighter so navy ink on it reaches 4.5:1 */
+#app[data-screen="range"] button.primary { background: #f47d49; border-color: #f47d49; }
+#app[data-screen="range"] button.primary:hover:not(:disabled) { background: #ff9560; }
+
+/* ---- the left column: the level's name, and the ladder ---- */
+#screen-lesson[data-mode="range"] .kind { margin: 0 0 2px; text-transform: none; letter-spacing: 0; font-weight: 700; color: var(--accent); }
+#screen-lesson[data-mode="range"] #round-title { margin-bottom: 6px; }
+#screen-lesson[data-mode="range"] #explain { margin-bottom: 8px; }
+#screen-lesson[data-mode="range"] #prompt { font-weight: 700; margin-bottom: 8px; }
+#screen-lesson[data-mode="range"] #then-line { margin-bottom: 8px; }
+
+#screen-lesson[data-mode="range"] #wave-list { display: block; margin: 0 0 6px; padding: 0 0 0 14px; border-left: 4px solid var(--line); }
+#wave-list li.group { position: relative; display: grid; grid-template-columns: 9.5em minmax(0, 1fr); align-items: center; gap: 4px 10px; padding: 3px 0; }
+#wave-list li.group::before { content: ""; position: absolute; left: -23px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--bg); border: 3px solid var(--line); }
+#wave-list li.group.done::before { background: var(--accent); border-color: var(--accent); }
+#wave-list .group-title { margin: 0; font-weight: 700; }
+#wave-list .rungs { display: flex; flex-wrap: wrap; gap: 6px; }
+#app[data-screen="range"] #wave-list button.wave { width: auto; min-width: 44px; min-height: 40px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 16px; }
+#app[data-screen="range"] #wave-list button.wave[aria-current="true"] { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+#app[data-screen="range"] #wave-list .wave-side { font-size: 16px; color: inherit; font-weight: 700; }
+#app[data-screen="range"] #wave-list .wave-side:empty { display: none; }
+#wave-list .rung.locked { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 10px; border: 1px dashed var(--ink-soft); border-radius: 6px; color: var(--ink-soft); background: transparent; font-size: 16px; }
+/* the boss rung is its own colour, as the boss level is */
+#wave-list li.group.boss .group-title { color: #3b2f86; }
+#wave-list li.group.boss::before { border-color: #3b2f86; }
+#wave-list li.group.boss.done::before { background: #3b2f86; }
+#app[data-screen="range"] #wave-list button.wave.boss { border-color: #3b2f86; color: #3b2f86; font-weight: 700; }
+#app[data-screen="range"] #wave-list button.wave.boss[aria-current="true"] { background: #3b2f86; color: #fff; }
+#wave-list .rung.locked { font-weight: 400; }
+#app[data-screen="range"] #locked-line { font-size: 16px; }
+#waves #wave-hint-text { margin: 6px 0 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--panel); font-size: 16px; }
+
+/* ---- the boss: its own colour, a story line, a bigger table ---- */
+.boss-banner { margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: #2a2350; color: #f6f3ff; border-left: 6px solid #ffd166; }
+.boss-banner p { margin: 0; }
+.boss-banner .boss-tag { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #ffd166; }
+.boss-banner .boss-story { font-size: 17px; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .kind { color: #3b2f86; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .rack { --pre-bg: #3c3477; --pre-bd: #b9b0ee; --pre-id: #f6f3ff; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] #board { background: #2a2350; color: #f6f3ff; border-radius: 10px; padding: 8px 10px; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .grp-label, #app[data-screen="range"] #screen-lesson[data-boss="1"] .board-summary, #app[data-screen="range"] #screen-lesson[data-boss="1"] .sweep-note { color: #f6f3ff; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar-id { color: #f6f3ff; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar-body { background: #3c3477; border-color: #b9b0ee; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar-body::before { background: #b9b0ee; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.target .jar-body, #app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.missed .jar-body { background: #2a2350; border: 3px solid #ffd166; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.target .jar-body::before, #app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.missed .jar-body::before { background: #ffd166; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.hit .jar-body { background: #5fd6c4; border-color: #5fd6c4; color: #0d2b27; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.hit .jar-body::before { background: #5fd6c4; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.miss .jar-body { background: #ff9a8f; border-color: #ff9a8f; color: #3b0f0a; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.miss .jar-body::before { background: #ff9a8f; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.miss .jar-id, #app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.hit .jar-id { color: #ffffff; font-weight: 700; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar.hit.refused .jar-body { background: #2a2350; border: 3px solid #5fd6c4; color: #5fd6c4; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .jar-again { color: #ffb4ab; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .sweeper-line { background: #ffd166; color: #2a2350; }
+/* the boss shelf has no legend line: its chip lies at the right, clear of the group labels (round 5) */
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .sweeper-line { left: auto; right: 0; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .sweeper-line::after { background: #2a2350; }
+
+/* ---- the right column: a smaller editor, the columns strip, the jars ---- */
+#screen-lesson[data-mode="range"] #code { flex: 0 0 auto; height: 4.6em; min-height: 4.6em; max-height: 4.6em; resize: none; }
+.range-cols { margin: 0 0 6px; padding: 5px 8px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; background: var(--panel); display: flex; flex-wrap: wrap; gap: 2px 9px; align-items: baseline; }
+.range-cols .cols-lead { font-weight: 700; }
+.range-cols code { font: 700 16px var(--mono); color: var(--ink); }
+.range-cols .col-eg { color: var(--ink-soft); margin-left: 3px; }
+.range-legend { margin: 0 0 8px; line-height: 22px; color: var(--ink-soft); } /* 30 px with its gap: the strip the sweep chip lies over (round 5) */
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .range-legend { color: #d9d2ff; }
+#range-sound { margin-left: auto; }
+#range-sound[aria-pressed="true"] { background: var(--accent-soft); border-width: 2px; }
+
+#app[data-screen="range"] #board { margin-bottom: 6px; }
+.rack-wrap { position: relative; }
+#app[data-screen="range"] .rack { gap: 4px 12px; }
+#app[data-screen="range"] .grp-label { margin: 0 0 1px; font: 600 16px var(--mono); color: var(--ink-soft); }
+#app[data-screen="range"] .grp-jars { gap: 4px; }
+#app[data-screen="range"] .jar { width: 76px; }
+#app[data-screen="range"] .jar-body { height: 50px; margin-top: 12px; font: 700 26px/46px var(--sans); transition: none; border-radius: 8px 8px 16px 16px; }
+#app[data-screen="range"] .jar-body::before { left: 16px; right: 16px; }
+/* the boss table is denser: thirty jars in the same room */
+#app[data-screen="range"] .rack.dense { gap: 2px 10px; }
+#app[data-screen="range"] .rack.dense .jar { width: 58px; }
+#app[data-screen="range"] .rack.dense .jar-body { height: 30px; margin-top: 8px; font-size: 18px; line-height: 26px; }
+#app[data-screen="range"] .rack.dense .jar-body::before { left: 10px; right: 10px; }
+#app[data-screen="range"] .rack.dense .grp-jars { gap: 2px; }
+#app[data-screen="range"] .jar-id { font: 16px/1.25 var(--mono); }
+#app[data-screen="range"] .jar.miss .jar-body { background: #8f3f37; border-color: #8f3f37; }
+#app[data-screen="range"] .jar.miss .jar-body::before { background: #8f3f37; }
+#app[data-screen="range"] .jar.hit .jar-body, #app[data-screen="range"] .jar.miss .jar-body { animation: none; }
+/* a right jar whose way the level refuses: an outline tick, not a filled win */
+.jar.hit.refused .jar-body { background: #fff; border: 3px solid var(--accent); color: var(--accent); }
+.jar.hit.refused .jar-body::before { background: var(--accent); }
+.jar-again { display: block; font: 700 16px/1.2 var(--sans); color: var(--bad); }
+#app[data-screen="range"] .board-summary { margin: 6px 0 0; font-size: 16px; }
+.sweep-note { margin: 0; color: var(--ink-soft); font-size: 16px; }
+
+/* the words wait for the picture: they fade in as the fills begin */
+[data-late] { animation: jt-settle 300ms var(--late, 1100ms) backwards; }
+
+/* ---- beat 1: the sweep. The player's line appears over the jars; jars it keeps light up, the rest fade ---- */
+.sweeper { position: absolute; inset: 0; pointer-events: none; }
+.sweeper-line { position: absolute; top: 0; left: 0; max-width: 100%; padding: 2px 10px 6px; line-height: 22px; border-radius: 6px 6px 0 0; background: var(--ink); color: #fff; font: 700 16px var(--mono);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: jt-label var(--sweep) linear both; }
+.sweeper-line::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; background: #ffd166; animation: jt-progress var(--sweep) linear both; }
+@keyframes jt-label { 0% { opacity: 0; } 8% { opacity: 1; } 86% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes jt-progress { from { width: 0; } to { width: 100%; } }
+@keyframes jt-lit { 0% { transform: none; filter: none; } 30%, 70% { transform: translateY(-5px); filter: drop-shadow(0 0 7px #e0a526); } 100% { transform: none; filter: none; } }
+@keyframes jt-dim { 0% { opacity: 1; } 30%, 70% { opacity: .25; } 100% { opacity: 1; } }
+.rack.go .jar.sw-pass { animation: jt-lit 420ms var(--sw) backwards; }
+.rack.go .jar.sw-fail { animation: jt-dim 420ms var(--sw) backwards; }
+
+/* ---- beat 2: the cascade. Each right jar wobbles and fills, one after another; each wrong pick shakes ---- */
+@keyframes jt-fill { from { background-color: var(--pre-bg, #fff); border-color: var(--pre-bd, #b9c0bd); color: transparent; } to { } }
+@keyframes jt-wobble { 0% { transform: rotate(0) scale(1); } 22% { transform: rotate(-8deg) scale(1.1); } 48% { transform: rotate(7deg) scale(1.12); } 72% { transform: rotate(-3deg) scale(1.04); } 100% { transform: rotate(0) scale(1); } }
+@keyframes jt-missfill { from { background-color: var(--pre-bg, #fff); border-color: var(--pre-bd, #b9c0bd); color: transparent; } to { } }
+@keyframes jt-shake { 0%, 100% { transform: translateX(0); } 18% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 62% { transform: translateX(-3px); } 82% { transform: translateX(2px); } }
+@keyframes jt-lid { from { background-color: var(--pre-bd, #b9c0bd); } to { } }
+@keyframes jt-idc { from { color: var(--pre-id, var(--ink-soft)); } to { } }
+@keyframes jt-ring { from { border-color: var(--pre-bd, #b9c0bd); } to { } }
+@keyframes jt-pop { 0% { transform: scale(.9); opacity: 0; } 60% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes jt-settle { from { opacity: 0; } to { opacity: 1; } }
+#app[data-screen="range"] .rack.go .jar.hit:not(.refused) .jar-body { animation: jt-fill 260ms var(--cs) backwards, jt-wobble 440ms var(--cs) backwards; }
+#app[data-screen="range"] .rack.go .jar.miss .jar-body { animation: jt-missfill 200ms var(--cs) backwards, jt-shake 340ms var(--cs) backwards; }
+#app[data-screen="range"] .rack.go .jar.hit:not(.refused) .jar-body::before, #app[data-screen="range"] .rack.go .jar.miss .jar-body::before,
+#app[data-screen="range"] .rack.go .jar.missed .jar-body::before, #app[data-screen="range"] .rack.go .jar.target .jar-body::before { animation: jt-lid 260ms var(--cs) backwards; }
+#app[data-screen="range"] .rack.go .jar.hit:not(.refused) .jar-id, #app[data-screen="range"] .rack.go .jar.miss .jar-id { animation: jt-idc 260ms var(--cs) backwards; }
+#app[data-screen="range"] .rack.go .jar.refused .jar-body { animation: jt-settle 260ms var(--cs) backwards; }
+#app[data-screen="range"] .rack.go .jar.missed .jar-body, #app[data-screen="range"] .rack.go .jar.target .jar-body { animation: jt-ring 260ms var(--cs) backwards; }
+#app[data-screen="range"] .rack.go .jar-again { animation: jt-settle 260ms var(--cs) backwards; }
+
+/* ---- the end: boss beaten, and each cleared line beside a small picture of its jars ---- */
+#screen-range-end { max-width: 760px; }
+#app[data-screen="range"] #screen-range-end, #app[data-screen="range"] #screen-range-end p, #app[data-screen="range"] #screen-range-end li,
+#app[data-screen="range"] #screen-range-end a, #app[data-screen="range"] #screen-range-end button { font-size: 16px; }
+#screen-range-end h1 { font-size: 26px; }
+.finale { animation: jt-pop 600ms ease-out backwards; margin: 0 0 12px; padding: 12px 16px; border-radius: 10px; background: #2a2350; color: #f6f3ff; border-left: 8px solid #ffd166; }
+.finale p { margin: 0; }
+.finale .finale-kicker { font: 700 24px var(--serif); color: #ffd166; }
+.finale .finale-line { font-size: 17px; }
+#range-end-lines li.cleared { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); margin: 0; }
+#range-end-lines li.cleared.boss strong { color: #3b2f86; }
+#range-end-lines li.cleared pre { grid-column: 1 / -1; margin: 0; font: 16px var(--mono); }
+.mini { display: flex; flex-wrap: wrap; gap: 3px; max-width: 280px; justify-content: flex-end; }
+.mini .m { width: 12px; height: 18px; border: 1px solid #8a9491; border-radius: 3px 3px 6px 6px; background: #efece0; }
+.mini .m.on { background: var(--accent); border-color: var(--accent); }
+#range-end-lines.rise li.cleared { animation: jt-settle 420ms calc(var(--i) * 130ms) backwards; }
+#range-end-lines.rise li.cleared .m.on { animation: jt-wobble 500ms calc(var(--i) * 130ms + 200ms) backwards; }
+
+/* the bar and the footer on the range screen: 16px */
+@media (max-width: 799px) {
+  #wave-list li.group { grid-template-columns: 1fr; }
+}
+
+/* ---- fix round 4 ---- */
+/* the hint opens straight under the buttons (the page's own place for it) */
+#wave-hint-text { margin: 0 0 6px; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--panel); font-size: 16px; }
+/* the columns strip stays on one row, so it costs one line */
+.range-cols { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; margin-bottom: 4px; padding: 3px 8px; }
+
+/* ---- a boss win: a gold flash on the shelf, a warmer, bigger banner. Under reduced motion the gold ring is simply there. ---- */
+#board.boss-won { box-shadow: 0 0 0 3px #ffd166; border-radius: 10px; }
+@keyframes jt-gold { 0% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0); } 30% { box-shadow: 0 0 0 7px #ffd166, 0 0 36px 12px rgba(255, 209, 102, .85); } 100% { box-shadow: 0 0 0 3px #ffd166, 0 0 0 0 rgba(255, 209, 102, 0); } }
+#board.boss-won.boss-flash { animation: jt-gold 1500ms var(--flash, 1400ms) backwards; }
+#feedback.ok.boss-win { margin: 0 0 4px; padding: 4px 16px 4px 56px; border-left: 8px solid #ffd166; border-radius: 8px; background: #2a2350; color: #f6f3ff; font: 700 22px/1.25 var(--serif); }
+/* Round 6 (Tufte r5, finding 4): the peak of a boss win. A small gold kicker, the serif line, a gold glow that stays on the hit jars, and "5 of 5" in gold. */
+#feedback.ok.boss-win .boss-kicker { display: block; font: 700 16px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: #ffd166; }
+#feedback.ok.boss-win .boss-dot { font-size: 0; }
+#feedback.ok.boss-win .boss-line { display: block; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] #board.boss-won .jar.hit .jar-body { box-shadow: 0 0 10px 2px rgba(255, 209, 102, .7); }
+#board.boss-won .win-num { font: 700 18px/1.4 var(--sans); color: #ffd166; }
+#feedback.ok.boss-win[data-late] { animation: jt-pop 600ms var(--late, 1100ms) backwards; }
+
+/* ---- a Run that waits: the jars rest in a slow pulse, a few times, and it stops with the answer ---- */
+@keyframes jt-wait { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+#board[data-waiting] .jar-body { animation: jt-wait 1600ms ease-in-out 6; }
+
+/* ---- the finale: a bigger, labelled picture of the jars each line picked, one row even for the boss ---- */
+#range-end-lines li.cleared { grid-template-columns: minmax(0, 1fr) auto; }
+#range-end-lines li.cleared .mini { grid-column: 1 / -1; max-width: none; justify-content: flex-start; flex-wrap: nowrap; gap: 3px; }
+.mini .m { flex: 0 1 26px; min-width: 6px; height: 26px; border-radius: 4px 4px 9px 9px; }
+.mini-cap { color: var(--ink-soft); }
+#next[data-held] { visibility: hidden; }
+
+/* ---- the boss page fits the screen with the hint open: the thirty-jar shelf is denser in words too ---- */
+#screen-lesson[data-boss="1"] #code { height: 4.6em; min-height: 4.6em; max-height: 4.6em; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .range-legend { display: none; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .board-summary, #app[data-screen="range"] #screen-lesson[data-boss="1"] .sweep-note { display: inline-block; margin: 6px 14px 0 0; }
+#screen-lesson[data-boss="1"] .boss-banner { margin-bottom: 4px; padding: 6px 12px; }
+#screen-lesson[data-boss="1"] #round-title { margin-top: 0; margin-bottom: 2px; }
+#screen-lesson[data-boss="1"] #explain { margin-bottom: 4px; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] .grp-label { line-height: 1.1; }
+#screen-lesson[data-boss="1"] #prompt, #screen-lesson[data-boss="1"] #then-line { margin-bottom: 4px; }
+#screen-lesson[data-boss="1"] #waves #wave-list { margin-bottom: 0; }
+#app[data-screen="range"] #screen-lesson[data-boss="1"] #board { padding: 5px 10px; margin-bottom: 4px; }
+#feedback.ok.boss-win::before { top: 50%; margin-top: -14px; background: #ffd166; color: #2a2350; }
+
+/* ---- fix round 5: a tray, batch or jar name (T-E, B05, Q-053, or any quoted value in a finale line) never breaks at its hyphen ---- */
+.nw { white-space: nowrap; }
+
+/* ---- fix round 5: room on the range screen. The two lines under the jars ("Right jars ..." and "Your line kept ...") share one row on
+   every level, as they already did on the boss. That gives back a whole line (24 px), so Next ends inside the 768 px screen
+   even with the third row of jars and the hint open. ---- */
+#app[data-screen="range"] .board-summary, #app[data-screen="range"] .sweep-note { display: inline-block; margin: 6px 14px 0 0; }

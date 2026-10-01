@@ -13,8 +13,8 @@ const intro = require("../web/course/intro.js");
 const courseState = require("../web/course/course-state.js");
 const client = require("../web/course/course-client.js");
 
-test("scenes: intro-script.js has exactly 5 scenes with the required fields", () => {
-  assert.equal(script.scenes.length, 5);
+test("scenes: intro-script.js has exactly 6 scenes (the road map first) with the required fields", () => {
+  assert.equal(script.scenes.length, 6);
   for (const scene of script.scenes) {
     assert.ok(scene.title && scene.title.trim(), "title");
     assert.ok(scene.caption && scene.caption.trim(), "caption");
@@ -25,17 +25,17 @@ test("scenes: intro-script.js has exactly 5 scenes with the required fields", ()
   }
 });
 
-test("scenes: player next/back/skip respect the bounds of the 5 scenes", () => {
+test("scenes: player next/back/skip respect the bounds of the 6 scenes", () => {
   let player = intro.createPlayer(script.scenes.length);
-  assert.deepEqual(player, {index:0, count:5});
+  assert.deepEqual(player, {index:0, count:6});
   player = intro.playerStep(player, "back");
   assert.equal(player.index, 0, "back does not go below 0");
   for (let i = 0; i < 10; i++) player = intro.playerStep(player, "next");
-  assert.equal(player.index, 4, "next stops at the last scene (index count - 1)");
+  assert.equal(player.index, 5, "next stops at the last scene (index count - 1)");
   player = intro.playerStep(player, "back");
-  assert.equal(player.index, 3);
+  assert.equal(player.index, 4);
   player = intro.playerStep(player, "skip");
-  assert.equal(player.index, 4, "skip jumps straight to the last scene");
+  assert.equal(player.index, 5, "skip jumps straight to the last scene");
 });
 
 test("scenes: intro.js never auto-advances with a timer", () => {
@@ -62,8 +62,8 @@ test("fixture: batch B09 in src/mystery.jl has 6 jars on 3 trays, 2 per tray, na
   for (const tray of distinctTrays) assert.equal(b09Trays.filter(t => t === tray).length, 2, tray + " has 2 jars");
 });
 
-test("fixture: scene 2's caption states the batch facts in words, matching the game's data", () => {
-  const scene2 = script.scenes[1];
+test("fixture: scene 3's caption states the batch facts in words, matching the game's data", () => {
+  const scene2 = script.scenes[2];
   assert.match(scene2.caption, /six jars/i);
   assert.match(scene2.caption, /three trays/);
   assert.match(scene2.caption, /T-A, T-B and T-C/);
@@ -99,13 +99,32 @@ test("entry: dashboardModel().startWithIntro is false once the whole case is com
   assert.equal(model.startWithIntro, false);
 });
 
-test("entry: course-board.js references startWithIntro and skip-intro", () => {
+test("entry: the intro is optional; the Board's one Start goes to Lesson 1 and the intro is marked seen", () => {
   const board = read("web/course/course-board.js");
-  assert.match(board, /startWithIntro/);
-  assert.match(board, /skip-intro/);
+  assert.match(read("web/course/course-client.js"), /startWithIntro/);
+  assert.doesNotMatch(board, /next\.kind === "intro"/);
+  assert.doesNotMatch(read("web/course/index.html"), /id="skip-intro"/);
+  assert.match(read("web/course/intro.js"), /INTRO_SEEN_KEY/);
 });
 
-test("entry: web/course/index.html has a #skip-intro element next to #continue-action", () => {
-  const html = read("web/course/index.html");
-  assert.match(html, /id="skip-intro"/);
+test("0.5 fix: the road map is scene 1, every scene is under 45 words, and the last button says Start Lesson 1", () => {
+  assert.match(script.scenes[0].title, /road map/i);
+  assert.match(script.scenes[0].caption, /six steps/i);
+  for (const scene of script.scenes) {
+    const count = (scene.caption + " " + (scene.speaker || "") + " " + (scene.line || "")).split(/\s+/).length;
+    assert.ok(count < 45, scene.title + " has " + count + " words");
+  }
+  assert.equal(script.buttons.start, "Start Lesson 1 →");
+  assert.doesNotMatch(JSON.stringify(script), /Part [123]/);
+  assert.doesNotMatch(read("web/course/intro.css"), /ending-caption[^}]*font-weight:\s*[5-9]00|ending-caption[^}]*font-weight:\s*bold/, "intro captions are regular weight");
+});
+
+test("0.5 fix: reaching the last scene marks the intro seen, and the Board then counts it done", () => {
+  const store = new Map();
+  const storage = {getItem: k => store.has(k) ? store.get(k) : null, setItem: (k, v) => store.set(k, String(v)), key: i => [...store.keys()][i], get length() { return store.size; }};
+  assert.equal(client.lessonProgress(storage).introSeen, false);
+  storage.setItem(client.INTRO_SEEN_KEY, "1");
+  assert.equal(client.lessonProgress(storage).introSeen, true);
+  const model = client.dashboardModel(courseState.emptyCourseState());
+  assert.equal(client.courseWalk(model, client.lessonProgress(storage), "").introDone, true);
 });

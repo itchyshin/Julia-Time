@@ -40,15 +40,22 @@ const walk = dir => { for (const e of fs.readdirSync(dir, {withFileTypes:true}))
   if (e.isDirectory()) { if (!["vendor", "assets", "fixtures"].includes(e.name)) walk(p); }
   else if (/\.(html|js)$/.test(e.name) && !/fixtures\.html$/.test(e.name)) files.push(p); } };
 walk(path.join(root, "web"));
-for (const f of fs.readdirSync(path.join(root, "src"))) if (/^mystery.*\.jl$/.test(f)) files.push(path.join(root, "src", f));
+// src/lessons.jl holds the lesson engine's feedback lines (checkpoint messages, fallbacks): players read them too.
+for (const f of fs.readdirSync(path.join(root, "src"))) if (/^(mystery.*|lessons)\.jl$/.test(f)) files.push(path.join(root, "src", f));
+// Lesson files (lessons/*.json, range.json too): every string value is learner-facing text, code included.
+// That covers each glossary term and meaning and each range wave's target and hint (see test/lesson-data.test.cjs).
+const lessonsDir = path.join(root, "lessons");
+if (fs.existsSync(lessonsDir)) for (const f of fs.readdirSync(lessonsDir)) if (f.endsWith(".json")) files.push(path.join(lessonsDir, f));
+const jsonStrings = (v, out = []) => { if (typeof v === "string") out.push(v); else if (Array.isArray(v)) v.forEach(x => jsonStrings(x, out)); else if (v && typeof v === "object") Object.values(v).forEach(x => jsonStrings(x, out)); return out; };
 const hits = [];
 for (const f of files) {
   let text = fs.readFileSync(f, "utf8");
-  if (f.endsWith(".html")) text = text.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/g, " ").replace(/<[^>]+>/g, " ");
+  if (f.endsWith(".json")) text = jsonStrings(JSON.parse(text)).join("\n");
+  else if (f.endsWith(".html")) text = text.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/g, " ").replace(/<[^>]+>/g, " ");
   else if (f.endsWith(".js")) text = (text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`\\])\/\/[^\n]*/g, "$1").match(/"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g) || []).join("\n");
   else text = (text.replace(/"""[\s\S]*?"""/g, " ").replace(/#[^\n"]*$/gm, "").match(/"(?:[^"\\\n]|\\.)*"/g) || []).join("\n");
   // A string with no space is a class name, key or identifier, never a sentence a player reads.
-  if (!f.endsWith(".html")) text = text.split("\n").filter(line => /\s/.test(line.slice(1, -1))).join("\n");
+  if (!f.endsWith(".html") && !f.endsWith(".json")) text = text.split("\n").filter(line => /\s/.test(line.slice(1, -1))).join("\n");
   for (const phrase of BANNED) { const re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"); const n = (text.match(re) || []).length; if (n) hits.push(`${path.relative(root, f)}: "${phrase}" x${n}`); }
 }
 if (hits.length) { console.log(hits.join("\n")); console.log(`PLAIN-WORDS: ${hits.length} file/phrase hits`); process.exit(1); }
