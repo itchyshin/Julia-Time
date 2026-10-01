@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Julia Time</title>
+<meta name="description" content="A free game that teaches the Julia language through a lab mystery. Real code, real data, and your R or Python beside every line.">
+<meta name="theme-color" content="#0F2836">
+<link rel="preload" href="fonts/source-serif-4-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ibm-plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="mark" href="#main"><span class="dots" aria-hidden="true"><i class="d-red"></i><i class="d-green"></i><i class="d-blue"></i><i class="d-purple"></i></span>Julia Time</a>
+    <nav class="top-nav" aria-label="Page">
+      <a href="#why">Why Julia</a>
+      <a href="#teachers">For teachers</a>
+      <a href="https://github.com/itchyshin/Julia-Time/issues/new/choose">Tell us what to improve</a>
+    </nav>
+    <a class="btn btn-sm" href="https://github.com/itchyshin/Julia-Time/releases/latest">Download</a>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="band night first" aria-labelledby="h1">
+  <div class="wrap">
+    <h1 id="h1">Learn Julia by solving a mystery.</h1>
+    <div class="first-grid">
+      <figure class="exhibit trailer">
+        <div class="screen">
+        <video class="player" controls preload="metadata" poster="img/poster-how-to-play.jpg" width="1280" height="720">
+          <source src="trailer.mp4" type="video/mp4">
+          <track kind="captions" src="trailer.vtt" srclang="en" label="English">
+          <a href="trailer.mp4">Open the trailer file</a>
+        </video>
+        </div>
+        <figcaption class="label strip">Exhibit 01 · Trailer · 1:44 · Captions on</figcaption>
+      </figure>
+      <div class="pitch">
+        <p class="label case">Case 01 · The Missing Fleas</p>
+        <p class="hook">Toto's report says the lab's springtails, tiny relatives of snow fleas, are dying out. The notebook may say otherwise. Find out, one line of Julia at a time.</p>
+        <ol class="first-steps">
+          <li><span class="n">1</span><span>Install Julia 1.10 (<a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/install.md">install guide</a>).</span></li>
+          <li><span class="n">2</span><span>Download Julia Time, unzip it, double-click to play (Mac and Windows).</span></li>
+        </ol>
+        <p><a class="btn btn-lg" href="https://github.com/itchyshin/Julia-Time/releases/latest">Download Julia Time</a></p>
+        <p class="setup" id="setup">Free. About 1&nbsp;GB of disk; internet once for setup (about a minute or two on a fast connection), then offline. Linux: from a terminal. Laptop or desktop, not a phone. Tested on macOS; tell us if anything breaks on yours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band day" id="why" aria-labelledby="why-h">
+  <div class="wrap">
+    <p class="label kicker">Why Julia</p>
+    <h2 id="why-h">Write the plain loop. It is already fast.</h2>
+    <p class="lead">When your analysis needs its own loop, like a simulation or a bootstrap, Julia runs it fast with no rewrite.</p>
+
+    <figure class="race" id="race-boot">
+      <figcaption class="race-cap"><b>Bootstrap a mean:</b> 10,000 resamples of 1,000 values. The inner loops differ by language, as shown.</figcaption>
+      <div class="lane is-julia" data-ms="35.92">
+        <p class="who">Julia, loop</p>
+        <pre class="snip">for b in 1:B
+    s = 0.0
+    for i in 1:n
+        s += x[rand(rng, 1:n)]
+    end
+    m[b] = s / n
+end</pre>
+        <p class="bar"><span class="track"><i style="--w:19.3%"></i><span class="ms">36 ms</span></span></p>
+      </div>
+      <div class="lane" data-ms="58.8">
+        <p class="who">Python, NumPy vectorised</p>
+        <pre class="snip">rng.choice(x, (B, len(x))).mean(axis=1)</pre>
+        <p class="bar"><span class="track"><i style="--w:31.6%"></i><span class="ms">59 ms</span></span></p>
+      </div>
+      <div class="lane" data-ms="126">
+        <p class="who">R, vectorised</p>
+        <pre class="snip">rowMeans(matrix(sample(x, n * B,
+  replace = TRUE), nrow = B))</pre>
+        <p class="bar"><span class="track"><i style="--w:67.7%"></i><span class="ms">126 ms</span></span></p>
+      </div>
+      <div class="lane" data-ms="126.5">
+        <p class="who">Python, loop</p>
+        <pre class="snip">for b in range(B):
+    m[b] = rng.choice(x, n).mean()</pre>
+        <p class="bar"><span class="track"><i style="--w:68%"></i><span class="ms">127 ms</span></span></p>
+      </div>
+      <div class="lane" data-ms="186">
+        <p class="who">R, loop</p>
+        <pre class="snip">for (b in 1:B)
+  m[b] &lt;- mean(sample(x, n, replace = TRUE))</pre>
+        <p class="bar"><span class="track"><i style="--w:100%"></i><span class="ms">186 ms</span></span></p>
+      </div>
+    </figure>
+
+    <figure class="race race-small" id="race-sum">
+      <figcaption class="race-cap"><b>The trailer's race:</b> a plain loop adding up 10 million numbers.</figcaption>
+      <div class="lane" data-ms="180"><p class="who">R</p><p class="bar"><span class="track"><i style="--w:100%"></i><span class="ms">180 ms</span></span></p></div>
+      <div class="lane" data-ms="133.86"><p class="who">Python</p><p class="bar"><span class="track"><i style="--w:74.4%"></i><span class="ms">134 ms</span></span></p></div>
+      <div class="lane is-julia" data-ms="10.21"><p class="who">Julia</p><p class="bar"><span class="track"><i style="--w:5.7%"></i><span class="ms">10 ms</span></span></p></div>
+      <div class="lane" data-ms="10.13"><p class="who">C</p><p class="bar"><span class="track"><i style="--w:5.6%"></i><span class="ms">10 ms</span></span></p></div>
+    </figure>
+
+    <p class="small">Our own measurement: one Mac Studio (M1 Ultra), macOS 26.7, 24 September 2026; Julia 1.10.12, R 4.6.0, Python 3.13.2, NumPy 2.3.3, Apple clang. One thread; median of 7 runs after a warm-up (11 for Julia and C in the sum); compile time is not shown. Built-in <code>sum</code>: Julia 1.9 ms, NumPy 2.2, R 17. Loading DataFrames takes about 1 second each time you start Julia.</p>
+
+    <ul class="also">
+      <li><b>Reads like R and Python.</b> Every new line shows its R and Python twin.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band night play" aria-labelledby="play-h">
+  <div class="wrap">
+    <h2 id="play-h">One character is missing.</h2>
+
+    <div class="pz-grid">
+    <div class="puzzle is-solved" id="puzzle" role="group" aria-labelledby="pz-prompt" data-fold-exempt>
+      <p class="label pz-field">A line from Lesson 1, with the dot removed</p>
+      <p class="pz-prompt" id="pz-prompt">Toto, who wrote the report, wants the jars on tray T-F. <code>logbook</code> is the lab notebook, a table. Tap where the dot goes.</p>
+      <div class="editor"><code class="line">logbook[<button type="button" class="slot" aria-label="Put the dot here, spot 1 of 4"></button>logbook<button type="button" class="slot" aria-label="Put the dot here, spot 2 of 4"></button>.tray_id <button type="button" class="slot" data-ok aria-label="Put the dot here, spot 3 of 4">.</button>== "T-F"<button type="button" class="slot" aria-label="Put the dot here, spot 4 of 4"></button>, :]</code></div>
+
+      <div class="out" aria-live="polite">
+        <p class="out-miss">Not there, try another spot.</p>
+        <div class="out-err">
+          <p class="label err-label">The game, on this line</p>
+          <p class="err-help">Add the dot: .== asks every jar, while a plain == gives one answer that cannot pick rows.</p>
+          <details class="err-own"><summary>Julia's own message</summary><code>ArgumentError: invalid row index of type Bool</code></details>
+        </div>
+        <div class="out-ok">
+          <p class="ok-cap">A table: 4 rows, 4 columns.</p>
+          <pre class="table" tabindex="0" aria-label="Julia's printed table">4×4 DataFrame
+ Row │ jar_id  batch_id  tray_id  detected
+     │ String  String    String   Bool
+─────┼─────────────────────────────────────
+   1 │ Q-045   B04       T-F         false
+   2 │ Q-046   B04       T-F         false
+   3 │ Q-055   B05       T-F          true
+   4 │ Q-056   B05       T-F         false</pre>
+          <p class="ok-pass">The rule kept the four T-F rows, two B04 and two B05, with all columns.</p>
+          <dl class="bridge">
+            <div><dt>In R</dt><dd>After library(dplyr): <code>filter(logbook, tray_id == "T-F")</code>. Julia puts the rule inside square brackets, with a dot.</dd></div>
+            <div><dt>In Python</dt><dd><code>logbook[logbook.tray_id == "T-F"]</code>. In Julia you write .== with a dot, and end with a comma and a colon to keep every column.</dd></div>
+          </dl>
+          <p class="ok-line">You just fixed a line of Julia.</p>
+        </div>
+      </div>
+    </div>
+    <figure class="pz-side">
+      <img src="img/task-pass.jpg" width="900" height="866" alt="The same task in the game: the line logbook[logbook.tray_id .== &quot;T-F&quot;, :] has run, the table has 4 rows, and a green card says the rule kept the four T-F rows.">
+      <figcaption class="small">The same task, passing in the game. Every answer here is recorded.</figcaption>
+    </figure>
+    </div>
+
+    <h2 class="moments-h" id="moments-h">From the game</h2>
+    <div class="moments">
+      <figure class="moment">
+        <div class="clip"><video class="loop" src="loops/slip.mp4" poster="loops/slip.jpg" width="1280" height="960" muted loop playsinline controls preload="none" aria-label="A line missing its dot is run, and the game names the slip."></video></div>
+        <figcaption><b>Help that names your slip.</b></figcaption>
+      </figure>
+      <figure class="moment">
+        <div class="clip"><video class="loop" src="loops/pass.mp4" poster="loops/pass.jpg" width="1280" height="960" muted loop playsinline controls preload="none" aria-label="The fixed line runs, Julia prints the table, and a green card says what was right."></video></div>
+        <figcaption><b>A pass you can see.</b></figcaption>
+      </figure>
+      <figure class="moment">
+        <div class="clip"><video class="loop" src="loops/boss.mp4" poster="loops/boss.jpg" width="1280" height="960" muted loop playsinline controls preload="none" aria-label="The boss level: one line picks five jars out of thirty, and the boss is beaten."></video></div>
+        <figcaption><b>The target range, and its boss.</b></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="band day" id="steps" aria-labelledby="steps-h">
+  <div class="wrap steps-grid">
+    <div>
+            <h2 id="steps-h">Six steps, about four hours.</h2>
+      <p class="lead">Each step: a practice lesson, then a chapter of the case.</p>
+      <ol class="steps">
+        <li data-min="50"><i class="d-red" aria-hidden="true"></i><span class="what"><b>Pick rows from a table</b><span>Lesson 40 + Chapter 10</span></span><span class="min">50 min</span></li>
+        <li data-min="43"><i class="d-green" aria-hidden="true"></i><span class="what"><b>Count by group</b><span>Lesson 35 + Chapter 8</span></span><span class="min">43 min</span></li>
+        <li data-min="35"><i class="d-blue" aria-hidden="true"></i><span class="what"><b>Join two tables</b><span>Lesson 30 + Chapter 5</span></span><span class="min">35 min</span></li>
+        <li data-min="30"><i class="d-purple" aria-hidden="true"></i><span class="what"><b>Plan a fair recheck</b><span>Lesson 25 + Chapter 5</span></span><span class="min">30 min</span></li>
+        <li data-min="33"><i class="d-red" aria-hidden="true"></i><span class="what"><b>Simulate chance</b><span>Lesson 28 + Chapter 5</span></span><span class="min">33 min</span></li>
+        <li data-min="40"><i class="d-green" aria-hidden="true"></i><span class="what"><b>Test the claim</b><span>Lesson 32 + Chapter 8</span></span><span class="min">40 min</span></li>
+      </ol>
+      <p class="small">231 minutes, plus a 2-minute intro and 5-minute ending.</p>
+    </div>
+    <figure class="board">
+      <a href="img/board-road-map.jpg"><img src="img/board-road-map.jpg" width="2049" height="2295" alt="The game's Board on a fresh start: one Start Lesson 1 button, then the six steps, each with a lesson, a chapter and its minutes."></a>
+    </figure>
+  </div>
+</section>
+
+<section class="band day rule-top" id="teachers" aria-labelledby="teach-h">
+  <div class="wrap two">
+    <h2 id="teach-h">For teachers</h2>
+    <ul class="teach">
+      <li><span>Tutor guides, one per step:</span> <span class="guides"><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/course/tutor-guide-1.md" aria-label="Tutor guide for step 1">1</a><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/course/tutor-guide-2.md" aria-label="Tutor guide for step 2">2</a><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/course/tutor-guide-3.md" aria-label="Tutor guide for step 3">3</a><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/course/tutor-guide-4.md" aria-label="Tutor guide for step 4">4</a><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/course/tutor-guide-5.md" aria-label="Tutor guide for step 5">5</a><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/course/tutor-guide-6.md" aria-label="Tutor guide for step 6">6</a></span></li>
+      <li>Runs offline on each laptop after setup.</li>
+      <li>Progress stays on that laptop; the game sends nothing anywhere.</li>
+      <li>MIT licence. Made by Shinichi Nakagawa's lab, University of Alberta.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band day rule-top" id="improve" aria-labelledby="imp-h">
+  <div class="wrap two">
+    <h2 id="imp-h">Still improving</h2>
+    <div>
+      <p class="lead">Tell us what to make better, even this page or the trailer.</p>
+      <p class="links"><a class="btn btn-ghost" href="https://github.com/itchyshin/Julia-Time/issues/new/choose">Make a request</a><a class="btn btn-ghost" href="https://github.com/itchyshin/Julia-Time/issues">See what others asked</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="band day rule-top" aria-labelledby="next-h">
+  <div class="wrap two">
+    <h2 id="next-h">Coming next</h2>
+    <ol class="next">
+      <li>Write your own functions</li>
+      <li>Loops, packages and your own data</li>
+      <li>A full teacher's pack</li>
+      <li>Tested with real students</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer class="band night foot">
+  <div class="wrap">
+    <p class="foot-mark"><span class="dots" aria-hidden="true"><i class="d-red"></i><i class="d-green"></i><i class="d-blue"></i><i class="d-purple"></i></span>Julia Time v0.5, our first public release. Made by Shinichi Nakagawa's lab, University of Alberta.</p>
+    <ul class="foot-links">
+      <li><a href="https://github.com/itchyshin/Julia-Time/blob/main/docs/install.md">Install guide</a></li>
+      <li><a href="https://github.com/itchyshin/Julia-Time">GitHub</a></li>
+      <li><a href="https://github.com/itchyshin/Julia-Time/blob/main/LICENSE">Licence: MIT</a></li>
+    </ul>
+    <p class="credits">Music: Kevin MacLeod (incompetech.com), CC BY 4.0. Voice: Kokoro-82M, Apache-2.0. Type: Source Serif 4 and IBM Plex, SIL Open Font License.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var seen = "IntersectionObserver" in window;
+
+  // The puzzle loads solved, so it reads without JavaScript. The script opens it at the broken line,
+  // with the error Julia really gives that line.
+  var pz = document.getElementById("puzzle");
+  var slots = pz.querySelectorAll(".slot");
+  pz.classList.remove("is-solved");
+  pz.classList.add("is-live");
+  slots.forEach(function (b) {
+    if (b.hasAttribute("data-ok")) b.textContent = "";
+    b.addEventListener("click", function () {
+      if (pz.classList.contains("is-solved")) return;
+      slots.forEach(function (s) { s.classList.remove("miss"); });
+      if (b.hasAttribute("data-ok")) {
+        b.textContent = ".";
+        b.disabled = true;
+        pz.classList.remove("is-wrong");
+        pz.classList.add("is-solved");
+      } else {
+        void b.offsetWidth;
+        b.classList.add("miss");
+        pz.classList.add("is-wrong");
+      }
+    });
+  });
+
+  // A plain play button over the trailer's still frame, so it reads as a film. The video's own controls stay.
+  var tv = document.querySelector(".player");
+  var pb = document.createElement("button");
+  pb.type = "button"; pb.className = "play-btn"; pb.innerHTML = '<span aria-hidden="true"></span>Play the trailer';
+  tv.controls = false;
+  pb.addEventListener("click", function () { tv.controls = true; tv.play(); });
+  tv.addEventListener("play", function () { pb.hidden = true; tv.controls = true; });
+  tv.parentNode.appendChild(pb);
+
+  // The bootstrap bars fill once, when they scroll into view: the page's one moment of motion.
+  var race = document.getElementById("race-boot");
+  if (!reduce && seen) {
+    race.classList.add("armed");
+    new IntersectionObserver(function (es, o) {
+      if (es[0].isIntersecting) { race.classList.add("run"); o.disconnect(); }
+    }, { threshold: 0.4 }).observe(race);
+  }
+
+  // The three clips: no browser controls. They play muted while in view and pause out of view.
+  // With reduced motion, or where a phone will not start them, each keeps its still frame and one play button.
+  document.querySelectorAll("video.loop").forEach(function (v) {
+    v.controls = false;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "clip-play"; b.innerHTML = '<span aria-hidden="true"></span>Play';
+    b.setAttribute("aria-label", "Play: " + v.getAttribute("aria-label"));
+    b.addEventListener("click", function () { v.preload = "auto"; v.play(); });
+    v.addEventListener("playing", function () { b.hidden = true; });
+    v.parentNode.appendChild(b);
+  });
+  if (!reduce && seen) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting) { v.preload = "auto"; var p = v.play(); if (p && p.catch) p.catch(function () { /* the play button stays */ }); }
+        else v.pause();
+      });
+    }, { threshold: 0.35 });
+    document.querySelectorAll("video.loop").forEach(function (v) { io.observe(v); });
+  }
+})();
+</script>
+</body>
+</html>
