@@ -157,8 +157,8 @@ h2 { font-size: var(--t-h2); line-height: 1.12; }
 .pz-field { color: var(--night-text); margin-bottom: var(--s1); }
 .pz-prompt { margin-bottom: var(--s3); max-width: 38em; }
 .pz-prompt code, .bridge code, .err-own code { font-size: 1em; }
-.editor { background: var(--navy-deep); border: 1px solid var(--night-rule); padding: 16px 14px; overflow-x: auto; }
-.line { font-size: 19px; white-space: nowrap; color: var(--night-text); display: inline-flex; align-items: center; }
+.editor { background: var(--navy-deep); border: 1px solid var(--night-rule); padding: 16px 14px; overflow-x: visible; }
+.line { font-size: 19px; white-space: normal; flex-wrap: wrap; row-gap: 8px; color: var(--night-text); display: inline-flex; align-items: center; }
 .slot { width: 44px; height: 44px; margin: 0 2px; border: 2px dashed var(--j-purple-n); background: rgba(170, 121, 193, 0.14); border-radius: 6px; color: var(--night-text); font: 500 26px/1 var(--mono); cursor: pointer; padding: 0; }
 .slot:hover { background: rgba(170, 121, 193, 0.3); }
 .slot[disabled] { border-style: solid; border-color: var(--j-green-n); background: rgba(124, 203, 107, 0.16); cursor: default; }
@@ -169,6 +169,7 @@ h2 { font-size: var(--t-h2); line-height: 1.12; }
 .is-solved .out-ok { display: block; }
 .is-live:not(.is-solved) .out-err { display: block; }
 .is-live.is-wrong:not(.is-solved) .out-miss { display: block; }
+.is-live:not(.is-wrong) .err-help, .is-live:not(.is-wrong) .err-label { display: none; }
 .out-miss { color: var(--night-text); font-weight: 600; margin-bottom: var(--s1); }
 .err-label { color: var(--night-soft); margin-bottom: 6px; }
 .err-help { color: var(--night-text); border-left: 3px solid var(--j-red-n); padding-left: 14px; }
