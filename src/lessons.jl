@@ -1430,6 +1430,36 @@ function _lesson_dot_assign_line(code::AbstractString, solution::AbstractString=
     return "`.=` stores a value, it does not ask a question: write .$sign to ask about every row."
 end
 
+"""Two dots between two values. With a number on either side (`1..3`, `1 .. 3`, `[7 for _ in 1..n]`) a range is
+meant, and a range uses a colon. Between two names (`logbook..jar_id`) it is a doubled dot before a column. The code
+alone shows the slip, whatever Julia then says about it. "" when the code has no such slip."""
+function _lesson_range_dots_line(code::AbstractString)
+    m = match(r"(?<![\w.])([A-Za-z_]\w*|\d+)\s*\.\.(?!\.)\s*([A-Za-z_]\w*|\d+)", _lesson_bracket_text(code))
+    m === nothing && return ""
+    a, b = m.captures
+    isdigit(a[1]) || isdigit(b[1]) || return "Use one dot between a table and its column: write $a.$b, not $a..$b."
+    return "A range uses a colon: write $a:$b, not $a..$b."
+end
+
+"""`~=` or `<>` where not equal is meant (`.~=`, `.<>`): Julia writes it `!=`, and `.!=` to ask about every row."""
+function _lesson_not_equal_line(code::AbstractString)
+    m = match(r"(?<![!=<>~])\.?(~=|<>)", _lesson_bracket_text(code))
+    m === nothing && return ""
+    return "Not equal is written != (with a dot for a whole list: .!=), not $(m.captures[1])."
+end
+
+"""`=>` for `>=`, dotted or not: `=>` makes a pair. Only when the step's own solution asks with `>=` and has no pair
+arrow itself, and when any sign on the line is the swapped one. `=<` is not handled here: Lesson 6 has its own line. "" otherwise."""
+function _lesson_sign_swap_line(solution::AbstractString, code::AbstractString)
+    sol = _lesson_bracket_text(solution)
+    occursin("=>", sol) && return ""
+    t = _lesson_bracket_text(code)
+    occursin(r"(?<![=!<>])\.?=>(?![=>])", t) || return ""
+    m = match(r"(\.?)>=", sol)
+    m === nothing && return ""
+    return "The sign is written >= (greater sign first), not => which makes a pair: write $(m.captures[1])>= here."
+end
+
 """A dash inside square brackets where a range with a colon is meant (`[1-3]`): Julia reads 1-3 as minus."""
 function _lesson_range_dash_line(code::AbstractString; solution::AbstractString="")
     t = _lesson_bracket_text(code)
@@ -1775,7 +1805,8 @@ end
 
 """Slips that run without an error but give a wrong answer, named for the step's own solution. "" when none."""
 function _lesson_value_slip_line(solution::AbstractString, code::AbstractString)
-    for line in (_lesson_pair_arrow_line(code), _lesson_range_dash_line(code; solution=solution),
+    for line in (_lesson_sign_swap_line(solution, code), _lesson_not_equal_line(code), _lesson_range_dots_line(code),
+                 _lesson_pair_arrow_line(code), _lesson_range_dash_line(code; solution=solution),
                  _lesson_quote_slip_line(solution, code), _lesson_quoted_name_line(solution, code), _lesson_dollar_line(code), _lesson_glued_assign_line(solution, code),
                  _lesson_single_eq_line(solution, code))
         isempty(line) || return line
@@ -2052,6 +2083,20 @@ function _lesson_error_line_raw(challenge, code, message; names=(), env=nothing,
     arrow = _mystery_r_arrow_note(code)
     isempty(arrow) || return arrow
     _lesson_naming_with_eq(code, message) && return LESSON_NAMING_EQ_FEEDBACK
+    # Slips the code shows by itself, whatever Julia then says: `1..3` for a range, `~=` or `<>` for not equal, `=>` for `>=`.
+    for line in (_lesson_range_dots_line(code), _lesson_not_equal_line(code), _lesson_sign_swap_line(_lesson_expected_code(challenge), code))
+        isempty(line) || return line
+    end
+    # A step that says "Get the jars from <table>": another table in the first input is the slip, even when Julia
+    # then complains about the shape (a whole table where a column is needed).
+    chk = get(challenge, "check", nothing)
+    if chk isa AbstractDict
+        bare0 = _lesson_strip_comments(code)
+        miss = [String(r) for r in get(chk, "requires", Any[]) if r isa AbstractString && !occursin(r, bare0)]
+        req = _lesson_feedback(challenge, "requires")
+        named = isempty(miss) ? req : _lesson_requires_name_line(req, miss, bare0; tables=first.(_lesson_env_tables(env)))
+        named != req && return named
+    end
     word = _lesson_unknown_word(message, code)
     # A table and its column split by a space: only a lost dot explains it, so it answers before the lesson's entries.
     line = _lesson_space_for_dot_line(challenge, code, env)
@@ -2239,6 +2284,23 @@ function _lesson_judge(lesson, challenge, code, r, on_status)
     return (ok, feedback, also)
 end
 
+"""A step's `requires` line that says "Do not type their ids" is about typed ids. When the code has no typed text or
+list at all and names another table in the first input (`sample(open_jars.jar_id, ...)`), the slip is the table: say so
+and drop the ids sentence. Any other line, and any code with typed values, keeps the step's own line."""
+function _lesson_requires_name_line(line::AbstractString, missing_items, bare::AbstractString; tables=nothing)
+    occursin("Do not type their ids", line) || return line
+    length(missing_items) == 1 && occursin(r"^[A-Za-z_]\w*$", missing_items[1]) || return line
+    t = _lesson_bracket_text(bare)
+    occursin(r"\"|\[", t) && return line
+    m = match(r"\(\s*([A-Za-z_]\w*)(?:\.\w+)?\s*[,)]", t)
+    m === nothing && return line
+    other = String(m.captures[1])
+    (other == missing_items[1] || other in ("true", "false")) && return line
+    # a table, not a column that lost its table (`sample(jar_id, ...)`): known tables when given, else `name.column`
+    (tables === nothing ? occursin(Regex("\\b" * other * "\\.\\w"), t) : other in tables) || return line
+    return "`$other` is a different table: get the jars from $(missing_items[1])."
+end
+
 """The `check.requires`, `check.requires_any` and `check.forbids` tests of a challenge or a range wave, on the
 player's code with `#` comments removed. Returns `(kind, line)`: `kind` is "requires" or "forbids" for the test
 that failed, and `line` is what to show. `("", "")` means every test holds. The lines come from the data
@@ -2251,7 +2313,8 @@ function _lesson_rules_check(challenge, code::AbstractString; forbids_default::A
     missing_items = [String(s) for s in requires if s isa AbstractString && !occursin(s, bare)]
     if !isempty(missing_items)
         line = _lesson_feedback(challenge, "requires")
-        return ("requires", isempty(line) ? "Your line needs to use: $(join(missing_items, ", "))." : line)
+        return ("requires", isempty(line) ? "Your line needs to use: $(join(missing_items, ", "))." :
+                            _lesson_requires_name_line(line, missing_items, bare))
     end
     # `requires_any`: at least one of these must be in the code (a call with brackets, or a pipe, for example)
     any_of = [String(s) for s in get(check, "requires_any", Any[]) if s isa AbstractString && !isempty(s)]

@@ -102,3 +102,12 @@ test("the credits show at once: no staggered fade left the dark box empty (round
   assert.doesNotMatch(html, /id="credits[^"]*"[^>]*style="--i/, "no credits line carries a stagger delay");
   assert.match(html, /<p id="credits-featuring-label"[^>]*>Featuring the Julia you typed<\/p>/);
 });
+
+test("the ending stamp is visible at once, not after a delay (Pat, screenshot taken at the moment of arrival)", () => {
+  const css = read("web/course/ending.css");
+  const rule = css.match(/\.finale-play \.stamp \{([^}]*)\}/);
+  assert.ok(rule, "the stamp animation rule exists");
+  assert.doesNotMatch(rule[1], /\)\s+\.\d+s\s+both/, "no start delay on the stamp");
+  const keyframe = css.match(/@keyframes stamp-in \{ from \{([^}]*)\}/);
+  assert.match(keyframe[1], /opacity:\s*1/, "the stamp starts fully visible and only settles into place");
+});

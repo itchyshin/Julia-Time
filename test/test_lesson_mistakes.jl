@@ -235,6 +235,28 @@ const LESSON_MISTAKES = [
         ["single =", "== (two equals signs)"], ["Press Reset"]),
     ("lesson1", "l1-r3-c1", "logbook.batch_id = \"B04\"",
         ["single =", ".== (a dot and two equals signs)"], ["Pocket dictionary"]),
+    # ---- Round 8 (Pat's playtest): six slips that got a generic or wrong-way line ----
+    ("lesson1", "l1-r2-c5", "practice_jars[1..3, :]", "A range uses a colon: write 1:3, not 1..3.", ["Pocket dictionary", "underscore"]),
+    ("lesson1", "l1-r2-c4", "logbook.jar_id[1..3]", "A range uses a colon: write 1:3, not 1..3.", ["check both spellings"]),
+    ("lesson5", "l5-r2-c5", "[7 for _ in 1..3]", "A range uses a colon: write 1:3, not 1..3.", ["spelling"]),
+    ("lesson5", "l5-r2-c0b", "[7 for _ in 1..3]", "A range uses a colon: write 1:3, not 1..3.", ["spelling", "capital B"]),
+    ("lesson5", "l5-r2-c3", "pretend_counts => seen_count", ["greater sign first", ">=", "pair"], ["Yours differ"]),
+    ("lesson5", "l5-r2-c3", "pretend_counts .=> seen_count", [".>=", "greater sign first", "pair"], ["Yours differ"]),
+    ("lesson3", "l3-r2-c3", "desk.shelves[desk.logged .~= desk.keyed]", "Not equal is written != (with a dot for a whole list: .!=), not ~=.", ["Pocket dictionary"]),
+    ("lesson3", "l3-r2-c3", "desk.shelves[desk.logged .<> desk.keyed]", "Not equal is written != (with a dot for a whole list: .!=), not <>.", ["unary"]),
+    ("lesson3", "l3-r3-c5", "merged = leftjoin(book_table, key_table, on=:shelf_id)\nmerged[merged.logged .~= merged.keyed, :]",
+        "Not equal is written != (with a dot for a whole list: .!=), not ~=.", ["commas"]),
+    ("lesson4", "l4-r2-c4", "sample(open_jars.jar_id, 3; replace=false)", "`open_jars` is a different table: get the jars from practice_jars.", ["ids"]),
+    ("lesson4", "l4-r2-c4", "sample([\"P-01\", \"P-02\", \"P-03\"], 3; replace=false)", "Get the jars from practice_jars.", ["different table"]),   # typed ids keep the ids line
+    ("lesson4", "l4-r2-c4", "sample(open_jars, 3; replace=false)", "`open_jars` is a different table: get the jars from practice_jars.", ["like open_jars.jar_id"]),
+    ("lesson4", "l4-r2-c3", "sample(open_jars, 3; replace=false)", "`open_jars` is a different table: get the jars from practice_jars.", ["like open_jars.jar_id"]),
+    ("lesson4", "l4-r2-c4", "sample(practice_jars, 3; replace=false)", "sample needs one column, not the whole table: pick a column with a dot, like practice_jars.jar_id.", ["different table"]),
+    # ---- Round 9 (Pat's RC replay): two dots before a column is a doubled dot, not a range ----
+    ("lesson1", "l1-r2-c4", "logbook..jar_id[12]", "Use one dot between a table and its column: write logbook.jar_id, not logbook..jar_id.", ["range", "colon"]),
+    ("lesson1", "l1-r2-c5", "sum(practice_jars..detected)", "Use one dot between a table and its column: write practice_jars.detected, not practice_jars..detected.", ["range", "colon"]),
+    ("lesson3", "l3-r2-c3", "desk.shelves[desk..logged .!= desk.keyed]", "Use one dot between a table and its column: write desk.logged, not desk..logged.", ["range", "colon"]),
+    ("lesson4", "l4-r2-c4", "sample(practice_jars..jar_id, 3; replace=false)", "Use one dot between a table and its column: write practice_jars.jar_id, not practice_jars..jar_id.", ["range", "colon"]),
+    ("lesson1", "l1-r2-c4", "logbook.jar_id[1 .. 3]", "A range uses a colon: write 1:3, not 1..3.", ["check both spellings"]),
     # ---- Chapters ----
     ("exam1", "x1-select-records", "jars\$batch_id .== case_batch", "R's \$ does not exist in Julia: write jars.batch_id, not jars\$batch_id.", ["small letters"]),
     ("exam1", "x1-select-records", "jars[jars.batch_id == case_batch, :]", "Add a dot: write .== instead of ==, so Julia compares every value, one at a time.", String[]),
