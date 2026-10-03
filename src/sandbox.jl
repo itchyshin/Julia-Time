@@ -41,6 +41,13 @@ using Distributions, Statistics
 const VALUE_CAP_BYTES = 1_000_000
 const STDOUT_CAP_CHARS = 10_000
 
+"""A value too big to send on whole: only its text preview. Prints as that text, so every display path shows it."""
+struct _ValueText
+    text::String
+end
+Base.show(io::IO, v::_ValueText) = print(io, v.text)
+Base.show(io::IO, ::MIME"text/plain", v::_ValueText) = print(io, v.text)
+
 struct SandboxResult
     status::Symbol   # :ok | :error | :timeout
     value::Any
@@ -79,6 +86,13 @@ function _spawn_worker()
     project = dirname(Base.active_project())
     script = joinpath(@__DIR__, "sandbox_worker.jl")
     cmd = `$(Base.julia_cmd()) --startup-file=no --history-file=no --project=$project $script`
+    # The worker sees only the game's own project and the standard library (not the user's global environment, where
+    # a learner's `using Plots` would otherwise load), and starts in the game folder, so `pwd()` and `data/...` mean
+    # the same thing to the learner's code and to the server (src/own_data.jl).
+    # JULIA_PKG_OFFLINE and the game-root variable: a learner's Pkg line cannot reach the network, and every run starts
+    # in the game folder (see `_eval_on_worker`).
+    cmd = Cmd(addenv(cmd, "JULIA_LOAD_PATH" => "@:@stdlib", "JULIA_PKG_OFFLINE" => "true",
+                     "JULIATIME_GAME_ROOT" => _own_game_root()); dir=_own_game_root())
     # The worker's stderr is ours until its start-up finishes, so a failed `using JuliaTime` shows
     # in this process's log; after that the worker sends its own stderr to devnull
     # (src/sandbox_worker.jl), so a learner's stray output never reaches it.
@@ -132,6 +146,10 @@ let df = DataFrame(id=[1, 2, 3], g=[1, 1, 2], v=[1, 2, 3]), other = DataFrame(g=
     leftjoin(df, other, on=:g)
     sample(MersenneTwister(1), df.id, 2; replace=false)
     rand(MersenneTwister(1), Bool, 3)
+    let fit_df = DataFrame(x=[1.0, 2.0, 3.0, 4.0, 5.0], y=[1.0, 3.0, 2.0, 5.0, 4.0], n=[1, 3, 2, 6, 8])
+        lm(@formula(y ~ x), fit_df)
+        glm(@formula(n ~ x), fit_df, Poisson())
+    end
     nothing
 end
 """
@@ -628,8 +646,13 @@ function _eval_on_worker(code::String, env, seed, protected_bindings=(), reply::
     # run and never sends it to another worker (`_worker_round_trip`, `run_code`).
     serialize(reply, _REQUEST_RECEIVED)
     flush(reply)
+    # A learner's cd() must not outlast its run: every run starts in the game folder.
+    let root = get(ENV, "JULIATIME_GAME_ROOT", "")
+        isempty(root) || try cd(root) catch end
+    end
     m = Module(:Sandbox)
-    Core.eval(m, :(using Random, Distributions, DataFrames, Statistics))
+    Core.eval(m, :(using Random, Distributions, DataFrames, Statistics, GLM))
+    Core.eval(m, :(import CSV))   # `CSV.read` for a learner who reads a file; `using CSV` is still the learner's to write
     # A learner's bare `exit()` is almost always an accidental experiment, not a request to tear
     # down the game. Shadow the ordinary unqualified spelling inside the throw-away module so it
     # becomes an ordinary, recoverable learner error and the next move remains available.
@@ -817,9 +840,14 @@ function run_code(code::AbstractString; env=(;), seed=nothing, budget::Real=5.0,
         typemax(Int)
     end
     if sz > VALUE_CAP_BYTES
-        mb = round(sz / 1_000_000; digits=1)
-        return SandboxResult(:ok, nothing, printed,
-            "The result was too large to show ($(mb) MB). Try a smaller n or summarise it (e.g. mean, length).")
+        # Too big to hand on whole: show it as Julia's own text preview, cut to the same cap as printed output.
+        text = try
+            sprint(show, MIME"text/plain"(), value; context=(:limit => true, :displaysize => (24, 80)))
+        catch
+            "(a result too large to show in full)"
+        end
+        length(text) > STDOUT_CAP_CHARS && (text = first(text, STDOUT_CAP_CHARS) * "\n... (truncated)")
+        return SandboxResult(:ok, _ValueText(text), printed, "")
     end
     return SandboxResult(:ok, value, printed, message)   # message carries the "shown as text" note for values that cannot cross back
 end

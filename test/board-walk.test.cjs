@@ -233,3 +233,35 @@ test("a chapter passed only through web/lesson-exam-save.js lights Case on its c
     assert.match(c.href, new RegExp("lesson=exam" + n + "(&|$)"));
   }
 });
+
+// ---- 0.5.2: the optional "Bonus: your own data" card ------------------------------------------------------------
+test("the Board has an optional own-data card that links to lesson=own and keeps the attempt", () => {
+  const p = board(memoryStorage());
+  assert.match(flat(p["own-data-panel"]), /Bonus: your own data/);
+  assert.match(flat(p["own-data-panel"]), /optional/i);
+  assert.ok(links(p["own-data-panel"]).some(l => l.href === "../lesson.html?lesson=own"), "plain link");
+  const q = board(memoryStorage(), "?attempt=f3-check");
+  assert.ok(links(q["own-data-panel"]).some(l => l.href === "../lesson.html?lesson=own&attempt=f3-check"), "attempt kept");
+  assert.equal(client.ownDataDestination(), "../lesson.html?lesson=own");
+  assert.equal(client.ownDataDestination("f3-check"), "../lesson.html?lesson=own&attempt=f3-check");
+});
+
+test("the own-data card sits outside the closed fold, and never locks or replaces the ending", () => {
+  const html = fs.readFileSync(path.join(web, "index.html"), "utf8");
+  assert.match(html, /id="own-data-panel"/);
+  const fold = /<details id="also-here"[\s\S]*?<\/details>\s*<\/main>/.exec(html)[0];
+  assert.doesNotMatch(fold, /own-data-panel/);
+  assert.equal(client.STEPS.length, 6, "the six-level scope is unchanged");
+  const t = memoryStorage();
+  for (let n = 1; n <= 6; n++) { passLesson(t, n); solveChapter(t, n); }
+  const p = board(t);                       // the lesson "own" was never opened
+  assert.equal(p["continue-action"].textContent, "See how the case ends");
+  assert.doesNotMatch(flat(p["own-data-panel"]), /locked|unavailable/i);
+  assert.doesNotMatch(flat(p["continue-action"]), /own/i);
+});
+
+test("the ending page has an optional link to the own-data lesson", () => {
+  const html = fs.readFileSync(path.join(web, "ending.html"), "utf8");
+  assert.match(html, /id="ending-own-data"/);
+  assert.match(fs.readFileSync(path.join(web, "ending.js"), "utf8"), /ownDataDestination/);
+});

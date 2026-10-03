@@ -5,11 +5,12 @@
   // The target range's code sits in web/lesson-range.js, and the "Julia's own message" filter in web/julia-text.js
   // (both loaded first by lesson.html; required in Node).
   const api = factory(typeof module === "object" && module.exports ? require("./lesson-range.js") : root && root.JuliaTimeLessonRange,
-    typeof module === "object" && module.exports ? require("./julia-text.js") : root && root.JuliaTimeJuliaText);
+    typeof module === "object" && module.exports ? require("./julia-text.js") : root && root.JuliaTimeJuliaText,
+    typeof module === "object" && module.exports ? require("./lesson-own.js") : root && root.JuliaTimeLessonOwn);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.JuliaTimeLesson = api;
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", () => api.init(document));
-})(typeof window !== "undefined" ? window : null, function (Range, JuliaText) {
+})(typeof window !== "undefined" ? window : null, function (Range, JuliaText, Own) {
   "use strict";
 
   const STORE_PREFIX = "julia-time:lesson:v1:";
@@ -40,6 +41,24 @@
   // Every task says what kind it is (fix round 2, P12), in the plain words of How to play.
   const KIND_LABELS = { see: "Watch", change: "Change", complete: "Fill the blank", write: "Write", checkpoint: "Checkpoint", fix: "Fix", play: "Try anything" };
   const RANGE_ID = "range";
+  // The own-data lesson (kind "own", lessons/own.json): the learner's own CSV, loaded by the game running on this computer.
+  // The picks and helpers are in web/lesson-own.js; the table check comes from the server (own_data_info).
+  const OWN_KIND = "own";
+  const OWN_COLS_SHOWN = 12;
+  const OWN_TEXT = {
+    heading: "Your table", privacy: "Your file stays on this computer: the page hands it to the game running here, and nothing is sent anywhere.",
+    choose: "Choose your CSV", starter: "Use the starter table", unreadable: "The page could not read that file. Try another one, or the starter table.",
+    simulated: "SIMULATED: this starter table is made up, not real counts.", picksHead: "Columns for the steps",
+    pickLabels: { any: "A column to look at", num: "A column of numbers", y: "Number to explain (y)", group: "A column to split by" },
+    stuck: "Stuck? Choose the file with the button instead of typing the line.", tableHead: "Your table and the column picks",
+    endFile: "The starter table is a real file, starter_ponds.csv, in the game's data folder, for the game: to use your own file in the game, copy it there. For the saved script: ",
+    none: "(none in this table)", endHead: "Lines you ran", save: "Save my lines as a script", 
+    board: "Back to the Board", sayLabel: "Your one sentence", sayNote: "Saved on this computer as you type. Nothing is marked.",
+    still: "Still using: ", newTable: "New table: your lines start again.", forget: "Forget this table",
+    rule: "Put my-analysis.jl and your data file in the same folder, open Julia there, and run include(\"my-analysis.jl\").",
+    saved: "Your browser saved my-analysis.jl (it may have asked where). Put my-analysis.jl and your data file in the same folder, open Julia there, and run include(\"my-analysis.jl\").",
+    noLines: "No line ran without an error yet. Go back to a step and press Run.",
+  };
   const TEST_OUT_RUNS = 2;
   const MAX_UNDERLINES = 4;                    // underlined words on one screen, at most
   // A chapter exam (kind "exam", lessons/examN.json) runs on this screen in exam mode: no worked example, no "Show me
@@ -246,6 +265,7 @@
       progress: emptyProgress(), index: 0, pending: null, result: null, guess: null,
       hints: 0, quiz: null, warmDone: false, notice: "", story: false, error: "",
       openTerm: null, testing: null, range: null, look: { open: false, pending: null, result: null },
+      own: { info: null, error: "", notice: "", pending: null, ids: {}, starter: false, fileName: "", fresh: false },
     };
 
     // A chapter exam saves to the course record per attempt, so its screen progress is per attempt too: a second
@@ -299,14 +319,14 @@
       }
       return false;
     }
-    const isPlay = (c) => !!c && c.challenge.kind === "play";
+    const isPlay = (c) => !!c && (c.challenge.kind === "play" || c.challenge.kind === "say");   // the "say" step of the own-data lesson goes on like a play step
     const isExam = () => !!s.lesson && s.lesson.kind === EXAM_KIND;
     const hintCap = () => (isExam() ? EXAM_HINTS : LESSON_HINTS);
     const attempt = ATTEMPT_PATTERN.test(options.attempt || "") ? options.attempt : "";
     const withAttempt = (href) => (attempt ? href + (href.indexOf("?") >= 0 ? "&" : "?") + "attempt=" + encodeURIComponent(attempt) : href);
     const change = () => onChange();
 
-    function resetTransient() { s.pending = null; s.result = null; s.guess = null; s.hints = 0; s.starter = false; s.quiz = null; s.warmDone = false; s.notice = ""; s.switchNote = false; s.dirty = false; s.dirtyDrawn = false; s.openTerm = null; s.look = { open: false, pending: null, result: null }; }
+    function resetTransient() { s.pending = null; s.result = null; s.guess = null; s.hints = 0; s.starter = false; s.quiz = null; s.warmDone = false; s.notice = ""; s.switchNote = false; s.dirty = false; s.dirtyDrawn = false; s.openTerm = null; s.look = { open: false, pending: null, result: null }; s.own.fresh = false; }
 
     // ---- skills: what each finished lesson says you can now do, kept in that lesson's own stored progress --------
     // A lesson counts as finished when its end screen is reached. The words are the lesson's own `close.can_do`.
@@ -345,6 +365,7 @@
 
     function handle(msg) {
       if (!msg || typeof msg !== "object") return;
+      if (msg.type === "own_data_info") { ownInfo(msg); change(); return; }
       if (msg.type === "lessons") {
         s.lessons = Array.isArray(msg.lessons) ? msg.lessons : [];
         if (s.screen === "loading" || s.screen === "list") s.screen = "list";     // the end screen asks for the list too, and must stay
@@ -362,8 +383,11 @@
         s.flat = flatten(msg.lesson);
         s.progress = loadProgress();
         if (syncLastCheckpoint()) save();
+        // The own-data lesson always opens on its start card (the table is loaded there); a reconnect keeps the player on the line.
+        const isOwn = msg.lesson.kind === OWN_KIND;
+        if (isOwn) { s.own.pending = "own-" + (++seq); s.own.ids[s.own.pending] = true; s.own.statusReq = s.own.pending; send({ type: "own_data_status", request_id: s.own.pending }); ownRefill(); }
         // A lesson already begun opens on its start card too, with Continue and Start again; a finished one opens on its end page.
-        if (s.progress.started && (playing || s.flat.every((f) => finished(f.challenge.id)))) goToFirstUnfinished();
+        if (s.progress.started && (playing || (!isOwn && s.flat.every((f) => finished(f.challenge.id))))) goToFirstUnfinished();
         else { s.screen = "start"; s.index = 0; }
       } else if (msg.type === "lesson_result" && s.look.pending && msg.request_id === s.look.pending) {
         s.look.pending = null;                       // a Look closer run is never graded and never touches the main result
@@ -379,7 +403,12 @@
         const c = cur();
         if (c) {
           const testing = s.testing && c.challenge.kind === "checkpoint" && s.testing.round === c.round.id;
-          if (c.challenge.kind === "play") { /* ungraded */ }
+          if (c.challenge.kind === "play") {   // ungraded; the own-data end screen lists the lines that ran
+            if (ownLesson() && msg.status === "ok") {
+              if (c.challenge.loads_table) { const info = ownResultInfo(msg); if (info) ownTake(info, true); }   // the typed read: the game read the file and sent the table check
+              ownRan(s.lastCode, c.challenge);
+            }
+          }
           else if (msg.pass) {
             s.progress.done[c.challenge.id] = isExam() && msg.exam ? { code: s.lastCode, saved: true } : { code: s.lastCode };
             syncLastCheckpoint();
@@ -409,7 +438,15 @@
       change();
     }
 
-    function start() { s.progress.started = true; save(); goToFirstUnfinished(); change(); }
+    function start() {
+      // A fresh start (nothing saved on this browser) forgets any table the game still holds from an earlier session.
+      if (ownLesson() && !s.progress.started) {
+        s.own.info = null; s.own.error = ""; s.own.notice = ""; s.progress.table = undefined; s.progress.readLine = ""; s.progress.picks = {};
+        ownRefill();
+        ownAsk({ type: "own_data_clear" });
+      }
+      s.progress.started = true; save(); goToFirstUnfinished(); change();
+    }
     function toggleStory() { s.story = !s.story; change(); }
 
     function run(code) {
@@ -458,7 +495,7 @@
       const c = cur();
       if (!c) return "";
       const id = c.challenge.id;
-      if (s.progress.done[id] && typeof s.progress.done[id].code === "string") return s.progress.done[id].code;
+      if (s.progress.done[id] && typeof s.progress.done[id].code === "string" && s.progress.done[id].code) return s.progress.done[id].code;   // a play step passed with Next and no run keeps no line: show its starter again
       if (typeof s.progress.drafts[id] === "string") return s.progress.drafts[id];
       return c.challenge.starter || "";
     }
@@ -840,6 +877,7 @@
       Object.keys(keep).forEach((k) => { if (keep[k]) s.progress[k] = keep[k]; });
       if (Object.keys(keep).some((k) => keep[k])) save();
       s.screen = "start"; s.index = 0; s.testing = null; resetTransient();
+      if (ownLesson()) { ownForget(); return; }
       change();
     }
 
@@ -854,6 +892,134 @@
       const paras = [];
       for (let i = 0; i < sentences.length; i += 2) paras.push(sentences.slice(i, i + 2).join(" "));
       return paras;
+    }
+
+    // ---- your own data (lessons/own.json, web/lesson-own.js) ------------------------------------------------------
+    // The page reads the file (the DOM layer, FileReader) and hands the text to the game on this computer. The server answers
+    // with own_data_info; the three names {any_col} {num_col} {group_col} are filled here, in a copy of the lesson.
+    const ownLesson = () => !!s.lesson && s.lesson.kind === OWN_KIND;
+    function ownColumns() {
+      const i = s.own.info;
+      return i && Array.isArray(i.columns) ? i.columns.map((c) => Object.assign({ rows: i.rows }, c)) : [];
+    }
+    function ownRefill() {
+      const cols = ownLesson() ? ownColumns() : [];
+      if (!cols.length) { if (ownLesson()) s.flat = flatten(Own.blankLesson(s.lesson)); return; }
+      s.progress.picks = Own.settlePicks(s.progress.picks, cols);
+      s.flat = flatten(Own.fillLesson(s.lesson, s.progress.picks, cols));
+    }
+    function ownAsk(msg) {
+      s.own.pending = "own-" + (++seq);
+      s.own.ids[s.own.pending] = true;
+      s.own.error = "";
+      send(Object.assign({ request_id: s.own.pending }, msg));
+      change();
+    }
+    function ownLoad(name, text) {
+      if (!ownLesson()) return;
+      if (String(text || "").length > Own.MAX_BYTES) { s.own.error = Own.TOO_BIG; change(); return; }
+      s.own.starter = false; s.own.fileName = String(name || "");
+      ownAsk({ type: "own_data_load", name: s.own.fileName, text: String(text || "") });
+    }
+    function ownTooBig() { s.own.error = Own.TOO_BIG; change(); }
+    function ownUnreadable() { s.own.error = OWN_TEXT.unreadable; change(); }
+    function ownStarter() {
+      if (!ownLesson()) return;
+      s.own.starter = true; s.own.fileName = "";
+      ownAsk({ type: "own_data_starter" });
+    }
+    function ownInfo(msg) {
+      // Every request still waiting for its answer counts: a reconnect asks for the status while a queued load is on its way.
+      if (Object.keys(s.own.ids).length && !s.own.ids[msg.request_id]) return;
+      delete s.own.ids[msg.request_id];
+      if (s.own.pending === msg.request_id || !Object.keys(s.own.ids).length) s.own.pending = null;
+      if (msg.status === "ok") ownTake(msg, false, msg.request_id === s.own.statusReq);
+      else if (msg.status === "refused") s.own.error = String(msg.message || "The game could not read that file.");
+      else { s.own.info = null; s.own.error = ""; ownRefill(); }
+    }
+    // A table the game now holds: from a button load or the starter (own_data_info), or from the typed read on the read step
+    // (the lesson_result carries the same table check and the exact read line).
+    function ownTake(msg, typed, status) {
+      // Lines, sentence and typed drafts belong to the table that is loaded: another table starts them again.
+      const same = s.progress.table === undefined || s.progress.table === msg.name;
+      s.own.notice = "";
+      if (!same) {
+        if ((Array.isArray(s.progress.ran) && s.progress.ran.length) || s.progress.sentence) s.own.notice = OWN_TEXT.newTable;
+        s.progress.ran = []; s.progress.sentence = ""; s.progress.drafts = {};
+      }
+      s.progress.table = msg.name;
+      // read_line: the exact line that reads this file as the game read it. A status reply may leave it out: keep the one held
+      // for the same table, drop it for another.
+      if (typeof msg.read_line === "string" && msg.read_line.trim()) s.progress.readLine = msg.read_line.trim();
+      else if (!same) s.progress.readLine = "";
+      s.own.info = msg; s.own.error = ""; s.own.fresh = true;
+      if (!status || !same) s.progress.picks = {};   // a new table (or a re-read with other options) starts from the defaults again
+      // A table chosen with a button: the read step's editor now holds the line that reads it, so Run re-reads this table.
+      if (!typed && !status && s.progress.readLine) { const d3 = s.flat.find((f) => f.challenge.loads_table); if (d3) { s.progress.drafts[d3.challenge.id] = "# Your table is loaded (you chose it with the button). Press Next.\n# Your saved script reads it with this line:\n# " + s.progress.readLine; s.codeStamp = (s.codeStamp || 0) + 1; } }
+      ownRefill(); save();
+    }
+    function ownResultInfo(msg) {
+      const src = msg.own_data || msg.own_info || msg.own_table || (Array.isArray(msg.columns) && msg.name ? msg : null);
+      if (!src || !Array.isArray(src.columns) || !src.name || (src.status && src.status !== "ok")) return null;
+      return Object.assign({}, src, { status: "ok", read_line: src.read_line || msg.read_line || "" });
+    }
+    function ownPick(which, name) {
+      if (!ownLesson() || !s.own.info || !Own.TOKENS || !["any", "num", "y", "group"].includes(which)) return;
+      const before = s.flat;
+      s.progress.picks = Object.assign({}, s.progress.picks, { [which]: String(name) });
+      ownRefill();
+      // A step still holding its old starter line gets the new one; a line the player typed stays.
+      before.forEach((f) => { const d = s.progress.drafts[f.challenge.id]; if (typeof d === "string" && sameCode(d, f.challenge.starter)) delete s.progress.drafts[f.challenge.id]; });
+      if (!s.pending) { s.result = null; s.notice = ""; s.dirty = false; s.dirtyDrawn = false; }
+      save(); change();
+    }
+    // Forget this table: ask the game to drop it, and clear everything kept for it on this browser.
+    function ownForget() {
+      if (!ownLesson()) return;
+      const keep = { lastCheckpointDone: s.progress.lastCheckpointDone, skill: s.progress.skill };
+      store.remove(key());
+      s.progress = emptyProgress();
+      Object.keys(keep).forEach((k) => { if (keep[k]) s.progress[k] = keep[k]; });
+      s.own.info = null; s.own.error = ""; s.own.notice = ""; s.own.starter = false; s.own.fileName = "";
+      s.flat = flatten(Own.blankLesson(s.lesson));
+      s.screen = "start"; s.index = 0; s.testing = null; resetTransient();
+      ownAsk({ type: "own_data_clear" });
+    }
+    function ownRan(code, challenge) {
+      if (challenge && challenge.table === "none") return;   // d1, d2, d3 (look, packages, read) are not repeated: the script has its own header and read line
+      const line = String(code || "").trim();
+      if (!line || line.indexOf("a value from this column") >= 0) return;   // an unedited placeholder line is not the learner's
+      const ran = Array.isArray(s.progress.ran) ? s.progress.ran : [];
+      if (!ran.includes(line)) ran.push(line);
+      s.progress.ran = ran;
+    }
+    // "Read a table in step 3 first" has a button: go to the read step.
+    function ownGoRead() {
+      const i = s.flat.findIndex((f) => f.challenge.loads_table);
+      if (!ownLesson() || i < 0) return;
+      s.index = i; s.screen = "challenge"; resetTransient(); change();
+    }
+    function ownSay(text) { s.progress.sentence = String(text || ""); save(); }
+    function ownScript() {
+      const i = s.own.info;
+      const ran = Array.isArray(s.progress.ran) ? s.progress.ran : [];
+      return { name: Own.SAVE_NAME, text: Own.buildScript(s.progress.readLine, ran, s.progress.sentence, ran.some((l) => /\b(?:lm|glm)\s*\(/.test(l)), (i && i.name) || s.own.fileName) };
+    }
+    function ownView() {
+      const i = s.own.info;
+      const notes = i && Array.isArray(i.notes) ? i.notes.map(String) : [];
+      // The server says whether this is the starter table (starter true/false); a server that sends no flag is read from its note.
+      const sim = i && typeof i.starter === "boolean" ? (i.starter ? (notes.find((n) => /simulated/i.test(n)) || OWN_TEXT.simulated) : "") : (notes.find((n) => /simulated/i.test(n)) || "");
+      const picks = s.progress.picks || {}, cols = ownColumns(), opts = cols.length ? Own.pickOptions(cols) : { any: [], num: [], group: [] };
+      return {
+        loaded: !!i, pending: !!s.own.pending, error: s.own.error, sim, notice: s.own.notice,
+        still: s.own.error && i ? OWN_TEXT.still + String(i.name || "") : "",
+        info: i ? { name: String(i.name || s.own.fileName || ""), size: i.rows + " rows x " + i.cols + " columns", notes: notes.filter((n) => n !== sim),
+          columns: cols.map((c) => ({ name: c.name, type: String(c.type || "").replace(/^Union\{Missing,\s*(.*)\}$/, "$1"), missing: Number(c.missing) || 0 })) } : null,
+        fresh: s.own.fresh,
+        picks: ["any", "num", "y", "group"].map((k) => ({ key: k, label: OWN_TEXT.pickLabels[k], options: opts[k], value: picks[k] || "" })),
+        say: s.progress.sentence || "",
+      };
     }
 
     function view() {
@@ -871,8 +1037,10 @@
       const exam = isExam();
       const roundsN = (L.rounds || []).length;
       const stepOf = typeof L.number === "number" && L.number >= 1 && L.number <= CHAPTERS ? "Step " + L.number + " of " + CHAPTERS + " · " : "";
-      const unit = (exam ? "Chapter " : "Lesson ") + L.number;
-      out.nav.text = stepOf + unit;
+      const own = ownLesson();
+      const unit = own ? "Bonus lesson" : (exam ? "Chapter " : "Lesson ") + L.number;
+      out.nav.text = own ? "Bonus: " + String(L.title || "").toLowerCase() : stepOf + unit;
+      if (own) out.own = ownView();
       out.nav.switches = true;
       out.nav.switchNote = "";
       out.nav.cheat = Array.isArray(L.dictionary) && L.dictionary.length > 0;
@@ -887,14 +1055,16 @@
       const place = [unit, exam ? plural(s.flat.length, "task", "tasks") : plural(roundsN, "round", "rounds")];
       if (Number.isInteger(L.minutes) && L.minutes > 0) place.push("about " + L.minutes + " min");
       const at = s.flat.findIndex((f) => !finished(f.challenge.id));
-      const resume = s.progress.started && at >= 0 ? (exam ? "You stopped at task " + (at + 1) + " of " + s.flat.length + "."
+      const resume = s.progress.started && at >= 0 ? (own ? "You stopped at step " + (at + 1) + " of " + s.flat.length + "." : exam ? "You stopped at task " + (at + 1) + " of " + s.flat.length + "."
         : "You stopped at Round " + (s.flat[at].ri + 1) + (s.flat[at].challenge.kind === "play" ? ", the Try anything step." : ", task " + (taskNumber(s.flat[at]) || 1) + ".")) : "";
       out.lesson = { title: L.title, goal: L.goal, story: L.story || "", storyMore: L.story_more || "", storyParas: shortParas(L.story_more || ""), storyOpen: s.story, number: L.number, canDo,
         exam, heading: exam ? "Chapter " + L.number + ": " + L.title : L.title, name: unit, place: place.join(" · "),
         chapterLine: exam ? (L.banner || CHAPTER_START) : "", resume, startLabel: s.progress.started ? "Continue" : "Start", canRestart: !!s.progress.started,
-        fastLane: canFastLane() ? FAST_LABEL : "" };
+        fastLane: canFastLane() ? FAST_LABEL : "", startDisabled: false };
       out.hasProgress = s.progress.started;
       out.dataLabel = L.data_label || "";
+      // Only the starter table is SIMULATED: a file of the learner's own gets the first sentence of the label alone.
+      if (own && out.own && !out.own.sim) out.dataLabel = out.dataLabel.split(/(?<=\.)\s+/)[0] || "";
       if (s.screen === "end") {
         out.end = {
           finding: (L.close && L.close.finding) || "", next: (L.close && L.close.next) || "",
@@ -904,6 +1074,7 @@
           // One forward route (P04): the main button. The Board still lets a player skip, since nothing is locked.
           go: endGo(L, exam),
           lines: endLines(),
+          ownRun: own ? { file: OWN_TEXT.endFile + OWN_TEXT.rule, lines: Array.isArray(s.progress.ran) ? s.progress.ran.slice() : [], sentence: String(s.progress.sentence || "").trim(), board: withAttempt(BOARD_HREF) } : null,
           clues: clues(),
           own: L.close && L.close.own_work && L.close.own_work.code ? { title: L.close.own_work.title || OWN_TITLE, say: L.close.own_work.say || "", code: L.close.own_work.code, first: !exam && L.number === 6 ? OWN_FIRST_TIME : null } : null,
           dictionary: L.dictionary || [],
@@ -927,13 +1098,13 @@
         // The bar: "Step 3 of 6 · Lesson 3 · Round 2 of 3" (a chapter: "Step 3 of 6 · Chapter 3"), then the dots and
         // "Line 3 of 6". A chapter counts its lines across the whole chapter, never as rounds of a lesson. The try-anything
         // box is not a line, so it has no dot and no number.
-        if (!exam) out.nav.text += " · Round " + (c.ri + 1) + " of " + roundsN;
+        if (!exam && !own) out.nav.text += " · Round " + (c.ri + 1) + " of " + roundsN;
         const lines = exam ? s.flat : s.flat.filter((f) => f.ri === c.ri && f.challenge.kind !== "play");
         const lineAt = lines.findIndex((f) => f.challenge.id === id);
         // "Task 3 of 6" (fix round 2, D3b): "line" now means a line of code only. No dots and no clue counter.
         out.strip = {
           text: out.nav.text,
-          line: ch.kind === "play" ? "Try anything" : "Task " + (lineAt + 1) + " of " + lines.length,
+          line: own ? "Step " + (s.index + 1) + " of " + s.flat.length : ch.kind === "play" ? "Try anything" : "Task " + (lineAt + 1) + " of " + lines.length,
         };
         const remember = first && (warmGate() || !(c.round.remember && c.round.remember.choices)) ? rememberView(c.round.remember) : null;
         // A new round opens with one line that says the last one is done, so the warm-up does not arrive from nowhere.
@@ -985,7 +1156,7 @@
           hintOffered: Array.isArray(ch.hints) && ch.hints.length > 0 && fails >= FAILS_BEFORE_HINT && !finished(id),
           starterOffered: !!starterOf(c) && !finished(id) && (s.starter || fails >= FAILS_BEFORE_STARTER) } : null;
         out.ch = {
-          id, kind: ch.kind, kindLabel: KIND_LABELS[ch.kind] || "", roundTitle: c.round.title || "",
+          id, kind: ch.kind, kindLabel: own ? (ch.kind === "say" ? "Say it" : "Run it on your table") : KIND_LABELS[ch.kind] || "", say: ch.kind === "say" ? { text: s.progress.sentence || "" } : null, roundTitle: c.round.title || "",
           // the round's one-line story, above its first task (P14, D3-6)
           roundStory: first && !warmGate() && typeof c.round.story === "string" ? c.round.story : "", explain: first ? (c.round.explain || "") : "",
           remember,
@@ -1014,12 +1185,13 @@
           // The drawer starts closed on a round's first screen and on a checkpoint; the player can open it.
           dictClosed: true,
           code: editorCode(),
+          codeStamp: s.codeStamp || 0,   // bumped when the game rewrites this step's line (a button load on the read step)
           predict,
           // A table shown for a task about positions is numbered by row, so positions are read, not counted by eye.
           rowNumbers: !exam && !!data && /\bpositions?\b|\w\[\s*(?:\d|end\b|[a-z_]\w*\s*:)/i.test([ch.prompt, ch.starter, ch.solution].filter(Boolean).join("\n")),
           data: data || null, dataName: data ? dataName : "",
           dataAlso: (ch.data_also && L.data_values && L.data_values[ch.data_also]) || null, dataAlsoName: ch.data_also || "",
-          pending: !!s.pending,
+          pending: !!s.pending, ownLoad: own && !!ch.loads_table, needTable: own && !!ch.need_table,
           result: s.result ? foldedResult(s.result, ch, fbText, data, dataName) : null,
           // Before a run the play box says it is optional; after a run of several lines, that only the last line shows.
           playNote: ch.kind !== "play" ? "" : (!s.result ? (s.pending ? "" : "Optional. Press " + (nextIndex(c) >= s.flat.length ? "Finish" : "Next") + " whenever you like.") : (codeLines(s.lastCode) > 1 ? "Only the last line's value is shown." : "")),
@@ -1189,7 +1361,7 @@
         shown: typeof r.shown === "string" && r.status === "ok" ? shownView(r.shown, data, dataName) : null,
         status: r.status, repr: r.value_repr || "", items: list ? list.items : null, itemsTotal: list ? list.n : 0, itemsCut: !!(list && list.cut),
         tableRows: tbl ? tbl.rows : null, tableBody: tbl ? tbl.body : "", tableLabel: tbl ? upFirst(tableWords(tbl)) : "",
-        table: r.value_table || rowTable(r.value_repr), stdout: r.stdout || "", message: trimLocations(juliaText(r.message)), pass: !!r.pass,
+        table: r.value_table ? Object.assign({}, r.value_table, ownLesson() ? { cap: 20, more: Number(r.more_rows) || 0 } : {}) : rowTable(r.value_repr), stdout: r.stdout || "", message: trimLocations(juliaText(r.message)), pass: !!r.pass,
       };
     }
 
@@ -1299,7 +1471,7 @@
     const codeLines = (code) => String(code || "").split("\n").filter((x) => x.trim() && !x.trim().startsWith("#")).length;
     function feedbackLine(ch, r) {
       // A try-anything run of an empty editor, or of a line that gives `nothing`, still says something.
-      if (ch.kind === "play" && r.status === "ok" && !r.feedback && ["", "nothing"].includes(String(r.value_repr || "").trim())) return "Nothing to show: type a line, then press Run.";
+      if (ch.kind === "play" && r.status === "ok" && !r.feedback && ["", "nothing"].includes(String(r.value_repr || "").trim())) return /^\s*(?:using|import)\b/.test(String(s.lastCode || "")) ? "Done. This line loads packages; it shows nothing." : "Done. This line shows nothing.";
       // The server ends the pass line with the "That works too" sentence too; that sentence has its own line.
       const at = r.pass ? String(r.feedback || "").indexOf(WORKS) : -1;
       let text = (at > 0 ? String(r.feedback).slice(0, at).trim() : r.feedback) || failLine(r, ch);
@@ -1346,7 +1518,8 @@
     }
 
     return { handle, open, start, fastLane, skipWarm, toggleStory, toggleLook, tryLook, run, draft, editorCode, reset, predict, quiz, startRound, showLine, hint, showStarter, starterFilled, next, restart, view, state: s,
-      toggleTerm, toggleShow, testOut, leaveTestOut, selectWave, nextWave, leaveRangeEnd, toggleHint, fire, rangeDraft, rangeCode };
+      toggleTerm, toggleShow, testOut, leaveTestOut, selectWave, nextWave, leaveRangeEnd, toggleHint, fire, rangeDraft, rangeCode,
+      ownLoad, ownTooBig, ownUnreadable, ownStarter, ownPick, ownSay, ownScript, ownForget, ownGoRead };
   }
 
   // WebSocket client, same pattern as web/app.js (connect, reconnect every 2 s, send when open).
@@ -1383,7 +1556,7 @@
     const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); };
     let storage = null;
     try { storage = win.localStorage; } catch (e) { storage = null; }
-    let afterRun = false, afterLook = false, endFocus = false, socket = null, lastKey = "", ctrl = null, dictSeen = false, dictClosedLast = null, refocus = null, testBox = null, lastRule = null;
+    let afterRun = false, afterLook = false, endFocus = false, socket = null, lastKey = "", lastStamp = 0, ctrl = null, dictSeen = false, dictClosedLast = null, refocus = null, testBox = null, lastRule = null;
 
     const DATA_ROWS = 20;
     function tableNode(t, cap, numbered) {
@@ -1393,14 +1566,17 @@
       if (numbered) head.appendChild(el("th", { scope: "col", class: "rownum" }, "row"));
       (t.columns || []).forEach((c) => head.appendChild(el("th", { scope: "col" }, String(c))));
       table.appendChild(head);
-      (t.rows || []).slice(0, cap || 8).forEach((r, i) => {
+      const capN = cap || 8;
+      (t.rows || []).slice(0, capN).forEach((r, i) => {
         const tr = el("tr");
         if (numbered) tr.appendChild(el("td", { class: "rownum" }, String(i + 1)));
         r.forEach((v) => tr.appendChild(el("td", null, v === null ? "missing" : String(v))));
         table.appendChild(tr);
       });
       wrap.appendChild(table);
-      if ((t.rows || []).length > (cap || 8)) wrap.appendChild(el("p", { class: "more" }, "and " + (t.rows.length - (cap || 8)) + " more rows"));
+      // The own-data server sends at most 20 rows and says how many more there are (t.more).
+      const extra = Math.max(0, (t.rows || []).length - capN) + (Number(t.more) || 0);
+      if (extra > 0) wrap.appendChild(el("p", { class: "more" }, "and " + extra + " more rows"));
       return wrap;
     }
 
@@ -1455,7 +1631,7 @@
     }
     function codeCell(text) {
       const td = el("td", { class: "mono" });
-      String(text || "").split(/(?<=[$,(\[]|\.(?=[A-Za-z_]))/).forEach((piece, i) => {
+      String(text || "").split(/(?<=[$,(\[ ]|=>|\.(?=[A-Za-z_]))/).forEach((piece, i) => {
         if (i > 0 && doc.createElement) td.appendChild(el("wbr"));
         // an id such as "T-A" or J-081 never breaks at its hyphen (P14)
         let at = 0;
@@ -1509,6 +1685,126 @@
       const ul = el("ul"); items.forEach((t) => ul.appendChild(el("li", null, t))); box.appendChild(ul);
     }
 
+    // ---- your own data: the start panel, the three picks, the say step and the saved script ----------------------
+    function drawPicks(box, picks) {
+      clear(box);
+      box.hidden = !picks;
+      if (!picks) return;
+      box.appendChild(el("p", { class: "own-picks-head" }, OWN_TEXT.picksHead));
+      picks.forEach((p) => {
+        const label = el("label", { class: "own-pick" });
+        label.appendChild(el("span", null, p.label + " "));
+        const sel = el("select", { "aria-label": p.label });
+        (p.options.length ? p.options : [""]).forEach((name) => sel.appendChild(el("option", { value: name }, name || OWN_TEXT.none)));
+        sel.value = p.options.length ? p.value : "";
+        sel.disabled = !p.options.length;
+        sel.addEventListener("change", () => { lastKey = ""; ctrl.ownPick(p.key, sel.value); });
+        label.appendChild(sel);
+        box.appendChild(label);
+      });
+    }
+    let ownShowAll = false;
+    function drawOwnStart(v) {
+      const panel = $("own-panel");
+      panel.hidden = !v.own;
+      if (!v.own) return;
+      setText("own-panel-h", OWN_TEXT.heading); setText("own-privacy", OWN_TEXT.privacy);
+      drawOwnTable({ own: null });   // the table panel lives on the lesson screen: it is cleared here, for a table just forgotten
+    }
+    // The file button and the starter table wait on the read step, as the fallback for the typed line.
+    function drawOwnLoad(v) {
+      const box = $("own-load"), on = !!(v.own && v.ch && v.ch.ownLoad);
+      box.hidden = !on;
+      if (!on) return;
+      setText("own-stuck", OWN_TEXT.stuck);
+      setText("own-file-label", OWN_TEXT.choose); setText("own-starter", OWN_TEXT.starter);
+      $("own-starter").disabled = v.own.pending; $("own-file").disabled = v.own.pending;
+      setText("own-error", v.own.error);
+      setText("own-still", v.own.still);
+    }
+    // The table check, its notes and the four picks: shown once a table is held (after the read step), open when it has just arrived.
+    let ownFreshSeen = false;
+    function drawOwnTable(v) {
+      const box = $("own-table"), o = v.own;
+      box.hidden = !(o && o.info);
+      if (box.hidden) { ownFreshSeen = false; drawPicks($("own-picks"), null); $("own-check").hidden = true; $("own-forget").hidden = true; return; }
+      if (o.fresh && !ownFreshSeen) box.open = true;
+      ownFreshSeen = !!o.fresh;
+      setText("own-table-sum", OWN_TEXT.tableHead + ": " + o.info.name + ", " + o.info.size);
+      setText("own-notice", o.notice);
+      setText("own-forget", OWN_TEXT.forget); $("own-forget").hidden = false;
+      setText("own-sim", o.sim);
+      const chk = $("own-check"); clear(chk);
+      chk.hidden = false;
+      const i = o.info;
+      chk.appendChild(el("p", { class: "own-name" }, i.name + ": " + i.size));
+      const wrap = el("div", { class: "own-cols-wrap" });
+      const table = el("table", { class: "own-cols" });
+      const head = el("tr");
+      ["Column", "Type", "Missing"].forEach((h) => head.appendChild(el("th", { scope: "col" }, h)));
+      table.appendChild(head);
+      // A wide file shows its first columns and says how many more, so the picks stay in reach.
+      const shown = ownShowAll ? i.columns : i.columns.slice(0, OWN_COLS_SHOWN);
+      shown.forEach((c) => { const tr = el("tr"); [c.name, c.type, String(c.missing)].forEach((x) => tr.appendChild(el("td", null, x))); table.appendChild(tr); });
+      wrap.appendChild(table);
+      chk.appendChild(wrap);
+      if (i.columns.length > OWN_COLS_SHOWN) {
+        if (!ownShowAll) chk.appendChild(el("p", { class: "more" }, "and " + (i.columns.length - OWN_COLS_SHOWN) + " more columns"));
+        const tog = el("button", { type: "button", class: "quiet" }, ownShowAll ? "Show fewer columns" : "Show all columns");
+        tog.addEventListener("click", () => { ownShowAll = !ownShowAll; render(); });
+        chk.appendChild(tog);
+      }
+      if (i.notes.length) { const ul = el("ul", { class: "own-notes" }); i.notes.forEach((n) => ul.appendChild(el("li", null, n))); chk.appendChild(ul); }
+      drawPicks($("own-picks"), o.picks);
+    }
+    function drawOwnRun(v) {
+      const c = v.ch, say = !!c.say;
+      drawOwnLoad(v); drawOwnTable(v);
+      $("own-go-read").hidden = !c.needTable;
+      $("own-say").hidden = !say;
+      if (say) {
+        setText("own-say-label", OWN_TEXT.sayLabel); setText("own-say-note", OWN_TEXT.sayNote);
+        if (lastKey !== c.id) $("own-say-text").value = c.say.text;
+      }
+      ["code-label", "code", "code-buttons", "run-hint", "result-wrap"].forEach((id) => { $(id).hidden = say; });
+    }
+    function drawOwnEnd(v) {
+      const box = $("own-end"), run = v.end.ownRun;
+      box.hidden = !run;
+      if (!run) return;
+      setText("own-end-h", OWN_TEXT.endHead);
+      const lines = $("own-end-lines"); clear(lines);
+      if (!run.lines.length) lines.appendChild(el("p", { class: "muted" }, OWN_TEXT.noLines));
+      else { const ol = el("ol"); run.lines.forEach((l) => { const li = el("li"); li.appendChild(el("pre", null, l)); ol.appendChild(li); }); lines.appendChild(ol); }
+      setText("own-end-file", run.file);
+      setText("own-end-say", run.sentence);
+      setText("own-end-forget", OWN_TEXT.forget);
+      setText("own-save", OWN_TEXT.save); $("own-save").className = "primary"; setText("own-save-note", "");
+      $("own-board").setAttribute("href", run.board); setText("own-board", OWN_TEXT.board);
+    }
+    // The script is made here and handed to the browser as a download: a Blob and a temporary link. Nothing is sent anywhere.
+    function saveOwnScript() {
+      const f = ctrl.ownScript();
+      const blob = new win.Blob([f.text], { type: "text/plain" });
+      const url = win.URL.createObjectURL(blob);
+      const a = el("a", { href: url, download: f.name });
+      if (doc.body && doc.body.appendChild) doc.body.appendChild(a);
+      a.click();
+      if (a.parentNode && a.parentNode.removeChild) a.parentNode.removeChild(a);
+      if (win.URL.revokeObjectURL) setTimeout(() => win.URL.revokeObjectURL(url), 1000);
+      setText("own-save-note", OWN_TEXT.saved);
+    }
+    function readOwnFile() {
+      const file = $("own-file").files && $("own-file").files[0];
+      if (!file) return;
+      if (file.size > Own.MAX_BYTES) { ctrl.ownTooBig(); return; }
+      const reader = new win.FileReader();
+      reader.onload = () => { lastKey = ""; ctrl.ownLoad(file.name, String(reader.result || "")); };
+      reader.onerror = () => ctrl.ownUnreadable();
+      reader.readAsText(file);
+      try { $("own-file").value = ""; } catch (e) { /* a file input may refuse */ }
+    }
+
     function renderStart(v) {
       showOnly("screen-start");
       $("start-title").textContent = v.lesson.heading;
@@ -1525,6 +1821,8 @@
       setText("start-chapter", v.lesson.chapterLine);
       setText("start-resume", v.lesson.resume);
       $("start").textContent = v.lesson.startLabel;
+      $("start").disabled = !!v.lesson.startDisabled;
+      drawOwnStart(v);
       $("restart").hidden = !v.lesson.canRestart;
       $("fast-row").hidden = !v.lesson.fastLane; $("fast-lane").textContent = v.lesson.fastLane;
       clear($("dots"));
@@ -1560,6 +1858,8 @@
         box.appendChild(ol);
       });
       $("end-more-sum").textContent = "Your lines and notes" + (all.length ? " (" + plural(all.length, "saved line", "saved lines") + ")" : "");
+      drawOwnEnd(v);
+      if (v.end.ownRun) v.end.ownRun.lines.forEach((l) => all.push(l));
       const copy = $("copy-all"); copy.hidden = !all.length; copy.textContent = "Copy all";
       copy._lines = all.join("\n");
       // The one main action, right under the title, and the only forward route (P04).
@@ -1700,9 +2000,10 @@
       // stays until the default changes, and on a narrow screen the drawer starts closed once.
       if (!dictSeen) { dictSeen = true; $("dict").open = false; }
       if (dictClosedLast !== c.dictClosed) { dictClosedLast = c.dictClosed; if (c.dictClosed) $("dict").open = false; }
+      drawOwnRun(v);
       // editor: only rewrite when the challenge changes, so typing is never overwritten
-      if (lastKey !== c.id) $("code").value = c.code;
-      lastKey = c.id;
+      if (lastKey !== c.id || lastStamp !== c.codeStamp) $("code").value = c.code;
+      lastKey = c.id; lastStamp = c.codeStamp;
       $("run").disabled = c.pending;
       // predict
       const pr = $("predict"); pr.hidden = !c.predict; clear(pr);
@@ -1839,7 +2140,7 @@
           row.appendChild(julia);
           node.appendChild(row);
         } else node.appendChild(julia);
-      } else if (r.table) node.appendChild(tableNode(r.table, 12));
+      } else if (r.table) node.appendChild(tableNode(r.table, r.table.cap || 12));
       else if (r.items) {
         node.appendChild(el("p", { class: "cap" }, "A list of " + plural(r.itemsTotal, "item", "items")));
         node.appendChild(el("pre", { class: "items" }, r.items.join("   ") + (r.itemsCut ? "   ..." : "")));
@@ -2112,6 +2413,14 @@
       }
       sheetOpen = !sheetOpen; render();
     });
+    $("own-file").addEventListener("change", readOwnFile);
+    $("own-go-read").addEventListener("click", () => { lastKey = ""; ctrl.ownGoRead(); });
+    $("own-starter").addEventListener("click", () => { lastKey = ""; ctrl.ownStarter(); });
+    $("own-say-text").addEventListener("input", () => ctrl.ownSay($("own-say-text").value));
+    $("own-save").addEventListener("click", saveOwnScript);
+    const forgetIt = () => { lastKey = ""; ctrl.ownForget(); };
+    $("own-forget").addEventListener("click", forgetIt);
+    $("own-end-forget").addEventListener("click", forgetIt);
     $("copy-all").addEventListener("click", () => {
       const b = $("copy-all");
       try { win.navigator.clipboard.writeText(b._lines || ""); b.textContent = "Copied"; } catch (e) { b.textContent = "Select the lines and copy them"; }

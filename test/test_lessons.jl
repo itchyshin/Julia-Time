@@ -151,8 +151,8 @@ end
         list = JuliaTime.handle_message(Dict("type" => "lesson_list"))["lessons"]
         entry = only(filter(l -> l["id"] == "range-test", list))
         @test entry["kind"] == "range" && entry["title"] == "Test range"
-        # only the range and the chapter exams say kind
-        @test all(l -> !haskey(l, "kind") || l["id"] == "range-test" || l["id"] == "range" || (l["kind"] == "exam" && occursin(r"^exam\d+$", l["id"])), list)
+        # only the range, the own-data lesson and the chapter exams say kind
+        @test all(l -> !haskey(l, "kind") || l["id"] == "range-test" || l["id"] == "range" || l["id"] == "own" || (l["kind"] == "exam" && occursin(r"^exam\d+$", l["id"])), list)
         @test list[end]["kind"] == "range"                                        # after every numbered lesson
         r = JuliaTime.handle_message(Dict("type" => "lesson_info", "lesson" => "range-test", "request_id" => "q"))
         @test r["type"] == "lesson" && r["request_id"] == "q"
@@ -1035,12 +1035,18 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
         by_diagnosis = 0
         for l in _all_lessons()
             JuliaTime.LESSONS[l["id"]] = l
+            # "Your own data" runs on the table the learner loaded: hold the starter table, and fill the names in curly
+            # brackets as the screen does (the example then runs as the learner's line would).
+            is_own = get(l, "kind", nothing) == "own"
+            is_own ? JuliaTime.handle_message(Dict("type" => "own_data_starter")) : JuliaTime.handle_message(Dict("type" => "own_data_clear"))
+            fill_own(x) = is_own ? replace(x, "{any_col}" => "pond", "{group_col}" => "site", "{num_col}" => "frogs", "{group_value}" => "\"north\"") : x
             for c in _challenges(l), e in get(get(c, "feedback", Dict()), "errors", Any[])
                 @test haskey(e, "example")
                 haskey(e, "example") || continue
                 ws(x) = replace(x, r"\s+" => "")
+                ex = fill_own(e["example"])
                 # an example equal to the starter would be answered with the "unchanged" line; a comment avoids that
-                code = ws(e["example"]) == ws(get(c, "starter", "")) ? e["example"] * "\n# example" : e["example"]
+                code = ws(ex) == ws(fill_own(get(c, "starter", ""))) ? ex * "\n# example" : ex
                 res = _run(l["id"], c["id"], code)
                 spec = JuliaTime._lesson_exam_spec(c)
                 env = spec === nothing ? JuliaTime.lesson_env(JuliaTime._lesson_setup_for(l, c)) : JuliaTime.lesson_env(spec.setup)
@@ -1055,6 +1061,7 @@ if get(ENV, "JULIATIME_INTEGRATION", "0") == "1"
                     " gave ", repr(res["feedback"]), ", wanted ", repr(own), isempty(diag) ? "" : " or " * repr(diag)); false)
             end
         end
+        JuliaTime.handle_message(Dict("type" => "own_data_clear"))
         println("errors[].example: ", by_diagnosis, " examples now get the engine's diagnosis instead of the catch-all entry")
         JuliaTime.reload_lessons!()
     end

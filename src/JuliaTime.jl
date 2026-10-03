@@ -28,6 +28,7 @@ export run_server, run_code, warmup!, shutdown!, SandboxResult, water_fleas, DAT
        speed_lab_info_reply, speed_lab_run_reply
 
 using CSV, DataFrames
+import GLM   # a worker's lm/glm result is deserialised here, so the parent must have GLM (and StatsModels) loaded
 using HTTP, JSON
 
 include("sandbox.jl")
@@ -56,5 +57,6 @@ include("mystery_c5.jl")
 include("mystery_c6.jl")
 include("mystery_epilogue.jl")
 include("lessons.jl")
+include("own_data.jl")
 
 end # module

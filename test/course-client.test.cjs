@@ -355,7 +355,7 @@ test("the optional speed laboratory is outside the six chapters and preserves on
   assert.match(board, /id="speed-lab-entry"/);
   assert.match(board, /not part of the case/i);
   assert.match(board, /no score/i);
-  assert.match(board, /same answers.*before.*timing/i);
+  assert.match(board, /answers match before it times/i);
   assert.match(board, /id="speed-lab-link"[^>]*href="speed-lab\.html"/);
   assert.match(board, /speedLabDestination\(attempt\)/);
 });

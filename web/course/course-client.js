@@ -397,6 +397,9 @@
   function attemptQuery(attempt) { return courseState.attemptId(attempt) ? "&attempt=" + encodeURIComponent(attempt) : ""; }
   // Every link off the Board keeps the attempt, or coming back shows another attempt's progress.
   function rangeDestination(attempt) { return RANGE_DESTINATION + attemptQuery(attempt); }
+  // The optional "Bonus: your own data" lesson (lessons/own.json). Not a step of the walk; nothing waits on it.
+  const OWN_DATA_DESTINATION = "../lesson.html?lesson=own";
+  function ownDataDestination(attempt) { return OWN_DATA_DESTINATION + attemptQuery(attempt); }
   function lessonNumberOfKey(key) {
     if (typeof key !== "string" || !key.startsWith(LESSON_PREFIX)) return null;
     const m = /^lesson(\d+)$/.exec(key.slice(LESSON_PREFIX.length));
@@ -463,5 +466,5 @@
     return Boolean(pending && reply && pending.case_id === courseState.CASE_ID && pending.mode === "challenge" && knownMove && reply.type === "case_result" && keys.every(key => typeof pending[key] === "string" && pending[key] && reply[key] === pending[key]));
   }
 
-  return {STEPS, timePromise, INTRO_MINUTES, ENDING_MINUTES, INTRO_SEEN_KEY, RANGE_UNLOCKS, RANGE_DESTINATION, rangeDestination, lessonProgress, wavesOpen, lessonDestination, examDestination, courseWalk, CHAPTER_STEPS, drawnJars, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
+  return {STEPS, timePromise, INTRO_MINUTES, ENDING_MINUTES, INTRO_SEEN_KEY, RANGE_UNLOCKS, RANGE_DESTINATION, rangeDestination, OWN_DATA_DESTINATION, ownDataDestination, lessonProgress, wavesOpen, lessonDestination, examDestination, courseWalk, CHAPTER_STEPS, drawnJars, CASE_SOLVED, chapterList, loadCourseState, legacyDestination, adapterDestination, speedLabDestination, endingDestination, caseThread, caseFile, dashboardModel, acceptReply};
 });

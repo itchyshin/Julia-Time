@@ -60,6 +60,10 @@
       <div id="start-promise" class="promise" hidden></div>
       <p id="start-chapter" class="chapter-line" hidden></p>
       <p id="start-resume" class="muted" hidden></p>
+      <section id="own-panel" class="own-panel" aria-labelledby="own-panel-h" hidden>
+        <h2 id="own-panel-h"></h2>
+        <p id="own-privacy" class="muted"></p>
+      </section>
       <p class="start-row"><button id="start" type="button" class="primary">Start</button>
         <button id="restart" type="button" class="quiet" aria-label="Start this lesson again" hidden>Start again</button></p>
       <p id="fast-row" class="fast-row" hidden><button id="fast-lane" type="button" class="quiet">I know R or Python: try this lesson's checkpoints</button>
@@ -69,6 +73,23 @@
     <section id="screen-lesson" class="lesson" hidden>
       <div id="left">
         <div id="remember" class="warmup" aria-live="polite" tabindex="-1" hidden></div>
+        <p><button id="own-go-read" type="button" class="quiet" hidden>Go to step 3: read the table</button></p>
+        <section id="own-load" class="own-panel" aria-label="Choose a file with the button" hidden>
+          <p id="own-stuck" class="own-stuck"></p>
+          <p class="own-choose"><label id="own-file-label" for="own-file" class="own-file-label quiet"></label>
+            <input id="own-file" class="sr-only" type="file" accept=".csv,.txt">
+            <button id="own-starter" type="button" class="quiet" aria-label="Use the starter table"></button></p>
+          <p id="own-error" class="own-error" role="alert" hidden></p>
+          <p id="own-still" class="own-still" hidden></p>
+        </section>
+        <details id="own-table" class="own-panel" hidden>
+          <summary id="own-table-sum"></summary>
+          <p id="own-notice" class="own-notice" role="status" hidden></p>
+          <p id="own-sim" class="own-sim" hidden></p>
+          <div id="own-check" class="own-check" aria-live="polite" hidden></div>
+          <div id="own-picks" class="own-picks" hidden></div>
+          <p><button id="own-forget" type="button" class="quiet" aria-label="Forget this table" hidden>Forget this table</button></p>
+        </details>
         <p id="kind-label" class="kind" hidden></p>
         <h1 id="round-title"></h1>
         <p id="round-story" class="muted" hidden></p>
@@ -107,8 +128,13 @@
       <div id="right">
         <div id="predict" hidden></div>
         <label for="code" id="code-label" class="field-label">Your line of Julia</label>
-        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" rows="4"></textarea>
-        <div class="buttons">
+        <textarea id="code" spellcheck="false" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" autocapitalize="off" autocomplete="off" rows="4"></textarea>
+        <div id="own-say" class="own-say" hidden>
+          <label id="own-say-label" for="own-say-text" class="field-label"></label>
+          <textarea id="own-say-text" rows="3" spellcheck="true"></textarea>
+          <p id="own-say-note" class="muted"></p>
+        </div>
+        <div id="code-buttons" class="buttons">
           <button id="run" type="button" class="primary" aria-label="Run the code">Run</button>
           <button id="reset" type="button" class="quiet" aria-label="Reset the editor">Reset</button>
           <button id="show-line" type="button" class="quiet" aria-label="Show me the line" hidden>Show me the line</button>
@@ -164,6 +190,16 @@
       <div id="end-skills" hidden></div>
       <div id="end-mistake" hidden></div>
       <section id="end-own" class="own-card" aria-labelledby="end-own-h" hidden></section>
+      <section id="own-end" class="own-card" aria-labelledby="own-end-h" hidden>
+        <h2 id="own-end-h"></h2>
+        <div id="own-end-lines"></div>
+        <p id="own-end-file" class="muted"></p>
+        <p id="own-end-say" class="own-say-line" hidden></p>
+        <p><button id="own-save" type="button" aria-label="Save my lines as a script"></button></p>
+        <p id="own-save-note" class="muted" hidden></p>
+        <p><button id="own-end-forget" type="button" class="quiet" aria-label="Forget this table">Forget this table</button></p>
+        <p><a id="own-board" href="course/index.html"></a></p>
+      </section>
       <details id="end-more" class="end-more">
         <summary id="end-more-sum">Your lines and notes</summary>
         <p class="end-tools"><button id="copy-all" type="button" class="quiet">Copy all</button>
@@ -194,6 +230,7 @@
 <script src="julia-text.js"></script>
 <script src="lesson-exam-save.js"></script>
 <script src="lesson-range.js"></script>
+<script src="lesson-own.js"></script>
 <script src="lesson.js"></script>
 <script src="lesson-delight.js"></script>
 </body>

@@ -30,6 +30,7 @@ lesson_practice_jars() = DataFrame(
 
 """Named Julia environments a lesson's `setup` can ask for. Built fresh for every run."""
 function lesson_env(setup)
+    setup == "own_data" && return own_data_env()   # the table the learner loaded, or `nothing` (src/own_data.jl)
     setup == "jars" && return (jars=mystery_jars(), case_batch=MYSTERY_CASE_BATCH, practice_jars=lesson_practice_jars())
     if setup == "jars_b09"   # Lesson 2: `jars` stays the 12-row notebook; `b09` is its six B09 rows, ready for one-line counts
         all_jars = mystery_jars()
@@ -786,7 +787,7 @@ function lesson_public(lesson)
         end
     end
     pub["data_values"] = data_values
-    pub["data_label"] = lesson_data_label(get(lesson, "setup", nothing))
+    _lesson_is_own(lesson) || (pub["data_label"] = lesson_data_label(get(lesson, "setup", nothing)))   # own-data keeps its file's label
     # An exam shows the pocket dictionary of Lessons 1 to N, built here from those lesson files so it never drifts.
     _lesson_is_exam(lesson) && (pub["dictionary"] = _lesson_exam_dictionary(lesson))
     # The jars rack: the case notebook's jars without `detected`, so the board never gives the answer away.
@@ -807,6 +808,7 @@ function lesson_list_reply(msg::AbstractDict=Dict())
         d = Dict{String, Any}("id" => l["id"], "number" => get(l, "number", nothing), "title" => get(l, "title", ""))
         _lesson_is_range(l) && (d["kind"] = "range")
         _lesson_is_exam(l) && (d["kind"] = "exam")
+        _lesson_is_own(l) && (d["kind"] = "own")
         get(l, "minutes", nothing) isa Integer && (d["minutes"] = l["minutes"])   # the estimated time, for the Board
         d
     end
@@ -2492,6 +2494,17 @@ function lesson_run_reply(msg::AbstractDict; on_status::Function=((_, __) -> not
             "pass" => pass, "feedback" => feedback)
     end
 
+    # "Your own data": a say step is not run, and nothing runs until a table is held (src/own_data.jl).
+    is_own = _lesson_is_own(lesson)
+    if is_own
+        get(challenge, "kind", nothing) == "say" && return reply(status="ok", pass=true, feedback="")
+        # The game has installed its packages: a Pkg line is not run, and says why (and what to do at home).
+        _pkg_call(code) && return reply(status="ok", pass=true, feedback=OWN_DATA_PKG_LINE)
+        # A step flagged "table": "none" (where am I, packages, read the table) runs with no table held.
+        get(challenge, "table", nothing) == "none" || own_data_held() !== nothing ||
+            return reply(status="error", pass=false, feedback=OWN_DATA_NONE_FEEDBACK)
+    end
+
     # `look: true` is the "Try it" of a Look closer box: the code runs in the lesson's setup and is never
     # checked, exactly like a play box.
     is_look = get(msg, "look", false) === true
@@ -2507,12 +2520,15 @@ function lesson_run_reply(msg::AbstractDict; on_status::Function=((_, __) -> not
             return reply(status="ok", pass=false, feedback=isempty(line) ? LESSON_UNCHANGED_FEEDBACK : line)
         end
     end
+    # No lesson runs a package change: the game has installed its packages (an own-lesson line is handled above).
+    !is_own && _pkg_call(code) && return reply(status="ok", pass=is_play, feedback=OWN_DATA_PKG_LINE)
     isempty(strip(code)) && return is_play ? reply(status="ok", pass=true, feedback="") : reply(status="error", pass=false, feedback="The editor is empty, so nothing was run.")
 
     # An exam challenge runs exactly as its chapter's case_run does (inputs, protection, guard); any other challenge
     # runs in its lesson's setup.
     spec = is_look ? nothing : _lesson_exam_spec(challenge)
     env = spec === nothing ? lesson_env(_lesson_setup_for(lesson, challenge)) : lesson_exam_env(spec.setup)
+    is_own && env === nothing && (env = (;))   # a step that runs before any table is held
     names = _lesson_env_names(env)
     r = spec === nothing ? lock(_RUN_LOCK) do
         run_code(code; env=env, budget=RUN_BUDGET, on_status=on_status)
@@ -2520,13 +2536,32 @@ function lesson_run_reply(msg::AbstractDict; on_status::Function=((_, __) -> not
     value_repr = _lesson_repr(r.value)
     length(value_repr) > 2000 && (value_repr = first(value_repr, 2000))
     table = _lesson_value_table(r.value)
+    is_own && (table = _own_cap_table(table))   # a learner's table can be long: 20 rows, and how many more
     works_too = ""
+    own_info = nothing
+    refused_read = false
 
     if is_play
         # An ungraded try-anything box: never checked, but an error always shows a line.
         pass = true
-        feedback = r.status == :ok ? "" : r.status == :timeout ? _mystery_stopped_feedback(r.status) :
-            _lesson_error_line(challenge, code, r.message; names=names, env=env)
+        own_line = is_own && r.status in (:ok, :error) ? _own_help_line(code, r) : ""
+        # The step that reads the table: the server reads what the learner typed (never evaluating it) and holds it.
+        if is_own && get(challenge, "loads_table", false) === true && r.status == :ok
+            ta = _own_typed_analysis(code)
+            if ta.problem === :empty
+                own_line = own_data_held() === nothing ? OWN_DATA_READ_FORM_LINE : OWN_DATA_LOADED_LINE
+            elseif ta.problem === :keep
+                own_line = OWN_DATA_KEEP_LINE
+            elseif ta.problem === :no_read
+                own_line = OWN_DATA_READ_FORM_LINE
+            else
+                typed_info, typed_msg = _own_hold_typed(ta.line, rid)
+                typed_info === nothing ? (own_line = typed_msg; refused_read = true) : (own_info = typed_info)
+            end
+        end
+        is_own && isempty(own_line) && r.status == :timeout && occursin("CSV.read", code) && (own_line = OWN_DATA_TIMEOUT_LINE)
+        feedback = !isempty(own_line) ? own_line : r.status == :ok ? "" : r.status == :timeout ? _mystery_stopped_feedback(r.status) :
+            _own_error_line(is_own, challenge, code, r.message, names, env)
     elseif r.status == :ok
         pass, feedback, works_too = try
             _lesson_judge(lesson, challenge, code, r, on_status)
@@ -2545,7 +2580,11 @@ function lesson_run_reply(msg::AbstractDict; on_status::Function=((_, __) -> not
     end
     out = reply(status=String(r.status), pass=pass, feedback=feedback, value_repr=value_repr,
                 table=table, stdout=r.stdout)
+    own_info === nothing || (out["own_table"] = own_info; out["read_line"] = own_info["read_line"])
     _lesson_add_shown!(out, r, code, env)
+    if refused_read   # a refused file shows no preview
+        out["value_table"] = nothing; out["value_repr"] = ""; out["shown"] = ""; out["shown_caption"] = ""; out["shown_keys"] = nothing
+    end
     raw = r.status == :error ? _lesson_raw_message(code, r.message) : r.message
     # A play box shows Julia's first line only, unless the message was rewritten (a blank, a parse spot).
     out["message"] = is_play && r.status == :error && raw == _lesson_julia_text(r.message) ?
@@ -2731,6 +2770,7 @@ function range_run_reply(range::AbstractDict, msg::AbstractDict; on_status::Func
             "status" => status, "value_repr" => value_repr, "value_table" => table, "stdout" => stdout,
             "pass" => pass, "feedback" => feedback)
     end
+    _pkg_call(code) && return reply(status="ok", pass=false, feedback=OWN_DATA_PKG_LINE)
     isempty(strip(code)) && return reply(status="error", pass=false, feedback="The editor is empty, so nothing was run.")
 
     # A wave may name its own setup (the boss level's bigger table); otherwise the range's.

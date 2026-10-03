@@ -81,6 +81,28 @@ for (const file of files) {
   // typed challenges before a checkpoint, remember from round 2, can_do and common_mistake, the idea test) do not
   // apply. Its own rules come instead, and every other rule (words, dashes, glossary, leaks, starters, hints) holds.
   const isExam = lesson.kind === 'exam';
+  // "Your own data" (kind "own") is an optional last stage with one round of plays and a say step: like the range, it
+  // has no see, no checkpoint and no new idea, so the teaching-shape rules (ideas, see first, typed-before-checkpoint,
+  // play after checkpoint, last graded challenge) do not apply. Words, dashes, glossary, labels and the rest do.
+  const isOwn = lesson.kind === 'own';
+  if (isOwn) {
+    test(`${name}: own-data rules (plays and one say, no check or solution, notes at most 25 words)`, () => {
+      assert.strictEqual(lesson.setup, 'own_data');
+      assert.ok(challenges.length > 0 && challenges.every(({ c }) => ['play', 'say'].includes(c.kind)), 'only plays and say steps');
+      assert.strictEqual(challenges.filter(({ c }) => c.kind === 'say').length, 1, 'one say step');
+      assert.strictEqual(challenges[challenges.length - 1].c.kind, 'say', 'the say step is last');
+      for (const { c } of challenges) {
+        assert.ok(!('solution' in c) && !('check' in c), `${c.id}: no solution or check`);
+        for (const k of ['r_note', 'py_note']) if (c[k] !== undefined) assert.ok(words(c[k]) <= 25, `${c.id}: ${k} at most 25 words`);
+      }
+      const ids = challenges.map(({ c }) => c.id);
+      assert.strictEqual(new Set(ids).size, ids.length, 'challenge ids unique');
+      const names = JSON.stringify(lesson).match(/\{[a-z_]+\}/g) || [];
+      names.forEach((n) => assert.ok(['{any_col}', '{num_col}', '{group_col}', '{group_value}', '{y_col}'].includes(n), 'unknown name ' + n));
+      assert.ok(words(lesson.close && lesson.close.own_work && lesson.close.own_work.say) <= 40, 'own_work.say');
+      assert.deepStrictEqual(newFieldViolations(lesson).filter((m) => /minutes/.test(m)), []);
+    });
+  }
   if (isExam) {
     examRuleFiles.push(name);
     test(`${name}: exam rules (chapter, moves in order, checkers, setups, checkpoints only, at most one hint)`, () => {
@@ -155,7 +177,7 @@ for (const file of files) {
     for (const { c } of challenges) assert.ok(words(c.prompt) <= 40, `${c.id} prompt`);
   });
 
-  if (!isExam) test(`${name}: one idea per round, carried on a see`, () => {
+  if (!isExam && !isOwn) test(`${name}: one idea per round, carried on a see`, () => {
     let total = 0;
     for (const r of rounds) {
       assert.ok(r.idea && typeof r.idea === 'string', `${r.id} has one idea`);
@@ -170,11 +192,11 @@ for (const file of files) {
     assert.ok(total <= (lesson.id === 'lesson2' ? 4 : 3), 'at most three new ideas per lesson (Lesson 2: four)');
   });
 
-  test(`${name}: py_note, starter_hint and minutes rules`, () => {
+  if (!isOwn) test(`${name}: py_note, starter_hint and minutes rules`, () => {
     assert.deepStrictEqual(newFieldViolations(lesson), []);
   });
 
-  if (!isExam) test(`${name}: two typed challenges before each checkpoint; remember from round 2`, () => {
+  if (!isExam && !isOwn) test(`${name}: two typed challenges before each checkpoint; remember from round 2`, () => {
     rounds.forEach((r, i) => {
       const cs = r.challenges;
       const see = cs.findIndex((c) => c.kind === 'see');
@@ -188,7 +210,7 @@ for (const file of files) {
     });
   });
 
-  test(`${name}: kinds, play placement, clue and r_note rules`, () => {
+  if (!isOwn) test(`${name}: kinds, play placement, clue and r_note rules`, () => {
     for (const r of rounds) {
       r.challenges.forEach((c, j) => {
         assert.ok(KINDS.includes(c.kind), `${c.id}: kind ${c.kind}`);
@@ -210,7 +232,7 @@ for (const file of files) {
     }
   });
 
-  test(`${name}: last graded challenge is an empty checkpoint; ids unique; checkers allowed`, () => {
+  if (!isOwn) test(`${name}: last graded challenge is an empty checkpoint; ids unique; checkers allowed`, () => {
     const graded = challenges.filter(({ c }) => c.kind !== 'play');
     const last = graded[graded.length - 1].c;
     assert.strictEqual(last.kind, 'checkpoint');

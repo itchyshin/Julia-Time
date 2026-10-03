@@ -94,8 +94,8 @@ end
     # 9. value cap
     r = JuliaTime.run_code("zeros(10^7)")
     @test r.status === :ok
-    @test r.value === nothing
-    @test occursin("too large", r.message)
+    @test !occursin("too large", r.message)
+    @test occursin("10000000-element", sprint(show, MIME"text/plain"(), r.value))   # a text preview, not an error
 
     # 10. reused worker is fast
     JuliaTime.run_code("1+1")

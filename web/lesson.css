@@ -97,14 +97,14 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, summary:focus-vis
 .lesson > .dict { grid-column: 1 / -1; }
 .kind { margin: 0 0 2px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
 #explain, #rule-text { font-size: 18px; white-space: pre-line; } /* each line of a round's explanation on its own line (queue 3) */
-.prompt { font-size: 18px; font-weight: 500; }
+.prompt { font-size: 18px; font-weight: 500; overflow-wrap: anywhere; }
 /* The round's idea on later tasks: one short, whole name; open, the text wraps in full. */
 .rule { margin: 0 0 10px; border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 4px 12px; border-radius: 0 4px 4px 0; }
 .rule summary { cursor: pointer; font-weight: 600; }
 .rule p { margin: 6px 0 4px; }
-.notes { margin: 6px 0 10px; }
-.notes .note { margin: 0 0 4px; }
-.notes code, .note code { font: 16px var(--mono); color: var(--ink); background: var(--panel); padding: 1px 5px; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.notes { margin: 6px 0 10px; overflow-wrap: anywhere; min-width: 0; }
+.notes .note { margin: 0 0 4px; overflow-wrap: anywhere; }
+.notes code, .note code { font: 16px var(--mono); color: var(--ink); background: var(--panel); padding: 1px 5px; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .starter { margin: 0 0 10px; padding: 6px 12px; border: 1px dashed var(--accent); border-radius: 6px; background: var(--panel); }
 .starter pre { margin: 2px 0 0; font: 16px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 /* The worked example: a card, its caption sitting on the top border. */
@@ -154,9 +154,9 @@ th.rownum, td.rownum { width: 1%; text-align: right; font-weight: normal; color:
 :is(.dict, #sheet-table)[data-r="0"][data-py="0"] :is(th, td):nth-child(2) { width: 60%; }
 /* Code cells break after a dot, a $, a comma or a bracket (lesson.js puts a <wbr> there), and inside a word only when
    one piece is wider than its column. */
-.dict td:not(:nth-child(2)), .sheet td:not(:nth-child(2)) { font-family: var(--mono); overflow-wrap: break-word; }
-/* Round 6: a code cell of the cheat sheet never wraps (sum([true, false, true]) read as two lines); the table takes the width it needs. */
-@media (min-width: 800px) { #sheet-table td:not(:nth-child(2)) { white-space: nowrap; overflow-wrap: normal; } .sheet { max-width: 1200px; } }
+.dict td:not(:nth-child(2)), .sheet td:not(:nth-child(2)) { font-family: var(--mono); overflow-wrap: anywhere; }
+/* Visual round: a code cell of the cheat sheet wraps inside its column (at a space, after a comma or =>, then anywhere) and never runs over its neighbour. */
+@media (min-width: 800px) { .sheet { max-width: 1200px; } }
 td.mono { white-space: pre-wrap; }
 .dict-earlier summary { cursor: pointer; padding: 4px 8px; color: var(--ink); background: var(--panel); }
 .dict-earlier table { table-layout: fixed; }
@@ -208,7 +208,7 @@ main:focus { outline: none; }
 .julia-msg summary:focus-visible { outline-color: #e0a14e; }
 /* The result: only a result longer than 20 lines scrolls, inside its own box (D2). */
 .result-wrap { margin: 0; }
-#result { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 8px; margin-bottom: 8px; max-height: calc(4 * 24px + 30px); overflow: auto; background: var(--panel); }
+#result { max-width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 8px; margin-bottom: 8px; max-height: calc(4 * 24px + 30px); overflow: auto; background: var(--panel); }
 /* Round 6: the box shows whole lines (web/lesson.js snapResult sets the exact height from the real rows) and, under them, an 18 px strip for the soft fade
    that shows while there is more below, so the fade never washes a whole line. The fade sits at the end of the scrolled content and sticks to the box bottom: no height of its own. */
 #result[data-more]::after { content: ""; display: block; position: sticky; bottom: -8px; height: 18px; margin: -18px -12px 0; background: linear-gradient(rgba(255, 250, 240, 0), var(--panel) 60%); pointer-events: none; }
@@ -220,7 +220,7 @@ main:focus { outline: none; }
 .strip .cell { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 0; border-radius: 4px; background: #fffdf6; border: 1px solid var(--line); font: 16px/1.4 var(--mono); }
 .shown-cap + .strip { margin-top: -2px; }
 .strip .pos { color: var(--ink-soft); }
-.strip .val { font-weight: 700; }
+.strip .val { font-weight: 700; overflow-wrap: anywhere; max-width: 100%; text-align: center; }
 .strip .key { color: var(--ink-soft); white-space: nowrap; }
 #result details.exact { margin: 0; }
 #result details.exact > summary { cursor: pointer; color: var(--accent); }
@@ -228,6 +228,7 @@ main:focus { outline: none; }
 pre.items { white-space: pre-wrap; }
 /* Julia's own print, verbatim; row names added by the screen sit beside it, in a quieter ink (P08). */
 #result pre.shown, #look-result pre.shown { white-space: pre; overflow-wrap: normal; }
+#result pre.shown { max-width: 100%; overflow-x: auto; }
 .shown-row { display: flex; gap: 14px; align-items: flex-start; }
 pre.shown-keys { margin: 0; font: 16px/1.5 var(--mono); color: var(--ink-soft); padding-right: 12px; border-right: 2px solid var(--line); white-space: pre; }
 .shown-cap { margin: 0 0 6px; }
@@ -334,6 +335,27 @@ footer p { margin: 0; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 /* The "Loading..." card waits a moment before it shows, so a quick load never flashes it. */
 #app[data-screen="loading"] #screen-note { animation: fade 150ms 700ms both; }
+/* Your own data (lessons/own.json) */
+.own-panel { margin: 14px 0; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.own-panel h2 { margin: 0 0 6px; font-size: 18px; }
+#own-table, #own-load { max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+#own-table summary { cursor: pointer; font-weight: 600; }
+.own-stuck { margin: 0 0 6px; }
+.own-choose { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.own-file-label { display: inline-block; padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+#own-file:focus + #own-starter, #own-file:focus-visible { outline: 2px solid var(--accent); }
+.own-error { color: #8a1c1c; font-weight: 600; }
+.own-sim { margin: 8px 0; padding: 8px 12px; border: 2px solid var(--accent); border-radius: 6px; font-weight: 700; }
+.own-cols-wrap { max-width: 100%; overflow-x: auto; margin: 6px 0; }
+.own-cols { border-collapse: collapse; }
+.own-cols th, .own-cols td { text-align: left; padding: 3px 12px 3px 0; font: 16px var(--mono); white-space: nowrap; }
+.own-cols td:first-child { white-space: normal; overflow-wrap: anywhere; }
+.own-picks { margin: 8px 0; }
+.own-picks-head { margin: 0 0 4px; font-weight: 600; }
+.own-pick { display: block; margin: 4px 0; }
+.own-pick select { width: 100%; max-width: 100%; box-sizing: border-box; font: inherit; }
+.own-say textarea { width: 100%; box-sizing: border-box; font: inherit; }
+.own-say-line { white-space: pre-wrap; overflow-wrap: anywhere; font-style: italic; }
 .print-only { display: none; }
 @media print {
   #strip, #print, #end-lines button, #end-next, #end-range, #restart, #end-go, .end-tools, .end-foot { display: none !important; }
@@ -348,9 +370,12 @@ footer p { margin: 0; }
 @media (max-width: 799px) {
   .lesson { display: flex; flex-direction: column; gap: 0; }
   .lesson > #left, .lesson > #right { display: contents; }
-  :where(.lesson > #left, .lesson > #right) > * { order: 5; }
-  #remember, #kind-label, #round-title, #round-story, #then-line, #explain, #gloss-explain, #rule, #prompt, #gloss-prompt, #gloss-tip, #notes, #starter-box, #waves { order: 1; }
-  #predict, #code-label, #code, .buttons, #run-hint, #wave-hint-text, #result-wrap, #feedback, #julia-msg, #works-too, #gloss-feedback, #guess-line, #clue, #hints, #help-note, .next-row, #result-label, #result, #play-note { order: 2; }
+  :where(.lesson > #left, .lesson > #right) > * { order: 5; min-width: 0; max-width: 100%; }
+  #remember, #kind-label, #round-title, #round-story, #then-line, #explain, #gloss-explain, #rule, #prompt, #gloss-prompt, #gloss-tip, #notes, #starter-box, #waves, #range-cols { order: 1; }
+  #predict, #code-label, #code, .buttons, #run-hint, #wave-hint-text, #result-wrap, #feedback, #julia-msg, #works-too, #gloss-feedback, #guess-line, #clue, #hints, #help-note, .next-row, #result-label, #result, .cue, #play-note { order: 2; }
+  #result { max-height: calc(8 * 24px + 30px); }
+  #data .tbl { overflow-x: auto; }
+  .own-card ol { padding-left: 1.3em; }
   #data, #pinned { order: 3; }
   .lesson > .dict { order: 6; width: 100%; }
   /* The dictionary as cards: one entry per card, "In R:" and "In Python:" named in the card (round 4, R3-10). */

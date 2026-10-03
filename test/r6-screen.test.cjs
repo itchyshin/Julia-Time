@@ -110,6 +110,7 @@ test("r6 item 5: the pills carry a title", () => {
   assert.equal((html.match(/<label class="switch" title="[^"]+"><input id="show-(r|py)"/g) || []).length, 2);
 });
 
-test("r6 item 6: no cheat-sheet code cell wraps", () => {
-  assert.match(css, /#sheet-table td:not\(:nth-child\(2\)\) \{[^}]*white-space: nowrap/);
+test("r6 item 6 (visual round): a cheat-sheet code cell wraps inside its column, at spaces and commas, and breaks a long token last", () => {
+  assert.doesNotMatch(css, /#sheet-table td:not\(:nth-child\(2\)\) \{[^}]*white-space: nowrap/);
+  assert.match(css, /\.dict td:not\(:nth-child\(2\)\), \.sheet td:not\(:nth-child\(2\)\) \{[^}]*overflow-wrap: anywhere/);
 });

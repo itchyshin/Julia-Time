@@ -60,8 +60,8 @@ only on your own computer. If Julia Time is already running, starting it again j
 ## 4. The one-time setup
 
 On the first start, Julia downloads and compiles the packages Julia Time needs. This needs internet and can
-take several minutes, depending on your connection and computer (we measured 77 seconds on a recent laptop with a fast
-connection). Do not close the window while it runs. Later starts take seconds.
+take several minutes, depending on your connection and computer (on 2 October 2026 we measured 67 seconds from an empty package store on a recent Mac with a fast
+connection; the packages take about 244 MB). Do not close the window while it runs. Later starts take seconds.
 
 You can also run the setup by hand. The settings cap Julia at four threads and BLAS at one, so the game does
 not hog a shared computer. In the Julia Time folder:

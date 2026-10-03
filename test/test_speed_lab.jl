@@ -235,3 +235,180 @@ speed_lab_machine_fixture() = Dict(
         end
     end
 end
+
+# --- Speed lab 0.5.2b: six fixed examples and "time your own code" -------------------------
+const SPEED_LAB_EXAMPLE_IDS = ["loop-sum", "bootstrap-mean", "random-walk", "permutation-test", "running-stat", "group-means"]
+
+function speed_lab_fake_runner(; r_answer=[1.0, 2.0], julia_answer=[1.0, 2.0], python_answer=[1.0, 2.0], calls=String[])
+    answers = Dict("julia" => julia_answer, "r" => r_answer, "python" => python_answer)
+    return function (language, id, mode)
+        push!(calls, string(language, ":", id, ":", mode))
+        mode == "check" && return Dict{String,Any}("answer" => answers[language])
+        return Dict{String,Any}("answer" => answers[language], "times" => [0.3, 0.1, 0.2], "version" => string(language, " fixture"))
+    end
+end
+
+const SPEED_LAB_ALL_PRESENT = () -> Dict("julia" => true, "r" => true, "python" => true)
+
+@testset "Speed lab examples (0.5.2b)" begin
+    root = joinpath(@__DIR__, "..", "benchmarks", "speedlab")
+    @testset "six fixed examples each have Julia, base R and standard-library Python files" begin
+        @test JuliaTime.SPEED_LAB_EXAMPLE_IDS == SPEED_LAB_EXAMPLE_IDS
+        for id in SPEED_LAB_EXAMPLE_IDS, ext in ("jl", "R", "py")
+            @test isfile(joinpath(root, id, "$id.$ext"))
+        end
+        for id in SPEED_LAB_EXAMPLE_IDS
+            @test !occursin("numpy", lowercase(read(joinpath(root, id, "$id.py"), String)))
+            @test !occursin("library(", read(joinpath(root, id, "$id.R"), String))
+        end
+    end
+
+    @testset "examples list reports only fixed ids and language presence" begin
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_examples", "request_id" => "ex-1"); presence=SPEED_LAB_ALL_PRESENT)
+        @test reply["type"] == "speed_lab_examples"
+        @test reply["request_id"] == "ex-1"
+        @test [e["id"] for e in reply["examples"]] == SPEED_LAB_EXAMPLE_IDS
+        @test all(e -> !isempty(e["title"]) && !isempty(e["plain"]), reply["examples"])
+        @test reply["languages"] == Dict("julia" => true, "r" => true, "python" => true)
+        @test JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_examples", "request_id" => "ex-1", "x" => 1))["type"] == "error"
+    end
+
+    @testset "matching answers are timed; median of three after the check" begin
+        calls = String[]
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_example_run", "request_id" => "r1", "example_id" => "loop-sum");
+            presence=SPEED_LAB_ALL_PRESENT, runner=speed_lab_fake_runner(calls=calls))
+        @test reply["type"] == "speed_lab_example_result"
+        @test reply["example_id"] == "loop-sum"
+        @test reply["label"] == "Measured on this computer, just now."
+        for lang in ("julia", "r", "python")
+            row = reply["languages"][lang]
+            @test row["status"] == "timed"
+            @test row["median"] == 0.2
+            @test row["min"] == 0.1 && row["max"] == 0.3
+        end
+        # parity (check) of every language happens before any timing call
+        first_time = findfirst(c -> endswith(c, ":time"), calls)
+        @test all(endswith(c, ":check") for c in calls[1:first_time-1])
+        @test count(endswith(":check"), calls) == 3
+    end
+
+    @testset "answers that differ are never timed" begin
+        calls = String[]
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_example_run", "request_id" => "r2", "example_id" => "loop-sum");
+            presence=SPEED_LAB_ALL_PRESENT, runner=speed_lab_fake_runner(r_answer=[1.0, 2.5], calls=calls))
+        @test reply["languages"]["r"]["status"] == "answers_differ"
+        @test reply["languages"]["r"]["message"] == "answers differ, not timed"
+        @test !haskey(reply["languages"]["r"], "median")
+        @test reply["languages"]["python"]["status"] == "timed"
+        @test !("r:loop-sum:time" in calls)
+    end
+
+    @testset "a missing language says not installed, not timed" begin
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_example_run", "request_id" => "r3", "example_id" => "random-walk");
+            presence=() -> Dict("julia" => true, "r" => false, "python" => true), runner=speed_lab_fake_runner())
+        @test reply["languages"]["r"]["status"] == "not_installed"
+        @test reply["languages"]["r"]["message"] == "not installed, not timed"
+        @test !haskey(reply["languages"]["r"], "median")
+    end
+
+    @testset "a runner that throws becomes did-not-finish, not an invented number" begin
+        boom = (language, id, mode) -> language == "python" ? error("timed out") : Dict{String,Any}("answer" => [1.0], "times" => [1.0, 1.0, 1.0], "version" => "v")
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_example_run", "request_id" => "r4", "example_id" => "loop-sum");
+            presence=SPEED_LAB_ALL_PRESENT, runner=boom)
+        @test reply["languages"]["python"]["status"] == "failed"
+        @test reply["languages"]["python"]["message"] == "did not finish, not timed"
+        @test !haskey(reply["languages"]["python"], "median")
+    end
+
+    @testset "requests accept only fixed example ids and exact fields" begin
+        bad(m) = JuliaTime.speed_lab_reply(m; presence=SPEED_LAB_ALL_PRESENT, runner=speed_lab_fake_runner())["type"] == "error"
+        @test bad(Dict("type" => "speed_lab_example_run", "request_id" => "x", "example_id" => "../../etc/passwd"))
+        @test bad(Dict("type" => "speed_lab_example_run", "request_id" => "x", "example_id" => "loop-sum", "code" => "run(`ls`)"))
+        @test bad(Dict("type" => "speed_lab_example_run", "request_id" => "", "example_id" => "loop-sum"))
+        @test bad(Dict("type" => "speed_lab_nonsense", "request_id" => "x"))
+    end
+
+    @testset "own code: one sandbox run, the learner's lines inside a function, both times returned" begin
+        seen = String[]
+        fake = function (code; budget)
+            push!(seen, code)
+            return JuliaTime.SandboxResult(:ok, (0.8, 0.1), "", "")
+        end
+        code = "using Statistics\nimport Random\nx = mean(1:10)\nx"
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o1", "code" => code); sandbox=fake)
+        @test reply["type"] == "speed_lab_own_result"
+        @test reply["status"] == "ok"
+        @test reply["first"]["seconds"] == 0.8
+        @test reply["second"]["seconds"] == 0.1
+        @test length(seen) == 1
+        w = seen[1]
+        @test occursin("__jt_body() = begin", w)
+        @test occursin("@elapsed __jt_body()", w)
+        # using/import lines are lifted above the function; the rest sits inside it
+        @test first(findfirst("using Statistics", w)) < first(findfirst("__jt_body()", w))
+        @test first(findfirst("import Random", w)) < first(findfirst("__jt_body()", w))
+        @test first(findfirst("x = mean(1:10)", w)) > first(findfirst("__jt_body()", w))
+        @test occursin("compil", reply["explanation"])
+        @test reply["label"] == "Measured on this computer, just now."
+        @test JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o1", "code" => "1+1"); sandbox=(c; budget) -> JuliaTime.SandboxResult(:ok, 0.5, "", ""))["status"] == "error"
+    end
+
+    @testset "own code: errors, const lines and timeouts become plain messages" begin
+        n = Ref(0)
+        failing = function (code; budget)
+            n[] += 1
+            return JuliaTime.SandboxResult(:error, nothing, "", "UndefVarError: y not defined")
+        end
+        reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o2", "code" => "y"); sandbox=failing)
+        @test reply["status"] == "error"
+        @test occursin("UndefVarError", reply["first"]["message"])
+        @test reply["second"] === nothing
+        @test n[] == 1
+        slow = (code; budget) -> JuliaTime.SandboxResult(:timeout, nothing, "", "That took longer than 5 seconds.")
+        t = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o3", "code" => "while true end"); sandbox=slow)
+        @test t["status"] == "timeout"
+        @test t["second"] === nothing
+        # a const line is refused before the sandbox with a plain message
+        n[] = 0
+        c = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o5", "code" => "const A = 3\nA + 1"); sandbox=failing)
+        @test c["status"] == "error"
+        @test occursin("const", c["first"]["message"])
+        @test n[] == 0
+        @test JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o4", "code" => ""))["type"] == "error"
+        @test JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o4", "code" => "a"^30_000))["type"] == "error"
+        @test JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "o4", "code" => 1))["type"] == "error"
+    end
+
+    @testset "server routes every speed_lab_ message" begin
+        reply = JuliaTime.handle_message(Dict("type" => "speed_lab_examples", "request_id" => "ex-9"))
+        @test reply["type"] == "speed_lab_examples"
+        @test JuliaTime.handle_message(Dict("type" => "speed_lab_bogus", "request_id" => "x"))["type"] == "error"
+    end
+
+    if get(ENV, "JULIATIME_INTEGRATION", "") == "1"
+        @testset "live: one real example, all languages present, answers agree" begin
+            reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_example_run", "request_id" => "live-1", "example_id" => "group-means"))
+            @test reply["type"] == "speed_lab_example_result"
+            @test reply["languages"]["julia"]["status"] == "timed"
+            for (lang, row) in reply["languages"]
+                @test row["status"] in ("timed", "not_installed")
+            end
+        end
+        @testset "live: own code in the real sandbox, first run compiles, second does not" begin
+            # the coordinator's f(10^6) sum-of-roots example compiles in microseconds (measured: first
+            # and second are equal to within noise), so the gap is asserted on code that needs real compiling
+            code = "using Distributions\nf(n) = sum(rand(Normal(0, 1), n))\nf(10^5)"
+            reply = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "live-2", "code" => code))
+            @test reply["status"] == "ok"
+            @test reply["first"]["seconds"] > reply["second"]["seconds"] > 0
+            println("own-code Normal example: first=", reply["first"]["seconds"], " second=", reply["second"]["seconds"])
+            parse_err = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "live-3", "code" => "x = (1 +"))
+            @test parse_err["status"] == "error"
+            @test !isempty(parse_err["first"]["message"])
+            const_err = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "live-4", "code" => "const A = 2\nA"))
+            @test const_err["status"] == "error"
+            hang = JuliaTime.speed_lab_reply(Dict("type" => "speed_lab_own_run", "request_id" => "live-5", "code" => "while true end"))
+            @test hang["status"] == "timeout"
+        end
+    end
+end

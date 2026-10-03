@@ -103,9 +103,8 @@ test("a measured receipt gives a local, plain-language comparison against Julia 
   );
 
   const html = fs.readFileSync(pagePath, "utf8");
-  assert.match(html, /id="speed-report-comparison"/);
-  assert.match(html, /relativeTimingSummary/);
-  assert.match(html, /this computer/i);
+  assert.match(html, /Measured on this computer, just now/);
+  assert.match(html, /chartSvg/);
 });
 
 test("stale or malformed run replies cannot show a benchmark report", () => {
@@ -182,43 +181,44 @@ test("a failed local connection names the recovery step instead of leaving the o
   assert.match(client.viewModel(state).message, /run\.jl/i);
 });
 
-test("speed-lab page teaches parity before timing and uses native accessible controls without a winner", () => {
+test("speed-lab page: six examples, parity before timing, own-code timer, no winner", () => {
   assert.equal(fs.existsSync(pagePath), true, "the optional speed-lab page must exist");
   const html = fs.readFileSync(pagePath, "utf8");
-  assert.match(html, /parity.*before.*timing/i);
   assert.match(html, /after you finish the mystery/i);
-  assert.match(html, /bootstrap.*resampl/i);
-  assert.match(html, /Julia.*R.*Python/i);
-  assert.match(html, /same answer to the same supplied bootstrap calculation/i);
   assert.match(html, /What this page is for/i);
-  assert.match(html, /same bootstrap runs in three languages/i);
-  assert.match(html, /Step 1: confirm the answers agree/i);
-  assert.match(html, /Step 2: time those matching calculations/i);
+  assert.match(html, /answers.*(agree|match).*before.*tim/i);
   assert.match(html, /You do not need to do this to learn Julia or finish the case/i);
   assert.match(html, /Leave the Julia Time terminal running/i);
   assert.match(html, /optional/i);
-  assert.match(html, /30-second total limit/i);
+  assert.match(html, /Julia.*R.*Python/i);
   assert.match(html, /id="speed-status"[^>]*aria-live="polite"/);
-  assert.match(html, /<button id="check-speed-lab" type="button">/);
-  assert.match(html, /<button id="run-speed-lab" type="button" disabled>/);
+  assert.match(html, /id="own-code"/);
+  assert.match(html, /first run \(includes compiling\)/i);
+  assert.match(html, /second run/i);
+  assert.match(html, /Your lines run inside a function, the way fast Julia code is written\./);
+  assert.match(html, /one 5-second limit for both runs/);
   assert.match(html, /JuliaTimeSpeedLab/);
-  assert.match(html, /beginInfo\(/);
-  assert.match(html, /beginBenchmarkRun\(/);
-  assert.match(html, /INFO_REPLY_TIMEOUT_MS = 60000/);
-  assert.match(html, /RUN_REPLY_TIMEOUT_MS = 150000/);
+  assert.match(html, /exampleRunRequest\(/);
+  assert.match(html, /ownRunRequest\(/);
   assert.match(html, /CONNECT_TIMEOUT_MS = 5000/);
-  assert.match(html, /connectionFailed\(/);
-  assert.match(html, /expirePending\(/);
-  assert.match(html, /speedReport\.hidden = !model\.result/);
+  const waits = {};
+  for (const m of html.matchAll(/(EXAMPLE_REPLY_TIMEOUT_MS|OWN_REPLY_TIMEOUT_MS) = (\d+)/g)) waits[m[1]] = Number(m[2]);
+  assert.ok(waits.EXAMPLE_REPLY_TIMEOUT_MS >= 200000, "examples wait at least 200 s");
+  assert.ok(waits.OWN_REPLY_TIMEOUT_MS >= 200000, "own code waits at least 200 s");
+  assert.match(html, /Warming up Julia for the first run…/);
+  assert.match(html, /<textarea id="own-code"[^>]*>[^<]*@sprintf/, "default own-code example is the measured one");
+  assert.match(html, /Julia remembers what it compiled in earlier runs/);
+  assert.match(html, /connectionFailed|could not connect/i);
   assert.doesNotMatch(html, /winner|Julia wins|faster than/i);
+  assert.doesNotMatch(html, /https?:\/\/(?!www\.w3\.org)/i, "no CDN or external script");
+  assert.match(html, /name="viewport"/);
 });
 
 test("an unsupported browser gets a visible optional-lab recovery instead of inert controls", () => {
   const html = fs.readFileSync(pagePath, "utf8");
   assert.match(html, /current browser[^.]*WebSocket/i);
   assert.match(html, /mystery is still playable/i);
-  assert.match(html, /check\.disabled\s*=\s*true/);
-  assert.match(html, /run\.disabled\s*=\s*true/);
+  assert.match(html, /disabled\s*=\s*true/);
 });
 
 test("pure helpers have no storage, DOM, or network dependency", () => {
@@ -226,4 +226,92 @@ test("pure helpers have no storage, DOM, or network dependency", () => {
   for (const forbidden of ["localStorage", "document", "WebSocket", "fetch(", "XMLHttpRequest"]) {
     assert.equal(source.includes(forbidden), false, "pure module must not use " + forbidden);
   }
+});
+
+// --- 0.5.2b: six fixed examples, SVG chart, time your own code ------------------------------
+function exampleResult(requestId, languages) {
+  return {
+    type:"speed_lab_example_result", request_id:requestId, example_id:"loop-sum", title:"Add up square roots",
+    label:"Measured on this computer, just now.", method:"One warm-up run, then the median of three timed runs, one language at a time.",
+    machine:{os:"Darwin", architecture:"aarch64", cpu_model:"apple-m1", logical_cpus:20},
+    languages:languages || {
+      julia:{status:"timed", median:0.02, min:0.019, max:0.021, version:"Julia 1.10.0"},
+      r:{status:"timed", median:0.6, min:0.59, max:0.62, version:"R version 4.6.0"},
+      python:{status:"not_installed", message:"not installed, not timed"}
+    }
+  };
+}
+
+test("new requests are fixed envelopes; own code is bounded", () => {
+  const client = clientUnderTest();
+  assert.deepEqual(client.examplesRequest("a1"), {type:"speed_lab_examples", request_id:"a1"});
+  assert.deepEqual(client.exampleRunRequest("a2", "loop-sum"), {type:"speed_lab_example_run", request_id:"a2", example_id:"loop-sum"});
+  assert.equal(client.exampleRunRequest("a2", "../x"), null);
+  assert.equal(client.exampleRunRequest("", "loop-sum"), null);
+  assert.deepEqual(client.ownRunRequest("a3", "1+1"), {type:"speed_lab_own_run", request_id:"a3", code:"1+1"});
+  assert.equal(client.ownRunRequest("a3", "   "), null);
+  assert.equal(client.ownRunRequest("a3", "x".repeat(20001)), null);
+  assert.equal(client.ownRunRequest("a3", 5), null);
+  assert.deepEqual(client.EXAMPLE_IDS, ["loop-sum", "bootstrap-mean", "random-walk", "permutation-test", "running-stat", "group-means"]);
+});
+
+test("example results are accepted only when every language row is complete and honest", () => {
+  const client = clientUnderTest();
+  assert.equal(client.validExampleResult(exampleResult("r1"), "r1"), true);
+  assert.equal(client.validExampleResult(exampleResult("r1"), "other"), false);
+  assert.equal(client.validExampleResult(exampleResult("r1", {julia:{status:"timed", median:-1, min:0, max:1, version:"v"}, r:{status:"failed", message:"did not finish, not timed"}, python:{status:"failed", message:"did not finish, not timed"}}), "r1"), false);
+  const missing = exampleResult("r1");
+  delete missing.label;
+  assert.equal(client.validExampleResult(missing, "r1"), false);
+  const wrongLabel = exampleResult("r1");
+  wrongLabel.label = "Typical result";
+  assert.equal(client.validExampleResult(wrongLabel, "r1"), false);
+  const answersDiffer = exampleResult("r1", {julia:{status:"timed", median:0.02, min:0.01, max:0.03, version:"v"}, r:{status:"answers_differ", message:"answers differ, not timed"}, python:{status:"not_installed", message:"not installed, not timed"}});
+  assert.equal(client.validExampleResult(answersDiffer, "r1"), true);
+});
+
+test("the SVG chart is drawn only from measured medians, on a log scale, and is phone-width safe", () => {
+  const client = clientUnderTest();
+  const svg = client.chartSvg(exampleResult("r1").languages);
+  assert.match(svg, /^<svg /);
+  assert.match(svg, /viewBox="0 0 360 /);
+  assert.match(svg, /role="img"/);
+  assert.match(svg, /0\.02 s/);
+  assert.match(svg, /0\.6 s/);
+  assert.match(svg, /Julia/);
+  assert.match(svg, /not installed, not timed/);
+  assert.match(svg, /log scale/i);
+  assert.doesNotMatch(svg, /Python[^<]*[0-9] s/, "no number for a language that was not timed");
+  assert.doesNotMatch(svg, /<script|href=|<image/i);
+  // the longer time gets the longer bar (log scale, same baseline)
+  const widths = [...svg.matchAll(/data-bar="(julia|r)" [^>]*width="([0-9.]+)"/g)].reduce((o, m) => (o[m[1]] = Number(m[2]), o), {});
+  assert.ok(widths.r > widths.julia && widths.julia > 0);
+  assert.equal(client.chartSvg({julia:{status:"failed", message:"did not finish, not timed"}}), "");
+  const evil = client.chartSvg({julia:{status:"timed", median:0.1, min:0.1, max:0.1, version:"<script>"}, r:{status:"not_installed", message:"<b>x</b>"}});
+  assert.doesNotMatch(evil, /<script|<b>/);
+});
+
+test("seconds are written plainly and the comparison sentence is local, not universal", () => {
+  const client = clientUnderTest();
+  assert.equal(client.formatSeconds(0.0197), "0.0197 s");
+  assert.equal(client.formatSeconds(1.234567), "1.23 s");
+  assert.equal(client.formatSeconds(0.000642), "0.000642 s");
+  assert.equal(client.formatSeconds(12.3456), "12.3 s");
+  assert.equal(client.formatSeconds(NaN), "");
+  assert.equal(
+    client.comparisonSentence(exampleResult("r1").languages),
+    "On this computer, R took 30× Julia's median time here."
+  );
+  assert.equal(client.comparisonSentence({julia:{status:"timed", median:0.1, min:0.1, max:0.1, version:"v"}}), "");
+});
+
+test("own-code results need both runs measured, or a plain stop after the first", () => {
+  const client = clientUnderTest();
+  const ok = {type:"speed_lab_own_result", request_id:"o1", status:"ok", label:"Measured on this computer, just now.", first:{status:"ok", seconds:0.8}, second:{status:"ok", seconds:0.1}, explanation:"Julia compiles code the first time it runs, so the first run includes that compiling time and the second run, reusing it, is faster."};
+  assert.equal(client.validOwnResult(ok, "o1"), true);
+  assert.equal(client.validOwnResult(ok, "o2"), false);
+  const stopped = {type:"speed_lab_own_result", request_id:"o1", status:"error", label:ok.label, first:{status:"error", message:"UndefVarError: y not defined"}, second:null, explanation:null};
+  assert.equal(client.validOwnResult(stopped, "o1"), true);
+  assert.equal(client.validOwnResult(Object.assign({}, ok, {second:null}), "o1"), false);
+  assert.equal(client.validOwnResult(Object.assign({}, ok, {first:{status:"ok", seconds:"fast"}}), "o1"), false);
 });

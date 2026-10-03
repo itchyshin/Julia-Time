@@ -162,5 +162,114 @@
     return {phase:"not_checked", message:"Check cross-language parity before requesting any timing.", result:null};
   }
 
-  return {BENCHMARK_ID, validRequestId, benchmarkInfoRequest, benchmarkRunRequest, relativeTimingSummary, createState, connect, disconnect, connectionFailed, beginInfo, receiveInfoReply, expirePending, canRunBenchmark, beginBenchmarkRun, receiveRunReply, viewModel};
+  // --- 0.5.2b: six fixed examples, SVG chart, time your own code ---------------------------
+  const EXAMPLE_IDS = ["loop-sum", "bootstrap-mean", "random-walk", "permutation-test", "running-stat", "group-means"];
+  const LANGUAGE_ROWS = [["julia", "Julia"], ["r", "R"], ["python", "Python"]];
+  const MEASURED_LABEL = "Measured on this computer, just now.";
+  const OWN_CODE_LIMIT = 20000;
+
+  function examplesRequest(requestId) { return validRequestId(requestId) ? Object.freeze({type:"speed_lab_examples", request_id:requestId}) : null; }
+  function exampleRunRequest(requestId, exampleId) {
+    return validRequestId(requestId) && EXAMPLE_IDS.indexOf(exampleId) >= 0 ? Object.freeze({type:"speed_lab_example_run", request_id:requestId, example_id:exampleId}) : null;
+  }
+  function ownRunRequest(requestId, code) {
+    if (!validRequestId(requestId) || typeof code !== "string" || code.trim() === "" || code.length > OWN_CODE_LIMIT) return null;
+    return Object.freeze({type:"speed_lab_own_run", request_id:requestId, code});
+  }
+
+  function formatSeconds(value) {
+    if (!finiteNonnegative(value)) return "";
+    const rounded = Number(value.toPrecision(3));
+    const text = String(rounded).indexOf("e") >= 0 ? rounded.toFixed(9).replace(/0+$/, "") : String(rounded);
+    return text + " s";
+  }
+  function validLanguageRow(row) {
+    if (!plainRecord(row)) return false;
+    if (row.status === "timed") {
+      return exactFields(row, ["status", "median", "min", "max", "version"]) && finiteNonnegative(row.median) && finiteNonnegative(row.min) && finiteNonnegative(row.max) &&
+        row.min <= row.median && row.median <= row.max && nonemptyString(row.version, 240);
+    }
+    const messages = {not_installed:"not installed, not timed", answers_differ:"answers differ, not timed", failed:"did not finish, not timed"};
+    return Object.prototype.hasOwnProperty.call(messages, row.status) && exactFields(row, ["status", "message"]) && row.message === messages[row.status];
+  }
+  function validExampleResult(reply, requestId) {
+    if (!exactFields(reply, ["type", "request_id", "example_id", "title", "label", "method", "machine", "languages"])) return false;
+    if (reply.type !== "speed_lab_example_result" || reply.request_id !== requestId || EXAMPLE_IDS.indexOf(reply.example_id) < 0) return false;
+    if (reply.label !== MEASURED_LABEL || !nonemptyString(reply.title, 160) || !nonemptyString(reply.method, 400)) return false;
+    if (!exactFields(reply.machine, ["os", "architecture", "cpu_model", "logical_cpus"]) || !Number.isInteger(reply.machine.logical_cpus)) return false;
+    if (!plainRecord(reply.languages) || Object.keys(reply.languages).length !== 3) return false;
+    return LANGUAGE_ROWS.every(pair => validLanguageRow(reply.languages[pair[0]]));
+  }
+
+  function escapeText(value) {
+    return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  // Bars are drawn only from measured medians. Log scale: one gridline per factor of ten.
+  function chartSvg(languages) {
+    if (!plainRecord(languages)) return "";
+    const timed = LANGUAGE_ROWS.filter(pair => plainRecord(languages[pair[0]]) && languages[pair[0]].status === "timed" && languages[pair[0]].median > 0);
+    if (!timed.length) return "";
+    const medians = timed.map(pair => languages[pair[0]].median);
+    const low = Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, medians))) - 1);
+    let high = Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, medians))));
+    if (high <= Math.max.apply(null, medians) * 1.0000001) high *= 10;
+    const span = Math.log10(high) - Math.log10(low);
+    const colours = {julia:"#136165", r:"#c2561f", python:"#143242"};
+    const left = 8, usable = 344, rowHeight = 42, top = 6;
+    const x = value => left + usable * (Math.log10(value) - Math.log10(low)) / span;
+    const parts = [];
+    const rows = LANGUAGE_ROWS.length;
+    const axisY = top + rows * rowHeight;
+    const height = axisY + 36;
+    for (let value = low; value <= high * 1.0000001; value *= 10) {
+      const gx = x(value).toFixed(1);
+      parts.push('<line x1="' + gx + '" x2="' + gx + '" y1="' + top + '" y2="' + axisY + '" stroke="#cdbf9e" stroke-width="1"/>');
+      parts.push('<text x="' + gx + '" y="' + (axisY + 13) + '" font-size="11" text-anchor="middle" fill="#5f6d70">' + escapeText(formatSeconds(value)) + '</text>');
+    }
+    LANGUAGE_ROWS.forEach(function (pair, index) {
+      const row = languages[pair[0]];
+      const y = top + index * rowHeight;
+      if (plainRecord(row) && row.status === "timed" && row.median > 0) {
+        const width = Math.max(2, x(row.median) - left).toFixed(1);
+        parts.push('<text x="' + left + '" y="' + (y + 14) + '" font-size="13" font-weight="700" fill="#143242">' + escapeText(pair[1] + "  " + formatSeconds(row.median)) + '</text>');
+        parts.push('<rect data-bar="' + pair[0] + '" x="' + left + '" y="' + (y + 20) + '" width="' + width + '" height="14" fill="' + colours[pair[0]] + '"/>');
+      } else {
+        parts.push('<text x="' + left + '" y="' + (y + 14) + '" font-size="13" fill="#5f6d70">' + escapeText(pair[1] + "  " + (plainRecord(row) && row.message ? row.message : "not timed")) + '</text>');
+      }
+    });
+    parts.push('<text x="' + left + '" y="' + (axisY + 30) + '" font-size="11" fill="#5f6d70">Log scale: each gridline is 10 times the one before. Median of three runs.</text>');
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 ' + height + '" width="100%" role="img" aria-label="Bar chart, log scale, of the measured median seconds for each language on this computer" style="display:block;max-width:100%;height:auto">' + parts.join("") + '</svg>';
+  }
+
+  function comparisonSentence(languages) {
+    if (!plainRecord(languages) || !plainRecord(languages.julia) || languages.julia.status !== "timed" || !(languages.julia.median > 0)) return "";
+    const julia = languages.julia.median;
+    const clauses = [];
+    [["r", "R"], ["python", "Python"]].forEach(function (pair) {
+      const row = languages[pair[0]];
+      if (!plainRecord(row) || row.status !== "timed" || !(row.median > 0)) return;
+      const ratio = row.median / julia;
+      if (Math.abs(ratio - 1) <= 0.05) clauses.push(pair[1] + " took about the same time as Julia");
+      else if (ratio > 1) clauses.push(pair[1] + " took " + displayFactor(ratio) + "× Julia's median time");
+      else clauses.push("Julia took " + displayFactor(1 / ratio) + "× " + pair[1] + "'s median time");
+    });
+    return clauses.length ? "On this computer, " + clauses.join(" and ") + " here." : "";
+  }
+
+  function validOwnStep(step) {
+    if (!plainRecord(step)) return false;
+    if (step.status === "ok") return exactFields(step, ["status", "seconds"]) && finiteNonnegative(step.seconds);
+    return (step.status === "error" || step.status === "timeout") && exactFields(step, ["status", "message"]) && nonemptyString(step.message, 1600);
+  }
+  function validOwnResult(reply, requestId) {
+    if (!exactFields(reply, ["type", "request_id", "status", "label", "first", "second", "explanation"])) return false;
+    if (reply.type !== "speed_lab_own_result" || reply.request_id !== requestId || reply.label !== MEASURED_LABEL) return false;
+    if (!validOwnStep(reply.first)) return false;
+    if (reply.first.status !== "ok") return reply.second === null && reply.explanation === null && reply.status === reply.first.status;
+    if (!validOwnStep(reply.second)) return false;
+    if (reply.second.status !== "ok") return reply.explanation === null && reply.status === reply.second.status;
+    return reply.status === "ok" && nonemptyString(reply.explanation, 400);
+  }
+
+  return {BENCHMARK_ID, validRequestId, benchmarkInfoRequest, benchmarkRunRequest, relativeTimingSummary, EXAMPLE_IDS, examplesRequest, exampleRunRequest, ownRunRequest, formatSeconds, validExampleResult, chartSvg, comparisonSentence, validOwnResult, createState, connect, disconnect, connectionFailed, beginInfo, receiveInfoReply, expirePending, canRunBenchmark, beginBenchmarkRun, receiveRunReply, viewModel};
 });

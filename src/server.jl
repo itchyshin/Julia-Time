@@ -56,6 +56,8 @@ function handle_message(msg::Dict; on_status::Function=((_, __) -> nothing))
             return speed_lab_info_reply(msg)
         elseif type == "benchmark_run"
             return speed_lab_run_reply(msg)
+        elseif type isa AbstractString && startswith(type, "speed_lab_")
+            return speed_lab_reply(msg)
         elseif type == "level_info"
             level = _level_by_id_or_nothing(get(msg, "level", nothing))
             level === nothing && return Dict("type" => "error", "message" => "Unknown level: $(repr(get(msg, "level", nothing)))")
@@ -95,6 +97,14 @@ function handle_message(msg::Dict; on_status::Function=((_, __) -> nothing))
             return lesson_info_reply(msg)
         elseif type == "lesson_run"
             return lesson_run_reply(msg; on_status=on_status)
+        elseif type == "own_data_load"
+            return own_data_load(msg)
+        elseif type == "own_data_clear"
+            return own_data_clear(msg)
+        elseif type == "own_data_status"
+            return own_data_status(msg)
+        elseif type == "own_data_starter"
+            return own_data_starter(msg)
         elseif type == "case_epilogue"
             return mystery_epilogue_info(msg)
         elseif type == "case_action"

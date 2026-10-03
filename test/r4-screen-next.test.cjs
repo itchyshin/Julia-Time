@@ -83,7 +83,7 @@ test("R3-30: a quoted value in a worked line never breaks across two lines", () 
   assert.match(js, /function fillCode\(node, text\)/);
   for (const id of ["starter-code", "pinned-code", "look-code"]) assert.ok(js.includes('fillCode($("' + id + '")'), id);
   assert.match(css, /\.nb \{ white-space: nowrap; \}/);
-  assert.match(css, /\.dict td:not\(:nth-child\(2\)\), \.sheet td:not\(:nth-child\(2\)\) \{ font-family: var\(--mono\); overflow-wrap: break-word; \}/);
+  assert.match(css, /\.dict td:not\(:nth-child\(2\)\), \.sheet td:not\(:nth-child\(2\)\) \{ font-family: var\(--mono\); overflow-wrap: anywhere; \}/);
 });
 test("R3-34: Eddie and Momo are cropped closer, on the face; the disc is 64 px; Eddie is lifted", () => {
   assert.deepEqual(D.FACES.Eddie, [0.795, 0.405, 8.5]);

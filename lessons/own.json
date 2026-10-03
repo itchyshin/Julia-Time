@@ -1,0 +1,162 @@
+{
+  "id": "own",
+  "number": 7,
+  "kind": "own",
+  "title": "Your own data",
+  "goal": "Read a table of your own, run the moves from the six steps on it, fit a line, then say what you found.",
+  "story": "Last stage, and optional. Copy a CSV from your own research into the game's data folder, or use the starter table. The file stays on your laptop. Nothing here is marked.",
+  "data_label": "Your table stays on this laptop. The starter table is SIMULATED, not real counts.",
+  "setup": "own_data",
+  "minutes": 30,
+  "rounds": [
+    {
+      "id": "r1",
+      "title": "The same moves, your table",
+      "explain": "Each step is a line to run and change. Your table is called data once you have read it. The game fills in your own column names. Change the picks to use other columns.",
+      "challenges": [
+        {
+          "id": "own-r1-d1",
+          "kind": "play",
+          "prompt": "Before Julia can read a file, it must find it. pwd() shows the folder Julia is looking in. readdir(\"data\") lists the files in the game's data folder. Is starter_ponds.csv there?",
+          "starter": "println(pwd())\nreaddir(\"data\")",
+          "r_note": "`getwd()` and `list.files(\"data\")`.",
+          "py_note": "`os.getcwd()` and `os.listdir(\"data\")`.",
+          "new_ideas": [],
+          "table": "none"
+        },
+        {
+          "id": "own-r1-d2",
+          "kind": "play",
+          "prompt": "Install a package once per computer; load it with using every time you start Julia. The game has installed CSV, DataFrames and GLM, so run the line below. Then try using Plots and read what Julia says.",
+          "starter": "using CSV, DataFrames, GLM",
+          "r_note": "`install.packages()` once, then `library()` each time.",
+          "py_note": "`pip install` once, then `import` each time.",
+          "new_ideas": [],
+          "table": "none"
+        },
+        {
+          "id": "own-r1-d3",
+          "kind": "play",
+          "prompt": "Now read the table. CSV.read takes a file name and makes a DataFrame called data. For your own file, copy it into the game's data folder (for the game, not your saved script) and change the name.",
+          "starter": "data = CSV.read(\"data/starter_ponds.csv\", DataFrame)",
+          "r_note": "`data <- read.csv(\"data/starter_ponds.csv\")`.",
+          "py_note": "`data = pd.read_csv(\"data/starter_ponds.csv\")`.",
+          "new_ideas": [],
+          "table": "none",
+          "loads_table": true
+        },
+        {
+          "id": "own-r1-p1",
+          "kind": "play",
+          "prompt": "Look at what you loaded. size gives rows and columns. first shows the top 5 rows. Do the column names look right? Try first(data, 10), or names(data).",
+          "starter": "size(data)\nfirst(data, 5)",
+          "r_note": "`dim(data)` and `head(data, 5)`. Julia's size gives rows and columns in one go.",
+          "py_note": "`data.shape` and `data.head(5)` in pandas. Julia's size(data) gives (rows, columns).",
+          "new_ideas": [],
+          "feedback": {
+            "errors": [
+              {
+                "match": "UndefVarError",
+                "say": "Julia does not know data yet. Choose a file first, or use the starter table, then run again.",
+                "example": "size(table)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "own-r1-p2",
+          "kind": "play",
+          "prompt": "Pick one column that matters to your question. A dot and the column name picks it. Try another column, or first(data.{any_col}, 5) to see only the top.",
+          "starter": "data.{any_col}",
+          "r_note": "`data$col`. Julia takes a column with a dot, not a dollar sign.",
+          "py_note": "`data[\"col\"]` or `data.col` in pandas. Julia takes a column the second way, with no quotes.",
+          "new_ideas": []
+        },
+        {
+          "id": "own-r1-p3",
+          "kind": "play",
+          "prompt": "Keep only the rows that meet a rule. Here the rule picks the rows where {group_col} is {group_value}. Try another value from that column. Text goes in quotes; numbers do not. A comma and a colon keep every column.",
+          "starter": "data[data.{group_col} .== {group_value}, :]",
+          "r_note": "`filter(data, {group_col} == {group_value})` in dplyr. Julia needs the dot before ==.",
+          "py_note": "`data[data[\"{group_col}\"] == {group_value}]` in pandas. Julia needs the dot before == and ends with a comma and a colon.",
+          "new_ideas": [],
+          "feedback": {
+            "errors": [
+              {
+                "match": "BoundsError",
+                "say": "No row matched, so check the value. It must be written exactly as it appears in the column.",
+                "example": "data[data.{group_col} .== \"zzz\", :][1, 1]"
+              }
+            ]
+          }
+        },
+        {
+          "id": "own-r1-p4",
+          "kind": "play",
+          "prompt": "Count and share. sum counts the rows that pass a yes/no rule, because true counts as 1. limit is the median here. Change it. The second line is the share. If you see missing, step 8 explains.",
+          "starter": "limit = median(skipmissing(data.{num_col}))\nsum(data.{num_col} .> limit)\nsum(data.{num_col} .> limit) / length(data.{num_col})",
+          "r_note": "`sum(data$col > 15)` and `mean(data$col > 15)`. Add na.rm = TRUE in R to ignore gaps.",
+          "py_note": "`(data.col > 15).sum()` and `(data.col > 15).mean()`. pandas skips gaps without being asked; Julia does not.",
+          "new_ideas": []
+        },
+        {
+          "id": "own-r1-p5",
+          "kind": "play",
+          "prompt": "Some cells may be empty. Julia calls them missing, and sum of anything with a missing gives missing. dropmissing drops the rows that have a gap in that column. Try skipmissing instead: sum(skipmissing(...)).",
+          "starter": "clean = dropmissing(data, :{num_col})\nsize(clean)\nsum(skipmissing(data.{num_col}))",
+          "r_note": "`drop_na(data, col)` and `sum(data$col, na.rm = TRUE)`.",
+          "py_note": "`data.dropna(subset=[\"col\"])` and `data.col.sum()`. pandas skips gaps by default; Julia needs skipmissing.",
+          "new_ideas": []
+        },
+        {
+          "id": "own-r1-p6",
+          "kind": "play",
+          "prompt": "Compare two groups. groupby splits the table by {group_col}. combine then takes the mean of {num_col} in each group. Gaps would break mean, so skipmissing steps over them. Try sum, or length, instead of mean.",
+          "starter": "combine(groupby(data, :{group_col}), :{num_col} => (x -> mean(skipmissing(x))) => :mean_value)",
+          "r_note": "`data |> group_by({group_col}) |> summarise(mean_value = mean({num_col}, na.rm = TRUE))`.",
+          "py_note": "`data.groupby(\"{group_col}\")[\"{num_col}\"].mean()` in pandas. It skips gaps for you.",
+          "new_ideas": []
+        },
+        {
+          "id": "own-r1-m1",
+          "kind": "play",
+          "prompt": "Fit a straight line: how does {y_col} change with {num_col}? Find the row for {num_col}. Coef. is the slope, the change in {y_col} per unit of {num_col}. Pr(>|t|) is its p-value: small means the slope is unlikely to be chance.",
+          "starter": "model = lm(@formula({y_col} ~ {num_col}), data)",
+          "r_note": "`lm({y_col} ~ {num_col}, data = data)`.",
+          "py_note": "`smf.ols(\"{y_col} ~ {num_col}\", data).fit()` in statsmodels.",
+          "new_ideas": []
+        },
+        {
+          "id": "own-r1-m2",
+          "kind": "play",
+          "prompt": "Optional. If {y_col} is a count (0, 1, 2 and so on), a Poisson model suits it better than a straight line. glm fits it. Skip this step if it is not a count.",
+          "starter": "glm(@formula({y_col} ~ {num_col}), data, Poisson())",
+          "r_note": "`glm({y_col} ~ {num_col}, family = poisson, data = data)`.",
+          "py_note": "`smf.glm(..., family=sm.families.Poisson()).fit()`.",
+          "new_ideas": []
+        },
+        {
+          "id": "own-r1-s7",
+          "kind": "say",
+          "prompt": "Say it in one sentence: what you compared, the two numbers, and what you would check next. This is not marked. It stays on your end screen."
+        }
+      ]
+    }
+  ],
+  "dictionary": [],
+  "glossary": [],
+  "close": {
+    "finding": "You ran the course's moves on a table of your own, and wrote down one finding.",
+    "can_do": [
+      "Read a CSV file, then look at it.",
+      "Pick rows and columns, and compare two groups.",
+      "Fit a line and read its slope."
+    ],
+    "common_mistake": "A missing value makes a sum or mean missing: use dropmissing or skipmissing. A file outside the data folder will not read.",
+    "next": "Next: take the lines below into your own Julia.",
+    "own_work": {
+      "say": "In your own Julia, install the packages once, then load them each time. Put the file next to your script. Read it with CSV.read, then fit a line with lm.",
+      "code": "using Pkg; Pkg.add([\"CSV\", \"DataFrames\", \"GLM\"])   # first time only\nusing CSV, DataFrames, GLM\ndata = CSV.read(\"mydata.csv\", DataFrame)\nsize(data)\nlm(@formula(y ~ x), data)"
+    }
+  }
+}

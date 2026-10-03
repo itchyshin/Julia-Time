@@ -435,3 +435,201 @@ function speed_lab_run_reply(msg::AbstractDict;
         "result" => _speed_lab_measurement_receipt(measurements; machine_provider=machine_provider),
     )
 end
+
+# --- Speed lab 0.5.2b: six fixed examples, and "time your own code" -----------------------------
+# Same rules as above: the examples are bundled files chosen by a fixed id (the browser never
+# sends code, paths or commands for R or Python), every language's answer is compared to Julia's
+# before any timing is kept, and every number shown is measured on this computer in this request.
+
+const SPEED_LAB_EXAMPLE_IDS = ["loop-sum", "bootstrap-mean", "random-walk", "permutation-test", "running-stat", "group-means"]
+const SPEED_LAB_EXAMPLE_TEXT = Dict(
+    "loop-sum" => ("Add up square roots", "Add the square roots of the numbers 1 to 20 million, one at a time, in a plain loop."),
+    "bootstrap-mean" => ("Bootstrap a mean", "Resample 200 measurements 30,000 times and average each resample, as you would to put an uncertainty on a mean."),
+    "random-walk" => ("Random walks", "6,000 animals each take 1,000 random steps left or right. How far from the start do they end up?"),
+    "permutation-test" => ("Permutation test", "Shuffle 60 measurements between two groups 40,000 times to see how often chance alone gives a gap as big as the one observed."),
+    "running-stat" => ("Running mean and variance", "Update a running mean and variance after each of 4 million new measurements, without storing them."),
+    "group-means" => ("Many small group means", "Average 3 million measurements into 5,000 small groups, like a mean for every site."),
+)
+const SPEED_LAB_LANGUAGE_KEYS = ("julia", "r", "python")
+const SPEED_LAB_LABEL = "Measured on this computer, just now."
+const SPEED_LAB_CHECK_TIMEOUT_SECONDS = 60.0
+const SPEED_LAB_TIME_TIMEOUT_SECONDS = 90.0
+const SPEED_LAB_OWN_CODE_LIMIT = 20_000
+const SPEED_LAB_ANSWER_TOLERANCE = 1e-9
+
+function _speed_lab_exact_fields_or_error(msg::AbstractDict, type::String, fields)
+    all(key -> key isa AbstractString && key in fields, keys(msg)) && length(msg) == length(fields) ||
+        return nothing, _speed_lab_error("A $type request accepts only: " * join(sort!(collect(fields)), ", ") * ".")
+    request_id = get(msg, "request_id", nothing)
+    request_id isa AbstractString && !isempty(strip(request_id)) && length(request_id) <= 160 ||
+        return nothing, _speed_lab_error("Speed-lab requests need a short, non-empty request_id.")
+    return String(request_id), nothing
+end
+
+"""Which of the three languages can run here. Python needs no NumPy for these examples."""
+function _speed_lab_example_presence()
+    return Dict("julia" => true,
+                "r" => Sys.which("Rscript") !== nothing,
+                "python" => _speed_lab_python_executable() !== nothing)
+end
+
+function _speed_lab_example_command(language::AbstractString, id::AbstractString, mode::AbstractString)
+    id in SPEED_LAB_EXAMPLE_IDS || error("unknown fixed example")
+    mode in ("check", "time") || error("unknown fixed mode")
+    root = joinpath(@__DIR__, "..", "benchmarks", "speedlab", id)
+    if language == "julia"
+        return `$(Base.julia_cmd()) --startup-file=no --history-file=no $(joinpath(root, id * ".jl")) $mode`
+    elseif language == "r"
+        return `Rscript $(joinpath(root, id * ".R")) $mode`
+    elseif language == "python"
+        python = _speed_lab_python_executable()
+        python === nothing && error("Python is unavailable")
+        return `$python $(joinpath(root, id * ".py")) $mode`
+    end
+    error("unknown fixed language")
+end
+
+function _speed_lab_default_example_runner(language, id, mode)
+    return _speed_lab_fixed_json(_speed_lab_example_command(language, id, mode);
+        timeout_seconds=mode == "check" ? SPEED_LAB_CHECK_TIMEOUT_SECONDS : SPEED_LAB_TIME_TIMEOUT_SECONDS)
+end
+
+_speed_lab_numbers(value) = value isa AbstractVector && !isempty(value) && all(v -> v isa Real && isfinite(v), value)
+
+function _speed_lab_answers_agree(a, b)
+    _speed_lab_numbers(a) && _speed_lab_numbers(b) && length(a) == length(b) || return false
+    return all(i -> abs(a[i] - b[i]) <= SPEED_LAB_ANSWER_TOLERANCE * max(1.0, abs(a[i]), abs(b[i])), eachindex(a))
+end
+
+function speed_lab_examples_reply(msg::AbstractDict; presence::Function=_speed_lab_example_presence)
+    request_id, err = _speed_lab_exact_fields_or_error(msg, "speed_lab_examples", ("type", "request_id"))
+    err === nothing || return err
+    return Dict{String,Any}(
+        "type" => "speed_lab_examples", "request_id" => request_id,
+        "examples" => [Dict("id" => id, "title" => SPEED_LAB_EXAMPLE_TEXT[id][1], "plain" => SPEED_LAB_EXAMPLE_TEXT[id][2]) for id in SPEED_LAB_EXAMPLE_IDS],
+        "languages" => presence(),
+    )
+end
+
+"""Check every present language's answer against Julia's, then time only the languages that agree."""
+function speed_lab_example_run_reply(msg::AbstractDict; presence::Function=_speed_lab_example_presence,
+                                     runner::Function=_speed_lab_default_example_runner,
+                                     machine_provider::Function=_speed_lab_machine_metadata)
+    request_id, err = _speed_lab_exact_fields_or_error(msg, "speed_lab_example_run", ("type", "request_id", "example_id"))
+    err === nothing || return err
+    id = get(msg, "example_id", nothing)
+    id isa AbstractString && id in SPEED_LAB_EXAMPLE_IDS ||
+        return _speed_lab_error("Unknown speed-lab example.")
+    here = presence()
+    rows = Dict{String,Any}()
+    answers = Dict{String,Any}()
+    for language in SPEED_LAB_LANGUAGE_KEYS
+        if !get(here, language, false)
+            rows[language] = Dict("status" => "not_installed", "message" => "not installed, not timed")
+            continue
+        end
+        answer = try
+            report = runner(language, id, "check")
+            _speed_lab_numbers(report["answer"]) ? report["answer"] : nothing
+        catch
+            nothing
+        end
+        if answer === nothing
+            rows[language] = Dict("status" => "failed", "message" => "did not finish, not timed")
+        else
+            answers[language] = answer
+        end
+    end
+    reference = get(answers, "julia", nothing)
+    for language in SPEED_LAB_LANGUAGE_KEYS
+        haskey(answers, language) || continue
+        if reference === nothing
+            rows[language] = Dict("status" => "failed", "message" => "did not finish, not timed")
+        elseif !_speed_lab_answers_agree(answers[language], reference)
+            rows[language] = Dict("status" => "answers_differ", "message" => "answers differ, not timed")
+        end
+    end
+    for language in SPEED_LAB_LANGUAGE_KEYS
+        haskey(rows, language) && continue
+        rows[language] = try
+            report = runner(language, id, "time")
+            times = report["times"]
+            _speed_lab_numbers(times) && length(times) == 3 && all(>=(0), times) &&
+                _speed_lab_answers_agree(report["answer"], reference) &&
+                report["version"] isa AbstractString || error("incomplete timing report")
+            sorted = sort(Float64.(times))
+            Dict("status" => "timed", "median" => sorted[2], "min" => sorted[1], "max" => sorted[3],
+                 "version" => String(report["version"]))
+        catch
+            Dict("status" => "failed", "message" => "did not finish, not timed")
+        end
+    end
+    return Dict{String,Any}(
+        "type" => "speed_lab_example_result", "request_id" => request_id, "example_id" => id,
+        "title" => SPEED_LAB_EXAMPLE_TEXT[id][1],
+        "label" => SPEED_LAB_LABEL,
+        "method" => "One warm-up run, then the median of three timed runs, one language at a time.",
+        "machine" => machine_provider(),
+        "languages" => rows,
+    )
+end
+
+_speed_lab_own_explanation(first::Real, second::Real) =
+    second >= 0.8 * first ?
+        "Julia compiles code the first time it runs and reuses it after that, but your code was short enough that compiling cost little, so the two runs are close." :
+        "Julia compiles code the first time it runs, so the first run includes that compiling time and the second run, reusing it, is faster."
+
+"""Build the one program the sandbox runs: `using`/`import` lines first, the learner's other lines
+inside a function (the way fast Julia is written), then that function timed twice in one module so
+the second call reuses what the first call compiled."""
+function _speed_lab_own_program(code::AbstractString)
+    lifted = String[]
+    body = String[]
+    for line in split(String(code), '\n')
+        push!(occursin(r"^\s*(using|import)\s", line) ? lifted : body, String(line))
+    end
+    return join(lifted, "\n") * "\n__jt_body() = begin\n" * join(body, "\n") * "\nend\n" *
+           "__jt_t1 = @elapsed __jt_body()\n__jt_t2 = @elapsed __jt_body()\n(__jt_t1, __jt_t2)\n"
+end
+
+"""Run the learner's code in the normal sandbox (one 5 s budget for both timed calls)."""
+function speed_lab_own_run_reply(msg::AbstractDict; sandbox::Function=(code; budget) -> lock(_RUN_LOCK) do
+        run_code(code; budget=budget)
+    end)
+    request_id, err = _speed_lab_exact_fields_or_error(msg, "speed_lab_own_run", ("type", "request_id", "code"))
+    err === nothing || return err
+    code = get(msg, "code", nothing)
+    code isa AbstractString && !isempty(strip(code)) || return _speed_lab_error("Type some Julia code to time.")
+    length(code) <= SPEED_LAB_OWN_CODE_LIMIT || return _speed_lab_error("That code is too long for the speed lab (limit $(SPEED_LAB_OWN_CODE_LIMIT) characters).")
+    reply = Dict{String,Any}("type" => "speed_lab_own_result", "request_id" => request_id, "label" => SPEED_LAB_LABEL,
+                             "first" => nothing, "second" => nothing, "explanation" => nothing)
+    fail(status, message) = (reply["status"] = status; reply["first"] = Dict{String,Any}("status" => status, "message" => message); reply)
+    _pkg_call(code) && return fail("error", OWN_DATA_PKG_LINE)
+    occursin(r"(?m)^\s*const\s", code) &&
+        return fail("error", "The speed lab runs your lines inside a function, where const is not allowed. Take the word const off that line and try again.")
+    result = sandbox(_speed_lab_own_program(code); budget=5.0)
+    value = result.value
+    if result.status == :ok && value isa Union{Tuple,AbstractVector} && length(value) == 2 &&
+       all(v -> v isa Real && isfinite(v) && v >= 0, value)
+        reply["status"] = "ok"
+        reply["first"] = Dict{String,Any}("status" => "ok", "seconds" => Float64(value[1]))
+        reply["second"] = Dict{String,Any}("status" => "ok", "seconds" => Float64(value[2]))
+        reply["explanation"] = _speed_lab_own_explanation(value[1], value[2])
+        return reply
+    end
+    message = isempty(strip(result.message)) ? "This run did not finish." : first(result.message, 1500)
+    return fail(result.status == :timeout ? "timeout" : "error", message)
+end
+
+"""Single entry point for every `speed_lab_*` message; the server routes the whole prefix here."""
+function speed_lab_reply(msg::AbstractDict; kwargs...)
+    type = get(msg, "type", nothing)
+    if type == "speed_lab_examples"
+        return speed_lab_examples_reply(msg; filter(p -> first(p) == :presence, kwargs)...)
+    elseif type == "speed_lab_example_run"
+        return speed_lab_example_run_reply(msg; filter(p -> first(p) in (:presence, :runner, :machine_provider), kwargs)...)
+    elseif type == "speed_lab_own_run"
+        return speed_lab_own_run_reply(msg; filter(p -> first(p) == :sandbox, kwargs)...)
+    end
+    return _speed_lab_error("Unknown speed-lab request.")
+end

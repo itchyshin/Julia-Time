@@ -270,6 +270,7 @@
     const attempt = courseState.attemptId(raw) ? raw : "";
     for (const link of doc.querySelectorAll("[data-board-link]")) link.href = "index.html" + (attempt ? "?attempt=" + encodeURIComponent(attempt) : "");
     $("ending-speed-lab").href = client.speedLabDestination(attempt);
+    $("ending-own-data").href = client.ownDataDestination(attempt);
     let storage = null; try { storage = win.localStorage; } catch (_) { storage = null; }
     const gate = endingGate(storage, attempt);
     const status = $("ending-status");

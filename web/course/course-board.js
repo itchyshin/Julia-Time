@@ -142,6 +142,16 @@
         text(levels, ": short puzzles that use what you learned. Practice levels open: " + walk.waves.open + " of " + walk.waves.total + ". Nothing is scored.");
         range.append(line, levels);
       }
+      const ownData = document.getElementById("own-data-panel");
+      if (ownData) {
+        ownData.replaceChildren();
+        const link = document.createElement("a");
+        link.href = client.ownDataDestination(attempt);
+        text(link, "Bonus: your own data");
+        const about = document.createElement("span");
+        text(about, " (optional): run the same moves on a CSV file of your own, or on a starter table. It stays on this computer and nothing is marked. The case does not wait for it.");
+        ownData.append(link, about);
+      }
       const evidence = document.getElementById("saved-evidence");
       evidence.replaceChildren();
       if (!model.evidence.length) text(evidence, model.evidenceEmpty);

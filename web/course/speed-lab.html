@@ -6,6 +6,20 @@
   <meta name="description" content="Julia Time: the optional speed lab.">
   <title>Julia Time · Optional speed lab</title>
   <link rel="stylesheet" href="course.css">
+  <style>
+    .lab-card { background:var(--panel); border:2px solid var(--line); padding:.9rem 1rem; margin:1rem 0; }
+    .lab-card h3 { margin:.1rem 0 .3rem; font:700 1.15rem/1.25 Georgia,serif; }
+    .lab-card p { margin:.3rem 0; }
+    .lab-card .lab-state { color:var(--muted); font-size:1rem; }
+    .lab-card ul { margin:.3rem 0 .3rem 1.1rem; padding:0; font-size:1rem; }
+    .lab-card svg { margin:.5rem 0 .2rem; }
+    .lab-fine { color:var(--muted); font-size:.95rem; }
+    #own-code { display:block; width:100%; min-height:11rem; font:16px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; padding:.6rem; border:2px solid var(--ink); background:#fff; color:var(--ink); resize:vertical; }
+    #own-results dt { font-weight:800; margin-top:.5rem; }
+    #own-results dd { margin:0 0 .2rem; }
+    #own-error { white-space:pre-wrap; overflow-wrap:anywhere; font:15px/1.4 ui-monospace,Menlo,Consolas,monospace; background:#fff4d6; padding:.6rem; }
+    main { overflow-wrap:anywhere; }
+  </style>
 </head>
 <body>
   <a class="skip" href="#speed-lab">Skip to the speed lab</a>
@@ -16,35 +30,47 @@
   <main id="speed-lab" class="shell guide-main">
     <section class="guide-section" aria-labelledby="speed-title">
       <p class="eyebrow">Optional after the mystery</p>
-      <h1 id="speed-title">Curious how the same bootstrap runs in three languages?</h1>
-      <p><strong>What this page is for:</strong> after you finish the mystery, you can ask one fair question on <em>this</em> computer: do Julia, R and Python give the same answer to the same supplied bootstrap calculation, and how long does each take here?</p>
+      <h1 id="speed-title">How fast is Julia on your own computer?</h1>
+      <p><strong>What this page is for:</strong> after you finish the mystery, you can time six small, fixed calculations in Julia, R and Python on <em>this</em> computer, and then time a few lines of your own Julia code.</p>
       <ol>
-        <li><strong>Step 1: confirm the answers agree.</strong> The lab runs a fixed calculation in all three languages and checks the returned values.</li>
-        <li><strong>Step 2: time those matching calculations.</strong> This unlocks only when Step 1 passes, so we never time answers that do not match.</li>
-        <li><strong>Step 3: read one local report.</strong> It describes this computer and these settings; it is not a claim that a language always wins.</li>
+        <li><strong>Answers first.</strong> For each calculation the lab checks that the answers agree across the languages before timing anything, so we never time answers that do not match.</li>
+        <li><strong>Then the clock.</strong> One warm-up run, then the median of three timed runs, one language at a time. Every number you see was measured here, just now. Nothing is remembered or typed in by us.</li>
+        <li><strong>Missing a language?</strong> The page says "not installed, not timed" and carries on. R and Python run only the fixed files that come with Julia Time; they never run code you type.</li>
       </ol>
-      <p>A <strong>bootstrap</strong> repeatedly resamples a fixed dataset and recalculates one summary. If a language is missing, the page says so; you can still play the whole Missing Fleas mystery. Each language has a 30-second total limit across both fixed workloads.</p>
-      <aside class="setup-reminder"><strong>You do not need to do this to learn Julia or finish the case.</strong> Leave this page if you would rather continue the mystery. The speed lab is only for comparing one small calculation on this computer.</aside>
+      <aside class="setup-reminder"><strong>You do not need to do this to learn Julia or finish the case.</strong> The numbers describe this computer and these small loops. They are not a claim about every program or every computer.</aside>
     </section>
-    <section class="guide-section" aria-labelledby="controls-title">
-      <h2 id="controls-title">Try the optional experiment</h2>
-      <p><strong>Before you start:</strong> leave the Julia Time terminal running. Start with Step 1 below; this page will tell you whether the optional experiment is available.</p>
-      <p id="speed-status" aria-live="polite">Step 1: confirm that this computer can run the same calculation in Julia, R and Python.</p>
+    <section class="guide-section" aria-labelledby="examples-title">
+      <h2 id="examples-title">Six fixed calculations</h2>
+      <p><strong>Before you start:</strong> leave the Julia Time terminal running. Each calculation takes roughly 5 to 30 seconds to check and time; all six take a few minutes.</p>
+      <p id="speed-status" aria-live="polite">Press the button to time the six calculations.</p>
       <div class="editor-controls">
-        <button id="check-speed-lab" type="button">Step 1: check matching answers</button>
-        <button id="run-speed-lab" type="button" disabled>Step 2: time the fixed calculation</button>
+        <button id="run-all" type="button">Time all six, one after another</button>
       </div>
-      <section id="speed-report" hidden aria-live="polite" aria-labelledby="speed-report-title">
-        <h2 id="speed-report-title">Current local report</h2>
-        <p id="speed-report-message"></p>
-        <dl id="speed-report-context"></dl>
-        <table>
-          <caption>Median timing in seconds; range is shown in parentheses.</caption>
-          <thead><tr><th scope="col">Workload</th><th scope="col">Julia</th><th scope="col">R</th><th scope="col">Python / NumPy</th></tr></thead>
-          <tbody id="speed-report-timings"></tbody>
-        </table>
-        <p id="speed-report-comparison"></p>
-      </section>
+      <div id="examples"></div>
+    </section>
+    <section class="guide-section" aria-labelledby="own-title">
+      <h2 id="own-title">Time your own code</h2>
+      <p>Type a few lines of Julia. They run in the same sandbox as the lessons, twice in a row, with one 5-second limit for both runs together. You will see the two times separately. Your lines run inside a function, the way fast Julia code is written.</p>
+      <label for="own-code"><strong>Your Julia code</strong></label>
+      <textarea id="own-code" spellcheck="false" autocomplete="off" autocapitalize="off">using Printf
+function report(n)
+    lines = String[]
+    for i in 1:n
+        push!(lines, @sprintf("%-8s %6.2f %5d %s", "site" * string(i), sqrt(i), i * i, i % 2 == 0 ? "even" : "odd"))
+    end
+    length(join(lines, "\n"))
+end
+report(200)</textarea>
+      <div class="editor-controls"><button id="run-own" type="button">Run it twice and time it</button></div>
+      <p id="own-status" aria-live="polite"></p>
+      <dl id="own-results" hidden>
+        <dt>First run (includes compiling)</dt><dd id="own-first"></dd>
+        <dt>Second run</dt><dd id="own-second"></dd>
+      </dl>
+      <p id="own-explanation"></p>
+      <p class="lab-fine">Press the button again with the same code: Julia remembers what it compiled in earlier runs, so the two times can then be close.</p>
+      <pre id="own-error" hidden></pre>
+      <p class="lab-fine" id="own-label" hidden>Measured on this computer, just now.</p>
     </section>
     <aside class="setup-reminder"><strong>Boundary:</strong> this is an optional local comparison, not a requirement for the mystery and not a claim about a different computer.</aside>
   </main>
@@ -52,121 +78,172 @@
   <script>
   (function () {
     "use strict";
+    const client = window.JuliaTimeSpeedLab;
     const status = document.getElementById("speed-status");
+    const runAll = document.getElementById("run-all");
+    const runOwn = document.getElementById("run-own");
     const returnBoard = document.getElementById("return-case-board");
     const attempt = new URLSearchParams(location.search).get("attempt");
     if (returnBoard && /^[a-z0-9-]{1,80}$/.test(attempt || "")) returnBoard.href = "index.html?attempt=" + encodeURIComponent(attempt);
-    const check = document.getElementById("check-speed-lab");
-    const run = document.getElementById("run-speed-lab");
-    const client = window.JuliaTimeSpeedLab;
     if (!client || !window.WebSocket) {
       status.textContent = "The speed lab needs a current browser with WebSocket support. Board; the mystery is still playable.";
-      check.disabled = true;
-      run.disabled = true;
+      runAll.disabled = true;
+      runOwn.disabled = true;
       return;
     }
-    const speedReport = document.getElementById("speed-report");
-    const reportMessage = document.getElementById("speed-report-message");
-    const reportContext = document.getElementById("speed-report-context");
-    const reportTimings = document.getElementById("speed-report-timings");
-    const reportComparison = document.getElementById("speed-report-comparison");
-    const INFO_REPLY_TIMEOUT_MS = 60000;
-    const RUN_REPLY_TIMEOUT_MS = 150000;
     const CONNECT_TIMEOUT_MS = 5000;
-    let state = client.createState();
+    const EXAMPLE_REPLY_TIMEOUT_MS = 240000;
+    const OWN_REPLY_TIMEOUT_MS = 240000;
+    const TITLES = {
+      "loop-sum": ["Add up square roots", "Add the square roots of the numbers 1 to 20 million, one at a time, in a plain loop."],
+      "bootstrap-mean": ["Bootstrap a mean", "Resample 200 measurements 30,000 times and average each resample, as you would to put an uncertainty on a mean."],
+      "random-walk": ["Random walks", "6,000 animals each take 1,000 random steps left or right. How far from the start do they end up?"],
+      "permutation-test": ["Permutation test", "Shuffle 60 measurements between two groups 40,000 times to see how often chance alone gives a gap as big as the one observed."],
+      "running-stat": ["Running mean and variance", "Update a running mean and variance after each of 4 million new measurements, without storing them."],
+      "group-means": ["Many small group means", "Average 3 million measurements into 5,000 small groups, like a mean for every site."]
+    };
+    const LANGUAGE_NAMES = {julia: "Julia", r: "R", python: "Python"};
     let socket = null;
     let sequence = 0;
-    let replyTimer = null;
-    let connectionTimer = null;
+    let busy = false;
 
     function requestId(kind) { sequence += 1; return kind + "-" + Date.now().toString(36) + "-" + sequence; }
-    function timingText(summary) { return summary.median.toFixed(6) + " s (" + summary.min.toFixed(6) + "–" + summary.max.toFixed(6) + " s)"; }
-    function textNode(tag, text) { const node = document.createElement(tag); node.textContent = text; return node; }
-    function renderReceipt(receipt) {
-      reportContext.replaceChildren();
-      reportTimings.replaceChildren();
-      reportComparison.textContent = "";
-      if (!receipt) { reportMessage.textContent = ""; return; }
-      reportMessage.textContent = receipt.title + ". Parity verified before timing; each language ran one warm-up and five timed fixed-kernel repetitions.";
-      const context = [
-        ["Machine", receipt.machine.cpu_model + "; " + receipt.machine.architecture + "; " + receipt.machine.os + "; " + receipt.machine.logical_cpus + " logical CPUs"],
-        ["Threads", "Single-threaded kernel; Julia, BLAS, OpenMP, MKL and vecLib each capped at 1"],
-        ["Versions", "Julia " + receipt.language_versions.julia + " · R " + receipt.language_versions["r-base"] + " · Python / NumPy " + receipt.language_versions["python-numpy"]]
-      ];
-      context.forEach(function (pair) { reportContext.append(textNode("dt", pair[0]), textNode("dd", pair[1])); });
-      reportComparison.textContent = receipt.workloads.map(client.relativeTimingSummary).filter(Boolean).join(" ");
-      receipt.workloads.forEach(function (workload) {
-        const row = document.createElement("tr");
-        row.append(textNode("th", workload.iterations + " resamples"));
-        row.lastChild.scope = "row";
-        ["julia", "r-base", "python-numpy"].forEach(function (language) { row.append(textNode("td", timingText(workload.timings_seconds[language]))); });
-        reportTimings.append(row);
+    function node(tag, text) { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; return n; }
+
+    function connect() {
+      return new Promise(function (resolve, reject) {
+        if (socket && socket.readyState === WebSocket.OPEN) { resolve(socket); return; }
+        let settled = false;
+        let candidate;
+        try { candidate = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws"); } catch (_) { reject(new Error("connection")); return; }
+        const timer = setTimeout(function () { if (!settled) { settled = true; try { candidate.close(); } catch (_) {} reject(new Error("connection")); } }, CONNECT_TIMEOUT_MS);
+        candidate.addEventListener("open", function () { if (settled) return; settled = true; clearTimeout(timer); socket = candidate; resolve(candidate); });
+        candidate.addEventListener("error", function () { if (settled) return; settled = true; clearTimeout(timer); reject(new Error("connection")); });
+        candidate.addEventListener("close", function () { if (socket === candidate) socket = null; if (!settled) { settled = true; clearTimeout(timer); reject(new Error("connection")); } });
       });
     }
-    function render() {
-      const model = client.viewModel(state);
-      status.textContent = model.message;
-      check.disabled = state.phase === "loading" || state.phase === "running";
-      run.disabled = !client.canRunBenchmark(state);
-      speedReport.hidden = !model.result;
-      renderReceipt(model.result);
-    }
-    function clearReplyTimer() { if (replyTimer !== null) { clearTimeout(replyTimer); replyTimer = null; } }
-    function clearConnectionTimer() { if (connectionTimer !== null) { clearTimeout(connectionTimer); connectionTimer = null; } }
-    function armReplyTimer(requestId, timeoutMs) {
-      clearReplyTimer();
-      replyTimer = setTimeout(function () {
-        replyTimer = null;
-        const before = state;
-        state = client.expirePending(state, requestId);
-        if (state !== before) render();
-      }, timeoutMs);
-    }
-    function receive(reply) {
-      const before = state;
-      if (reply && reply.type === "benchmark_info") state = client.receiveInfoReply(state, reply);
-      if (reply && reply.type === "benchmark_run") state = client.receiveRunReply(state, reply);
-      if (before !== state) { clearReplyTimer(); render(); }
-    }
-    function withSocket(ready) {
-      if (socket && socket.readyState === WebSocket.OPEN) { ready(); return; }
-      status.textContent = "Connecting to the local lab…";
-      try {
-        socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
-      } catch (_) {
-        state = client.connectionFailed(state);
-        render();
-        return;
-      }
-      const currentSocket = socket;
-      connectionTimer = setTimeout(function () {
-        if (socket !== currentSocket || currentSocket.readyState === WebSocket.OPEN) return;
-        try { currentSocket.close(); } catch (_) {}
-        state = client.connectionFailed(state);
-        render();
-      }, CONNECT_TIMEOUT_MS);
-      currentSocket.addEventListener("open", function () { if (socket !== currentSocket) return; clearConnectionTimer(); state = client.connect(state); render(); ready(); });
-      currentSocket.addEventListener("message", function (event) { if (socket !== currentSocket) return; try { receive(JSON.parse(event.data)); } catch (_) {} });
-      currentSocket.addEventListener("error", function () { if (socket !== currentSocket) return; clearConnectionTimer(); clearReplyTimer(); state = client.connectionFailed(state); render(); });
-      currentSocket.addEventListener("close", function () { if (socket !== currentSocket) return; clearConnectionTimer(); clearReplyTimer(); state = client.connectionFailed(state); render(); });
-    }
-    check.addEventListener("click", function () {
-      withSocket(function () {
-        const started = client.beginInfo(state, requestId("speed-info"));
-        if (!started.message) return;
-        state = started.state;
-        socket.send(JSON.stringify(started.message));
-        armReplyTimer(started.message.request_id, INFO_REPLY_TIMEOUT_MS);
-        render();
+    function ask(message, validate, timeoutMs) {
+      return connect().then(function (ws) {
+        return new Promise(function (resolve, reject) {
+          const timer = setTimeout(function () { ws.removeEventListener("message", onMessage); reject(new Error("timeout")); }, timeoutMs);
+          function onMessage(event) {
+            let reply = null;
+            try { reply = JSON.parse(event.data); } catch (_) { return; }
+            if (!reply || reply.request_id !== message.request_id) return;
+            clearTimeout(timer);
+            ws.removeEventListener("message", onMessage);
+            if (validate(reply)) resolve(reply); else reject(new Error("invalid"));
+          }
+          ws.addEventListener("message", onMessage);
+          ws.send(JSON.stringify(message));
+        });
       });
+    }
+    function failureText(error) {
+      if (error && error.message === "connection") return "Could not connect to the local Julia game. In the game folder, start it again with the launcher, leave that terminal open, then try again.";
+      if (error && error.message === "timeout") return "The local lab did not reply in time. Try again; the mystery does not need this.";
+      return "The local lab sent a reply this page could not trust, so nothing is shown.";
+    }
+
+    // One card per fixed example; the chart is drawn from the measured reply only.
+    const cards = {};
+    const container = document.getElementById("examples");
+    client.EXAMPLE_IDS.forEach(function (id) {
+      const card = document.createElement("section");
+      card.className = "lab-card";
+      card.setAttribute("aria-labelledby", "h-" + id);
+      const heading = node("h3", TITLES[id][0]); heading.id = "h-" + id;
+      const state = node("p", "Not run yet."); state.className = "lab-state";
+      const button = node("button", "Time just this one"); button.type = "button"; button.className = "secondary-action";
+      const out = document.createElement("div");
+      card.append(heading, node("p", TITLES[id][1]), button, state, out);
+      container.append(card);
+      cards[id] = {state, button, out};
+      button.addEventListener("click", function () { runExamples([id]); });
     });
-    run.addEventListener("click", function () {
-      const started = client.beginBenchmarkRun(state, requestId("speed-run"));
-      if (!started.message || !socket || socket.readyState !== WebSocket.OPEN) return;
-      state = started.state;
-      socket.send(JSON.stringify(started.message));
-      armReplyTimer(started.message.request_id, RUN_REPLY_TIMEOUT_MS);
-      render();
+    function showResult(id, reply) {
+      const card = cards[id];
+      card.out.replaceChildren();
+      const timed = Object.keys(reply.languages).filter(function (k) { return reply.languages[k].status === "timed"; });
+      card.state.textContent = timed.length ? reply.label : "Nothing could be timed for this one.";
+      const svg = client.chartSvg(reply.languages);
+      if (svg) {
+        const holder = document.createElement("div");
+        holder.innerHTML = svg;
+        card.out.append(holder);
+      }
+      const list = document.createElement("ul");
+      ["julia", "r", "python"].forEach(function (key) {
+        const row = reply.languages[key];
+        list.append(node("li", row.status === "timed"
+          ? LANGUAGE_NAMES[key] + ": median " + client.formatSeconds(row.median) + " (range " + client.formatSeconds(row.min) + " to " + client.formatSeconds(row.max) + "); " + row.version
+          : LANGUAGE_NAMES[key] + ": " + row.message));
+      });
+      card.out.append(list);
+      const sentence = client.comparisonSentence(reply.languages);
+      if (sentence) card.out.append(node("p", sentence));
+      const fine = node("p", reply.method + " " + reply.machine.cpu_model + "; " + reply.machine.architecture + "; " + reply.machine.logical_cpus + " logical CPUs; each calculation ran on one thread.");
+      fine.className = "lab-fine";
+      card.out.append(fine);
+    }
+    function setBusy(value) {
+      busy = value;
+      runAll.disabled = value; runOwn.disabled = value;
+      Object.keys(cards).forEach(function (id) { cards[id].button.disabled = value; });
+    }
+    async function runExamples(ids) {
+      if (busy) return;
+      setBusy(true);
+      try {
+        for (let i = 0; i < ids.length; i += 1) {
+          const id = ids[i];
+          status.textContent = "Checking answers, then timing: " + TITLES[id][0] + " (" + (i + 1) + " of " + ids.length + "). Please wait.";
+          cards[id].state.textContent = "Warming up Julia for the first run… then checking that the answers agree, then timing.";
+          const message = client.exampleRunRequest(requestId("speed-ex"), id);
+          try {
+            const reply = await ask(message, function (r) { return client.validExampleResult(r, message.request_id); }, EXAMPLE_REPLY_TIMEOUT_MS);
+            showResult(id, reply);
+          } catch (error) {
+            cards[id].state.textContent = failureText(error);
+            status.textContent = failureText(error);
+            return;
+          }
+        }
+        status.textContent = "Done. Every number above was measured on this computer, just now.";
+      } finally { setBusy(false); }
+    }
+    runAll.addEventListener("click", function () { runExamples(client.EXAMPLE_IDS.slice()); });
+
+    const ownCode = document.getElementById("own-code");
+    const ownStatus = document.getElementById("own-status");
+    const ownResults = document.getElementById("own-results");
+    const ownFirst = document.getElementById("own-first");
+    const ownSecond = document.getElementById("own-second");
+    const ownExplanation = document.getElementById("own-explanation");
+    const ownError = document.getElementById("own-error");
+    const ownLabel = document.getElementById("own-label");
+    function ownStepText(step) { return step.status === "ok" ? client.formatSeconds(step.seconds) : "did not finish: " + step.message; }
+    runOwn.addEventListener("click", async function () {
+      if (busy) return;
+      const message = client.ownRunRequest(requestId("speed-own"), ownCode.value);
+      ownResults.hidden = true; ownError.hidden = true; ownLabel.hidden = true; ownExplanation.textContent = "";
+      if (!message) { ownStatus.textContent = "Type some Julia code first (up to 20,000 characters)."; return; }
+      setBusy(true);
+      ownStatus.textContent = "Warming up Julia for the first run… (the first run can take a while; please wait)";
+      try {
+        const reply = await ask(message, function (r) { return client.validOwnResult(r, message.request_id) || (r && r.type === "error"); }, OWN_REPLY_TIMEOUT_MS);
+        if (reply.type === "error") { ownStatus.textContent = String(reply.message || "That request was not accepted."); return; }
+        ownStatus.textContent = reply.status === "ok" ? "Both runs finished." : "Your code did not finish cleanly, so there is no comparison.";
+        ownFirst.textContent = ownStepText(reply.first);
+        ownSecond.textContent = reply.second ? ownStepText(reply.second) : "not run, because the first run stopped";
+        ownResults.hidden = false;
+        ownLabel.hidden = false;
+        if (reply.explanation) ownExplanation.textContent = reply.explanation;
+        const failed = reply.first.status !== "ok" ? reply.first : (reply.second && reply.second.status !== "ok" ? reply.second : null);
+        if (failed) { ownError.textContent = failed.message; ownError.hidden = false; }
+      } catch (error) {
+        ownStatus.textContent = failureText(error);
+      } finally { setBusy(false); }
     });
   }());
   </script>

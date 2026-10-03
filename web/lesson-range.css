@@ -167,6 +167,8 @@
 #wave-hint-text { margin: 0 0 6px; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--panel); font-size: 16px; }
 /* the columns strip stays on one row, so it costs one line */
 .range-cols { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; margin-bottom: 4px; padding: 3px 8px; }
+/* On a phone the strip wraps onto as many lines as it needs, and sits on top (web/lesson.css puts it in the first order group). */
+@media (max-width: 799px) { .range-cols { flex-wrap: wrap; white-space: normal; overflow: visible; } }
 
 /* ---- a boss win: a gold flash on the shelf, a warmer, bigger banner. Under reduced motion the gold ring is simply there. ---- */
 #board.boss-won { box-shadow: 0 0 0 3px #ffd166; border-radius: 10px; }

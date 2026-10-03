@@ -764,6 +764,7 @@ test("the page has only the listed elements", () => {
     "0.5, target range: locked levels as one line": ["locked-line"],
     "fix round 2 (D8, P12, P26): the fast lane on the start card; the one-time glossary tip; why Next is off; a chapter's one help used": ["fast-row", "fast-lane", "gloss-tip", "next-why", "help-note"],
     "fix round 2 (P14): the round's one-line story above its first task": ["round-story"],
+    "0.5.2, your own data (kind own): the file button on the read step, the table panel with its four picks, the say step, the end-screen script": ["own-panel", "own-panel-h", "own-privacy", "own-file", "own-file-label", "own-starter", "own-error", "own-sim", "own-check", "own-picks", "own-load", "own-go-read", "own-stuck", "own-table", "own-table-sum", "own-end-file", "own-say", "own-say-label", "own-say-text", "own-say-note", "code-buttons", "own-end", "own-end-h", "own-end-lines", "own-end-say", "own-save", "own-save-note", "own-board", "own-notice", "own-still", "own-forget", "own-end-forget"],
     "left: the instruction": ["left", "prompt"],
     "left: the pinned worked line, labelled (on a later screen, captioned Worked example)": ["pinned", "pinned-code", "pinned-labels", "pinned-cap"],
     "left: pocket dictionary (a drawer on narrow screens)": ["dict", "dict-body"],
@@ -803,8 +804,8 @@ test("the page has only the listed elements", () => {
   assert.deepEqual([...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map((m) => m[1]), ["lesson.css", "lesson-range.css", "lesson-delight.css"]);
   // no images, no inline handlers; the scripts are the screen, the course record it saves exam passes
   // to, the glue between them (0.5), the shared Julia-text filter and the target range (fix round 2), and the delight layer that only watches the page (0.5 round 3), in that load order
-  assert.deepEqual([...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]), ["course/course-state.js", "julia-text.js", "lesson-exam-save.js", "lesson-range.js", "lesson.js", "lesson-delight.js"]);
-  assert.equal((html.match(/<script/g) || []).length, 6);
+  assert.deepEqual([...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]), ["course/course-state.js", "julia-text.js", "lesson-exam-save.js", "lesson-range.js", "lesson-own.js", "lesson.js", "lesson-delight.js"]);
+  assert.equal((html.match(/<script/g) || []).length, 7);
   assert.equal((html.match(/<img/g) || []).length, 0);
   assert.doesNotMatch(html, /\son[a-z]+=/);
   // every button has an accessible name (text or aria-label)
@@ -2948,17 +2949,20 @@ test("range: a level the engine judges clean is done, whatever its shot_number",
   later.ctrl.fire("J-091");
   assert.equal(later.ctrl.view().range.waves[0].done, true);
 });
-test("play box: an empty run or `nothing` says so in one line", () => {
+test("play box: an empty run or `nothing` says Done in one line", () => {
   const { ctrl } = setup();
   ctrl.start();
   ctrl.state.index = ctrl.state.flat.findIndex((f) => f.challenge.kind === "play");
   ctrl.run("x");
   for (const repr of ["", "nothing"]) {
     ctrl.state.result = { status: "ok", feedback: "", value_repr: repr, pass: true };
-    assert.equal(ctrl.view().ch.feedback, "Nothing to show: type a line, then press Run.");
+    assert.match(ctrl.view().ch.feedback, /^Done\./);
   }
+  ctrl.state.lastCode = "using CSV";
+  ctrl.state.result = { status: "ok", feedback: "", value_repr: "nothing", pass: true };
+  assert.equal(ctrl.view().ch.feedback, "Done. This line loads packages; it shows nothing.");
   ctrl.state.result = { status: "ok", feedback: "", value_repr: "5", pass: true };
-  assert.notEqual(ctrl.view().ch.feedback, "Nothing to show: type a line, then press Run.");
+  assert.doesNotMatch(ctrl.view().ch.feedback, /^Done\./);
 });
 
 // ======================================================================================================
