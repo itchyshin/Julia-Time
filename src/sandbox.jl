@@ -82,6 +82,10 @@ const _WARMUP_TASK = Ref{Union{Nothing,Base.Task}}(nothing)
 # "has this process ever had a ready worker", not "is the pool ready right now".
 const _EVER_READY = Ref(false)
 
+# The worker's load path: the game's project and the standard library only. Windows separates the entries with ';',
+# every other system with ':' (0.5.2 shipped ':' everywhere and broke Windows set-up).
+_worker_load_path(windows::Bool=Sys.iswindows()) = join(["@", "@stdlib"], windows ? ';' : ':')
+
 function _spawn_worker()
     project = dirname(Base.active_project())
     script = joinpath(@__DIR__, "sandbox_worker.jl")
@@ -91,7 +95,7 @@ function _spawn_worker()
     # the same thing to the learner's code and to the server (src/own_data.jl).
     # JULIA_PKG_OFFLINE and the game-root variable: a learner's Pkg line cannot reach the network, and every run starts
     # in the game folder (see `_eval_on_worker`).
-    cmd = Cmd(addenv(cmd, "JULIA_LOAD_PATH" => "@:@stdlib", "JULIA_PKG_OFFLINE" => "true",
+    cmd = Cmd(addenv(cmd, "JULIA_LOAD_PATH" => _worker_load_path(), "JULIA_PKG_OFFLINE" => "true",
                      "JULIATIME_GAME_ROOT" => _own_game_root()); dir=_own_game_root())
     # The worker's stderr is ours until its start-up finishes, so a failed `using JuliaTime` shows
     # in this process's log; after that the worker sends its own stderr to devnull
