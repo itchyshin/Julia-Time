@@ -69,8 +69,9 @@ const MAX_WORKERS = 4          # hard cap on live workers, whatever the callers 
 const _OWNED_PROCESSES = Dict{Int, Any}()
 const _SHUTTING_DOWN = Ref(false)
 const _NEXT_WORKER_ID = Ref(0)
-# Kept for the server shutdown and regression contract: replacement is deliberately lazy and
-# synchronous, so no background recovery task can outlive a timed-out learner request.
+# Kept for the server shutdown and regression contract: a learner move's own replacement is lazy and
+# synchronous and never waits on a background task. (Since 0.5.4 the warm spare, `_SPARE`, is a
+# background task, but no move ever waits for it; this `_REFILL` slot is still never assigned.)
 const _REFILL = Ref{Union{Nothing,Base.Task}}(nothing)   # Base.Task qualified: levels.jl defines the spec's own `Task`
 # Tracks the background task started by `_run_warmup_in_background!` (used by `start_server`) so
 # `shutdown!()` can wait for it — see that function and `shutdown!()` for why.
@@ -109,8 +110,30 @@ function _spawn_worker()
     return worker
 end
 
+# Ids of workers this side killed (`_kill_worker!`). `_reap_killed_worker!` only unregisters a killed
+# worker that exits within 0.5 s; on a loaded machine a miss would otherwise stay counted against
+# `MAX_WORKERS` forever, so `_purge_dead_owned!` forgets exactly those, once they have exited. A worker
+# that died on its own must stay registered: `_may_resend` reads that to know nothing on this side
+# ended it (the 2026-09-24 "correct answer rejected" bug). Guarded by `_POOL_LOCK`.
+const _KILLED_IDS = Set{Int}()
+
+# Caller holds `_POOL_LOCK`.
+function _purge_dead_owned!()
+    for id in collect(_KILLED_IDS)
+        proc = get(_OWNED_PROCESSES, id, nothing)
+        if proc === nothing
+            delete!(_KILLED_IDS, id)
+        elseif process_exited(proc)
+            delete!(_OWNED_PROCESSES, id)
+            delete!(_KILLED_IDS, id)
+        end
+    end
+    return nothing
+end
+
 function _top_up!(n::Integer)
     lock(_POOL_LOCK) do
+        _purge_dead_owned!()
         while !_SHUTTING_DOWN[] && length(_POOL) < n && length(_OWNED_PROCESSES) < MAX_WORKERS
             push!(_POOL, _spawn_worker())
         end
@@ -319,17 +342,67 @@ function shutdown!()
     for w in workers
         _kill_worker!(w; timeout_s=2.0)
     end
+    # The warm spare (see `_schedule_refill!`) may be mid-proof; its process was just killed above,
+    # so its round trip fails fast. Wait (bounded) so it cannot touch the pool after we reset state.
+    spare = lock(() -> _SPARE[], _POOL_LOCK)
+    if spare !== nothing && !istaskdone(spare)
+        Base.timedwait(() -> istaskdone(spare), 10.0)
+    end
     lock(_POOL_LOCK) do
+        _SPARE[] === spare && (_SPARE[] = nothing)
+        empty!(_POOL)
         empty!(_OWNED_PROCESSES)
+        empty!(_KILLED_IDS)
         _SHUTTING_DOWN[] = false
     end
     return nothing
 end
 
+# Warm spare (0.5.4). A replacement is still created lazily by the next `_take_worker!` when the
+# pool is empty, and that move never waits for anything in the background: `_take_worker!` does
+# not read `_SPARE` at all. After a kill, one background task starts a single extra worker and
+# proves it ready (the GLM/DataFrames prewarm is most of a worker's start-up, measured 7.1 to 7.3 s
+# on the maintainer's Mac against 2.1 to 2.2 s for a bare start, .scratch/054/timings.log), keeping it OUT of the pool while it is
+# being proved so no move can touch its pipes. Only a proven worker is added to the pool, and only
+# if `shutdown!()` has not claimed it. A stalled or failed spare therefore costs nothing: the next
+# move simply spawns its own worker, as before. `_REFILL` stays `nothing` for that reason.
+const _SPARE = Ref{Union{Nothing,Base.Task}}(nothing)
+
+function _spare_body()
+    w = lock(_POOL_LOCK) do
+        _purge_dead_owned!()
+        # Leave one slot free: the spare must never take the slot a learner move needs for its own worker.
+        (_SHUTTING_DOWN[] || !isempty(_POOL) || length(_OWNED_PROCESSES) >= MAX_WORKERS - 1) && return nothing
+        _spawn_worker()
+    end
+    w === nothing && return nothing
+    ok = try
+        _ensure_ready!(w)
+    catch
+        false
+    end
+    lock(_POOL_LOCK) do
+        if ok && !_SHUTTING_DOWN[] && haskey(_OWNED_PROCESSES, w.id)
+            push!(_POOL, w)
+            return nothing
+        end
+        ok = false
+    end
+    ok || _kill_worker!(w)
+    return nothing
+end
+
 function _schedule_refill!(n::Integer=2)
-    # Replacement workers are created by the next `_take_worker!` call. Keeping this function
-    # preserves the timeout call sites while ensuring no background process launch can outlive
-    # the timed-out learner request.
+    lock(_POOL_LOCK) do
+        t = _SPARE[]
+        (_SHUTTING_DOWN[] || (t !== nothing && !istaskdone(t))) && return nothing
+        # No third cold process during start-up. Read the task directly: `_warmup_in_flight()` exempts the
+        # warm-up task itself, and its own trial kill (`_prewarm_kill_path!`) is exactly the case to refuse.
+        warm = _WARMUP_TASK[]
+        (warm !== nothing && !istaskdone(warm)) && return nothing
+        body = () -> try _spare_body() catch end
+        _SPARE[] = Threads.nthreads() > 1 ? Threads.@spawn(body()) : @async(body())
+    end
     return nothing
 end
 
@@ -604,6 +677,9 @@ _may_resend(w::_SandboxWorker) =
     end
 
 function _kill_worker!(w::_SandboxWorker; timeout_s::Real=0.5)
+    lock(_POOL_LOCK) do
+        haskey(_OWNED_PROCESSES, w.id) && push!(_KILLED_IDS, w.id)
+    end
     try
         process_running(w.process) && (Sys.iswindows() ? kill(w.process) : kill(w.process, Base.SIGKILL))
     catch e

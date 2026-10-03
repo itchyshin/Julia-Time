@@ -19,6 +19,13 @@ function _client_run_deadline_s()
     return minimum(ms) / 1000
 end
 
+# Wait (bounded) for any background warm spare to finish; true if none is running afterwards.
+function _settle_spare(limit=120.0)
+    t = JuliaTime._SPARE[]
+    t === nothing && return true
+    return Base.timedwait(() -> istaskdone(t), limit) === :ok
+end
+
 @testset "sandbox" begin
     JuliaTime.warmup!()
 
@@ -123,14 +130,37 @@ end
     @test JuliaTime.run_code("1+1").value == 2               # exit() must not poison the next learner move
 
     # finding 4: two timeouts back to back drain the pool; the next call must still answer soon
+    _settle_spare()   # a spare left by an earlier kill must not share the CPU with the move timed below
     JuliaTime.run_code("while true end"; budget=1.0)
     JuliaTime.run_code("while true end"; budget=1.0)
+    _settle_spare()
     # Replacement is deliberately lazy: a stalled background Distributed refill used to make
     # this next ordinary learner move wait indefinitely after two killed workers.
     @test JuliaTime._REFILL[] === nothing
     t4 = @elapsed r = JuliaTime.run_code("1+1")
     @test r.value == 2
     @test t4 < 15.0
+
+    # 0.5.4: after a kill one warm spare is started in the background, so the next move is served by a
+    # proven worker instead of paying the whole start-up (a fresh worker with its prewarm measured
+    # 7.1-7.3 s on the maintainer's Mac, .scratch/054/timings.log). Start from an empty pool.
+    JuliaTime.shutdown!()
+    JuliaTime.run_code("1+1")
+    JuliaTime.run_code("while true end"; budget=1.0)   # kills the only worker; pool is empty
+    @test JuliaTime._SPARE[] !== nothing
+    @test _settle_spare()
+    runs_before = JuliaTime._PREWARM_RUNS[]
+    t5 = @elapsed r = JuliaTime.run_code("1+1")
+    @test r.value == 2
+    @test JuliaTime._PREWARM_RUNS[] == runs_before    # served by the ready spare, no new worker proven
+    @test t5 < 2.0
+    # the first lm a learner runs on a worker that was never used must fit inside the 5 s budget
+    JuliaTime.run_code("while true end"; budget=1.0)
+    @test _settle_spare()
+    r = JuliaTime.run_code("""
+        df = DataFrame(x=[1.0,2.0,3.0,4.0,5.0], y=[1.0,3.0,2.0,5.0,4.0])
+        coef(lm(@formula(y ~ x), df))"""; budget=5.0)
+    @test r.status === :ok
 
     # Repeated bad loops must not exhaust the replacement mechanism. This used to
     # strand the fifth ordinary move when `Distributed.addprocs` stopped launching
@@ -141,6 +171,58 @@ end
         @test JuliaTime.run_code("1+1"; budget=3.0).value == 2
     end
 
+    JuliaTime.shutdown!()
+end
+
+@testset "a stalled warm spare never delays the next move (0.5.4)" begin
+    JuliaTime.shutdown!()
+    JuliaTime.run_code("1+1")
+    id0 = JuliaTime._NEXT_WORKER_ID[]
+    # Three killed workers whose reap missed its window stay registered; they must not count against
+    # MAX_WORKERS, or with the spare's slot a move would wait for the spare.
+    for k in 1:3
+        JuliaTime._OWNED_PROCESSES[-k] = run(`$(Base.julia_cmd()) --startup-file=no -e 0`)
+        push!(JuliaTime._KILLED_IDS, -k)
+    end
+    # Start the spare with a deliberately slow worker start (30 s), then leave the slow environment.
+    withenv("JULIATIME_TEST_SLOW_WORKER_START" => "30") do
+        JuliaTime.run_code("while true end"; budget=0.5)
+        @test Base.timedwait(() -> any(k -> k > id0, keys(JuliaTime._OWNED_PROCESSES)), 30.0) === :ok
+    end
+    spare = JuliaTime._SPARE[]
+    @test spare !== nothing && !istaskdone(spare)
+    t = @elapsed r = JuliaTime.run_code("1+1")
+    @test r.value == 2
+    # The stalled spare takes 30 s, so a move that waited for it would take over 30 s. The move cold-starts its own
+    # worker meanwhile, which took 17 s on a GitHub macOS runner (run 37139563964), so the bound is 25 s, not 15 s.
+    @test t < 25.0
+    @test !istaskdone(spare)          # the move did not wait for the stalled spare
+    t0 = time()
+    JuliaTime.shutdown!()             # and shutdown does not hang on it either
+    @test time() - t0 < 20.0
+    @test istaskdone(spare)
+    @test isempty(JuliaTime._POOL)
+end
+
+@testset "the spare never starts during the start-up warm-up, even from its own trial kill (0.5.4)" begin
+    JuliaTime.shutdown!()
+    JuliaTime.run_code("1+1")                       # one pooled worker, so killing it empties the pool
+    w = lock(() -> pop!(JuliaTime._POOL), JuliaTime._POOL_LOCK)
+    gate = Channel{Nothing}(1)
+    JuliaTime._WARMUP_TASK[] = @async take!(gate)   # a warm-up that is still running
+    try
+        # what `_prewarm_kill_path!` does from inside the warm-up task: a kill, then a refill request
+        JuliaTime._kill_worker!(w)
+        JuliaTime._schedule_refill!()
+        @test JuliaTime._SPARE[] === nothing
+        @test isempty(JuliaTime._POOL)
+    finally
+        put!(gate, nothing)
+        wait(JuliaTime._WARMUP_TASK[])
+        JuliaTime._WARMUP_TASK[] = nothing
+    end
+    JuliaTime._schedule_refill!()                   # once the warm-up is over the spare may start
+    @test JuliaTime._SPARE[] !== nothing
     JuliaTime.shutdown!()
 end
 
@@ -341,6 +423,28 @@ _pooled_workers() = lock(() -> copy(JuliaTime._POOL), JuliaTime._POOL_LOCK)
     r = JuliaTime.run_code("1+1")
     @test r.status === :ok
     @test r.value == 2
+    JuliaTime.shutdown!()
+end
+
+@testset "purging killed workers never hides a worker that died on its own (0.5.4)" begin
+    # 2026-09-24 bug: a correct move rejected because `_may_resend` no longer saw the dead idle worker as ours.
+    JuliaTime.shutdown!()
+    JuliaTime.warmup!(n=2)
+    @test _settle_spare()
+    a, b = _pooled_workers()
+    _kill_out_of_band(a); wait(a.process)           # `a` dies on its own while idle in the pool
+    # the pool pops `b` for the stopped run, which this side then kills
+    @test JuliaTime.run_code("while true end"; budget=1.0).status === :timeout
+    @test _settle_spare()
+    lock(JuliaTime._POOL_LOCK) do
+        @test haskey(JuliaTime._OWNED_PROCESSES, a.id)
+    end
+    JuliaTime._top_up!(1)                            # any worker start purges killed entries
+    lock(JuliaTime._POOL_LOCK) do
+        @test haskey(JuliaTime._OWNED_PROCESSES, a.id)   # still registered: it was not killed by us
+    end
+    r = JuliaTime.run_code("1+1")                    # pops dead `a`, re-sent to a fresh worker, accepted
+    @test r.status === :ok && r.value == 2
     JuliaTime.shutdown!()
 end
 
