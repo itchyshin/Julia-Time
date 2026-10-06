@@ -1,64 +1,74 @@
-# Missing Fleas — 10–15 minute no-rescue playtest sheet
+# Julia Time playtest observer sheet: first session in Lesson 1
+
+10 to 15 minutes, no-rescue session. This sheet tests the game, not the player. A first session lands in Lesson 1, a practice notebook called logbook that is made up for training. It is not the case, so record nothing about the case. Tell the player what is recorded (this sheet, no names) and that they can stop at any time. Ask permission before any recording. Guide: docs/playtest-observer-guide.md.
 
 ## Before the player arrives
 
+- Date:
+- Observer:
+- Player id (no names):
+- Game version (the ZIP name, Julia-Time-...):
+- Julia version (`julia --version`):
+- System: `macOS` / `Windows` / `Linux`
+- Started from: `launcher` / `terminal`
 - Player type: `new coder` / `R or Python user` / `pair`
-- Device and browser:
-- Started from: `Windows setup` / `Mac setup` / `already-running local game`
-- Start time:
+- Browser and start time:
+
+Setup: game running, browser open on the Case Board, Lesson 1 not started (the button says Start Lesson 1, not Continue).
 
 Say only:
 
 > “Please play the game without help. If you get stuck, say aloud what you expected to happen. I am testing the game, not you, so I will not teach or point things out.”
 
-Do not demonstrate code, name a button, or explain Julia while the player is deciding what to do.
+Do not demonstrate code, name a button, or explain Julia while the player is deciding what to do. On-screen help is not rescue: let the player use Hint, Look closer, the Show R and Show Python notes, error messages and the optional intro, and record each use. If asked for help, say only “What would you try?” and write the question down. If the player is truly stuck, note the time and wait 2 minutes. Then stop the session and record where their own next action became unclear. Stop at 15 minutes or when Lesson 1 finishes.
 
-## Observe the first 10–15 minutes
+## Record these moments
 
-| Moment | What happened? | Time | Exact words, expectation, or question |
+| Moment | What to record | Clock time | Player’s words or action |
 | --- | --- | --- | --- |
-| Open the game | Did the player understand what this is and why it is local? | | |
-| First minute | Can they state the case question and identify the supplied data/table? | | |
-| First move | Can they find the next action and begin without help? | | |
-| First Julia run | What code did they expect to run? What did the result mean to them? | | |
-| Ordinary error or hesitation | What did they think went wrong? Did they find and use a hint or recovery message? | | |
-| Returned evidence | Can they say what Julia did, what it tells the case, and what it does not tell the case? | | |
-| Navigation | Can they find their next chapter or return to the Case Board? | | |
+| Start to first Run | Minutes from Start Lesson 1 on the Board to the first Run. Did they watch the optional two-minute intro? | | |
+| First line passes | When a green message shows and Next opens. Was the line typed, changed, or already in the editor? | | |
+| First error | What the message said and what the player did next. Task 3 shows an error on purpose. | | |
+| Hint or Look closer | First use. Look closer starts at task 2. Hints and Show a starter line appear only after a missed Run at a checkpoint (the first is task 8). | | |
+| Show R / Show Python | Did they read the notes, switch one off, or ignore them? | | |
+| Confusion | Any moment of confusion, in their own words. | | |
+| 5-second stop | If a run was stopped (“ran for more than 5 seconds”), what did they do next? | | |
 
-## Gate checklist
+## Checks that can be seen in Lesson 1
 
 Mark **observed**, not inferred.
 
-- [ ] Within one minute, the player stated the question in their own words.
-- [ ] Within one minute, the player identified the relevant named input(s).
-- [ ] Within three minutes, the player made a first accepted move using only on-screen support.
-- [ ] The player could explain the effect of their code.
-- [ ] The player could explain the case discovery it enabled.
-- [ ] The player recovered from one ordinary error or hesitation without facilitator rescue.
-- [ ] The player could say what remains unknown; they did not infer a causal culprit from the exercise.
-- [ ] The player found a route back to the Case Board or next chapter.
-- [ ] The player said whether they wanted to continue, and why.
+- [ ] Types or edits a line without help.
+- [ ] Reads an error message, aloud or in their own words.
+- [ ] Fixes the line after an error and passes.
+- [ ] Says in their own words what a result shows.
+
+What the player says they will do next:
 
 ## If the player stops or asks for help
 
-Record the exact screen/chapter, what was visible, and the player’s expected next step:
-
-- Chapter/screen:
+- Time and screen or task:
 - What they expected:
-- What they tried:
 - What was missing, confusing, or too much:
-- Did a visible hint, table, label, or recovery message resolve it? `yes` / `no`
+- Did a visible hint, label, or error message resolve it? `yes` / `no`
 
-## End questions (ask only after play)
+## Part 2 (optional, a separate session): Your own data and the speed lab
 
-1. What was the mystery asking you to find out?
-2. What did your last Julia move do?
-3. What did the game help you understand about Julia?
-4. What was the most confusing moment?
-5. Would you continue? Why or why not?
+Use it only with a player who has finished the six steps, about 4 hours of play.
+
+- Copies their CSV into the game’s data folder unaided: `yes` / `no` / `not reached`
+- Types the CSV.read line unaided: `yes` / `no` / `not reached`
+- What they say about the speed lab:
+
+## Ask only after play
+
+1. What did your last line do?
+2. What was the most confusing moment?
+3. Would you continue, and why?
 
 ## Observer verdict
 
-- **Pass / revise / unclear**:
+- **Clear / unclear**: Clear if the player ran a line and fixed an error unaided; unclear if their own next action stalled for more than 2 minutes (write which task):
 - One repair to make before the next player:
 - Evidence retained (notes or recording location, with consent if recorded):
+- Return the sheet to the person who asked you to observe. Project feedback: open an issue at github.com/itchyshin/Julia-Time/issues (no names).

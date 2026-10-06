@@ -7,15 +7,16 @@ Julia Time is a free game that teaches Julia. It runs on your own computer.
 > - Julia **1.10** (the long-term-support version, not the newest Julia).
 > - About 1 GB of free disk space (Julia about 0.5 GB, Julia Time plus its packages about 0.3 GB).
 > - Internet once, for the setup. After that the game runs offline.
-> - R and Python are not needed to play the mystery (only an optional comparison after it uses them).
+> - R and Python are not needed to play the mystery. Only the optional speed lab uses them.
 
-Want pictures first? Open [Start here](../web/course/getting-started.html) from the Julia Time folder.
+Want pictures first? In the extracted Julia Time folder, open `web/course/getting-started.html`.
 
 ## 1. Download and unpack Julia Time
 
 Go to the [Releases page](https://github.com/itchyshin/Julia-Time/releases/latest) and download the
 `Julia-Time-<version>.zip` file under *Assets*. Unpack it to a folder you can find again.
-On Windows, right-click the ZIP and choose **Extract All**; do not run the game from inside the ZIP.
+On Windows, first right-click the ZIP, choose Properties, tick **Unblock** if you see it, and click OK; this avoids a
+security prompt later. Then right-click the ZIP and choose **Extract All**; do not run the game from inside the ZIP.
 Open the inner `Julia-Time-<version>` folder (the one that holds `Play-Julia-Time-Windows`).
 
 ## 2. Install Julia 1.10
@@ -35,8 +36,8 @@ Julia Time needs Julia **1.10.x**. Use one of these:
 A newer Julia that is already installed is fine. The launchers check each Julia they find and use
 the 1.10 one. You do not need to change PATH.
 
-To check, open a terminal in the Julia Time folder and run `julia --version`. It must begin
-`julia version 1.10.`. If a Mac terminal cannot find `julia`, try
+You do not need to check: the Play files find the right Julia for you. If you want to check anyway and your terminal
+knows `julia`, run `julia --version`. It must begin `julia version 1.10.`. If a Mac terminal cannot find `julia`, try
 `/Applications/Julia-1.10.app/Contents/Resources/julia/bin/julia --version` (adjust the app name if needed).
 
 ## 3. Start the game
@@ -44,8 +45,7 @@ To check, open a terminal in the Julia Time folder and run `julia --version`. It
 The first time, the launcher also runs the one-time setup (section 4). Keep its window open while you play.
 
 1. **Windows:** double-click `Play-Julia-Time-Windows`. If Windows says it protected your PC, choose
-   **More info**, then **Run anyway** (or **Run**). To avoid that prompt, right-click the downloaded ZIP
-   before unpacking, choose Properties, tick **Unblock**, and click OK.
+   **More info**, then **Run anyway** (or **Run**).
 2. **Mac:** double-click `Play-Julia-Time-Mac.command`. If macOS says it cannot verify the file, click
    **Done**, open **System Settings > Privacy & Security**, click **Open Anyway** next to
    `Play-Julia-Time-Mac.command`, and double-click it again. If asked whether Terminal may access your
@@ -59,12 +59,13 @@ only on your own computer. If Julia Time is already running, starting it again j
 
 ## 4. The one-time setup
 
-On the first start, Julia downloads and compiles the packages Julia Time needs. This needs internet and can
-take several minutes, depending on your connection and computer (on 2 October 2026 we measured 67 seconds from an empty package store on a recent Mac with a fast
-connection; the packages take about 244 MB). Do not close the window while it runs. Later starts take seconds.
+On the first start, Julia downloads and compiles the packages Julia Time needs. This needs internet. On a fast
+connection it usually takes a few minutes; on 2 October 2026 we measured 67 seconds from an empty package store on a
+recent Mac with a fast connection. The packages take about 244 MB. A slower connection or computer takes longer.
+Do not close the window while it runs. Later starts take seconds.
 
-You can also run the setup by hand. The settings cap Julia at four threads and BLAS at one, so the game does
-not hog a shared computer. In the Julia Time folder:
+You do not need this if you double-clicked a Play file. To run the setup by hand, use the commands below. Their settings
+limit how many of your computer's processor cores the game uses, so it does not hog a shared computer. In the Julia Time folder:
 
 **Mac or Linux Terminal**
 
@@ -89,10 +90,10 @@ $env:OPENBLAS_NUM_THREADS = "1"
 julia --startup-file=no --history-file=no --project=. check_setup.jl
 ```
 
-Success ends with:
+Success ends with these lines (the number of seconds is your own):
 
 ```text
-OK: Julia Time is ready
+OK: Julia Time is ready (complete setup took <N> seconds).
 Next: open the Case Board with the matching command in docs/install.md.
 ```
 
@@ -117,11 +118,12 @@ allow Julia 1.10, or use another computer.
 
 Go to the black window (Windows) or Terminal window (Mac, Linux) that opened with the game. Press Enter or Ctrl-C there.
 
-## Optional: use a different Python for the Speed Lab
+## Optional: the speed lab and a different Python
 
-You do not need this to play the mystery. The optional bootstrap comparison after the mystery uses
-R, Python, and NumPy. If the Speed Lab says NumPy is missing but another Python on your computer has it, restart Julia Time
-with that interpreter's full path. This does not install anything or change your other Python.
+You do not need this to play the mystery. The optional speed lab times six small calculations in Julia, R and
+Python on your computer. It needs R and Python installed to time them. A language that is not
+installed is shown as not timed, and the lab carries on. If another Python on your computer is the one you want the lab
+to use, restart Julia Time with that interpreter's full path. This does not install anything or change your other Python.
 
 **Mac or Linux Terminal**
 

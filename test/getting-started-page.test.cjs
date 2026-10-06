@@ -45,8 +45,9 @@ test("the participant Start Here page explains the local game before asking for 
   assert.doesNotMatch(guide, /<details[^>]*\bopen\b/i, "a platform-specific command must never be the default visible command");
   assert.doesNotMatch(guide, /What is playable now|all six chapters are on the Board/i, "the status note is gone");
   assert.match(guide, /static page.*mystery.*own laptop/i);
-  assert.match(readme, /\[Start here\]\(web\/course\/getting-started\.html\)/i);
-  assert.match(install, /\[Start here\]\(\.\.\/web\/course\/getting-started\.html\)/i);
+  // 2026-10-06: GitHub shows a linked .html file as raw source, so the docs say where to open it instead.
+  assert.match(readme, /in the extracted folder, open\s+`web\/course\/getting-started\.html`/i);
+  assert.match(install, /in the extracted Julia Time folder, open `web\/course\/getting-started\.html`/i);
   // The guide stays a safe static page, not a second game client: its one script only fixes one link.
   const scripts = guide.match(/<script\b[^>]*>/gi) || [];
   assert.deepEqual(scripts, ['<script defer src="getting-started.js">'], "the guide may load only its link script");
@@ -100,14 +101,15 @@ test("the repository landing page is a public first door before the learner has 
   const readme = read("README.md");
   const firstInstallSection = readme.slice(0, readme.indexOf("## What happens when you play"));
 
-  assert.match(firstInstallSection, /You are in the right place before you download anything/i);
+  assert.match(readme, /free game for graduate students and researchers/i, "the README says what it is and who it is for");
   assert.match(firstInstallSection, /\[\*\*Download Julia Time\*\*\]\(https:\/\/github\.com\/itchyshin\/Julia-Time\/releases\/latest\)/i);
   assert.match(firstInstallSection, /web\/assets\/lab-cast\.png/i, "the public doorway should retain the course's visual welcome");
   assert.match(firstInstallSection, /## Start here/i);
-  assert.match(firstInstallSection, /Julia Time archive/i);
+  assert.match(firstInstallSection, /Julia Time ZIP file/i);
   assert.match(firstInstallSection, /Julia 1\.10\.x/i);
   assert.match(firstInstallSection, /internet connection.*first setup/i);
-  assert.match(firstInstallSection, /Do \*\*not\*\* install R, Python, NumPy/i);
+  assert.match(readme, /R and Python are only\s+needed for the speed lab/i, "the README says R and Python are only for the speed lab");
+  assert.doesNotMatch(readme, /NumPy/, "the README no longer mentions NumPy");
   assert.match(firstInstallSection, /docs\/install\.md/i);
   assert.match(firstInstallSection, /setup-windows\.cmd/i);
   assert.match(firstInstallSection, /launch-macos\.command/i);

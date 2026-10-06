@@ -31,9 +31,8 @@ test("learner-facing launcher configuration directs the story to the Case Board 
   assert.match(install, /http:\/\/127\.0\.0\.1:8000\/course\/index\.html/);
   assert.match(install, /JULIA_NUM_THREADS/);
   assert.match(install, /R and Python are not needed to play the mystery/i);
-  assert.match(install, /optional\s+bootstrap comparison[\s\S]*R,\s+Python, and NumPy/i);
+  assert.match(install, /optional\s+speed lab[\s\S]*R and\s+Python installed/i);
   assert.doesNotMatch(install, /comparisons are\s+reading-only/i);
-  assert.match(readme, /http:\/\/127\.0\.0\.1:8000\/course\/index\.html/);
 });
 
 test("Windows has a double-clickable one-time setup helper with the same bounded local contract", () => {

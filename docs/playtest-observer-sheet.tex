@@ -3,72 +3,81 @@
 \usepackage{array,tabularx}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{2pt}
-\renewcommand{\arraystretch}{1.45}
+\renewcommand{\arraystretch}{1.2}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-\newcolumntype{M}{>{\raggedright\arraybackslash}m{0.15\textwidth}}
+\newcolumntype{M}{>{\raggedright\arraybackslash}m{0.14\textwidth}}
 \newcommand{\linefill}{\rule{0.72\linewidth}{0.3pt}}
+\newcommand{\rowh}{\rule{0pt}{1.5em}}
 \newcommand{\checkbox}{\fbox{\rule{0pt}{0.75em}\rule{0.75em}{0pt}}}
 \begin{document}
 \small
 
-{\Large\bfseries Missing Fleas playtest observer sheet}\\[-2pt]
-\textit{10-15 minutes, no-rescue session. This sheet tests the game, not the player.}
+{\Large\bfseries Julia Time playtest observer sheet: first session in Lesson 1}\\[-2pt]
+\textit{10 to 15 minutes, no-rescue session. This sheet tests the game, not the player. A first session lands in Lesson 1, a practice notebook called logbook that is made up for training. It is not the case, so record nothing about the case. Tell the player what is recorded (this sheet, no names) and that they can stop at any time. Ask permission before any recording. Guide: docs/playtest-observer-guide.md.}
 
 \vspace{3pt}
-\textbf{Before the player arrives}\quad Player type: \checkbox\ new coder \quad \checkbox\ R/Python user \quad \checkbox\ pair\\
-Device/browser: \rule{0.35\linewidth}{0.3pt}\quad Start time: \rule{0.18\linewidth}{0.3pt}\\
-Started from: \checkbox\ Windows setup \quad \checkbox\ Mac setup \quad \checkbox\ already-running game
+\textbf{Before the player arrives}\\
+Date: \rule{0.14\linewidth}{0.3pt}\quad Observer: \rule{0.20\linewidth}{0.3pt}\quad Player id (no names): \rule{0.20\linewidth}{0.3pt}\\
+Game version (the ZIP name, Julia-Time-...): \rule{0.22\linewidth}{0.3pt}\quad Julia version (\texttt{julia --version}): \rule{0.15\linewidth}{0.3pt}\\
+System: \checkbox\ macOS \quad \checkbox\ Windows \quad \checkbox\ Linux \qquad Started from: \checkbox\ launcher \quad \checkbox\ terminal\\
+Player type: \checkbox\ new coder \quad \checkbox\ R or Python user \quad \checkbox\ pair \qquad Browser and start time: \rule{0.25\linewidth}{0.3pt}\\
+Setup: game running, browser open on the Case Board, Lesson 1 not started (the button says Start Lesson 1, not Continue).
 
 \vspace{3pt}
 \textbf{Say only:} ``Please play the game without help. If you get stuck, say aloud what you expected to happen. I am testing the game, not you, so I will not teach or point things out.''\\
-\textit{Do not demonstrate code, name a button, or explain Julia while the player is deciding what to do.}
+\textit{Do not demonstrate code, name a button, or explain Julia while the player is deciding what to do. On-screen help is not rescue: let the player use Hint, Look closer, the Show R and Show Python notes, error messages and the optional intro, and record each use. If asked for help, say only ``What would you try?'' and write the question down. If the player is truly stuck, note the time and wait 2 minutes. Then stop the session and record where their own next action became unclear. Stop at 15 minutes or when Lesson 1 finishes.}
 
-\vspace{4pt}
-\textbf{Observe the first 10-15 minutes}\\[-2pt]
-\begin{tabularx}{\textwidth}{|M|Y|p{0.08\textwidth}|Y|}
+\vspace{3pt}
+\textbf{Record these moments}\\[3pt]
+\begin{tabularx}{\textwidth}{|M|Y|p{0.07\textwidth}|Y|}
 \hline
-\textbf{Moment} & \textbf{What happened?} & \textbf{Time} & \textbf{Exact words, expectation, or question} \\
+\textbf{Moment} & \textbf{What to record} & \textbf{Clock time} & \textbf{Player's words or action} \\
 \hline
-Open the game & Did they understand what this is and why it is local? & & \\
+\rowh Start to first Run & Minutes from Start Lesson 1 on the Board to the first Run. Did they watch the optional two-minute intro? & & \\
 \hline
-First minute & Can they state the case question and identify the supplied data/table? & & \\
+\rowh First line passes & When a green message shows and Next opens. Was the line typed, changed, or already in the editor? & & \\
 \hline
-First move & Can they find the next action and begin without help? & & \\
+\rowh First error & What the message said and what the player did next. Task 3 shows an error on purpose. & & \\
 \hline
-First Julia run & What code did they expect to run? What did the result mean to them? & & \\
+\rowh Hint or Look closer & First use. Look closer starts at task 2. Hints and Show a starter line appear only after a missed Run at a checkpoint (the first is task 8). & & \\
 \hline
-Error or hesitation & What did they think went wrong? Did they use a hint or recovery message? & & \\
+\rowh Show R / Show Python & Did they read the notes, switch one off, or ignore them? & & \\
 \hline
-Returned evidence & Can they say what Julia did, what it tells the case, and what it does not? & & \\
+\rowh Confusion & Any moment of confusion, in their own words. & & \\
 \hline
-Navigation & Can they find the next chapter or return to the Case Board? & & \\
+\rowh 5-second stop & If a run was stopped (``ran for more than 5 seconds''), what did they do next? & & \\
 \hline
 \end{tabularx}
 
-\vspace{4pt}
-\textbf{Gate checklist - mark observed, not inferred}\\[-2pt]
+\vspace{3pt}
+\textbf{Checks that can be seen in Lesson 1 - mark observed, not inferred}\\[3pt]
 \begin{tabularx}{\textwidth}{@{}YY@{}}
-\checkbox\ Within 1 minute, states the question in their own words. & \checkbox\ Identifies the relevant named input(s). \\
-\checkbox\ Within 3 minutes, makes a first accepted move using on-screen support. & \checkbox\ Explains the effect of their code. \\
-\checkbox\ Explains the case discovery it enabled. & \checkbox\ Recovers from one ordinary error or hesitation without rescue. \\
-\checkbox\ Says what remains unknown; does not infer a causal culprit. & \checkbox\ Finds the Case Board or next-chapter route. \\
-\checkbox\ Says whether they want to continue, and why. & \\
-\end{tabularx}
+\checkbox\ Types or edits a line without help. & \checkbox\ Reads an error message, aloud or in their own words. \\
+\checkbox\ Fixes the line after an error and passes. & \checkbox\ Says in their own words what a result shows. \\
+\end{tabularx}\\
+What the player says they will do next: \rule{0.62\linewidth}{0.3pt}
 
-\vspace{4pt}
+\vspace{3pt}
 \textbf{If the player stops or asks for help}\\
-Chapter/screen: \rule{0.30\linewidth}{0.3pt}\quad Expected next step: \rule{0.30\linewidth}{0.3pt}\\
-What they tried: \rule{0.84\linewidth}{0.3pt}\\
-What was missing, confusing, or too much: \rule{0.61\linewidth}{0.3pt}\\
-Did a visible hint, table, label, or recovery message resolve it? \checkbox\ yes \quad \checkbox\ no
+Time and screen or task: \rule{0.28\linewidth}{0.3pt}\quad What they expected: \rule{0.33\linewidth}{0.3pt}\\
+What was missing, confusing, or too much: \rule{0.62\linewidth}{0.3pt}\\
+Did a visible hint, label, or error message resolve it? \checkbox\ yes \quad \checkbox\ no
 
-\vspace{4pt}
-\textbf{Ask only after play}\quad 1. What was the mystery asking you to find out? \quad 2. What did your last Julia move do?\\
-3. What did the game help you understand about Julia? \quad 4. What was most confusing? \quad 5. Would you continue, and why?
+\vspace{3pt}
+\textbf{Part 2 (optional, a separate session): Your own data and the speed lab}\\
+Use it only with a player who has finished the six steps, about 4 hours of play.\\
+Copies their CSV into the game's data folder unaided: \checkbox\ yes \quad \checkbox\ no \quad \checkbox\ not reached\\
+Types the CSV.read line unaided: \checkbox\ yes \quad \checkbox\ no \quad \checkbox\ not reached\\
+What they say about the speed lab: \rule{0.65\linewidth}{0.3pt}
 
-\vspace{4pt}
-\textbf{Observer verdict}\quad \checkbox\ pass \quad \checkbox\ revise \quad \checkbox\ unclear\\
-One repair before the next player: \rule{0.68\linewidth}{0.3pt}\\
-Evidence retained (notes or recording location; consent if recorded): \rule{0.40\linewidth}{0.3pt}
+\vspace{3pt}
+\textbf{Ask only after play}\enspace 1. What did your last line do? \enspace 2. What was the most confusing moment? \enspace 3. Would you continue, and why?
+
+\vspace{3pt}
+\textbf{Observer verdict}\quad \checkbox\ clear \quad \checkbox\ unclear\\
+Clear if the player ran a line and fixed an error unaided; unclear if their own next action stalled for more than 2 minutes (write which task): \rule{0.12\linewidth}{0.3pt}\\
+One repair to make before the next player: \rule{0.58\linewidth}{0.3pt}\\
+Evidence retained (notes or recording location, with consent if recorded): \rule{0.35\linewidth}{0.3pt}\\
+Return the sheet to the person who asked you to observe. Project feedback: open an issue at github.com/itchyshin/Julia-Time/issues (no names).
 
 \end{document}
