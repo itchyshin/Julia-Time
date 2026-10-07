@@ -45,8 +45,11 @@ test("each lesson and exam has a speaker, the right one, with a short line", () 
   Object.keys(D.LINES).forEach((who) => D.LINES[who].forEach((l) => assert.ok(D.wordCount(l) < 15, l)));
   for (let n = 1; n <= 6; n++) { const s = D.speakerFor("exam" + n); assert.ok(D.wordCount(s.line) < 15); assert.ok(D.FACES[s.name]); }
 });
-test("the lines are lines the story bible already gives (no new fact)", () => {
-  const bible = fs.readFileSync(path.join(__dirname, "../docs/design/05-story-bible.md"), "utf8") + fs.readFileSync(path.join(__dirname, "../docs/design/06-story-spine.md"), "utf8")
+// The release export strips docs/design, so a public clone has no story bible to check against: skip there, run in the source repo.
+const BIBLE_FILE = path.join(__dirname, "../docs/design/05-story-bible.md");
+const NO_BIBLE = fs.existsSync(BIBLE_FILE) ? false : "docs/design/05-story-bible.md is not in this checkout (the release export leaves docs/design out)";
+test("the lines are lines the story bible already gives (no new fact)", { skip: NO_BIBLE }, () => {
+  const bible = fs.readFileSync(BIBLE_FILE, "utf8") + fs.readFileSync(path.join(__dirname, "../docs/design/06-story-spine.md"), "utf8")
     + fs.readdirSync(path.join(__dirname, "../web")).filter((f) => /^chapter\d\.html$/.test(f)).map((f) => fs.readFileSync(path.join(__dirname, "../web", f), "utf8")).join("");
   Object.keys(D.LINES).forEach((who) => D.LINES[who].forEach((l) => assert.ok(bible.replace(/[“”*]/g, "").includes(l.replace(/\.$/, "")), "not found: " + l)));
 });
